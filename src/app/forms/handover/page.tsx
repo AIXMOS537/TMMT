@@ -1,0 +1,157 @@
+"use client";
+
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { Car, CheckCircle, ClipboardCheck } from "lucide-react";
+
+const fuelLevels = ["Empty", "1/4", "1/2", "3/4", "Full"];
+
+export default function HandoverForm() {
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [handoverType, setHandoverType] = useState("Pickup");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    const fd = new FormData(e.currentTarget);
+    const record: Record<string, unknown> = {
+      handover_type: handoverType,
+      status: "Completed",
+      handover_date: new Date().toISOString().split("T")[0],
+    };
+    fd.forEach((v, k) => {
+      if (v) {
+        if (k === "odometer_reading") record[k] = Number(v);
+        else if (k.startsWith("check_")) record[k] = v === "on";
+        else record[k] = v;
+      }
+    });
+
+    // Set boolean checkboxes that are unchecked
+    ["check_exterior", "check_interior", "check_tires", "check_lights", "check_documents"].forEach((key) => {
+      if (!(key in record)) record[key] = false;
+    });
+
+    const { error } = await supabase.from("vehicle_handovers").insert(record);
+    setLoading(false);
+    if (error) { alert("Error: " + error.message); return; }
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <Card className="p-8 text-center max-w-md">
+          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Handover Complete!</h2>
+          <p className="text-gray-600">The vehicle handover has been recorded successfully.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Car className="h-8 w-8 text-blue-600" />
+            <span className="text-2xl font-bold text-gray-900">TMMT Rentals</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <ClipboardCheck className="h-5 w-5 text-blue-600" />
+            <h1 className="text-xl font-semibold text-gray-800">Vehicle Handover Checklist</h1>
+          </div>
+          <p className="text-gray-500 text-sm mt-1">Complete this checklist when picking up or returning a vehicle</p>
+        </div>
+
+        <Card className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Handover Type Toggle */}
+            <div className="flex gap-2">
+              {["Pickup", "Return"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setHandoverType(type)}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                    handoverType === type
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  Vehicle {type}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="Customer Name" required>
+                <input name="customer_name" className={inputClass} required />
+              </FormField>
+              <FormField label="Staff Member" required>
+                <input name="staff_name" className={inputClass} required />
+              </FormField>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Vehicle Info</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <FormField label="Make"><input name="vehicle_make" className={inputClass} /></FormField>
+                <FormField label="Model"><input name="vehicle_model" className={inputClass} /></FormField>
+                <FormField label="License Plate"><input name="license_plate" className={inputClass} /></FormField>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <FormField label="Odometer Reading" required>
+                  <input name="odometer_reading" type="number" className={inputClass} required />
+                </FormField>
+                <FormField label="Fuel Level" required>
+                  <select name="fuel_level" className={selectClass} required>
+                    <option value="">Select...</option>
+                    {fuelLevels.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </FormField>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Condition Checklist</h3>
+              <div className="space-y-3">
+                {[
+                  { name: "check_exterior", label: "Exterior — No new scratches, dents, or damage" },
+                  { name: "check_interior", label: "Interior — Clean, no damage to seats/dashboard" },
+                  { name: "check_tires", label: "Tires — Good condition, proper pressure" },
+                  { name: "check_lights", label: "Lights — All headlights, brake lights, and signals working" },
+                  { name: "check_documents", label: "Documents — Registration, insurance card present" },
+                ].map((item) => (
+                  <label key={item.name} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input
+                      type="checkbox"
+                      name={item.name}
+                      className="mt-0.5 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <FormField label="Condition Notes">
+              <textarea name="condition_notes" rows={3} className={inputClass} placeholder="Note any damage, scratches, or issues observed..." />
+            </FormField>
+
+            <FormField label="Customer Signature (Type Full Name)" required>
+              <input name="customer_signature" className={inputClass} required placeholder="Type your full legal name as signature" />
+            </FormField>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Recording..." : `Complete ${handoverType} Handover`}
+            </Button>
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
+}
