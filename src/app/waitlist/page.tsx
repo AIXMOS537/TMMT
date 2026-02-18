@@ -43,7 +43,7 @@ export default function WaitlistPage() {
     { key: "year", label: "Year" },
     { key: "desired_weekly_payment", label: "Desired $/wk", render: (r) => formatCurrency(r.desired_weekly_payment as number) },
     { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status as string} /> },
-    { key: "date_added_to_waitlist", label: "Added", render: (r) => <span className="text-sm">{formatDate(r.date_added_to_waitlist as string)}</span> },
+    { key: "date_added", label: "Added", render: (r) => <span className="text-sm">{formatDate(r.date_added as string)}</span> },
   ];
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -93,8 +93,8 @@ export default function WaitlistPage() {
               {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </FormField>
-          <FormField label="Date Added"><input name="date_added_to_waitlist" type="date" defaultValue={editing?.date_added_to_waitlist as string || ""} className={inputClass} /></FormField>
-          <FormField label="Notes"><textarea name="desired_specifications_notes" rows={3} defaultValue={editing?.desired_specifications_notes as string || ""} className={inputClass} /></FormField>
+          <FormField label="Date Added"><input name="date_added" type="date" defaultValue={editing?.date_added as string || ""} className={inputClass} /></FormField>
+          <FormField label="Notes"><textarea name="desired_specs_notes" rows={3} defaultValue={editing?.desired_specs_notes as string || ""} className={inputClass} /></FormField>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
             <Button type="submit">Save</Button>

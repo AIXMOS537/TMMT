@@ -17,7 +17,7 @@ export default function WaitlistForm() {
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {
       status: "Waiting",
-      date_added_to_waitlist: new Date().toISOString().split("T")[0],
+      date_added: new Date().toISOString().split("T")[0],
     };
     fd.forEach((v, k) => {
       if (v) {
@@ -89,7 +89,7 @@ export default function WaitlistForm() {
               <input name="desired_weekly_payment" type="number" step="0.01" className={inputClass} placeholder="e.g., 300" />
             </FormField>
             <FormField label="Additional Notes">
-              <textarea name="desired_specifications_notes" rows={3} className={inputClass} placeholder="Any other preferences or requirements..." />
+              <textarea name="desired_specs_notes" rows={3} className={inputClass} placeholder="Any other preferences or requirements..." />
             </FormField>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Submitting..." : "Join Waitlist"}
