@@ -40,8 +40,8 @@ export default function PaymentsPage() {
   const columns: Column<Pay>[] = [
     { key: "customer", label: "Customer", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.customer as string || "—"}</p>
-        <p className="text-xs text-gray-500">{r.customer_phone_number as string}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.customer as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{r.customer_phone_number as string}</p>
       </div>
     )},
     { key: "amount", label: "Amount", render: (r) => <span className="font-semibold">{formatCurrency(r.amount as number)}</span> },

@@ -40,27 +40,27 @@ export default function OnboardingInspectionForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
         <Card className="p-8 text-center max-w-md">
-          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
+          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 dark:text-emerald-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Inspection Complete!</h2>
-          <p className="text-gray-600">Vehicle onboarding inspection has been recorded. The vehicle is ready for the fleet.</p>
+          <p className="text-gray-600 dark:text-slate-400">Vehicle onboarding inspection has been recorded. The vehicle is ready for the fleet.</p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Car className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">TMMT Rentals</span>
+            <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
-            <Search className="h-5 w-5 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-800">Vehicle Onboarding Inspection</h1>
+            <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Vehicle Onboarding Inspection</h1>
           </div>
           <p className="text-gray-500 text-sm mt-1">Complete all sections before adding a vehicle to the fleet</p>
 
@@ -72,12 +72,12 @@ export default function OnboardingInspectionForm() {
                   type="button"
                   onClick={() => setStep(s)}
                   className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                    step === s ? "bg-blue-600 text-white" : step > s ? "bg-emerald-500 text-white" : "bg-gray-200 text-gray-500"
+                    step === s ? "bg-blue-600 text-white" : step > s ? "bg-emerald-500 text-white" : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                   }`}
                 >
                   {s}
                 </button>
-                {s < 4 && <div className={`w-8 h-0.5 ${step > s ? "bg-emerald-500" : "bg-gray-200"}`} />}
+                {s < 4 && <div className={`w-8 h-0.5 ${step > s ? "bg-emerald-500" : "bg-gray-200 dark:bg-slate-700"}`} />}
               </div>
             ))}
           </div>
@@ -186,7 +186,7 @@ export default function OnboardingInspectionForm() {
                 </select>
               </FormField>
 
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="border-t border-gray-200 dark:border-slate-700 pt-4 mt-4">
                 <h4 className="font-medium text-gray-700 mb-3">GPS / Tracker</h4>
                 <FormField label="GPS Tracker Installed?">
                   <select name="tracker_installed" className={selectClass}>
@@ -199,7 +199,7 @@ export default function OnboardingInspectionForm() {
                 </FormField>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="border-t border-gray-200 dark:border-slate-700 pt-4 mt-4">
                 <h4 className="font-medium text-gray-700 mb-3">Keys</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField label="Number of Keys">
@@ -270,12 +270,12 @@ export default function OnboardingInspectionForm() {
             </div>
 
             {/* Navigation */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={() => setStep(step - 1)}
-                  className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 font-medium hover:bg-gray-50 dark:bg-slate-900 transition-colors"
                 >
                   Back
                 </button>

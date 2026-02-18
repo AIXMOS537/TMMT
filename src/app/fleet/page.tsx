@@ -52,8 +52,8 @@ export default function FleetPage() {
   const columns: Column<Fleet>[] = [
     { key: "vehicle_name", label: "Vehicle", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.vehicle_name as string || "—"}</p>
-        <p className="text-xs text-gray-500">{r.vehicle_make as string} {r.vehicle_model as string} {r.year as number}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.vehicle_name as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{r.vehicle_make as string} {r.vehicle_model as string} {r.year as number}</p>
       </div>
     )},
     { key: "vehicle_status", label: "Status", render: (r) => <StatusBadge status={r.vehicle_status as string} /> },

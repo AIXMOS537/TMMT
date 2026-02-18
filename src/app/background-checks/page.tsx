@@ -35,8 +35,8 @@ export default function BackgroundChecksPage() {
   const columns: Column<BgCheck>[] = [
     { key: "customer_name", label: "Customer", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.customer_name as string || "—"}</p>
-        <p className="text-xs text-gray-500">ID: {r.customer_id as number}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.customer_name as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">ID: {r.customer_id as number}</p>
       </div>
     )},
     { key: "phone_number", label: "Phone" },

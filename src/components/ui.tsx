@@ -24,7 +24,7 @@ export function Badge({
 }
 
 export function StatusBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="text-gray-400 text-sm">—</span>;
+  if (!status) return <span className="text-gray-400 dark:text-gray-500 text-sm">—</span>;
   return <Badge className={statusColor(status)}>{status}</Badge>;
 }
 
@@ -39,7 +39,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "bg-white rounded-xl border border-gray-200 shadow-sm",
+        "bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm",
         className
       )}
     >
@@ -66,14 +66,14 @@ export function StatCard({
     <Card className={cn("p-5", className)}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-slate-400">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
           {trend && (
-            <p className="mt-1 text-xs text-gray-500">{trend}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{trend}</p>
           )}
         </div>
         {icon && (
-          <div className="p-2 bg-blue-50 rounded-lg text-blue-600">{icon}</div>
+          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">{icon}</div>
         )}
       </div>
     </Card>
@@ -93,9 +93,9 @@ export function PageHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{description}</p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
@@ -127,12 +127,12 @@ export function DataTable<T extends Record<string, unknown>>({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
+            <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-left font-semibold text-gray-600",
+                    "px-4 py-3 text-left font-semibold text-gray-600 dark:text-slate-300",
                     col.className
                   )}
                 >
@@ -141,12 +141,12 @@ export function DataTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
             {data.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-gray-400"
+                  className="px-4 py-8 text-center text-gray-400 dark:text-slate-500"
                 >
                   {emptyMessage}
                 </td>
@@ -156,7 +156,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tr
                   key={i}
                   className={cn(
-                    "hover:bg-gray-50 transition-colors",
+                    "hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors",
                     onRowClick && "cursor-pointer"
                   )}
                   onClick={() => onRowClick?.(row)}
@@ -164,12 +164,12 @@ export function DataTable<T extends Record<string, unknown>>({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={cn("px-4 py-3 text-gray-700", col.className)}
+                      className={cn("px-4 py-3 text-gray-700 dark:text-slate-300", col.className)}
                     >
                       {col.render
                         ? col.render(row)
                         : (row[col.key] as ReactNode) ?? (
-                            <span className="text-gray-300">—</span>
+                            <span className="text-gray-300 dark:text-slate-600">—</span>
                           )}
                     </td>
                   ))}
@@ -201,18 +201,18 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} />
       <div
         className={cn(
-          "relative bg-white rounded-xl shadow-2xl overflow-y-auto max-h-[80vh]",
+          "relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-y-auto max-h-[80vh]",
           wide ? "w-full max-w-3xl" : "w-full max-w-lg"
         )}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 text-xl leading-none"
           >
             ×
           </button>
@@ -237,7 +237,7 @@ export function FormField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
@@ -248,7 +248,7 @@ export function FormField({
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition";
+  "w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition";
 
 export const selectClass = inputClass;
 
@@ -272,11 +272,11 @@ export function Button({
         variant === "primary" &&
           "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
         variant === "secondary" &&
-          "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50",
+          "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600",
         variant === "danger" &&
           "bg-red-600 text-white hover:bg-red-700",
         variant === "ghost" &&
-          "text-gray-600 hover:bg-gray-100",
+          "text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700",
         className
       )}
       {...props}

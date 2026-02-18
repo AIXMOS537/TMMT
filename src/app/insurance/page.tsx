@@ -33,8 +33,8 @@ export default function InsurancePage() {
   const columns: Column<Ins>[] = [
     { key: "insured_vehicle", label: "Vehicle", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.insured_vehicle as string || "—"}</p>
-        <p className="text-xs text-gray-500">{r.insured_customer as string}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.insured_vehicle as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{r.insured_customer as string}</p>
       </div>
     )},
     { key: "insurance_company_name", label: "Company" },

@@ -41,8 +41,8 @@ export default function LeadsPage() {
   const columns: Column<Lead>[] = [
     { key: "contact_name", label: "Contact", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.contact_name as string || "—"}</p>
-        <p className="text-xs text-gray-500">{r.email as string}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.contact_name as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{r.email as string}</p>
       </div>
     )},
     { key: "opportunity_name", label: "Opportunity" },
@@ -76,9 +76,9 @@ export default function LeadsPage() {
       {/* Pipeline Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {statusOptions.map((s) => (
-          <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)} className={`p-3 rounded-xl border text-center transition-all ${statusFilter === s ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
-            <p className="text-2xl font-bold text-gray-900">{counts[s] || 0}</p>
-            <p className="text-xs text-gray-500 mt-1">{s}</p>
+          <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)} className={`p-3 rounded-xl border text-center transition-all ${statusFilter === s ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"}`}>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{counts[s] || 0}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{s}</p>
           </button>
         ))}
       </div>

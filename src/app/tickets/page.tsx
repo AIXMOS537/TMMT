@@ -63,9 +63,9 @@ export default function TicketsPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
         {statusOptions.map((s) => (
-          <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)} className={`p-3 rounded-xl border text-center transition-all ${statusFilter === s ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
-            <p className="text-2xl font-bold text-gray-900">{data.filter((r) => r.status === s).length}</p>
-            <p className="text-xs text-gray-500 mt-1">{s}</p>
+          <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)} className={`p-3 rounded-xl border text-center transition-all ${statusFilter === s ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700"}`}>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.filter((r) => r.status === s).length}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{s}</p>
           </button>
         ))}
       </div>

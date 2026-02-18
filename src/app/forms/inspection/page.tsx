@@ -35,11 +35,11 @@ export default function CustomerInspectionForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
         <Card className="p-8 text-center max-w-md">
-          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
+          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 dark:text-emerald-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Inspection Submitted!</h2>
-          <p className="text-gray-600">Your vehicle inspection record has been saved. Safe travels!</p>
+          <p className="text-gray-600 dark:text-slate-400">Your vehicle inspection record has been saved. Safe travels!</p>
           <Button className="mt-6" onClick={() => setSubmitted(false)}>Submit Another</Button>
         </Card>
       </div>
@@ -47,16 +47,16 @@ export default function CustomerInspectionForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 px-4">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Car className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">TMMT Rentals</span>
+            <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
-            <Camera className="h-5 w-5 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-800">Vehicle Inspection Form</h1>
+            <Camera className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Vehicle Inspection Form</h1>
           </div>
           <p className="text-gray-500 text-sm mt-1">Complete before leaving TMMT premises</p>
         </div>
@@ -71,23 +71,23 @@ export default function CustomerInspectionForm() {
               <input name="odometer_reading" type="number" className={inputClass} required placeholder="e.g., 45230" />
             </FormField>
 
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
               <h3 className="font-semibold text-gray-800 mb-3">Vehicle Condition</h3>
               
               <div className="space-y-3">
-                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:bg-slate-900 cursor-pointer">
                   <input type="checkbox" name="interior_clean" value="true" className="h-4 w-4 text-blue-600 rounded" />
                   <div>
-                    <span className="font-medium text-sm text-gray-900">Interior is clean</span>
-                    <p className="text-xs text-gray-500">No trash, seats wiped, dashboard clean</p>
+                    <span className="font-medium text-sm text-gray-900 dark:text-white">Interior is clean</span>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">No trash, seats wiped, dashboard clean</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:bg-slate-900 cursor-pointer">
                   <input type="checkbox" name="exterior_clean" value="true" className="h-4 w-4 text-blue-600 rounded" />
                   <div>
-                    <span className="font-medium text-sm text-gray-900">Exterior is clean</span>
-                    <p className="text-xs text-gray-500">No visible damage, car washed</p>
+                    <span className="font-medium text-sm text-gray-900 dark:text-white">Exterior is clean</span>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">No visible damage, car washed</p>
                   </div>
                 </label>
               </div>
@@ -104,10 +104,10 @@ export default function CustomerInspectionForm() {
               <p className="mt-2 text-xs text-amber-600">Email photos to the office or upload in-person</p>
             </div>
 
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" name="confirmation" value="true" required className="h-4 w-4 text-blue-600 rounded mt-1" />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-slate-300">
                   I confirm that the above details accurately reflect the vehicle&apos;s condition before leaving TMMT Rentals premises.
                 </span>
               </label>

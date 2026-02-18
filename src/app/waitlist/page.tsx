@@ -32,8 +32,8 @@ export default function WaitlistPage() {
   const columns: Column<WL>[] = [
     { key: "customer_name", label: "Customer", render: (r) => (
       <div>
-        <p className="font-medium text-gray-900">{r.customer_name as string || "—"}</p>
-        <p className="text-xs text-gray-500">{r.customer_email as string}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{r.customer_name as string || "—"}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{r.customer_email as string}</p>
       </div>
     )},
     { key: "customer_phone", label: "Phone" },
