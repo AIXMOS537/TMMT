@@ -45,27 +45,27 @@ export default function TicketForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
         <Card className="p-8 text-center max-w-md">
-          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
+          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 dark:text-emerald-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Ticket Submitted</h2>
-          <p className="text-gray-600">Our team has been notified. We&apos;ll reach out shortly to assist you.</p>
+          <p className="text-gray-600 dark:text-slate-400">Our team has been notified. We&apos;ll reach out shortly to assist you.</p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 px-4">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Car className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">TMMT Rentals</span>
+            <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <h1 className="text-xl font-semibold text-gray-800">Report an Issue</h1>
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Report an Issue</h1>
           </div>
           <p className="text-gray-500 text-sm mt-1">Let us know about a problem with your rental vehicle</p>
         </div>
@@ -82,7 +82,7 @@ export default function TicketForm() {
               <input name="vehicle_description" className={inputClass} placeholder="e.g., 2022 Toyota Camry" />
             </FormField>
 
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
               <h3 className="font-semibold text-gray-800 mb-3">Issue Details</h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Issue Type" required>

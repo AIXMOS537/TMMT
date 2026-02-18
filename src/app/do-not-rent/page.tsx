@@ -25,7 +25,7 @@ export default function DoNotRentPage() {
   const filtered = useMemo(() => data.filter((r) => !search || [r.person_entity_name, r.contact_email, r.contact_phone].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))), [data, search]);
 
   const columns: Column<DNR>[] = [
-    { key: "person_entity_name", label: "Name", render: (r) => <span className="font-medium text-gray-900">{r.person_entity_name as string || "—"}</span> },
+    { key: "person_entity_name", label: "Name", render: (r) => <span className="font-medium text-gray-900 dark:text-white">{r.person_entity_name as string || "—"}</span> },
     { key: "contact_email", label: "Email" },
     { key: "contact_phone", label: "Phone" },
     { key: "source_of_restriction", label: "Source", render: (r) => <StatusBadge status={r.source_of_restriction as string} /> },

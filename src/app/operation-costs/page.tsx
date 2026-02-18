@@ -27,7 +27,7 @@ export default function OperationCostsPage() {
   const totalCost = useMemo(() => data.reduce((s, r) => s + (Number(r.prices) || 0), 0), [data]);
 
   const columns: Column<OpCost>[] = [
-    { key: "tool_software_name", label: "Tool/Software", render: (r) => <span className="font-medium text-gray-900">{r.tool_software_name as string || "—"}</span> },
+    { key: "tool_software_name", label: "Tool/Software", render: (r) => <span className="font-medium text-gray-900 dark:text-white">{r.tool_software_name as string || "—"}</span> },
     { key: "type", label: "Type", render: (r) => <StatusBadge status={r.type as string} /> },
     { key: "prices", label: "Cost", render: (r) => <span className="font-semibold">{formatCurrency(r.prices as number)}</span> },
     { key: "license_subscription_status", label: "License Status", render: (r) => <StatusBadge status={r.license_subscription_status as string} /> },

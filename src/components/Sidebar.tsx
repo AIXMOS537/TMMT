@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   LayoutDashboard,
   Car,
@@ -85,7 +86,7 @@ export default function Sidebar() {
     <>
       {/* Mobile hamburger */}
       <button
-        className="fixed top-4 left-4 z-50 lg:hidden bg-white rounded-lg p-2 shadow-md"
+        className="fixed top-4 left-4 z-50 lg:hidden bg-white dark:bg-slate-800 rounded-lg p-2 shadow-md"
         onClick={() => setOpen(!open)}
       >
         {open ? <X size={20} /> : <Menu size={20} />}
@@ -94,7 +95,7 @@ export default function Sidebar() {
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/30 dark:bg-black/50 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -102,15 +103,16 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200 overflow-y-auto transition-transform lg:translate-x-0",
+          "fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 overflow-y-auto transition-transform lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-5 border-b border-gray-200">
+        <div className="p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-            <Car className="h-7 w-7 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">TMMT Rentals</span>
+            <Car className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            <span className="text-xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
           </Link>
+          <ThemeToggle />
         </div>
 
         <nav className="p-3 space-y-1">
@@ -118,7 +120,7 @@ export default function Sidebar() {
             <div key={group.label}>
               <button
                 onClick={() => toggle(group.label)}
-                className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600"
+                className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider hover:text-gray-600 dark:hover:text-slate-300"
               >
                 {group.label}
                 <ChevronDown
@@ -145,8 +147,8 @@ export default function Sidebar() {
                         className={cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                           isActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                            : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200"
                         )}
                       >
                         <item.icon size={18} />

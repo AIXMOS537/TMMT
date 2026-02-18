@@ -35,8 +35,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">TMMT Rentals overview</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">TMMT Rentals overview</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -56,17 +56,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Recent Leads</h2>
-            <Link href="/leads" className="text-sm text-blue-600 hover:underline">View all →</Link>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Recent Leads</h2>
+            <Link href="/leads" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
           </div>
           <div className="space-y-3">
             {data.recentLeads.map((lead, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-700 last:border-0">
                 <div>
-                  <p className="font-medium text-sm text-gray-900">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">
                     {(lead.contact_name as string) || (lead.opportunity_name as string) || "Unknown"}
                   </p>
-                  <p className="text-xs text-gray-500">{formatDate(lead.created_on as string)}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{formatDate(lead.created_on as string)}</p>
                 </div>
                 <StatusBadge status={lead.status as string} />
               </div>
@@ -76,17 +76,17 @@ export default function DashboardPage() {
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Recent Tickets</h2>
-            <Link href="/tickets" className="text-sm text-blue-600 hover:underline">View all →</Link>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Recent Tickets</h2>
+            <Link href="/tickets" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
           </div>
           <div className="space-y-3">
             {data.recentTickets.map((ticket, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-700 last:border-0">
                 <div>
-                  <p className="font-medium text-sm text-gray-900">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">
                     #{ticket.ticket_id as number} — {(ticket.requested_by_customer as string) || "Unassigned"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     {(ticket.violation_type as string) || "General"} · {formatDate(ticket.date_created as string)}
                   </p>
                 </div>

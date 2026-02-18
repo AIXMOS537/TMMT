@@ -21,7 +21,7 @@ export default function VendorsPage() {
   const filtered = useMemo(() => data.filter((r) => !search || [r.vendor_payee, r.point_of_contact, r.email_address].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))), [data, search]);
 
   const columns: Column<Vendor>[] = [
-    { key: "vendor_payee", label: "Vendor/Payee", render: (r) => <span className="font-medium text-gray-900">{r.vendor_payee as string || "—"}</span> },
+    { key: "vendor_payee", label: "Vendor/Payee", render: (r) => <span className="font-medium text-gray-900 dark:text-white">{r.vendor_payee as string || "—"}</span> },
     { key: "phone_number", label: "Phone" },
     { key: "email_address", label: "Email" },
     { key: "point_of_contact", label: "Contact Person" },
