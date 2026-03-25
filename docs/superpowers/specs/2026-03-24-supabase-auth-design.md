@@ -86,10 +86,10 @@ URLs are unaffected by route groups — `/fleet` still routes to `/fleet`.
 Two distinct helpers added to `src/lib/supabase.ts` to avoid naming collision with `@supabase/ssr`'s own `createServerClient` export:
 
 ```ts
-// For use in server actions and server components
-// cookies() is writable inside server actions, so setAll works correctly here
-export function createSSRClient() {
-  const cookieStore = cookies() // next/headers
+// For use in server actions, server components, and route handlers
+// cookies() returns a Promise in Next.js 15+, so this function must be async
+export async function createSSRClient() {
+  const cookieStore = await cookies() // next/headers
   return supabaseSSR.createServerClient(url, anonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
