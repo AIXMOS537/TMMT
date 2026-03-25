@@ -25,8 +25,10 @@ import {
   ChevronDown,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { signOut } from "@/app/(admin)/actions";
 
 const navGroups = [
   {
@@ -161,6 +163,18 @@ export default function Sidebar() {
             </div>
           ))}
         </nav>
+
+        <div className="p-3 border-t border-gray-200 dark:border-slate-700 mt-auto">
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
+          </form>
+        </div>
       </aside>
     </>
   );
