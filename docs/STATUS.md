@@ -1,6 +1,6 @@
 # TMMT Rentals — Project Status
 
-> Last updated: February 18, 2026
+> Last updated: March 25, 2026
 
 ## Migration Status
 
@@ -9,8 +9,9 @@
 | Airtable Export | ✅ Complete | 2,713 records across 3 bases |
 | Supabase Schema | ✅ Complete | 44 tables (25 main + 19 junction) |
 | Data Import | ✅ Complete | 1,453 records, 368 junction links, 0 errors |
-| App Build | ✅ Complete | 29 routes, all compiling |
+| App Build | ✅ Complete | 30 routes, all compiling |
 | Dark Mode | ✅ Complete | Class-based with toggle + persistence |
+| Authentication | ✅ Complete | Supabase Auth, email + password, middleware-protected |
 
 ## Current Record Counts
 
@@ -49,12 +50,13 @@ graph LR
         D7["CRUD (Create/Read/Update/Delete)"]
         D8["Status Badges"]
         D9["Responsive Sidebar"]
+        D10["Authentication (Supabase Auth)"]
     end
 
     subgraph Planned["🔲 Planned"]
-        P1["Authentication"]
-        P2["Row-Level Security"]
-        P3["File Uploads<br/>(Supabase Storage)"]
+        P1["Row-Level Security"]
+        P2["Password Reset Flow"]
+        P3["File Uploads (Supabase Storage)"]
         P4["Email Notifications"]
         P5["Reporting / Analytics"]
         P6["TMMT Rentals Copy base"]
@@ -111,12 +113,12 @@ graph LR
 
 | Metric | Value |
 |--------|-------|
-| Total source files | 33 |
-| Total lines of code | ~3,740 |
+| Total source files | 36 |
+| Total lines of code | ~4,100 |
 | Admin pages | 18 |
 | Public forms | 8 |
 | Shared components | 3 files (Sidebar, ThemeToggle, ui) |
-| Library modules | 3 files (supabase, queries, utils) |
+| Library modules | 4 files (supabase, supabase-server, queries, utils) |
 | Supabase tables | 44 (25 main + 19 junction) |
 | Migrated records | 1,453 |
 | Junction links | 368 |
@@ -125,6 +127,7 @@ graph LR
 
 - **Payments table empty** — May need re-import or manual entry
 - **Maintenance/Vendors/Handovers empty** — New tables awaiting data
-- **No authentication** — All pages currently use anon key
+- **No RLS** — Public forms rely on RLS being disabled for anon inserts; enabling RLS requires explicit anon INSERT policies for form tables
+- **No password reset** — Admins must reset passwords via Supabase dashboard
 - **No file uploads** — Airtable had attachment fields (photos, licenses, contracts) not yet migrated to Supabase Storage
 - **TMMT Rentals (Copy) base** — Deferred; needs manager clarification

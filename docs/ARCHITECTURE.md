@@ -8,6 +8,7 @@
 | Language | TypeScript | 5.x |
 | Styling | Tailwind CSS | 4.1 |
 | Database | Supabase (PostgreSQL) | — |
+| Auth | Supabase Auth + `@supabase/ssr` | 0.9.0 |
 | Icons | lucide-react | — |
 | Utilities | date-fns, clsx, tailwind-merge | — |
 
@@ -21,23 +22,29 @@ graph TB
     end
 
     subgraph Server["Next.js Server"]
+        Middleware["Middleware (auth gate)"]
         AppRouter["App Router"]
-        Pages["18 Admin Pages"]
-        Forms["8 Public Forms"]
-        API["Server Components"]
+        AdminPages["18 Admin Pages (protected)"]
+        Forms["8 Public Forms (public)"]
+        LoginPage["Login Page"]
+        ServerActions["Server Actions (signIn / signOut)"]
     end
 
     subgraph Backend["Supabase"]
-        Auth["Auth (planned)"]
+        Auth["Auth ✅"]
         DB["PostgreSQL<br/>44 tables"]
         Storage["Storage (planned)<br/>File uploads"]
         RLS["Row-Level Security (planned)"]
     end
 
-    UI --> AppRouter
-    AppRouter --> Pages
+    UI --> Middleware
+    Middleware -->|"authenticated"| AppRouter
+    Middleware -->|"unauthenticated"| LoginPage
+    AppRouter --> AdminPages
     AppRouter --> Forms
-    Pages -->|"@supabase/supabase-js"| DB
+    LoginPage --> ServerActions
+    ServerActions -->|"signInWithPassword"| Auth
+    AdminPages -->|"@supabase/supabase-js"| DB
     Forms -->|"@supabase/supabase-js"| DB
 ```
 
@@ -46,46 +53,56 @@ graph TB
 ```
 TMMT/
 ├── docs/                          # Documentation
+├── middleware.ts                  # Auth gate — checks session on every request
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx             # Root layout + sidebar + dark mode script
+│   │   ├── layout.tsx             # Root shell (html/body/theme script only)
 │   │   ├── globals.css            # Tailwind v4 imports + dark mode variant
-│   │   ├── page.tsx               # Dashboard (KPI stats + recent activity)
-│   │   ├── fleet/                 # Fleet vehicle management
-│   │   ├── leads/                 # Incoming leads pipeline
-│   │   ├── background-checks/     # Background verification tracking
-│   │   ├── waitlist/              # Customer waitlist management
-│   │   ├── appointments/          # Appointment scheduling
-│   │   ├── customers/             # Active customer management
-│   │   ├── payments/              # Payment tracking
-│   │   ├── tickets/               # Support ticket management
-│   │   ├── expenses/              # Expense tracking
-│   │   ├── insurance/             # Insurance policy tracking
-│   │   ├── inspections/           # Vehicle inspection records
-│   │   ├── maintenance/           # Maintenance scheduling
-│   │   ├── contracts/             # Contract management
-│   │   ├── vendors/               # Vendor/shop directory
-│   │   ├── operation-costs/       # Software & tools costs
-│   │   ├── do-not-rent/           # Blacklisted customers
-│   │   ├── former-customers/      # Former customer archive
-│   │   └── forms/                 # Public-facing intake forms
-│   │       ├── lead-intake/       # New customer inquiry
-│   │       ├── background-check/  # Background check submission
-│   │       ├── waitlist/          # Join waitlist
-│   │       ├── appointment/       # Schedule appointment
-│   │       ├── inspection/        # Vehicle inspection checklist
-│   │       ├── onboarding-inspection/ # Full 23-field onboarding
-│   │       ├── handover/          # Vehicle handover checklist
-│   │       └── ticket/            # Support ticket submission
+│   │   ├── (admin)/               # Protected route group (requires auth)
+│   │   │   ├── layout.tsx         # Admin layout — renders Sidebar
+│   │   │   ├── actions.ts         # signOut server action
+│   │   │   ├── page.tsx           # Dashboard (KPI stats + recent activity)
+│   │   │   ├── fleet/             # Fleet vehicle management
+│   │   │   ├── leads/             # Incoming leads pipeline
+│   │   │   ├── background-checks/ # Background verification tracking
+│   │   │   ├── waitlist/          # Customer waitlist management
+│   │   │   ├── appointments/      # Appointment scheduling
+│   │   │   ├── customers/         # Active customer management
+│   │   │   ├── payments/          # Payment tracking
+│   │   │   ├── tickets/           # Support ticket management
+│   │   │   ├── expenses/          # Expense tracking
+│   │   │   ├── insurance/         # Insurance policy tracking
+│   │   │   ├── inspections/       # Vehicle inspection records
+│   │   │   ├── maintenance/       # Maintenance scheduling
+│   │   │   ├── contracts/         # Contract management
+│   │   │   ├── vendors/           # Vendor/shop directory
+│   │   │   ├── operation-costs/   # Software & tools costs
+│   │   │   ├── do-not-rent/       # Blacklisted customers
+│   │   │   └── former-customers/  # Former customer archive
+│   │   ├── (auth)/                # Public auth route group
+│   │   │   ├── layout.tsx         # Minimal centered layout (no sidebar)
+│   │   │   └── login/
+│   │   │       ├── page.tsx       # Email + password login form
+│   │   │       └── actions.ts     # signIn server action
+│   │   └── forms/                 # Public-facing intake forms (no auth)
+│   │       ├── lead-intake/
+│   │       ├── background-check/
+│   │       ├── waitlist/
+│   │       ├── appointment/
+│   │       ├── inspection/
+│   │       ├── onboarding-inspection/
+│   │       ├── handover/
+│   │       └── ticket/
 │   ├── components/
-│   │   ├── Sidebar.tsx            # Navigation sidebar (5 groups)
+│   │   ├── Sidebar.tsx            # Navigation sidebar (5 groups + logout button)
 │   │   ├── ThemeToggle.tsx        # Dark/light mode toggle
 │   │   └── ui.tsx                 # Reusable UI component library
 │   └── lib/
-│       ├── supabase.ts            # Supabase client initialization
+│       ├── supabase.ts            # Browser anon client + service role client
+│       ├── supabase-server.ts     # SSR clients: createSSRClient, createMiddlewareClient
 │       ├── queries.ts             # All data fetchers + CRUD helpers
 │       └── utils.ts               # Formatting + status colors
-├── .env.local                     # Supabase credentials (gitignored)
+├── .env                           # Supabase credentials (gitignored)
 ├── package.json
 ├── tsconfig.json
 └── next.config.ts
@@ -102,7 +119,8 @@ graph LR
     end
 
     subgraph Lib["src/lib/"]
-        Supabase["supabase.ts<br/>Client init"]
+        Supabase["supabase.ts<br/>Browser anon client<br/>+ service role client"]
+        SupabaseServer["supabase-server.ts<br/>createSSRClient (server actions)<br/>createMiddlewareClient (middleware)"]
         Queries["queries.ts<br/>fetchTable, upsertRecord,<br/>deleteRecord, getDashboardData"]
         Utils["utils.ts<br/>cn, formatCurrency,<br/>formatDate, statusColor"]
     end
@@ -139,6 +157,41 @@ stateDiagram-v2
     Save --> LoadData: Refresh data
     EditForm --> Delete: deleteRecord()
     Delete --> LoadData
+```
+
+## Auth Flow
+
+- **Strategy**: Next.js middleware (`middleware.ts`) intercepts every request and calls `supabase.auth.getUser()` to verify the session token against the Supabase Auth server
+- **Protected**: All routes except `/login` and `/forms/*`
+- **Session storage**: Cookie-based via `@supabase/ssr` — tokens refreshed automatically on each request
+- **Login**: Email + password via `supabase.auth.signInWithPassword()` in a server action
+- **Logout**: `supabase.auth.signOut()` server action, triggered from sidebar button
+- **Account management**: Admins created manually in Supabase dashboard (no signup flow)
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Middleware
+    participant Supabase as Supabase Auth
+    participant Page
+
+    Browser->>Middleware: GET /fleet
+    Middleware->>Supabase: getUser() — verify token
+    Supabase-->>Middleware: no session
+    Middleware-->>Browser: redirect /login
+
+    Browser->>Page: GET /login
+    Page-->>Browser: login form
+
+    Browser->>Page: POST (email + password)
+    Page->>Supabase: signInWithPassword()
+    Supabase-->>Page: session + cookies
+    Page-->>Browser: redirect /
+
+    Browser->>Middleware: GET /fleet
+    Middleware->>Supabase: getUser() — verify token
+    Supabase-->>Middleware: user ok
+    Middleware-->>Browser: pass through to /fleet
 ```
 
 ## Dark Mode
