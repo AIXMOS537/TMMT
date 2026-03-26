@@ -44,26 +44,25 @@ Each sync run executes in this order:
 2. **Match** — normalize Airtable table names to snake_case; match against a hardcoded Supabase allowlist (the 25 main tables) to avoid touching auth/system tables
 3. **Fetch** — pull all records from each matched Airtable table, paginated at 100 records/page using Airtable's `offset` cursor
 4. **Map fields** — normalize each Airtable field name to snake_case (e.g. `"Contact Name"` → `contact_name`); drop any fields that don't exist as Supabase columns
-5. **Truncate** — `DELETE FROM table WHERE true` via Supabase service role client (avoids `TRUNCATE` lock issues)
+5. **Truncate** — `DELETE FROM table WHERE true` via Supabase service role client (avoids `TRUNCATE` lock issues). Junction tables are cleared first (using a hardcoded junction table list) to avoid FK constraint failures when deleting from main tables.
 6. **Insert** — batch insert in chunks of 500 rows using Supabase `.insert()`
 7. **Report** — print per-table summary and final totals to stdout
 
 ## Supabase Table Allowlist
 
-Only these 25 main tables are touched (junction/system tables are never modified):
+Only these 18 confirmed main tables are touched (junction/system tables are never modified):
 
 `fleet`, `incoming_leads`, `background_checks`, `waitlist`, `appointments`,
 `active_customers`, `payments`, `tickets`, `expenses`, `insurance`,
 `customer_inspection_photos`, `maintenance`, `contracts`, `vendors`,
-`operation_costs`, `do_not_rent`, `former_customers`, `vehicle_handovers`,
-`forms`, `notes`, `tags`, `categories`, `statuses`, `priorities`, `types`
+`operation_costs`, `do_not_rent`, `former_customers`, `vehicle_handovers`
 
 > If a table name exists in Airtable but not in this allowlist, it is skipped with a log message.
 
 ## Dry Run Mode
 
 ```bash
-node scripts/sync-airtable.mjs --dry-run
+node --env-file=.env scripts/sync-airtable.mjs --dry-run
 ```
 
 Prints what would be truncated and inserted without writing anything to Supabase. Fetches from Airtable and maps fields, but stops before the DELETE step.
@@ -72,7 +71,7 @@ Prints what would be truncated and inserted without writing anything to Supabase
 
 - **Per-table isolation** — if one table fails (fetch error, insert error, schema mismatch), log the error and continue to the next table
 - **Field mismatches** — unknown Airtable fields are silently dropped before insert; Supabase column errors are caught and logged per-table
-- **Airtable rate limits** — Airtable's API allows 5 req/sec; script adds a 250ms delay between table fetches to stay well under the limit
+- **Airtable rate limits** — Airtable's API allows 5 req/sec; script adds a 250ms delay after every Airtable API call (including pagination requests within a single table) to stay well under the limit
 
 ## Output Format
 
