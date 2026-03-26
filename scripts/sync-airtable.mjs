@@ -50,6 +50,30 @@ function toSnake(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 }
 
+async function fetchSupabaseSchema() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`
+    }
+  })
+  if (!res.ok) throw new Error(`Failed to fetch Supabase schema: ${res.status}`)
+  const spec = await res.json()
+  const schemaMap = new Map()
+  for (const [name, def] of Object.entries(spec.definitions ?? {})) {
+    if (def.properties) {
+      const cols = new Set(Object.keys(def.properties))
+      const arrayCols = new Set(
+        Object.entries(def.properties)
+          .filter(([, p]) => p.type === 'array' || p.items != null)
+          .map(([k]) => k)
+      )
+      schemaMap.set(name, { cols, arrayCols })
+    }
+  }
+  return schemaMap
+}
+
 async function listBases() {
   const { bases } = await airtableFetch('/v0/meta/bases')
   return bases
@@ -73,14 +97,21 @@ async function fetchRecords(baseId, tableId) {
   return all
 }
 
-function mapFields(record) {
+function mapFields(record, tableSchema) {
+  const knownCols = tableSchema?.cols
+  const arrayCols = tableSchema?.arrayCols
   const row = { airtable_id: record.id }
   for (const [key, val] of Object.entries(record.fields)) {
     const col = toSnake(key)
     if (SKIP_COLS.has(col)) continue
-    // Airtable linked record fields are arrays of recXXXX IDs — stored as
-    // comma-joined strings intentionally; these won't match Supabase UUIDs
-    row[col] = Array.isArray(val) ? val.join(', ') : val
+    if (knownCols && !knownCols.has(col)) continue
+    if (arrayCols?.has(col)) {
+      // Column is text[] — ensure value is always a native array
+      row[col] = Array.isArray(val) ? val : [String(val)]
+    } else {
+      // Non-array column: join Airtable linked-record arrays as comma string
+      row[col] = Array.isArray(val) ? val.join(', ') : val
+    }
   }
   return row
 }
@@ -103,6 +134,8 @@ async function insertRows(name, rows) {
 
 async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
+
+  const schemaMap = await fetchSupabaseSchema()
 
   const bases = await listBases()
   const tableMap = new Map()
@@ -133,7 +166,8 @@ async function main() {
     }
     try {
       const records = await fetchRecords(entry.baseId, entry.tableId)
-      const rows = records.map(mapFields)
+      const tableSchema = schemaMap.get(name)
+      const rows = records.map(r => mapFields(r, tableSchema))
       if (!DRY_RUN) {
         await clearTable(name)
         try {
