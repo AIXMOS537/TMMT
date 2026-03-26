@@ -60,6 +60,29 @@ async function listTables(baseId) {
   return tables
 }
 
+async function fetchRecords(baseId, tableId) {
+  const all = []
+  let offset
+  do {
+    const qs = new URLSearchParams({ pageSize: '100' })
+    if (offset) qs.set('offset', offset)
+    const data = await airtableFetch(`/v0/${baseId}/${tableId}?${qs}`)
+    all.push(...data.records)
+    offset = data.offset
+  } while (offset)
+  return all
+}
+
+function mapFields(record) {
+  const row = { airtable_id: record.id }
+  for (const [key, val] of Object.entries(record.fields)) {
+    const col = toSnake(key)
+    if (SKIP_COLS.has(col)) continue
+    row[col] = Array.isArray(val) ? val.join(', ') : val
+  }
+  return row
+}
+
 async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
 
