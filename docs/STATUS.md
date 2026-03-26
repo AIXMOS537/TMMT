@@ -9,6 +9,7 @@
 | Airtable Export | ✅ Complete | 2,713 records across 3 bases |
 | Supabase Schema | ✅ Complete | 44 tables (25 main + 19 junction) |
 | Data Import | ✅ Complete | 1,453 records, 368 junction links, 0 errors |
+| Airtable Sync Script | ✅ Complete | `scripts/sync-airtable.mjs` — live + `--dry-run` mode, 18 main + 19 junction tables |
 | App Build | ✅ Complete | 30 routes, all compiling |
 | Dark Mode | ✅ Complete | Class-based with toggle + persistence |
 | Authentication | ✅ Complete | Supabase Auth, email + password, middleware-protected |
@@ -42,7 +43,7 @@
 graph LR
     subgraph Done["✅ Complete"]
         D1["Dashboard + KPIs"]
-        D2["18 Admin Pages"]
+        D2["17 Admin Pages"]
         D3["8 Public Forms"]
         D4["Dark Mode"]
         D5["Supabase Integration"]
@@ -73,7 +74,7 @@ graph LR
 
 ## Application Routes
 
-### Admin Pages (18)
+### Admin Pages (17)
 
 | Route | Page | Purpose |
 |-------|------|---------|
@@ -115,7 +116,7 @@ graph LR
 |--------|-------|
 | Total source files | 36 |
 | Total lines of code | ~4,100 |
-| Admin pages | 18 |
+| Admin pages | 17 |
 | Public forms | 8 |
 | Shared components | 3 files (Sidebar, ThemeToggle, ui) |
 | Library modules | 4 files (supabase, supabase-server, queries, utils) |
