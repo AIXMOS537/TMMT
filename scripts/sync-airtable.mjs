@@ -31,6 +31,25 @@ const JUNCTION_TABLES = [
 
 const SKIP_COLS = new Set(['id', 'created_at', 'updated_at'])
 
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
+
+async function airtableFetch(path) {
+  await sleep(250)
+  const res = await fetch(`https://api.airtable.com${path}`, {
+    headers: { Authorization: `Bearer ${AIRTABLE_PAT}` }
+  })
+  if (!res.ok) {
+    throw new Error(`Airtable ${res.status}: ${await res.text()}`)
+  }
+  return res.json()
+}
+
+function toSnake(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+}
+
 async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
 }
