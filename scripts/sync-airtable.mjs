@@ -65,7 +65,7 @@ async function fetchSupabaseSchema() {
       const cols = new Set(Object.keys(def.properties))
       const arrayCols = new Set(
         Object.entries(def.properties)
-          .filter(([, p]) => p.type === 'array' || p.items != null)
+          .filter(([, p]) => p.type === 'array')
           .map(([k]) => k)
       )
       schemaMap.set(name, { cols, arrayCols })
