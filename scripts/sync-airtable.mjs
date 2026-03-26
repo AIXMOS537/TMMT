@@ -50,8 +50,34 @@ function toSnake(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 }
 
+async function listBases() {
+  const { bases } = await airtableFetch('/v0/meta/bases')
+  return bases
+}
+
+async function listTables(baseId) {
+  const { tables } = await airtableFetch(`/v0/meta/bases/${baseId}/tables`)
+  return tables
+}
+
 async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
+
+  const bases = await listBases()
+
+  const tableMap = new Map()
+  for (const base of bases) {
+    const tables = await listTables(base.id)
+    for (const t of tables) {
+      const name = toSnake(t.name)
+      if (MAIN_TABLES.includes(name) && !tableMap.has(name)) {
+        tableMap.set(name, { baseId: base.id, tableId: t.id })
+      }
+    }
+  }
+
+  console.log(`Matched ${tableMap.size}/${MAIN_TABLES.length} tables from Airtable`)
+  for (const [name] of tableMap) console.log(' -', name)
 }
 
 main().catch(e => { console.error(e.message); process.exit(1) })
