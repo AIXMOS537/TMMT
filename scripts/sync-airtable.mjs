@@ -103,7 +103,6 @@ async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
 
   const bases = await listBases()
-
   const tableMap = new Map()
   for (const base of bases) {
     const tables = await listTables(base.id)
@@ -115,8 +114,39 @@ async function main() {
     }
   }
 
-  console.log(`Matched ${tableMap.size}/${MAIN_TABLES.length} tables from Airtable`)
-  for (const [name] of tableMap) console.log(' -', name)
+  if (!DRY_RUN) {
+    for (const jt of JUNCTION_TABLES) {
+      try { await clearTable(jt) } catch { /* skip silently */ }
+    }
+  }
+
+  let synced = 0, failed = 0, totalRecords = 0
+  const lines = []
+
+  for (const name of MAIN_TABLES) {
+    const entry = tableMap.get(name)
+    if (!entry) {
+      lines.push(`  - ${name.padEnd(38)} SKIPPED (not found in Airtable)`)
+      continue
+    }
+    try {
+      const records = await fetchRecords(entry.baseId, entry.tableId)
+      const rows = records.map(mapFields)
+      if (!DRY_RUN) {
+        await clearTable(name)
+        await insertRows(name, rows)
+      }
+      lines.push(`  ✓ ${name.padEnd(38)} ${rows.length} records`)
+      synced++
+      totalRecords += rows.length
+    } catch (e) {
+      lines.push(`  ✗ ${name.padEnd(38)} FAILED: ${e.message}`)
+      failed++
+    }
+  }
+
+  lines.forEach(l => console.log(l))
+  console.log(`\nSync complete: ${synced}/${MAIN_TABLES.length} tables | ${totalRecords} records | ${failed} failed`)
 }
 
 main().catch(e => { console.error(e.message); process.exit(1) })
