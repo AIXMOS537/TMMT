@@ -83,6 +83,22 @@ function mapFields(record) {
   return row
 }
 
+async function clearTable(name) {
+  const { error } = await supabase
+    .from(name)
+    .delete()
+    .gte('id', '00000000-0000-0000-0000-000000000000')
+  if (error) throw new Error(error.message)
+}
+
+async function insertRows(name, rows) {
+  const CHUNK = 500
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from(name).insert(rows.slice(i, i + CHUNK))
+    if (error) throw new Error(error.message)
+  }
+}
+
 async function main() {
   console.log(DRY_RUN ? '[dry-run] sync starting...\n' : 'Live sync starting...\n')
 
