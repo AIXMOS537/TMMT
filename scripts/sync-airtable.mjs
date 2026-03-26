@@ -78,6 +78,8 @@ function mapFields(record) {
   for (const [key, val] of Object.entries(record.fields)) {
     const col = toSnake(key)
     if (SKIP_COLS.has(col)) continue
+    // Airtable linked record fields are arrays of recXXXX IDs — stored as
+    // comma-joined strings intentionally; these won't match Supabase UUIDs
     row[col] = Array.isArray(val) ? val.join(', ') : val
   }
   return row
@@ -116,7 +118,7 @@ async function main() {
 
   if (!DRY_RUN) {
     for (const jt of JUNCTION_TABLES) {
-      try { await clearTable(jt) } catch { /* skip silently */ }
+      try { await clearTable(jt) } catch (e) { console.warn(`  ⚠ junction clear skipped: ${jt} — ${e.message}`) }
     }
   }
 
@@ -134,7 +136,13 @@ async function main() {
       const rows = records.map(mapFields)
       if (!DRY_RUN) {
         await clearTable(name)
-        await insertRows(name, rows)
+        try {
+          await insertRows(name, rows)
+        } catch (insertErr) {
+          lines.push(`  ✗ ${name.padEnd(38)} FAILED (TABLE IS NOW EMPTY): ${insertErr.message}`)
+          failed++
+          continue
+        }
       }
       lines.push(`  ✓ ${name.padEnd(38)} ${rows.length} records`)
       synced++
