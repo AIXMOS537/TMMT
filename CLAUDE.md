@@ -35,7 +35,7 @@ src/app/
   (admin)/                     — protected, requires auth
     layout.tsx                 — renders Sidebar
     actions.ts                 — signOut
-    [18 admin pages]
+    [17 admin pages]
   (auth)/
     layout.tsx                 — centered, no sidebar
     login/page.tsx + actions.ts
@@ -93,11 +93,24 @@ Every admin page follows the same structure — respect it when adding new pages
 // 5. handleSave → supabase.upsert() → reload
 ```
 
+## Commands
+
+```bash
+npm run dev      # dev server (Turbopack) on http://localhost:3000
+npm run build    # production build — only CI gate currently
+npm run start    # serve production build locally
+npm run lint     # ESLint
+
+# Airtable → Supabase one-time sync
+node scripts/sync-airtable.mjs           # live run
+node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
+```
+
 ## Env
 
 - `.env` at project root (gitignored via `.env*`)
 - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- **Airtable keys needed** — not currently in `.env`
+- Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
 
 ## Docs
 
