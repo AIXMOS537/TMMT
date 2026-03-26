@@ -24,7 +24,7 @@ graph TB
     subgraph Server["Next.js Server"]
         Middleware["Middleware (auth gate)"]
         AppRouter["App Router"]
-        AdminPages["18 Admin Pages (protected)"]
+        AdminPages["17 Admin Pages (protected)"]
         Forms["8 Public Forms (public)"]
         LoginPage["Login Page"]
         ServerActions["Server Actions (signIn / signOut)"]

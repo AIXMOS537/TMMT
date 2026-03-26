@@ -1,6 +1,17 @@
 # TMMT Rentals — Project Status
 
-> Last updated: March 25, 2026
+> Last updated: March 26, 2026
+
+## Business Context
+
+TMMT Rentals ran its entire operation — fleet, leads, background checks, waitlist, appointments, contracts, payments, tickets, inspections, and more — out of Airtable. This system replaces that with a production-grade platform purpose-built for the rental workflow.
+
+**What changed:**
+- Staff use a custom admin UI instead of Airtable's generic spreadsheet interface
+- Customers submit their own intake forms (lead, background check, waitlist, inspection, etc.) — no manual data entry by staff
+- Auth-protected admin with Supabase PostgreSQL as the source of truth
+- Full data migration: 1,453 records, 368 junction links, 0 errors
+- Path to production features (RLS, file uploads, email notifications) that Airtable couldn't support
 
 ## Migration Status
 
