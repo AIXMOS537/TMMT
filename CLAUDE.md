@@ -42,7 +42,7 @@ src/app/
     login/page.tsx + actions.ts
   forms/                       — 8 public forms, no auth required
 src/lib/
-  supabase.ts                  — browser anon client + service role client
+  supabase.ts                  — browser anon client (singleton); createServiceClient() exists but is unused
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
   queries.ts                   — read fetchers only; writes use inline supabase.from().upsert() in each page's handleSave
   utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
