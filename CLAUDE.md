@@ -31,7 +31,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 ```
 middleware.ts                  — auth gate (getUser, not getSession)
 src/app/
-  layout.tsx                   — bare shell only
+  layout.tsx                   — sets metadata, injects blocking theme script (dark mode init), suppressHydrationWarning required
   (admin)/                     — protected, requires auth
     layout.tsx                 — renders Sidebar
     actions.ts                 — signOut
