@@ -20,7 +20,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 |---|---|---|
 | Framework | Next.js 16.1.6 (App Router, Turbopack) | |
 | Language | TypeScript 5 (strict mode) | |
-| Styling | Tailwind CSS 4 | Class-based dark mode via `html.dark` |
+| Styling | Tailwind CSS 4 | Class-based dark mode via `html.dark`; no tailwind.config.js — all config in `globals.css` |
 | Database | Supabase PostgreSQL | 44 tables, 1,453 migrated records |
 | Auth | Supabase Auth + `@supabase/ssr` v0.9.0, `supabase-js` v2.97.0 | Email + password, middleware-protected |
 | Icons | lucide-react | |
