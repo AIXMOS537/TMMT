@@ -8,7 +8,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 
 ## Engineering Philosophy
 
-- **Agentic workflows first** — use brainstorming → writing-plans → subagent-driven-development for all non-trivial work
+- **Agentic workflows first** — use `superpowers:brainstorming` → `superpowers:writing-plans` → `superpowers:subagent-driven-development` for all non-trivial work
 - **Production quality, not prototype quality** — every feature ships with proper error handling, TypeScript correctness, and accessibility
 - **YAGNI + DRY** — build exactly what's needed, no speculative abstractions
 - **TDD where testable** — no test framework is installed yet; build verification (`npm run build`) is the current gate
@@ -22,7 +22,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 | Language | TypeScript 5 (strict mode) | |
 | Styling | Tailwind CSS 4 | Class-based dark mode via `html.dark` |
 | Database | Supabase PostgreSQL | 44 tables, 1,453 migrated records |
-| Auth | Supabase Auth + `@supabase/ssr` v0.9.0 | Email + password, middleware-protected |
+| Auth | Supabase Auth + `@supabase/ssr` v0.9.0, `supabase-js` v2.97.0 | Email + password, middleware-protected |
 | Icons | lucide-react | |
 | Utilities | date-fns, clsx, tailwind-merge | |
 
@@ -72,13 +72,14 @@ src/components/
 
 ## Production Gaps (ordered by priority)
 
-1. **Row-Level Security (RLS)** — all tables currently open; anon key has full access
+1. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); `StatusPill` component and inline save not yet implemented
+2. **Row-Level Security (RLS)** — all tables currently open; anon key has full access
    - Public forms rely on RLS being OFF for inserts — enabling RLS requires explicit anon INSERT policies for: `incoming_leads`, `background_checks`, `waitlist`, `appointments`, `tickets`, `customer_inspection_photos`, `vehicle_handovers`
-2. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
-3. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
-4. **Email notifications** — no transactional email yet
-5. **Reporting / analytics** — no export or aggregate views
-6. **Testing infrastructure** — no Jest/Playwright; build is the only gate
+3. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
+4. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
+5. **Email notifications** — no transactional email yet
+6. **Reporting / analytics** — no export or aggregate views
+7. **Testing infrastructure** — no Jest/Playwright; build is the only gate
 
 ## Admin Page Pattern
 
@@ -118,5 +119,5 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
 - `docs/PIPELINE-FLOW.md` — customer and vehicle lifecycle state machines
 - `docs/STATUS.md` — feature status, known issues, codebase stats
-- `docs/superpowers/specs/` — design specs
-- `docs/superpowers/plans/` — implementation plans
+- `docs/superpowers/specs/` — design specs (supabase-auth, airtable-sync, maintenance-toggle)
+- `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync)
