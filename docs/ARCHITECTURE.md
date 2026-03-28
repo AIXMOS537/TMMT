@@ -56,7 +56,7 @@ TMMT/
 ├── middleware.ts                  # Auth gate — checks session on every request
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx             # Root shell (html/body/theme script only)
+│   │   ├── layout.tsx             # Root shell — blocking theme init script, suppressHydrationWarning required
 │   │   ├── globals.css            # Tailwind v4 imports + dark mode variant
 │   │   ├── (admin)/               # Protected route group (requires auth)
 │   │   │   ├── layout.tsx         # Admin layout — renders Sidebar
@@ -98,9 +98,9 @@ TMMT/
 │   │   ├── ThemeToggle.tsx        # Dark/light mode toggle
 │   │   └── ui.tsx                 # Reusable UI component library
 │   └── lib/
-│       ├── supabase.ts            # Browser anon client + service role client
+│       ├── supabase.ts            # Browser anon client (singleton); createServiceClient() exists but unused
 │       ├── supabase-server.ts     # SSR clients: createSSRClient, createMiddlewareClient
-│       ├── queries.ts             # All data fetchers + CRUD helpers
+│       ├── queries.ts             # Read fetchers only; writes use inline supabase.from().upsert() in pages
 │       └── utils.ts               # Formatting + status colors
 ├── .env                           # Supabase credentials (gitignored)
 ├── package.json
@@ -119,10 +119,10 @@ graph LR
     end
 
     subgraph Lib["src/lib/"]
-        Supabase["supabase.ts<br/>Browser anon client<br/>+ service role client"]
+        Supabase["supabase.ts<br/>Browser anon client (singleton)<br/>createServiceClient() unused"]
         SupabaseServer["supabase-server.ts<br/>createSSRClient (server actions)<br/>createMiddlewareClient (middleware)"]
-        Queries["queries.ts<br/>fetchTable, upsertRecord,<br/>deleteRecord, getDashboardData"]
-        Utils["utils.ts<br/>cn, formatCurrency,<br/>formatDate, statusColor"]
+        Queries["queries.ts<br/>fetchTable, getDashboardData<br/>(read-only; writes inline in pages)"]
+        Utils["utils.ts<br/>cn, formatCurrency,<br/>formatDate, formatDateTime, statusColor"]
     end
 
     subgraph Pages["Admin Pages (×18)"]
@@ -153,9 +153,9 @@ stateDiagram-v2
     FilteredView --> Display
     Display --> OpenModal: User clicks row or "Add"
     OpenModal --> EditForm: Modal with FormField inputs
-    EditForm --> Save: upsertRecord()
+    EditForm --> Save: supabase.from().upsert()
     Save --> LoadData: Refresh data
-    EditForm --> Delete: deleteRecord()
+    EditForm --> Delete: supabase.from().delete()
     Delete --> LoadData
 ```
 
@@ -219,7 +219,7 @@ sequenceDiagram
     NextJS-->>Browser: Opens Modal form
 
     Browser->>NextJS: User submits form
-    NextJS->>Supabase: upsertRecord("fleet", data)
+    NextJS->>Supabase: supabase.from("fleet").upsert(data)
     Supabase-->>NextJS: { data, error }
     NextJS-->>Browser: Refresh table / show error
 ```

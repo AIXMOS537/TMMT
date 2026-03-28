@@ -99,9 +99,9 @@ src/
 │   ├── ThemeToggle.tsx       # Dark/light mode
 │   └── ui.tsx                # Reusable UI library
 └── lib/
-    ├── supabase.ts           # Browser client
+    ├── supabase.ts           # Browser anon client (singleton)
     ├── supabase-server.ts    # SSR client (server actions + middleware)
-    ├── queries.ts            # Data fetchers + CRUD
+    ├── queries.ts            # Read fetchers only; writes inline in pages
     └── utils.ts              # Formatting + status colors
 ```
 

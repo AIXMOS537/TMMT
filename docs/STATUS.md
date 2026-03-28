@@ -1,6 +1,6 @@
 # TMMT Rentals — Project Status
 
-> Last updated: March 26, 2026
+> Last updated: March 28, 2026
 
 ## Business Context
 
@@ -63,6 +63,10 @@ graph LR
         D8["Status Badges"]
         D9["Responsive Sidebar"]
         D10["Authentication (Supabase Auth)"]
+    end
+
+    subgraph InProgress["🔄 In Progress"]
+        I1["Maintenance Show/No-Show Toggle<br/>(spec approved, not yet built)"]
     end
 
     subgraph Planned["🔲 Planned"]
@@ -138,6 +142,7 @@ graph LR
 ## Known Issues
 
 - **Payments table empty** — May need re-import or manual entry
+- **Maintenance show/no-show toggle** — Spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); `StatusPill` component and inline save not yet implemented
 - **Maintenance/Vendors/Handovers empty** — New tables awaiting data
 - **No RLS** — Public forms rely on RLS being disabled for anon inserts; enabling RLS requires explicit anon INSERT policies for form tables
 - **No password reset** — Admins must reset passwords via Supabase dashboard
