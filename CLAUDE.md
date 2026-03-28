@@ -35,6 +35,7 @@ src/app/
   (admin)/                     — protected, requires auth
     layout.tsx                 — renders Sidebar
     actions.ts                 — signOut
+    page.tsx                   — dashboard (StatCard metrics, getDashboardData)
     [17 admin pages]
   (auth)/
     layout.tsx                 — centered, no sidebar
@@ -44,7 +45,7 @@ src/lib/
   supabase.ts                  — browser anon client + service role client
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
   queries.ts                   — all data fetchers + CRUD
-  utils.ts                     — cn(), formatCurrency(), statusColor()
+  utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
 src/components/
   Sidebar.tsx                  — nav + logout button ("use client")
   ThemeToggle.tsx
