@@ -44,7 +44,7 @@ src/app/
 src/lib/
   supabase.ts                  — browser anon client + service role client
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
-  queries.ts                   — all data fetchers + CRUD
+  queries.ts                   — read fetchers only; writes use inline supabase.from().upsert() in each page's handleSave
   utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
 src/components/
   Sidebar.tsx                  — nav + logout button ("use client")
@@ -92,7 +92,7 @@ Every admin page follows the same structure — respect it when adding new pages
 // 2. useMemo → filter by search + status
 // 3. DataTable with columns config
 // 4. onRowClick → Modal → FormField inputs
-// 5. handleSave → supabase.upsert() → reload
+// 5. handleSave → supabase.from("table_name").upsert(record) → reload (do NOT add writes to queries.ts)
 ```
 
 ## Commands
