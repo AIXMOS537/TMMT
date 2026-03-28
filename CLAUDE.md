@@ -42,7 +42,7 @@ src/app/
     login/page.tsx + actions.ts
   forms/                       — 8 public forms, no auth required
 src/lib/
-  supabase.ts                  — browser anon client (singleton); createServiceClient() exists but is unused
+  supabase.ts                  — browser anon client (singleton); createServiceClient() exists but is unused — audit before wiring up
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
   queries.ts                   — read fetchers only; writes use inline supabase.from().upsert() in each page's handleSave
   utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
@@ -73,7 +73,7 @@ src/components/
 
 ## Production Gaps (ordered by priority)
 
-1. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); `StatusPill` component and inline save not yet implemented
+1. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); **not started** — `StatusPill` component and inline save both pending
 2. **Row-Level Security (RLS)** — all tables currently open; anon key has full access
    - Public forms rely on RLS being OFF for inserts — enabling RLS requires explicit anon INSERT policies for: `incoming_leads`, `background_checks`, `waitlist`, `appointments`, `tickets`, `customer_inspection_photos`, `vehicle_handovers`
 3. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
@@ -98,7 +98,7 @@ Every admin page follows the same structure — respect it when adding new pages
 ## Commands
 
 ```bash
-npm run dev      # dev server (Turbopack) on http://localhost:3000
+npm run dev      # dev server on http://localhost:3000 (Turbopack — default in Next.js 16, no flag needed)
 npm run build    # production build — only CI gate currently
 npm run start    # serve production build locally
 npm run lint     # ESLint
@@ -113,9 +113,11 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - `.env` at project root (gitignored via `.env*`)
 - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
+- Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
 
 ## Docs
 
+- `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
 - `docs/PIPELINE-FLOW.md` — customer and vehicle lifecycle state machines
