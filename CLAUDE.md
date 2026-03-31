@@ -11,7 +11,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 - **Agentic workflows first** — use `superpowers:brainstorming` → `superpowers:writing-plans` → `superpowers:subagent-driven-development` for all non-trivial work
 - **Production quality, not prototype quality** — every feature ships with proper error handling, TypeScript correctness, and accessibility
 - **YAGNI + DRY** — build exactly what's needed, no speculative abstractions
-- **TDD where testable** — no test framework is installed yet; build verification (`npm run build`) is the current gate
+- **TDD where testable** — Playwright installed for E2E; build verification (`npm run build`) is the primary gate
 - **Frequent commits** — one logical unit per commit, descriptive messages
 
 ## Tech Stack
@@ -24,6 +24,9 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 | Database | Supabase PostgreSQL | 44 tables, 1,453 migrated records |
 | Auth | Supabase Auth + `@supabase/ssr` v0.9.0, `supabase-js` v2.97.0 | Email + password, middleware-protected |
 | Icons | lucide-react | |
+| Monitoring | @sentry/nextjs | Inactive until `NEXT_PUBLIC_SENTRY_DSN` set |
+| Testing | @playwright/test (dev) | E2E smoke tests in `e2e/` |
+| Validation | zod | Server action input validation |
 | Utilities | date-fns, clsx, tailwind-merge | |
 
 ## Current Architecture
@@ -44,7 +47,7 @@ src/app/
 src/lib/
   supabase.ts                  — browser anon client (singleton); createServiceClient() exists but is unused — audit before wiring up
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
-  queries.ts                   — read fetchers only; writes use inline supabase.from().upsert() in each page's handleSave
+  queries.ts                   — read fetchers only (writes go through server actions, not here)
   utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
 src/components/
   Sidebar.tsx                  — nav + logout button ("use client")
@@ -73,14 +76,18 @@ src/components/
 
 ## Production Gaps (ordered by priority)
 
-1. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); **not started** — `StatusPill` component and inline save both pending
-2. **Row-Level Security (RLS)** — all tables currently open; anon key has full access
-   - Public forms rely on RLS being OFF for inserts — enabling RLS requires explicit anon INSERT policies for: `incoming_leads`, `background_checks`, `waitlist`, `appointments`, `tickets`, `customer_inspection_photos`, `vehicle_handovers`
-3. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
-4. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
-5. **Email notifications** — no transactional email yet
-6. **Reporting / analytics** — no export or aggregate views
-7. **Testing infrastructure** — no Jest/Playwright; build is the only gate
+1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.
+2. ~~**Input validation / server actions**~~ — **DONE**: All 8 public forms use zod-validated server actions (`src/app/forms/actions.ts`). All 17 admin pages use auth-gated server action (`src/app/(admin)/admin-actions.ts`).
+3. ~~**Error handling**~~ — **DONE**: ErrorBanner replaces all alert() calls. Error boundaries at root and admin level. `.catch()` on all data fetches.
+4. ~~**Rate limiting**~~ — **DONE**: In-memory rate limiter (5 req/hr per IP) in middleware for `/forms` POST.
+5. ~~**Security headers**~~ — **DONE**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy in `next.config.ts`.
+6. ~~**Error monitoring**~~ — **DONE**: Sentry SDK installed and configured. Set `NEXT_PUBLIC_SENTRY_DSN` in `.env` to activate.
+7. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); **not started**
+8. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
+9. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
+10. **Email notifications** — no transactional email yet
+11. **Reporting / analytics** — no export or aggregate views
+12. **Testing infrastructure** — Playwright installed with smoke tests (`e2e/`); no unit test framework yet
 
 ## Admin Page Pattern
 
@@ -88,20 +95,22 @@ Every admin page follows the same structure — respect it when adding new pages
 
 ```tsx
 "use client"
-// 1. useEffect → fetch data → setState
+// 1. useEffect → fetch data → setState (with .catch() for error handling)
 // 2. useMemo → filter by search + status
 // 3. DataTable with columns config
 // 4. onRowClick → Modal → FormField inputs
-// 5. handleSave → supabase.from("table_name").upsert(record) → reload (do NOT add writes to queries.ts)
+// 5. handleSave → adminUpsert("table_name", record) server action → reload
+// 6. ErrorBanner in Modal for inline error display
 ```
 
 ## Commands
 
 ```bash
 npm run dev      # dev server on http://localhost:3000 (Turbopack — default in Next.js 16, no flag needed)
-npm run build    # production build — only CI gate currently
+npm run build    # production build — primary CI gate
 npm run start    # serve production build locally
 npm run lint     # ESLint
+npm run test:e2e # Playwright E2E smoke tests (requires dev server or uses webServer config)
 
 # Airtable → Supabase one-time sync
 node scripts/sync-airtable.mjs           # live run
@@ -112,6 +121,7 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 
 - `.env` at project root (gitignored via `.env*`)
 - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- Optional: `NEXT_PUBLIC_SENTRY_DSN` — Sentry error monitoring (inactive when empty)
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
 - Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
 
