@@ -1,35 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, Button } from "@/components/ui";
+import { submitInspection } from "@/app/forms/actions";
+import { Card, FormField, inputClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, Camera } from "lucide-react";
 
 export default function CustomerInspectionForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {};
-    fd.forEach((v, k) => {
-      if (v) {
-        if (k === "interior_clean" || k === "exterior_clean" || k === "confirmation") {
-          record[k] = true;
-        } else if (k === "odometer_reading") {
-          record[k] = Number(v);
-        } else {
-          record[k] = v;
-        }
-      }
-    });
-    record.date_time = new Date().toISOString();
-
-    const { error } = await supabase.from("customer_inspection_photos").insert(record);
+    const result = await submitInspection(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -63,6 +51,7 @@ export default function CustomerInspectionForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Your Full Name" required>
               <input name="full_name" className={inputClass} required />
             </FormField>

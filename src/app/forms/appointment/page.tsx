@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitAppointment } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, CalendarDays } from "lucide-react";
 
 const appointmentTypes = [
@@ -25,22 +25,16 @@ const timeSlots = [
 export default function AppointmentForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      status: "Scheduled",
-      created_at: new Date().toISOString(),
-    };
-    fd.forEach((v, k) => {
-      if (v) record[k] = v;
-    });
-
-    const { error } = await supabase.from("appointments").insert(record);
+    const result = await submitAppointment(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -78,6 +72,7 @@ export default function AppointmentForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Full Name" required>
               <input name="customer_name" className={inputClass} required />
             </FormField>

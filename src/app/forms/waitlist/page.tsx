@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitWaitlist } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, CalendarCheck } from "lucide-react";
 
 const vehicleTypes = ["Compact/Hatchback", "Sedan", "SUV", "Minivan", "Electric/Hybrid"];
@@ -10,26 +10,16 @@ const vehicleTypes = ["Compact/Hatchback", "Sedan", "SUV", "Minivan", "Electric/
 export default function WaitlistForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      status: "Waiting",
-      date_added: new Date().toISOString().split("T")[0],
-    };
-    fd.forEach((v, k) => {
-      if (v) {
-        if (k === "year") record[k] = Number(v);
-        else if (k === "desired_weekly_payment") record[k] = Number(v);
-        else record[k] = v;
-      }
-    });
-
-    const { error } = await supabase.from("waitlist").insert(record);
+    const result = await submitWaitlist(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -62,6 +52,7 @@ export default function WaitlistForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Full Name" required>
               <input name="customer_name" className={inputClass} required />
             </FormField>
