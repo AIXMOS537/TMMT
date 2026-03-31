@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getTickets } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -21,8 +21,9 @@ export default function TicketsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Ticket | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getTickets().then((d) => { setData(d as Ticket[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getTickets().then((d) => { setData(d as Ticket[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => {
@@ -46,13 +47,14 @@ export default function TicketsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.amount) record.amount = Number(record.amount);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("tickets").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -85,8 +87,9 @@ export default function TicketsPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Ticket" : "New Ticket"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Ticket" : "New Ticket"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer"><input name="requested_by_customer" defaultValue={editing?.requested_by_customer as string || ""} className={inputClass} /></FormField>
           <FormField label="Citation #"><input name="citation_number" defaultValue={editing?.citation_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Violation Type">
