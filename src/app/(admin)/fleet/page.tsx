@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Fleet = Record<string, unknown>;
 
@@ -81,8 +81,8 @@ export default function FleetPage() {
     if (record.partner_percentage) record.partner_percentage = Number(record.partner_percentage);
     if (editing?.id) record.id = editing.id;
 
-    const { error } = await supabase.from("fleet").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("fleet", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false);
     setEditing(null);
     load();

@@ -5,7 +5,7 @@ import { getAppointments } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Appt = Record<string, unknown>;
 
@@ -46,8 +46,8 @@ export default function AppointmentsPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.vehicle_preference_confirmed) record.vehicle_preference_confirmed = record.vehicle_preference_confirmed === "true";
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("appointments").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("appointments", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
