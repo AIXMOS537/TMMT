@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitTicket } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, AlertTriangle } from "lucide-react";
 
 const issueTypes = [
@@ -24,22 +24,16 @@ const urgencyLevels = ["Low", "Medium", "High", "Emergency"];
 export default function TicketForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      status: "Open",
-      created_at: new Date().toISOString(),
-    };
-    fd.forEach((v, k) => {
-      if (v) record[k] = v;
-    });
-
-    const { error } = await supabase.from("tickets").insert(record);
+    const result = await submitTicket(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -72,6 +66,7 @@ export default function TicketForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Your Name" required>
               <input name="customer_name" className={inputClass} required />
             </FormField>

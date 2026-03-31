@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitLeadIntake } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle } from "lucide-react";
 
 const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
@@ -10,17 +10,16 @@ const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
 export default function LeadIntakeForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = { status: "New Lead" };
-    fd.forEach((v, k) => { if (v) record[k] = k === "phone" ? Number(v) : v; });
-
-    const { error } = await supabase.from("incoming_leads").insert(record);
+    const result = await submitLeadIntake(fd);
     setLoading(false);
-    if (error) { alert("Error submitting: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -51,6 +50,7 @@ export default function LeadIntakeForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Full Name" required>
               <input name="contact_name" className={inputClass} required placeholder="John Doe" />
             </FormField>

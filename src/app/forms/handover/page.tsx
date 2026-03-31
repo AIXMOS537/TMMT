@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitHandover } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, ClipboardCheck } from "lucide-react";
 
 const fuelLevels = ["Empty", "1/4", "1/2", "3/4", "Full"];
@@ -10,33 +10,17 @@ const fuelLevels = ["Empty", "1/4", "1/2", "3/4", "Full"];
 export default function HandoverForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [handoverType, setHandoverType] = useState("Pickup");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      handover_type: handoverType,
-      status: "Completed",
-      handover_date: new Date().toISOString().split("T")[0],
-    };
-    fd.forEach((v, k) => {
-      if (v) {
-        if (k === "odometer_reading") record[k] = Number(v);
-        else if (k.startsWith("check_")) record[k] = v === "on";
-        else record[k] = v;
-      }
-    });
-
-    // Set boolean checkboxes that are unchecked
-    ["check_exterior", "check_interior", "check_tires", "check_lights", "check_documents"].forEach((key) => {
-      if (!(key in record)) record[key] = false;
-    });
-
-    const { error } = await supabase.from("vehicle_handovers").insert(record);
+    const result = await submitHandover(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -69,6 +53,8 @@ export default function HandoverForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+            <input type="hidden" name="handover_type" value={handoverType} />
             {/* Handover Type Toggle */}
             <div className="flex gap-2">
               {["Pickup", "Return"].map((type) => (
