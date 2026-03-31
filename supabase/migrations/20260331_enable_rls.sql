@@ -35,15 +35,15 @@ ALTER TABLE customer_inspection_photos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon_insert_inspections" ON customer_inspection_photos FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "auth_all_inspections" ON customer_inspection_photos FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- vehicle_handovers
-ALTER TABLE vehicle_handovers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_insert_handovers" ON vehicle_handovers FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "auth_all_handovers" ON vehicle_handovers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- vehicle_handover (public form + admin)
+ALTER TABLE vehicle_handover ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_insert_handovers" ON vehicle_handover FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "auth_all_handovers" ON vehicle_handover FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- vehicle_onboarding_inspection
-ALTER TABLE vehicle_onboarding_inspection ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_insert_onboarding" ON vehicle_onboarding_inspection FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "auth_all_onboarding" ON vehicle_onboarding_inspection FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- vehicle_onboarding_inspections
+ALTER TABLE vehicle_onboarding_inspections ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_insert_onboarding" ON vehicle_onboarding_inspections FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "auth_all_onboarding" ON vehicle_onboarding_inspections FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ════════════════════════════════════════════════════
 -- ADMIN-ONLY TABLES: authenticated full access, no anon
@@ -85,5 +85,4 @@ CREATE POLICY "auth_all_former" ON former_customers FOR ALL TO authenticated USI
 ALTER TABLE maintenance_appointments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "auth_all_maintenance" ON maintenance_appointments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-ALTER TABLE vehicle_handover ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "auth_all_handover" ON vehicle_handover FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- vehicle_handover already handled in public form tables section above
