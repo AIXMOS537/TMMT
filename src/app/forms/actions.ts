@@ -216,7 +216,7 @@ export async function submitHandover(formData: FormData): Promise<FormResult> {
   if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
 
   const d = parsed.data;
-  return insertRow("vehicle_handovers", {
+  return insertRow("vehicle_handover", {
     customer_name: d.customer_name.trim(),
     staff_name: d.staff_name.trim(),
     vehicle_make: d.vehicle_make || null,
@@ -284,5 +284,5 @@ export async function submitOnboardingInspection(formData: FormData): Promise<Fo
     record[k] = numericFields.includes(k) ? Number(v) : v;
   }
 
-  return insertRow("vehicle_onboarding_inspection", record);
+  return insertRow("vehicle_onboarding_inspections", record);
 }
