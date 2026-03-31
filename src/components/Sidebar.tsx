@@ -90,6 +90,7 @@ export default function Sidebar() {
       <button
         className="fixed top-4 left-4 z-50 lg:hidden bg-white dark:bg-slate-800 rounded-lg p-2 shadow-md"
         onClick={() => setOpen(!open)}
+        aria-label={open ? "Close navigation" : "Open navigation"}
       >
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -104,6 +105,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
+        aria-label="Main navigation"
         className={cn(
           "fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 overflow-y-auto transition-transform lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
@@ -122,6 +124,7 @@ export default function Sidebar() {
             <div key={group.label}>
               <button
                 onClick={() => toggle(group.label)}
+                aria-expanded={!collapsed[group.label]}
                 className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider hover:text-gray-600 dark:hover:text-slate-300"
               >
                 {group.label}
