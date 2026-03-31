@@ -19,10 +19,19 @@ type DashData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getDashboardData().then(setData);
+    getDashboardData().then(setData).catch(() => setLoadError(true));
   }, []);
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-600 dark:text-red-400">Failed to load dashboard data. Please refresh the page.</p>
+      </div>
+    );
+  }
 
   if (!data) {
     return (

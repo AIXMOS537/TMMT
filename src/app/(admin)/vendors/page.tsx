@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getVendors } from "@/lib/queries";
-import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, inputClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -14,8 +14,9 @@ export default function VendorsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getVendors().then((d) => { setData(d as Vendor[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getVendors().then((d) => { setData(d as Vendor[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => !search || [r.vendor_payee, r.point_of_contact, r.email_address].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))), [data, search]);
@@ -30,12 +31,13 @@ export default function VendorsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("shops_mechanics_cleaning").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -46,8 +48,9 @@ export default function VendorsPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Vendor" : "Add Vendor"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Vendor" : "Add Vendor"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Vendor/Payee Name" required><input name="vendor_payee" defaultValue={editing?.vendor_payee as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="phone_number" defaultValue={editing?.phone_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="email_address" type="email" defaultValue={editing?.email_address as string || ""} className={inputClass} /></FormField>

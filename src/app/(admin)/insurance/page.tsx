@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getInsurance } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -20,8 +20,9 @@ export default function InsurancePage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Ins | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getInsurance().then((d) => { setData(d as Ins[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getInsurance().then((d) => { setData(d as Ins[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => {
@@ -49,6 +50,7 @@ export default function InsurancePage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
@@ -56,7 +58,7 @@ export default function InsurancePage() {
     if (record.deductible) record.deductible = Number(record.deductible);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("insurance").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -72,8 +74,9 @@ export default function InsurancePage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Policy" : "Add Policy"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Policy" : "Add Policy"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Insured Vehicle"><input name="insured_vehicle" defaultValue={editing?.insured_vehicle as string || ""} className={inputClass} /></FormField>
           <FormField label="Insured Customer"><input name="insured_customer" defaultValue={editing?.insured_customer as string || ""} className={inputClass} /></FormField>
           <FormField label="Entity Type">

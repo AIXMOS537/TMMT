@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getBackgroundChecks } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -20,8 +20,9 @@ export default function BackgroundChecksPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<BgCheck | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getBackgroundChecks().then((d) => { setData(d as BgCheck[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getBackgroundChecks().then((d) => { setData(d as BgCheck[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => {
@@ -51,13 +52,14 @@ export default function BackgroundChecksPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.verification_form_submitted) record.verification_form_submitted = record.verification_form_submitted === "true";
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("background_checks").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -82,8 +84,9 @@ export default function BackgroundChecksPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Background Check" : "New Background Check"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Background Check" : "New Background Check"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="phone_number" defaultValue={editing?.phone_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="email" type="email" defaultValue={editing?.email as string || ""} className={inputClass} /></FormField>
