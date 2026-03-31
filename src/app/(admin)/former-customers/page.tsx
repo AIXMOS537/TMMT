@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getFormerCustomers } from "@/lib/queries";
-import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, inputClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -15,8 +15,9 @@ export default function FormerCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FC | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getFormerCustomers().then((d) => { setData(d as FC[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getFormerCustomers().then((d) => { setData(d as FC[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => !search || [r.customer_name, r.contact_email, r.contact_phone, r.vehicle_rented].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))), [data, search]);
@@ -39,12 +40,13 @@ export default function FormerCustomersPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("former_customers").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -55,8 +57,9 @@ export default function FormerCustomersPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Former Customer" : "Add Former Customer"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Former Customer" : "Add Former Customer"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Email"><input name="contact_email" type="email" defaultValue={editing?.contact_email as string || ""} className={inputClass} /></FormField>
           <FormField label="Phone"><input name="contact_phone" defaultValue={editing?.contact_phone as string || ""} className={inputClass} /></FormField>

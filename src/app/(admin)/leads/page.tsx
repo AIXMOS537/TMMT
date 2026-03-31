@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getLeads } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -19,8 +19,9 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getLeads().then((d) => { setData(d as Lead[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getLeads().then((d) => { setData(d as Lead[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => {
@@ -55,13 +56,14 @@ export default function LeadsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.phone) record.phone = Number(record.phone);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("incoming_leads").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -96,8 +98,9 @@ export default function LeadsPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Lead" : "New Lead"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Lead" : "New Lead"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Contact Name" required><input name="contact_name" defaultValue={editing?.contact_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Opportunity Name"><input name="opportunity_name" defaultValue={editing?.opportunity_name as string || ""} className={inputClass} /></FormField>
           <FormField label="Phone"><input name="phone" defaultValue={editing?.phone as string || ""} className={inputClass} /></FormField>

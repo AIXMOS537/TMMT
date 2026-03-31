@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getInspections } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -20,8 +20,9 @@ export default function InspectionsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Insp | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getInspections().then((d) => { setData(d as Insp[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getInspections().then((d) => { setData(d as Insp[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => {
@@ -43,13 +44,14 @@ export default function InspectionsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.odometer_reading_at_inspection) record.odometer_reading_at_inspection = Number(record.odometer_reading_at_inspection);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("fleet_car_inspections").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -65,8 +67,9 @@ export default function InspectionsPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Inspection" : "New Inspection"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Inspection" : "New Inspection"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Inspection Name"><input name="inspection_name" defaultValue={editing?.inspection_name as string || ""} className={inputClass} /></FormField>
           <FormField label="Inspector Name"><input name="inspector_name" defaultValue={editing?.inspector_name as string || ""} className={inputClass} /></FormField>
           <FormField label="Date"><input name="date_of_inspection" type="date" defaultValue={editing?.date_of_inspection as string || ""} className={inputClass} /></FormField>

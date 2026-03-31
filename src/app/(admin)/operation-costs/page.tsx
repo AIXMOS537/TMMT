@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getOperationCosts } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -18,8 +18,9 @@ export default function OperationCostsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OpCost | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getOperationCosts().then((d) => { setData(d as OpCost[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getOperationCosts().then((d) => { setData(d as OpCost[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => !search || [r.tool_software_name, r.description].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()))), [data, search]);
@@ -36,13 +37,14 @@ export default function OperationCostsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.prices) record.prices = Number(record.prices);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("operation_costs").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -53,8 +55,9 @@ export default function OperationCostsPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Tool/Software" : "Add Tool/Software"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Tool/Software" : "Add Tool/Software"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Tool/Software Name" required><input name="tool_software_name" defaultValue={editing?.tool_software_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Type">
             <select name="type" defaultValue={editing?.type as string || ""} className={selectClass}>
