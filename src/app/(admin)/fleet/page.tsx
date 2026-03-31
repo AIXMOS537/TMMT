@@ -11,6 +11,7 @@ import {
   Button,
   Modal,
   FormField,
+  ErrorBanner,
   inputClass,
   selectClass,
 } from "@/components/ui";
@@ -30,10 +31,12 @@ export default function FleetPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Fleet | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    getFleet().then((d) => { setData(d as Fleet[]); setLoading(false); });
+    setError(null);
+    getFleet().then((d) => { setData(d as Fleet[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); });
   };
   useEffect(load, []);
 
@@ -68,6 +71,7 @@ export default function FleetPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
@@ -78,7 +82,7 @@ export default function FleetPage() {
     if (editing?.id) record.id = editing.id;
 
     const { error } = await supabase.from("fleet").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false);
     setEditing(null);
     load();
@@ -109,8 +113,9 @@ export default function FleetPage() {
         />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Vehicle" : "Add Vehicle"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Vehicle" : "Add Vehicle"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Vehicle Name"><input name="vehicle_name" defaultValue={editing?.vehicle_name as string || ""} className={inputClass} /></FormField>
           <FormField label="Partner Name"><input name="partner_name" defaultValue={editing?.partner_name as string || ""} className={inputClass} /></FormField>
           <FormField label="Year"><input name="year" type="number" defaultValue={editing?.year as number || ""} className={inputClass} /></FormField>

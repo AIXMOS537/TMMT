@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getWaitlist } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -19,8 +19,9 @@ export default function WaitlistPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<WL | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getWaitlist().then((d) => { setData(d as WL[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getWaitlist().then((d) => { setData(d as WL[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => {
@@ -48,6 +49,7 @@ export default function WaitlistPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
@@ -55,7 +57,7 @@ export default function WaitlistPage() {
     if (record.desired_weekly_payment) record.desired_weekly_payment = Number(record.desired_weekly_payment);
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("waitlist").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -71,8 +73,9 @@ export default function WaitlistPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Waitlist Entry" : "Add to Waitlist"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Waitlist Entry" : "Add to Waitlist"}>
         <form onSubmit={handleSave} className="space-y-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="customer_phone" defaultValue={editing?.customer_phone as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="customer_email" type="email" defaultValue={editing?.customer_email as string || ""} className={inputClass} /></FormField>

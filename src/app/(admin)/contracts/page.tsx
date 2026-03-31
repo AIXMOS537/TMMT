@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getContracts } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -18,8 +18,9 @@ export default function ContractsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Contract | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => { setLoading(true); getContracts().then((d) => { setData(d as Contract[]); setLoading(false); }); };
+  const load = () => { setLoading(true); setError(null); getContracts().then((d) => { setData(d as Contract[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
 
   const filtered = useMemo(() => data.filter((r) => {
@@ -42,13 +43,14 @@ export default function ContractsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     ["base_price", "taxes_and_fees", "insurance_fee", "total_contract_amount"].forEach((k) => { if (record[k]) record[k] = Number(record[k]); });
     if (editing?.id) record.id = editing.id;
     const { error } = await supabase.from("contracts").upsert(record);
-    if (error) { alert(error.message); return; }
+    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
@@ -64,8 +66,9 @@ export default function ContractsPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); }} title={editing ? "Edit Contract" : "New Contract"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Contract" : "New Contract"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer"><input name="active_customer" defaultValue={editing?.active_customer as string || ""} className={inputClass} /></FormField>
           <FormField label="Status">
             <select name="contract_status" defaultValue={editing?.contract_status as string || "Draft"} className={selectClass}>
