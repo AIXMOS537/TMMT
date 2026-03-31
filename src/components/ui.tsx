@@ -160,6 +160,14 @@ export function DataTable<T extends Record<string, unknown>>({
                     onRowClick && "cursor-pointer"
                   )}
                   onClick={() => onRowClick?.(row)}
+                  onKeyDown={(e) => {
+                    if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      onRowClick(row);
+                    }
+                  }}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? "button" : undefined}
                 >
                   {columns.map((col) => (
                     <td
@@ -200,8 +208,8 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} aria-hidden="true" />
       <div
         className={cn(
           "relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-y-auto max-h-[80vh]",
@@ -209,9 +217,10 @@ export function Modal({
         )}
       >
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+          <h2 id="modal-title" className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 text-xl leading-none"
           >
             ×
