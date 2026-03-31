@@ -5,7 +5,7 @@ import { getOperationCosts } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type OpCost = Record<string, unknown>;
 
@@ -43,8 +43,8 @@ export default function OperationCostsPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.prices) record.prices = Number(record.prices);
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("operation_costs").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("operation_costs", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

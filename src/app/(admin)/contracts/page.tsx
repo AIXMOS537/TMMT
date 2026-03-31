@@ -5,7 +5,7 @@ import { getContracts } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Contract = Record<string, unknown>;
 
@@ -49,8 +49,8 @@ export default function ContractsPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     ["base_price", "taxes_and_fees", "insurance_fee", "total_contract_amount"].forEach((k) => { if (record[k]) record[k] = Number(record[k]); });
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("contracts").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("contracts", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

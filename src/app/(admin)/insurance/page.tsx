@@ -5,7 +5,7 @@ import { getInsurance } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Ins = Record<string, unknown>;
 
@@ -57,8 +57,8 @@ export default function InsurancePage() {
     if (record.coverage_amount) record.coverage_amount = Number(record.coverage_amount);
     if (record.deductible) record.deductible = Number(record.deductible);
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("insurance").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("insurance", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

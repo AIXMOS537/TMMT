@@ -5,7 +5,7 @@ import { getPayments } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Pay = Record<string, unknown>;
 
@@ -61,8 +61,8 @@ export default function PaymentsPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.amount) record.amount = Number(record.amount);
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("customer_payments").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("customer_payments", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

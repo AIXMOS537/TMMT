@@ -5,7 +5,7 @@ import { getFormerCustomers } from "@/lib/queries";
 import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type FC = Record<string, unknown>;
 
@@ -45,8 +45,8 @@ export default function FormerCustomersPage() {
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("former_customers").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("former_customers", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

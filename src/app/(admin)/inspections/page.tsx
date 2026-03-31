@@ -5,7 +5,7 @@ import { getInspections } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Insp = Record<string, unknown>;
 
@@ -50,8 +50,8 @@ export default function InspectionsPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.odometer_reading_at_inspection) record.odometer_reading_at_inspection = Number(record.odometer_reading_at_inspection);
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("fleet_car_inspections").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("fleet_car_inspections", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 

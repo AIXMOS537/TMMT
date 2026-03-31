@@ -5,7 +5,7 @@ import { getMaintenance } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminUpsert } from "@/app/(admin)/admin-actions";
 
 type Maint = Record<string, unknown>;
 
@@ -46,8 +46,8 @@ export default function MaintenancePage() {
     if (record.fee_assessed_if_no_show_late) record.fee_assessed_if_no_show_late = Number(record.fee_assessed_if_no_show_late);
     if (record.was_customer_notified_of_fee) record.was_customer_notified_of_fee = record.was_customer_notified_of_fee === "true";
     if (editing?.id) record.id = editing.id;
-    const { error } = await supabase.from("maintenance_appointments").upsert(record);
-    if (error) { console.error(error.message); setError("Failed to save. Please try again."); return; }
+    const result = await adminUpsert("maintenance_appointments", record);
+    if (!result.success) { setError(result.error); return; }
     setModalOpen(false); setEditing(null); load();
   };
 
