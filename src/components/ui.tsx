@@ -311,3 +311,27 @@ export function FilterBar({
     </div>
   );
 }
+
+// --- Error Banner ---
+export function ErrorBanner({
+  message,
+  onDismiss,
+}: {
+  message: string | null;
+  onDismiss?: () => void;
+}) {
+  if (!message) return null;
+  return (
+    <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-300 flex items-start justify-between gap-3">
+      <p>{message}</p>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="text-red-400 hover:text-red-600 dark:hover:text-red-200 shrink-0"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
