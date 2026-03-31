@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitBackgroundCheck } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, ShieldCheck } from "lucide-react";
 
 const insuranceOptions = ["Yes", "No"];
@@ -10,27 +10,16 @@ const insuranceOptions = ["Yes", "No"];
 export default function BackgroundCheckForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      background_check_status: "Pending",
-      insurance_check_status: "Pending",
-      earnings_verification_status: "Pending",
-    };
-    fd.forEach((v, k) => {
-      if (v) {
-        if (k === "verification_form_submitted") record[k] = true;
-        else record[k] = v;
-      }
-    });
-    record.verification_form_submitted = true;
-
-    const { error } = await supabase.from("background_checks").insert(record);
+    const result = await submitBackgroundCheck(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -63,6 +52,7 @@ export default function BackgroundCheckForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             <FormField label="Full Name" required>
               <input name="customer_name" className={inputClass} required />
             </FormField>

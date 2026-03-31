@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, FormField, inputClass, selectClass, Button } from "@/components/ui";
+import { submitOnboardingInspection } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, Search } from "lucide-react";
 
 const conditionOptions = ["Excellent", "Good", "Fair", "Poor", "N/A"];
@@ -11,30 +11,18 @@ const yesNo = ["Yes", "No"];
 export default function OnboardingInspectionForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const record: Record<string, unknown> = {
-      status: "Completed",
-      inspection_date: new Date().toISOString().split("T")[0],
-    };
-    fd.forEach((v, k) => {
-      if (v) {
-        if (["odometer", "tire_pressure_fl", "tire_pressure_fr", "tire_pressure_rl", "tire_pressure_rr"].includes(k)) {
-          record[k] = Number(v);
-        } else {
-          record[k] = v;
-        }
-      }
-    });
-
-    const { error } = await supabase.from("vehicle_onboarding_inspection").insert(record);
+    const result = await submitOnboardingInspection(fd);
     setLoading(false);
-    if (error) { alert("Error: " + error.message); return; }
+    if (!result.success) { setError(result.error); return; }
     setSubmitted(true);
   };
 
@@ -88,6 +76,7 @@ export default function OnboardingInspectionForm() {
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
             {/* Step 1: Vehicle Information */}
             <div className={step === 1 ? "" : "hidden"}>
               <h3 className="font-semibold text-gray-800 mb-4 text-lg">Step 1: Vehicle Information</h3>
