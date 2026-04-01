@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
 
   // Rate limit form submissions (POST only)
   if (pathname.startsWith("/forms") && request.method === "POST") {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || "unknown";
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { error: "Too many submissions. Please try again later." },

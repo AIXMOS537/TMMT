@@ -20,6 +20,7 @@ export default function LeadsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => { setLoading(true); setError(null); getLeads().then((d) => { setData(d as Lead[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -57,14 +58,15 @@ export default function LeadsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
-    if (record.phone) record.phone = Number(record.phone);
+    if (record.phone) record.phone = String(record.phone).replace(/\D/g, "");
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("incoming_leads", record);
-    if (!result.success) { setError(result.error); return; }
-    setModalOpen(false); setEditing(null); load();
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
   return (
@@ -98,7 +100,7 @@ export default function LeadsPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Lead" : "New Lead"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Lead" : "New Lead"}>
         <form onSubmit={handleSave} className="space-y-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Contact Name" required><input name="contact_name" defaultValue={editing?.contact_name as string || ""} className={inputClass} required /></FormField>
@@ -119,7 +121,7 @@ export default function LeadsPage() {
           <FormField label="Notes"><textarea name="notes" rows={3} defaultValue={editing?.notes as string || ""} className={inputClass} /></FormField>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save Lead</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Lead"}</Button>
           </div>
         </form>
       </Modal>
