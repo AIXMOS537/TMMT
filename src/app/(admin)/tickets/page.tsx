@@ -22,6 +22,7 @@ export default function TicketsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Ticket | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => { setLoading(true); setError(null); getTickets().then((d) => { setData(d as Ticket[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -48,14 +49,15 @@ export default function TicketsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.amount) record.amount = Number(record.amount);
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("tickets", record);
-    if (!result.success) { setError(result.error); return; }
-    setModalOpen(false); setEditing(null); load();
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
   return (
@@ -87,7 +89,7 @@ export default function TicketsPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Ticket" : "New Ticket"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Ticket" : "New Ticket"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer"><input name="requested_by_customer" defaultValue={editing?.requested_by_customer as string || ""} className={inputClass} /></FormField>
@@ -118,7 +120,7 @@ export default function TicketsPage() {
           <div className="sm:col-span-2"><FormField label="Internal Notes"><textarea name="internal_notes" rows={2} defaultValue={editing?.internal_notes as string || ""} className={inputClass} /></FormField></div>
           <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </Modal>

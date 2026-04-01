@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
 
 /* ──────────── Re-usable fetcher ──────────── */
-async function fetchTable<T>(table: string, select = "*", order?: string): Promise<T[]> {
-  let q = supabase.from(table).select(select);
+async function fetchTable<T>(table: string, select = "*", order?: string, limit = 1000): Promise<T[]> {
+  let q = supabase.from(table).select(select).limit(limit);
   if (order) q = q.order(order, { ascending: false });
   const { data, error } = await q;
   if (error) {
@@ -111,15 +111,3 @@ export async function getRecord(table: string, id: string) {
   return data;
 }
 
-/* ──────────── Upsert ──────────── */
-export async function upsertRecord(table: string, record: Record<string, unknown>) {
-  const { data, error } = await supabase.from(table).upsert(record).select().single();
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-/* ──────────── Delete ──────────── */
-export async function deleteRecord(table: string, id: string) {
-  const { error } = await supabase.from(table).delete().eq("id", id);
-  if (error) throw new Error(error.message);
-}

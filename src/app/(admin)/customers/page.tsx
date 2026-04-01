@@ -23,6 +23,7 @@ export default function CustomersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Cust | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => { setLoading(true); setError(null); getActiveCustomers().then((d) => { setData(d as Cust[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -59,13 +60,14 @@ export default function CustomersPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("active_customers", record);
-    if (!result.success) { setError(result.error); return; }
-    setModalOpen(false); setEditing(null); load();
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
   return (
@@ -80,7 +82,7 @@ export default function CustomersPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Customer" : "Add Customer"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Customer" : "Add Customer"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
@@ -121,7 +123,7 @@ export default function CustomersPage() {
           <div className="sm:col-span-2"><FormField label="Service Notes"><textarea name="service_notes" rows={3} defaultValue={editing?.service_notes as string || ""} className={inputClass} /></FormField></div>
           <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </Modal>
