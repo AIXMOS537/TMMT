@@ -19,6 +19,7 @@ export default function OperationCostsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OpCost | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => { setLoading(true); setError(null); getOperationCosts().then((d) => { setData(d as OpCost[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -38,14 +39,15 @@ export default function OperationCostsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.prices) record.prices = Number(record.prices);
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("operation_costs", record);
-    if (!result.success) { setError(result.error); return; }
-    setModalOpen(false); setEditing(null); load();
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
   return (
@@ -55,7 +57,7 @@ export default function OperationCostsPage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Tool/Software" : "Add Tool/Software"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Tool/Software" : "Add Tool/Software"}>
         <form onSubmit={handleSave} className="space-y-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Tool/Software Name" required><input name="tool_software_name" defaultValue={editing?.tool_software_name as string || ""} className={inputClass} required /></FormField>
@@ -75,7 +77,7 @@ export default function OperationCostsPage() {
           <FormField label="Description"><textarea name="description" rows={3} defaultValue={editing?.description as string || ""} className={inputClass} /></FormField>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </Modal>

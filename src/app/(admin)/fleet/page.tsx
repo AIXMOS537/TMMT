@@ -32,6 +32,7 @@ export default function FleetPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Fleet | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -72,6 +73,7 @@ export default function FleetPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
@@ -82,7 +84,8 @@ export default function FleetPage() {
     if (editing?.id) record.id = editing.id;
 
     const result = await adminUpsert("fleet", record);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false);
     setModalOpen(false);
     setEditing(null);
     load();
@@ -113,7 +116,7 @@ export default function FleetPage() {
         />
       )}
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Vehicle" : "Add Vehicle"} wide>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Vehicle" : "Add Vehicle"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Vehicle Name"><input name="vehicle_name" defaultValue={editing?.vehicle_name as string || ""} className={inputClass} /></FormField>
@@ -151,7 +154,7 @@ export default function FleetPage() {
           </div>
           <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save Vehicle</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Vehicle"}</Button>
           </div>
         </form>
       </Modal>
