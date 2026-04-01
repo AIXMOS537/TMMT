@@ -32,21 +32,25 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 ## Current Architecture
 
 ```
-middleware.ts                  — auth gate (getUser, not getSession)
+middleware.ts                  — auth gate (getUser) + rate limiter for /forms POST
 src/app/
   layout.tsx                   — sets metadata, injects blocking theme script (dark mode init), suppressHydrationWarning required
   (admin)/                     — protected, requires auth
     layout.tsx                 — renders Sidebar
-    actions.ts                 — signOut
+    actions.ts                 — signOut server action
+    admin-actions.ts           — adminUpsert() auth-gated write (table allowlist)
     page.tsx                   — dashboard (StatCard metrics, getDashboardData)
     [17 admin pages]
   (auth)/
     layout.tsx                 — centered, no sidebar
     login/page.tsx + actions.ts
-  forms/                       — 8 public forms, no auth required
+  forms/
+    actions.ts                 — 8 zod-validated server actions for public forms
+    [8 public form pages]      — no auth required
 src/lib/
-  supabase.ts                  — browser anon client (singleton); createServiceClient() exists but is unused — audit before wiring up
+  supabase.ts                  — browser anon client (singleton, read-only usage via queries.ts)
   supabase-server.ts           — createSSRClient (async), createMiddlewareClient
+  rate-limit.ts                — in-memory rate limiter (5 req/hr per IP)
   queries.ts                   — read fetchers only (writes go through server actions, not here)
   utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
 src/components/
@@ -73,6 +77,9 @@ src/components/
 - Must have `"use server"` directive
 - Import `createSSRClient` from `@/lib/supabase-server`, not `@/lib/supabase`
 - `createSSRClient` is async — always `await createSSRClient()`
+- Public form writes: `src/app/forms/actions.ts` (zod-validated, anon insert)
+- Admin writes: `src/app/(admin)/admin-actions.ts` (auth-gated upsert with table allowlist)
+- Do NOT add writes to `queries.ts` — that file is read-only fetchers
 
 ## Production Gaps (ordered by priority)
 
@@ -99,8 +106,9 @@ Every admin page follows the same structure — respect it when adding new pages
 // 2. useMemo → filter by search + status
 // 3. DataTable with columns config
 // 4. onRowClick → Modal → FormField inputs
-// 5. handleSave → adminUpsert("table_name", record) server action → reload
+// 5. handleSave → setSaving(true) → adminUpsert("table_name", record) → setSaving(false) → reload
 // 6. ErrorBanner in Modal for inline error display
+// 7. Submit button: disabled={saving}, shows "Saving..." while in flight
 ```
 
 ## Commands
@@ -132,5 +140,7 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
 - `docs/PIPELINE-FLOW.md` — customer and vehicle lifecycle state machines
 - `docs/STATUS.md` — feature status, known issues, codebase stats
+- `docs/SENTRY-SETUP.md` — Sentry activation guide (account setup, DSN, alert config)
 - `docs/superpowers/specs/` — design specs (supabase-auth, airtable-sync, maintenance-toggle)
-- `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync)
+- `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync, tier2-hardening)
+- `supabase/migrations/` — RLS migration (`20260331_enable_rls.sql`)
