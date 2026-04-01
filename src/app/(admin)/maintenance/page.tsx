@@ -19,6 +19,7 @@ export default function MaintenancePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Maint | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => { setLoading(true); setError(null); getMaintenance().then((d) => { setData(d as Maint[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -40,6 +41,7 @@ export default function MaintenancePage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSaving(true);
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
@@ -47,8 +49,8 @@ export default function MaintenancePage() {
     if (record.was_customer_notified_of_fee) record.was_customer_notified_of_fee = record.was_customer_notified_of_fee === "true";
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("maintenance_appointments", record);
-    if (!result.success) { setError(result.error); return; }
-    setModalOpen(false); setEditing(null); load();
+    if (!result.success) { setSaving(false); setError(result.error); return; }
+    setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
   return (
@@ -58,7 +60,7 @@ export default function MaintenancePage() {
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); }} title={editing ? "Edit Maintenance Appt" : "New Maintenance Appt"}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Maintenance Appt" : "New Maintenance Appt"}>
         <form onSubmit={handleSave} className="space-y-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
           <FormField label="Maintenance Type">
@@ -80,7 +82,7 @@ export default function MaintenancePage() {
           <FormField label="Notes"><textarea name="notes" rows={3} defaultValue={editing?.notes as string || ""} className={inputClass} /></FormField>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => { setModalOpen(false); setEditing(null); }}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </Modal>

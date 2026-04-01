@@ -36,7 +36,7 @@ export async function submitLeadIntake(formData: FormData): Promise<FormResult> 
   const d = parsed.data;
   return insertRow("incoming_leads", {
     contact_name: d.contact_name.trim(),
-    phone: Number(d.phone.replace(/\D/g, "")) || null,
+    phone: d.phone.replace(/\D/g, "") || null,
     email: d.email || null,
     opportunity_name: d.opportunity_name || null,
     priority_level: d.priority_level || null,
