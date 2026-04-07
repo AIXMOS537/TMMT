@@ -1,3 +1,4 @@
+import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,8 +11,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const _supabaseUrl: string = supabaseUrl;
 const _supabaseAnonKey: string = supabaseAnonKey;
 
-// Browser / client-component client (anon key)
-export const supabase = createClient(_supabaseUrl, _supabaseAnonKey);
+// Browser / client-component client (SSR-aware, reads auth cookies)
+export const supabase = createBrowserClient(_supabaseUrl, _supabaseAnonKey);
 
 // Server-side client with service role for admin operations
 export function createServiceClient() {
