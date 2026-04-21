@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Clock,
   CalendarCheck,
+  CalendarRange,
   Users,
   CreditCard,
   Shield,
@@ -35,6 +36,15 @@ const navGroups = [
     label: "Overview",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Interfaces",
+    items: [
+      { href: "/interfaces/appointments", label: "Appointments", icon: CalendarRange },
+      { href: "/interfaces/contracts", label: "Contracts", icon: FileText },
+      { href: "/interfaces/vehicles", label: "Vehicles", icon: Car },
+      { href: "/interfaces/payments", label: "Payments", icon: DollarSign },
     ],
   },
   {
