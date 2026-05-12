@@ -14,16 +14,24 @@ test.describe("Public Forms", () => {
     await page.fill('input[name="phone"]', "5551234567");
     await page.fill('input[name="email"]', "test@example.com");
     await page.click('button[type="submit"]');
-    // Should show success or error banner (not alert)
-    await expect(page.locator("text=Thank You").or(page.locator('[class*="red"]'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /Thank You/i })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 
 test.describe("Auth", () => {
-  test("unauthenticated user is redirected to login", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForURL("**/login");
+  test("unauthenticated user is redirected to login", async ({ page, context }) => {
+    await context.clearCookies();
+    await page.goto("/", { waitUntil: "commit" });
+    await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
     await expect(page.locator("form")).toBeVisible();
+  });
+
+  test("unauthenticated user cannot open partner portal", async ({ page }) => {
+    await page.goto("/partner");
+    await page.waitForURL("**/login");
+    await expect(page.locator('input[name="email"]')).toBeVisible();
   });
 
   test("login page loads with email and password fields", async ({ page }) => {
