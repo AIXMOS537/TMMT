@@ -6,6 +6,7 @@ import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, F
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { LicensePhotoControls } from "@/components/AdminDocumentControls";
 
 type BgCheck = Record<string, unknown>;
 
@@ -87,9 +88,12 @@ export default function BackgroundChecksPage() {
       )}
 
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Background Check" : "New Background Check"} wide>
-        <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ErrorBanner message={error} onDismiss={() => setError(null)} />
-          <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
+        <>
+          <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+            <input type="hidden" name="drivers_license_front_path" value={String(editing?.drivers_license_front_path ?? "")} />
+            <input type="hidden" name="drivers_license_back_path" value={String(editing?.drivers_license_back_path ?? "")} />
+            <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="phone_number" defaultValue={editing?.phone_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="email" type="email" defaultValue={editing?.email as string || ""} className={inputClass} /></FormField>
           <FormField label="Own Insurance?">
@@ -135,6 +139,14 @@ export default function BackgroundChecksPage() {
             <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
+        <LicensePhotoControls
+          table="background_checks"
+          recordId={editing?.id ? String(editing.id) : null}
+          frontPath={editing?.drivers_license_front_path as string | undefined}
+          backPath={editing?.drivers_license_back_path as string | undefined}
+          onChange={load}
+        />
+        </>
       </Modal>
     </div>
   );
