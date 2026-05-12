@@ -11,6 +11,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     port: 3000,
-    reuseExistingServer: true,
+    // Stale reused servers skip updated middleware matchers; reuse only when explicitly requested.
+    reuseExistingServer: process.env.PW_REUSE_WEB_SERVER === "1",
   },
 });
