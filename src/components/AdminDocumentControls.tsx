@@ -102,7 +102,7 @@ export function ContractPdfControls({
       <form onSubmit={onUpload} className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input type="file" name="file" accept="application/pdf" className={`${inputClass} flex-1`} required />
         <Button type="submit" disabled={busy}>
-          {busy ? "Uploading…" : "Upload / replace"}
+          {busy ? "Uploading…" : "Upload"}
         </Button>
       </form>
       {storagePath ? (
