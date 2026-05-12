@@ -42,7 +42,67 @@ npm install
 npm run dev        # http://localhost:3000
 npm run build      # production build
 npm run lint       # ESLint
+npm run check-env  # validate .env + Supabase reachability (optional)
 ```
+
+## Release: partner portal & staff-only RLS (May 2026)
+
+This version adds an **investor/partner read-only area** at `/partner`, **role-based routing** in middleware, and a **Supabase migration** that restricts `authenticated` users to **staff-only** data access unless they use the safe `get_partner_fleet()` RPC.
+
+**Docs:** [docs/PARTNER-PORTAL.md](docs/PARTNER-PORTAL.md) (invites, `app_metadata.role`, verification).
+
+### What changed (application)
+
+| Area | Change |
+|------|--------|
+| Routes | `(partner)/partner` — partner dashboard; middleware sends `role=partner` users here |
+| Auth | `src/lib/auth-roles.ts` — `partner` vs staff from `user.app_metadata.role` |
+| Middleware | `middleware.ts` — root `/` matcher, partner path allowlist, staff blocked from `/partner` |
+| Admin writes | `src/app/(admin)/admin-actions.ts` — rejects non-staff; allowlist includes `partner_fleet_access` |
+| Login | `src/app/(auth)/login/actions.ts` — redirects partners to `/partner` after sign-in |
+| Fleet UI | Optional **Partner portal notes** field (`partner_portal_notes`) on fleet edit modal |
+| Playwright | [`playwright.config.ts`](playwright.config.ts) — `PW_REUSE_WEB_SERVER=1` to reuse an existing dev server; otherwise a fresh server is started |
+| E2E | Extra smoke: `/partner` requires login; lead form success assertion tightened |
+
+### What changed (database)
+
+New migration: [`supabase/migrations/20260503120000_partner_portal_rls.sql`](supabase/migrations/20260503120000_partner_portal_rls.sql)
+
+- Table `partner_fleet_access` (links `auth.users.id` → `fleet.id`)
+- Column `fleet.partner_portal_notes`
+- Functions `is_staff()`, `is_partner()`, `app_auth_role()`, `get_partner_fleet()`
+- Replaces broad `auth_all_*` RLS policies with **`staff_all_*`** (`is_staff()`) on the same tables as [`supabase/migrations/20260331_enable_rls.sql`](supabase/migrations/20260331_enable_rls.sql)
+
+**Important:** Until this migration is applied in Supabase, production DB behavior is unchanged. After it is applied, **only** users with `app_metadata.role` of `admin` or `va` (or **empty/missing role**, treated as staff for legacy) can read/write operational tables; **`partner`** users only get data via `get_partner_fleet()`.
+
+### Rollback (Git / app)
+
+1. Note the current commit: `git rev-parse HEAD`
+2. Revert or reset to the commit **before** the partner-portal work, e.g. `git revert <merge_commit_sha>` or `git checkout <good_sha> -- .` (then commit), or restore from a branch/tag you created before deploying.
+
+Redeploy the previous app build so middleware and routes match whatever DB policies you restore.
+
+### Rollback (Supabase)
+
+Only needed if **`20260503120000_partner_portal_rls.sql`** was already executed. There is no automated down-migration in-repo; options:
+
+1. **Restore** the database from a Supabase backup taken **before** that migration (simplest if available).
+2. **Manual SQL** (sketch — run in SQL editor after review; adjust if you renamed objects). **Order matters:** policies reference `is_staff()`, so drop/replace policies before dropping functions.
+   - Drop every `staff_all_*` policy created in `20260503120000_partner_portal_rls.sql`, and drop `staff_all_partner_fleet_access` on `partner_fleet_access`.
+   - **Recreate** the original `auth_all_*` policies from [`20260331_enable_rls.sql`](supabase/migrations/20260331_enable_rls.sql) (copy the `CREATE POLICY "auth_all_..."` statements), plus `auth_all_fleet` on `fleet`.
+   - `DROP FUNCTION IF EXISTS public.get_partner_fleet();` (add argument/return signature if your Postgres version requires it).
+   - `DROP FUNCTION IF EXISTS public.is_partner();`, `public.is_staff();`, `public.app_auth_role();` (same caveat).
+   - `DROP TABLE IF EXISTS public.partner_fleet_access;`
+   - `ALTER TABLE public.fleet DROP COLUMN IF EXISTS partner_portal_notes;`
+
+After DB rollback, remove `role: "partner"` from any Auth users if you no longer want them treated as partners once you deploy old app code.
+
+### Rollback checklist
+
+- [ ] Revert or redeploy **application** to pre-partner commit
+- [ ] Revert **Supabase** policies/objects (backup restore or manual SQL above)
+- [ ] Confirm internal users can still log in and load `/` (staff)
+- [ ] Confirm public `/forms/*` still work (anon INSERT policies unchanged)
 
 ## Environment Variables
 
@@ -119,6 +179,7 @@ src/
 | [Status](docs/STATUS.md) | Migration status, record counts, feature checklist |
 | [Pipeline Flow](docs/PIPELINE-FLOW.md) | Customer lifecycle, vehicle flow, status state machines |
 | [Database Schema](docs/DATABASE-SCHEMA.md) | ER diagram, all tables, junction tables, status enums |
+| [Partner portal](docs/PARTNER-PORTAL.md) | Investor `/partner` rollout, RLS migration, invites, verification |
 
 ## Tech Stack
 

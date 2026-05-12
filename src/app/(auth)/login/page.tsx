@@ -24,9 +24,20 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-sm">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 p-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Sign in to your account</p>
+        <div className="mb-8 text-center space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+            Partner portal &amp; operations
+          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Sign in to TMMT Rentals
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Same login for everyone:{" "}
+            <span className="text-gray-700 dark:text-slate-300">
+              partners go to the partner portal
+            </span>
+            ; TMMT staff go to the main dashboard.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -73,7 +84,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
       </div>

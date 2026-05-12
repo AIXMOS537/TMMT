@@ -15,7 +15,6 @@ import {
   inputClass,
   selectClass,
 } from "@/components/ui";
-import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
 
@@ -149,6 +148,17 @@ export default function FleetPage() {
             </select>
           </FormField>
           <FormField label="Partner %"><input name="partner_percentage" type="number" step="0.01" defaultValue={editing?.partner_percentage as number || ""} className={inputClass} /></FormField>
+          <div className="sm:col-span-2">
+            <FormField label="Partner portal notes (investors only)">
+              <textarea
+                name="partner_portal_notes"
+                rows={2}
+                defaultValue={(editing?.partner_portal_notes as string) || ""}
+                className={inputClass}
+                placeholder="Short updates visible in the investor portal"
+              />
+            </FormField>
+          </div>
           <div className="sm:col-span-2">
             <FormField label="Notes"><textarea name="notes" rows={3} defaultValue={editing?.notes as string || ""} className={inputClass} /></FormField>
           </div>

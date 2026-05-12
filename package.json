@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check-env": "node scripts/check-env.mjs",
+    "create-partner-test-user": "node scripts/create-partner-test-user.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

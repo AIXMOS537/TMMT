@@ -114,6 +114,7 @@ Every admin page follows the same structure — respect it when adding new pages
 ## Commands
 
 ```bash
+npm run check-env # validate `.env` + Supabase Auth/REST reachability (no secrets printed)
 npm run dev      # dev server on http://localhost:3000 (Turbopack — default in Next.js 16, no flag needed)
 npm run build    # production build — primary CI gate
 npm run start    # serve production build locally
@@ -133,6 +134,11 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
 - Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
 
+### Vercel (deployment)
+
+- Dashboard project name: `tmmt-c919`
+- Project ID (CLI / linking): `prj_moZzMHYtwiZIS0TETOBOKODbp7eM`
+
 ## Docs
 
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
@@ -141,6 +147,7 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - `docs/PIPELINE-FLOW.md` — customer and vehicle lifecycle state machines
 - `docs/STATUS.md` — feature status, known issues, codebase stats
 - `docs/SENTRY-SETUP.md` — Sentry activation guide (account setup, DSN, alert config)
+- `docs/PARTNER-PORTAL.md` — investor read-only portal: RLS migration, `app_metadata.role`, `partner_fleet_access`
 - `docs/superpowers/specs/` — design specs (supabase-auth, airtable-sync, maintenance-toggle)
 - `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync, tier2-hardening)
 - `supabase/migrations/` — RLS migration (`20260331_enable_rls.sql`)
