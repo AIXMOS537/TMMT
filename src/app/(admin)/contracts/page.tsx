@@ -6,6 +6,7 @@ import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, F
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { ContractPdfControls } from "@/components/AdminDocumentControls";
 
 type Contract = Record<string, unknown>;
 
@@ -69,9 +70,11 @@ export default function ContractsPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Contract" : "New Contract"} wide>
-        <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ErrorBanner message={error} onDismiss={() => setError(null)} />
-          <FormField label="Customer"><input name="active_customer" defaultValue={editing?.active_customer as string || ""} className={inputClass} /></FormField>
+        <>
+          <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+            <input type="hidden" name="contract_pdf_storage_path" value={String(editing?.contract_pdf_storage_path ?? "")} />
+            <FormField label="Customer"><input name="active_customer" defaultValue={editing?.active_customer as string || ""} className={inputClass} /></FormField>
           <FormField label="Status">
             <select name="contract_status" defaultValue={editing?.contract_status as string || "Draft"} className={selectClass}>
               {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -91,6 +94,12 @@ export default function ContractsPage() {
             <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
+        <ContractPdfControls
+          contractId={editing?.id ? String(editing.id) : null}
+          storagePath={editing?.contract_pdf_storage_path as string | undefined}
+          onChange={load}
+        />
+        </>
       </Modal>
     </div>
   );

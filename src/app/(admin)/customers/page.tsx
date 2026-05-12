@@ -6,6 +6,7 @@ import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, F
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { LicensePhotoControls } from "@/components/AdminDocumentControls";
 
 type Cust = Record<string, unknown>;
 
@@ -83,9 +84,12 @@ export default function CustomersPage() {
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Customer" : "Add Customer"} wide>
-        <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ErrorBanner message={error} onDismiss={() => setError(null)} />
-          <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
+        <>
+          <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+            <input type="hidden" name="drivers_license_front_path" value={String(editing?.drivers_license_front_path ?? "")} />
+            <input type="hidden" name="drivers_license_back_path" value={String(editing?.drivers_license_back_path ?? "")} />
+            <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="contact_phone" defaultValue={editing?.contact_phone as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="contact_email" type="email" defaultValue={editing?.contact_email as string || ""} className={inputClass} /></FormField>
           <FormField label="Status">
@@ -126,6 +130,14 @@ export default function CustomersPage() {
             <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
           </div>
         </form>
+        <LicensePhotoControls
+          table="active_customers"
+          recordId={editing?.id ? String(editing.id) : null}
+          frontPath={editing?.drivers_license_front_path as string | undefined}
+          backPath={editing?.drivers_license_back_path as string | undefined}
+          onChange={load}
+        />
+        </>
       </Modal>
     </div>
   );

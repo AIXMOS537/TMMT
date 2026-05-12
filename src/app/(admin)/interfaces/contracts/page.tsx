@@ -15,6 +15,7 @@ import { DetailPanel, DetailSection, DetailRow } from "@/components/DetailPanel"
 import { LineChartCard, PieChartCard } from "@/components/charts";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import type { KanbanItem } from "@/components/KanbanBoard";
+import { ContractPdfControls } from "@/components/AdminDocumentControls";
 
 type Contract = Record<string, unknown>;
 
@@ -163,60 +164,70 @@ export default function ContractsInterface() {
         onClose={() => { setPanelOpen(false); setSelected(null); }}
         title={editing ? "Edit Contract" : String(selected?.customer_name ?? "Contract Details")}
       >
-        {selected && !editing && (
+        {selected && (
           <>
-            <ErrorBanner message={error} onDismiss={() => setError(null)} />
-            <DetailSection title="Contract Info">
-              <DetailRow label="Type" value={String(selected.contract_type ?? "—")} />
-              <DetailRow label="Status" value={<StatusBadge status={selected.status as string} />} />
-              <DetailRow label="Start" value={formatDate(selected.start_date as string)} />
-              <DetailRow label="End" value={formatDate(selected.end_date as string)} />
-              <DetailRow label="Total" value={formatCurrency(Number(selected.total_contract_amount) || null)} />
-            </DetailSection>
-            <DetailSection title="Customer">
-              <DetailRow label="Name" value={String(selected.customer_name ?? "—")} href="/customers" />
-              <DetailRow label="Phone" value={String(selected.phone ?? "—")} />
-            </DetailSection>
-            <DetailSection title="Vehicle">
-              <DetailRow label="Vehicle" value={String(selected.vehicle_name ?? "—")} href="/interfaces/vehicles" />
-              <DetailRow label="Plate" value={String(selected.license_plate ?? "—")} />
-            </DetailSection>
-            <div className="flex flex-wrap gap-2 pt-4">
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-            </div>
-          </>
-        )}
+            {!editing && (
+              <>
+                <ErrorBanner message={error} onDismiss={() => setError(null)} />
+                <DetailSection title="Contract Info">
+                  <DetailRow label="Type" value={String(selected.contract_type ?? "—")} />
+                  <DetailRow label="Status" value={<StatusBadge status={selected.status as string} />} />
+                  <DetailRow label="Start" value={formatDate(selected.start_date as string)} />
+                  <DetailRow label="End" value={formatDate(selected.end_date as string)} />
+                  <DetailRow label="Total" value={formatCurrency(Number(selected.total_contract_amount) || null)} />
+                </DetailSection>
+                <DetailSection title="Customer">
+                  <DetailRow label="Name" value={String(selected.customer_name ?? "—")} href="/customers" />
+                  <DetailRow label="Phone" value={String(selected.phone ?? "—")} />
+                </DetailSection>
+                <DetailSection title="Vehicle">
+                  <DetailRow label="Vehicle" value={String(selected.vehicle_name ?? "—")} href="/interfaces/vehicles" />
+                  <DetailRow label="Plate" value={String(selected.license_plate ?? "—")} />
+                </DetailSection>
+                <div className="flex flex-wrap gap-2 pt-4">
+                  <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
+                </div>
+              </>
+            )}
 
-        {selected && editing && (
-          <form onSubmit={handleSave} className="space-y-4">
-            <ErrorBanner message={error} onDismiss={() => setError(null)} />
-            <FormField label="Customer Name">
-              <input name="customer_name" defaultValue={String(selected.customer_name ?? "")} className={inputClass} />
-            </FormField>
-            <FormField label="Vehicle Name">
-              <input name="vehicle_name" defaultValue={String(selected.vehicle_name ?? "")} className={inputClass} />
-            </FormField>
-            <FormField label="Contract Type">
-              <input name="contract_type" defaultValue={String(selected.contract_type ?? "")} className={inputClass} />
-            </FormField>
-            <FormField label="Status">
-              <select name="status" defaultValue={String(selected.status ?? "")} className={selectClass}>
-                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </FormField>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="Start Date"><input name="start_date" type="date" defaultValue={String(selected.start_date ?? "")} className={inputClass} /></FormField>
-              <FormField label="End Date"><input name="end_date" type="date" defaultValue={String(selected.end_date ?? "")} className={inputClass} /></FormField>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="Base Price"><input name="base_price" type="number" step="0.01" defaultValue={String(selected.base_price ?? "")} className={inputClass} /></FormField>
-              <FormField label="Total Amount"><input name="total_contract_amount" type="number" step="0.01" defaultValue={String(selected.total_contract_amount ?? "")} className={inputClass} /></FormField>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" type="button" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
-            </div>
-          </form>
+            {editing && (
+              <form onSubmit={handleSave} className="space-y-4">
+                <ErrorBanner message={error} onDismiss={() => setError(null)} />
+                <input type="hidden" name="contract_pdf_storage_path" value={String(selected.contract_pdf_storage_path ?? "")} />
+                <FormField label="Customer Name">
+                  <input name="customer_name" defaultValue={String(selected.customer_name ?? "")} className={inputClass} />
+                </FormField>
+                <FormField label="Vehicle Name">
+                  <input name="vehicle_name" defaultValue={String(selected.vehicle_name ?? "")} className={inputClass} />
+                </FormField>
+                <FormField label="Contract Type">
+                  <input name="contract_type" defaultValue={String(selected.contract_type ?? "")} className={inputClass} />
+                </FormField>
+                <FormField label="Status">
+                  <select name="status" defaultValue={String(selected.status ?? "")} className={selectClass}>
+                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </FormField>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Start Date"><input name="start_date" type="date" defaultValue={String(selected.start_date ?? "")} className={inputClass} /></FormField>
+                  <FormField label="End Date"><input name="end_date" type="date" defaultValue={String(selected.end_date ?? "")} className={inputClass} /></FormField>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Base Price"><input name="base_price" type="number" step="0.01" defaultValue={String(selected.base_price ?? "")} className={inputClass} /></FormField>
+                  <FormField label="Total Amount"><input name="total_contract_amount" type="number" step="0.01" defaultValue={String(selected.total_contract_amount ?? "")} className={inputClass} /></FormField>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button variant="secondary" type="button" onClick={() => setEditing(false)}>Cancel</Button>
+                  <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
+                </div>
+              </form>
+            )}
+            <ContractPdfControls
+              contractId={selected.id ? String(selected.id) : null}
+              storagePath={selected.contract_pdf_storage_path as string | undefined}
+              onChange={load}
+            />
+          </>
         )}
       </DetailPanel>
     </div>
