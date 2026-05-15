@@ -64,7 +64,7 @@ Uses `SUPABASE_SERVICE_ROLE_KEY` from `.env`. Prints credentials once — delete
 
 ## Partner-safe fields
 
-Partners only receive columns returned by `get_partner_fleet()` (vehicle label, coarse status, color, percentage, portal notes timestamp). They do **not** see GPS/trackers when added elsewhere, contracts, insurance, payments, customers, plates, VIN, or dwell time calculations.
+Partners only receive columns returned by `get_partner_fleet()` (vehicle label, coarse status, color, percentage, portal notes timestamp, **license plate**, **VIN**, and last-updated). They do **not** see GPS/trackers when added elsewhere, contracts, insurance, payments, customer names, or dwell time calculations beyond this projection.
 
 ## Verification checklist (manual)
 
@@ -74,3 +74,41 @@ After the migration runs in Supabase:
 2. Partner user (`role` = `partner`, with `partner_fleet_access` rows): `/partner` shows only linked vehicles; `/` redirects to `/partner`; `/fleet` redirects to `/partner`.
 3. As partner, in browser devtools or REST: `GET /rest/v1/fleet` returns no rows (RLS). `POST` to `rpc/get_partner_fleet` returns the safe projection only.
 4. As partner, confirming `incoming_leads` / `customer_payments` / `contracts` return no readable rows via the anon REST client carrying the JWT.
+
+---
+
+## Product intent: what partners should understand about “their” cars
+
+Partners who work with TMMT are investors or aligned operators: they need **confidence that the asset is real, cared for, and current** — without getting the full admin stack (customers, contracts, payments, plates, VIN, etc.).
+
+### Today (`/partner`)
+
+- Coarse **vehicle status** (e.g. Available / Rented / Under Maintenance).
+- **Identity-ish presentation**: name / make / model / year / color, **partner share %**, **portal notes**, **last updated** timestamp.
+- **No** inspection galleries, **no** maintenance photo timelines, **no** odometer/mileage line items in the partner RPC yet.
+
+### Agreed direction (roadmap — not all built yet)
+
+When we extend the portal, partners should be able to see **what is going on with the car so far**, in a read-only, partner-safe way:
+
+1. **Updated inspection pictures of the car**  
+   - Recent **vehicle / program inspection** imagery (condition checks), tied only to vehicles they are linked to via `partner_fleet_access`.  
+   - Goal: “Here is how the car looks now” — not customer PII, not full inspection forms unless fields are explicitly sanitized.
+
+2. **Updated maintenance pictures with mileage**  
+   - **Maintenance-related** photos (shop, work in progress, completed work) where staff attach them.  
+   - **Mileage / odometer** surfaced next to those updates when available (e.g. from inspection records or maintenance entries), so partners see **when** and **at what miles** work happened.
+
+### Engineering guardrails (when implementing)
+
+- **Still no direct table access** for partners to `fleet`, `maintenance_appointments`, `customer_inspection_photos`, `fleet_car_inspections`, etc. — today those are **staff-only** under partner RLS. Any new data must go through **new partner-safe RPCs** (or narrow `SELECT` policies scoped by `partner_fleet_access`) that strip PII and only return allowed columns.
+- **Photos**: likely **Supabase Storage** paths with **short-lived signed URLs** (same pattern as staff document uploads), or a single RPC that returns signed URLs for objects under a partner-scoped prefix — never expose service role to the browser.
+- **Ordering**: show **most recent first** (inspection set, maintenance set) with clear **dates** and **mileage** on maintenance-related items.
+
+### Related tables (staff-facing today; partner projection TBD)
+
+- `customer_inspection_photos`, `fleet_car_inspections` — inspection / condition context.  
+- `maintenance_appointments` (and any future photo fields on maintenance) — upkeep timeline + mileage when modeled.  
+Exact columns and RPC shape should be decided in a small design pass before migration + UI work.
+
+This section records **business intent** from product discussion; implementation tasks can be tracked on the roadmap or as a follow-up migration + `/partner` UI iteration.
