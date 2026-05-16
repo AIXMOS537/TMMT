@@ -1,0 +1,64 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════
+# AIXMOS — UGREEN NAS DOCKER DEPLOYMENT
+#
+# SETUP STEPS:
+# 1. Open UGOS → Container Manager
+# 2. Upload this folder to /share/AIXMOS/docker/ (or copy compose + nginx configs to /share/AIXMOS/)
+# 3. From /share/AIXMOS/docker: docker compose up -d
+# 4. Portal accessible at: http://[NAS-IP]:8080
+# 5. Landing accessible at: http://[NAS-IP]:8081
+#
+# REMOTE ACCESS:
+# UGOS → Network → DDNS → Enable
+# OR: Set up reverse proxy in UGOS
+# Then point your domain DNS → your public IP
+# ═══════════════════════════════════════════════════════
+
+services:
+
+  # ── PRIVATE PORTAL ────────────────────────────────────
+  # Access: http://[NAS-IP]:8080
+  # Domain: portal.yourdomain.com
+  # Who: Muhammad, Executives, Operators, Members
+  # ──────────────────────────────────────────────────────
+  portal:
+    image: nginx:alpine
+    container_name: aixmos-portal
+    ports:
+      - "8080:80"
+    volumes:
+      - /share/AIXMOS/portal:/usr/share/nginx/html:ro
+      - /share/AIXMOS/files:/usr/share/nginx/html/files:ro
+      - /share/AIXMOS/training-videos:/usr/share/nginx/html/training:ro
+      - /share/AIXMOS/operator-sops:/usr/share/nginx/html/sops:ro
+      - /share/AIXMOS/member-resources:/usr/share/nginx/html/resources:ro
+      - ./nginx-portal.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    labels:
+      - "com.aixmos.service=portal"
+      - "com.aixmos.description=AIXMOS Private 4-Role Portal"
+
+  # ── PUBLIC LANDING PAGE ────────────────────────────────
+  # Access: http://[NAS-IP]:8081
+  # Domain: yourdomain.com / aixmos.com
+  # Who: Public — potential clients and operators
+  # ──────────────────────────────────────────────────────
+  landing:
+    image: nginx:alpine
+    container_name: aixmos-landing
+    ports:
+      - "8081:80"
+    volumes:
+      - /share/AIXMOS/public:/usr/share/nginx/html:ro
+      - /share/AIXMOS/files:/usr/share/nginx/html/files:ro
+      - ./nginx-landing.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    labels:
+      - "com.aixmos.service=landing"
+      - "com.aixmos.description=AIXMOS Public Landing Page"
+
+networks:
+  default:
+    name: aixmos-network

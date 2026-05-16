@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIXMOS Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!--
+  ═══════════════════════════════════════════════════════════
+  AIXMOS PRIVATE PORTAL
+  Deploy on UGREEN NAS via Docker (nginx container)
+
+  DEPLOYMENT STEPS:
+  1. Open UGREEN NAS → Container Manager
+  2. Pull image: nginx:alpine
+  3. Create container:
+     - Port mapping: 8080 → 80
+     - Volume: /your-nas-folder/portal → /usr/share/nginx/html
+  4. Upload this file as index.html to /your-nas-folder/portal/
+  5. Enable UGREEN remote access or DDNS
+  6. Point your domain to your NAS IP:8080
+
+  FOLDER STRUCTURE ON NAS:
+  /portal/          ← this file (index.html)
+  /training/        ← operator training videos + PDFs
+  /operator-sops/   ← SOPs, scripts, templates
+  /member-resources/ ← client pathway resources
+  /admin-only/      ← Muhammad-only files
+
+  USER ACCOUNTS (update the USERS object below):
+  Add or remove users by editing the USERS constant.
+  Each user has a role: admin | executive | operator | member
+
+  SECURITY NOTE:
+  This uses client-side auth — suitable for internal use on a
+  private NAS. For production public-facing use, add a
+  server-side auth layer (Node.js + JWT or similar).
+  ═══════════════════════════════════════════════════════════
+  -->
+
+  <style>
+    :root {
+      --blue:     #1440C4;
+      --blue-2:   #2563EB;
+      --blue-dim: rgba(20,64,196,0.07);
+      --navy:     #0A1628;
+      --white:    #FFFFFF;
+      --surface:  #F4F7FF;
+      --border:   rgba(10,37,102,0.1);
+      --muted:    rgba(10,22,40,0.5);
+      --green:    #1D9E75;
+      --amber:    #D97706;
+      --red:      #C0392B;
+      --font-d:   'Bebas Neue', sans-serif;
+      --font-b:   'DM Sans', sans-serif;
+      --sidebar:  240px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: var(--font-b); font-size: 14px; line-height: 1.5; color: var(--navy); background: var(--surface); -webkit-font-smoothing: antialiased; }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: flex; }
+
+    /* ══════════════════════════════════
+       LOGIN
+    ══════════════════════════════════ */
+    #v-login {
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      background: var(--navy);
+      position: relative;
+      overflow: hidden;
+    }
+    #v-login::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 70% 50%, rgba(20,64,196,0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(37,99,235,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .login-box {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 40px;
+      width: 380px;
+      position: relative;
+      z-index: 1;
+    }
+    .login-logo {
+      font-family: var(--font-d);
+      font-size: 32px;
+      color: var(--navy);
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .login-logo span { color: var(--blue); }
+    .login-sub { font-size: 12px; color: var(--muted); margin-bottom: 32px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .login-label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; }
+    .login-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--font-b); color: var(--navy); background: var(--white); margin-bottom: 14px; }
+    .login-input:focus { outline: none; border-color: var(--blue); }
+    .login-btn { width: 100%; padding: 12px; background: var(--blue); color: var(--white); border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font-b); transition: background 0.15s; }
+    .login-btn:hover { background: var(--blue-2); }
+    .login-error { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+
+    /* ══════════════════════════════════
+       PORTAL SHELL
+    ══════════════════════════════════ */
+    #v-portal {
+      flex-direction: row;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar);
+      background: var(--navy);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-logo-text {
+      font-family: var(--font-d);
+      font-size: 26px;
+      color: var(--white);
+      letter-spacing: 0.06em;
+    }
+    .sidebar-logo-text span { color: #93C5FD; }
+    .sidebar-role-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .sidebar-user {
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-user-name { font-size: 13px; font-weight: 500; color: var(--white); }
+    .sidebar-user-email { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 12px 20px 6px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active { color: var(--white); background: rgba(20,64,196,0.25); border-left-color: #93C5FD; }
+    .nav-item-icon { font-size: 16px; flex-shrink: 0; }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .logout-btn {
+      width: 100%;
+      padding: 9px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-b);
+      transition: all 0.15s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .topbar-title { font-family: var(--font-d); font-size: 22px; letter-spacing: 0.04em; color: var(--navy); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-greeting { font-size: 12px; color: var(--muted); }
+    .content { padding: 28px; flex: 1; }
+
+    /* ── DASHBOARD PANELS ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .stat-num { font-family: var(--font-d); font-size: 36px; color: var(--blue); line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: var(--muted); }
+
+    /* ── GRID ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+
+    /* ── CARDS ── */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .card-title-icon { color: var(--blue); }
+
+    /* ── TABLE ── */
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--navy); }
+    .table tr:last-child td { border-bottom: none; }
+    .table tr:hover td { background: var(--surface); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.04em; }
+    .badge-blue { background: var(--blue-dim); color: var(--blue); }
+    .badge-green { background: rgba(29,158,117,0.1); color: var(--green); }
+    .badge-amber { background: rgba(217,119,6,0.1); color: var(--amber); }
+    .badge-red { background: rgba(192,57,43,0.1); color: var(--red); }
+
+    /* ── FILE VAULT ── */
+    .file-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .file-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; text-align: center; }
+    .file-card:hover { border-color: var(--blue); transform: translateY(-1px); }
+    .file-icon { font-size: 28px; margin-bottom: 8px; }
+    .file-name { font-size: 12px; font-weight: 500; color: var(--navy); margin-bottom: 3px; }
+    .file-size { font-size: 11px; color: var(--muted); }
+
+    /* ── PATHWAY PROGRESS ── */
+    .pathway-step { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .pathway-step:last-child { border-bottom: none; }
+    .pathway-num { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--blue); flex-shrink: 0; }
+    .pathway-num.done { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .pathway-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .pathway-desc { font-size: 12px; color: var(--muted); }
+    .progress-bar { background: var(--border); border-radius: 4px; height: 6px; margin: 8px 0; }
+    .progress-fill { background: var(--blue); border-radius: 4px; height: 6px; transition: width 0.3s; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-b); border: none; transition: all 0.15s; }
+    .btn-blue { background: var(--blue); color: var(--white); }
+    .btn-blue:hover { background: var(--blue-2); }
+    .btn-outline { background: transparent; color: var(--navy); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── SECTION HEADER ── */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .section-header h2 { font-family: var(--font-d); font-size: 26px; letter-spacing: 0.02em; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .sidebar { width: 200px; transform: translateX(-100%); transition: transform 0.2s; }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-3, .file-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     LOGIN VIEW
+══════════════════════════════════ -->
+<div id="v-login" class="view active">
+  <div class="login-box">
+    <div class="login-logo">AIX<span>MOS</span></div>
+    <div class="login-sub">Private Portal · Secure Access</div>
+    <div>
+      <label class="login-label" for="l-email">Email address</label>
+      <input class="login-input" type="email" id="l-email" placeholder="your@email.com" autocomplete="username" />
+      <label class="login-label" for="l-pass">Password</label>
+      <input class="login-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()" />
+      <button class="login-btn" onclick="login()">Sign in →</button>
+      <div class="login-error" id="l-err">Invalid email or password. Try again.</div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:20px;text-align:center">AIXMOS · Confidential · Authorized access only</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PORTAL VIEW
+══════════════════════════════════ -->
+<div id="v-portal" class="view">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">AIX<span>MOS</span></div>
+      <div class="sidebar-role-badge" id="s-role-badge">Portal</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-user-name" id="s-user-name">—</div>
+      <div class="sidebar-user-email" id="s-user-email">—</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- populated by JS based on role -->
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="topbar-greeting" id="topbar-greeting"></div>
+      </div>
+    </div>
+    <div class="content" id="main-content">
+      <!-- panels rendered here by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ══════════════════════════════════
+     USER ACCOUNTS
+     Edit this to add/remove users
+     Roles: admin | executive | operator | member
+  ══════════════════════════════════ */
+  const USERS = [
+    { email: 'muhammad@aixmos.com',  password: 'AIXMOSadmin2025!',  name: 'Muhammad Taha',    role: 'admin' },
+    { email: 'exec1@aixmos.com',     password: 'Exec2025secure',     name: 'Executive 1',      role: 'executive' },
+    { email: 'exec2@aixmos.com',     password: 'Exec2025secure2',    name: 'Executive 2',      role: 'executive' },
+    { email: 'exec3@aixmos.com',     password: 'Exec2025secure3',    name: 'Executive 3',      role: 'executive' },
+    { email: 'operator@aixmos.com',  password: 'Operator2025!',      name: 'AIXMOS Operator',  role: 'operator' },
+    { email: 'member@aixmos.com',    password: 'Member2025!',        name: 'AIXMOS Member',    role: 'member' },
+  ];
+
+  /* ══════════════════════════════════
+     NAV CONFIG PER ROLE
+  ══════════════════════════════════ */
+  const NAV = {
+    admin: [
+      { section: 'Overview', items: [
+        { id: 'dashboard',   icon: 'ti-layout-dashboard', label: 'Dashboard' },
+        { id: 'revenue',     icon: 'ti-chart-bar',        label: 'Revenue' },
+        { id: 'pipeline',    icon: 'ti-filter',           label: 'Pipeline' },
+      ]},
+      { section: 'Team', items: [
+        { id: 'executives',  icon: 'ti-users',            label: 'Executives' },
+        { id: 'operators',   icon: 'ti-user-check',       label: 'Operators' },
+      ]},
+      { section: 'Resources', items: [
+        { id: 'vault',       icon: 'ti-folder',           label: 'Training Vault' },
+        { id: 'sops',        icon: 'ti-file-text',        label: 'SOPs & Docs' },
+        { id: 'tools',       icon: 'ti-tools',            label: 'Tools' },
+      ]},
+      { section: 'System', items: [
+        { id: 'settings',    icon: 'ti-settings',         label: 'Settings' },
+      ]},
+    ],
+    executive: [
+      { section: 'Overview', items: [
+        { id: 'dashboard',   icon: 'ti-layout-dashboard', label: 'Dashboard' },
+        { id: 'pipeline',    icon: 'ti-filter',           label: 'Pipeline' },
+      ]},
+      { section: 'Team', items: [
+        { id: 'operators',   icon: 'ti-user-check',       label: 'Operators' },
+      ]},
+      { section: 'Resources', items: [
+        { id: 'vault',       icon: 'ti-folder',           label: 'Training Vault' },
+        { id: 'sops',        icon: 'ti-file-text',        label: 'SOPs & Docs' },
+      ]},
+    ],
+    operator: [
+      { section: 'My Work', items: [
+        { id: 'dashboard',   icon: 'ti-layout-dashboard', label: 'My Dashboard' },
+        { id: 'my-clients',  icon: 'ti-users',            label: 'My Clients' },
+        { id: 'earnings',    icon: 'ti-cash',             label: 'Earnings' },
+      ]},
+      { section: 'Resources', items: [
+        { id: 'vault',       icon: 'ti-folder',           label: 'Training Vault' },
+        { id: 'sops',        icon: 'ti-file-text',        label: 'Scripts & SOPs' },
+        { id: 'tools',       icon: 'ti-tools',            label: 'CHUMMO Tools' },
+      ]},
+    ],
+    member: [
+      { section: 'My Journey', items: [
+        { id: 'dashboard',   icon: 'ti-layout-dashboard', label: 'My Dashboard' },
+        { id: 'pathway',     icon: 'ti-route',            label: 'My Pathway' },
+        { id: 'resources',   icon: 'ti-book',             label: 'Resources' },
+      ]},
+      { section: 'Support', items: [
+        { id: 'operator',    icon: 'ti-headset',          label: 'My Operator' },
+        { id: 'upgrade',     icon: 'ti-arrow-up-circle',  label: 'Upgrade' },
+      ]},
+    ],
+  };
+
+  /* ══════════════════════════════════
+     STATE
+  ══════════════════════════════════ */
+  let currentUser = null;
+  let currentPanel = 'dashboard';
+
+  /* ══════════════════════════════════
+     AUTH
+  ══════════════════════════════════ */
+  function login() {
+    const email = document.getElementById('l-email').value.trim().toLowerCase();
+    const pass  = document.getElementById('l-pass').value;
+    const user  = USERS.find(u => u.email.toLowerCase() === email && u.password === pass);
+    if (!user) {
+      document.getElementById('l-err').style.display = 'block';
+      return;
+    }
+    document.getElementById('l-err').style.display = 'none';
+    currentUser = user;
+    sessionStorage.setItem('aixmos_user', JSON.stringify(user));
+    showPortal();
+  }
+
+  function logout() {
+    currentUser = null;
+    sessionStorage.removeItem('aixmos_user');
+    document.getElementById('v-portal').classList.remove('active');
+    document.getElementById('v-login').classList.add('active');
+    document.getElementById('l-pass').value = '';
+  }
+
+  /* ══════════════════════════════════
+     PORTAL INIT
+  ══════════════════════════════════ */
+  function showPortal() {
+    document.getElementById('v-login').classList.remove('active');
+    document.getElementById('v-portal').classList.add('active');
+
+    const u = currentUser;
+    document.getElementById('s-user-name').textContent   = u.name;
+    document.getElementById('s-user-email').textContent  = u.email;
+    document.getElementById('s-role-badge').textContent  = u.role.toUpperCase();
+    document.getElementById('topbar-greeting').textContent = greet() + ', ' + u.name.split(' ')[0];
+
+    buildNav(u.role);
+    showPanel('dashboard');
+  }
+
+  function greet() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  /* ══════════════════════════════════
+     NAV BUILDER
+  ══════════════════════════════════ */
+  function buildNav(role) {
+    const nav = document.getElementById('sidebar-nav');
+    nav.innerHTML = '';
+    (NAV[role] || []).forEach(group => {
+      const sec = document.createElement('div');
+      sec.className = 'nav-section';
+      sec.textContent = group.section;
+      nav.appendChild(sec);
+      group.items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'nav-item';
+        el.dataset.id = item.id;
+        el.innerHTML = `<i class="ti ${item.icon} nav-item-icon" aria-hidden="true"></i><span>${item.label}</span>`;
+        el.onclick = () => showPanel(item.id);
+        nav.appendChild(el);
+      });
+    });
+  }
+
+  function setActiveNav(id) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const el = document.querySelector(`.nav-item[data-id="${id}"]`);
+    if (el) el.classList.add('active');
+  }
+
+  /* ══════════════════════════════════
+     PANEL ROUTER
+  ══════════════════════════════════ */
+  function showPanel(id) {
+    currentPanel = id;
+    setActiveNav(id);
+    const titles = {
+      dashboard: 'Dashboard', revenue: 'Revenue', pipeline: 'Pipeline',
+      executives: 'Executives', operators: 'Operators', 'my-clients': 'My Clients',
+      vault: 'Training Vault', sops: 'SOPs & Documents', tools: 'Tools',
+      settings: 'Settings', earnings: 'Earnings', pathway: 'My Pathway',
+      resources: 'Resources', operator: 'My Operator', upgrade: 'Upgrade',
+    };
+    document.getElementById('topbar-title').textContent = titles[id] || id;
+    const role = currentUser.role;
+    const content = document.getElementById('main-content');
+
+    switch(id) {
+      case 'dashboard': content.innerHTML = renderDashboard(role); break;
+      case 'vault':     content.innerHTML = renderVault(role); break;
+      case 'sops':      content.innerHTML = renderSOPs(role); break;
+      case 'pipeline':  content.innerHTML = renderPipeline(); break;
+      case 'operators': content.innerHTML = renderOperators(); break;
+      case 'my-clients':content.innerHTML = renderMyClients(); break;
+      case 'pathway':   content.innerHTML = renderPathway(); break;
+      case 'earnings':  content.innerHTML = renderEarnings(); break;
+      case 'tools':     content.innerHTML = renderTools(); break;
+      case 'upgrade':   content.innerHTML = renderUpgrade(); break;
+      default:          content.innerHTML = renderComingSoon(titles[id]||id); break;
+    }
+  }
+
+  /* ══════════════════════════════════
+     DASHBOARD BY ROLE
+  ══════════════════════════════════ */
+  function renderDashboard(role) {
+    if (role === 'admin') return renderAdminDash();
+    if (role === 'executive') return renderExecDash();
+    if (role === 'operator') return renderOperatorDash();
+    return renderMemberDash();
+  }
+
+  function renderAdminDash() { return `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Revenue this month</div></div>
+      <div class="stat-card"><div class="stat-num">100+</div><div class="stat-label">Pipeline contacts</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Active clients</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Active operators</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-line card-title-icon" aria-hidden="true"></i> Pipeline Status</div>
+        <table class="table">
+          <thead><tr><th>Stage</th><th>Count</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Hot leads</td><td><span class="badge badge-red">—</span></td><td><span class="badge badge-blue">Call today</span></td></tr>
+            <tr><td>Warm leads</td><td><span class="badge badge-amber">—</span></td><td><span class="badge badge-blue">Book calls</span></td></tr>
+            <tr><td>Already paid</td><td><span class="badge badge-green">—</span></td><td><span class="badge badge-green">Assign operator</span></td></tr>
+            <tr><td>Active clients</td><td><span class="badge badge-blue">—</span></td><td>Weekly check-ins</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-bell card-title-icon" aria-hidden="true"></i> Today's Priorities</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${['Call every hot lead in GHL', 'Assign operators to already-paid clients', 'Triage remaining 100+ contacts', 'Set up Stripe payment links', 'Get website live on your domain'].map((t,i) => `
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--surface);border-radius:8px;font-size:13px">
+              <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--blue);flex-shrink:0">${i+1}</div>
+              <span>${t}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-server-2 card-title-icon" aria-hidden="true"></i> NAS Storage — 60TB</div>
+      <div class="grid-3" style="margin:0">
+        ${[['Training Videos','/training/','🎬','0 GB used'],['Operator SOPs','/operator-sops/','📋','0 GB used'],['Member Resources','/member-resources/','📚','0 GB used']].map(([n,p,ic,s]) => `
+          <div class="file-card" onclick="showPanel('vault')">
+            <div class="file-icon">${ic}</div>
+            <div class="file-name">${n}</div>
+            <div class="file-size">${s}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `; }
+
+  function renderExecDash() { return `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">My active clients</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Operators I oversee</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Escalations pending</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Calls this week</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-users card-title-icon" aria-hidden="true"></i> Operator Overview</div>
+      <p style="color:var(--muted);font-size:13px">No operators assigned yet. Muhammad will assign operators to your department once onboarding begins.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-alert-triangle card-title-icon" aria-hidden="true"></i> Escalations</div>
+      <p style="color:var(--muted);font-size:13px">No open escalations. When an operator flags an issue at Level 3, it will appear here with a full brief attached.</p>
+    </div>
+  `; }
+
+  function renderOperatorDash() { return `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">My active clients</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Calls this week</div></div>
+      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Earned this month</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Clients up for upgrade</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-book card-title-icon" aria-hidden="true"></i> Start Here — Operator Onboarding</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${['Read the full Operator Training Manual (Sections 1–8)','Complete your first intake call with your assigned lead','Log the call in GHL within 30 minutes','Send the payment link during the call','Check in with your client on Day 3'].map((t,i,a) => `
+          <div class="pathway-step" style="border-bottom:${i<a.length-1?'1px solid var(--border)':'none'}">
+            <div class="pathway-num">${i+1}</div>
+            <div><div class="pathway-title">${t}</div></div>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-blue" style="margin-top:14px" onclick="showPanel('vault')">Open Training Vault →</button>
+    </div>
+  `; }
+
+  function renderMemberDash() { return `
+    <div style="margin-bottom:20px">
+      <div style="font-family:var(--font-d);font-size:32px;color:var(--navy);margin-bottom:4px">Welcome to AIXMOS.</div>
+      <div style="font-size:14px;color:var(--muted)">Your operator will reach out within 24 hours to begin building your custom pathway.</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-route card-title-icon" aria-hidden="true"></i> Your 90-Day Pathway</div>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px"><span>Progress</span><span>0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+      </div>
+      ${[['We hear your story','CHUMMO intake complete — your operator has your brief',false],['Your pathway is built','1:1 custom roadmap created for your situation',false],['Operator walks with you','Weekly check-ins begin — MOOSE executing in background',false],['Hit AIXMODE','Full resources activated — accelerated pathway',false],['$10K/month target','Spiritual freedom. Time back. Real wealth.',false]].map(([t,d,done],i) => `
+        <div class="pathway-step">
+          <div class="pathway-num ${done?'done':''}">${done?'✓':(i+1)}</div>
+          <div><div class="pathway-title">${t}</div><div class="pathway-desc">${d}</div></div>
+        </div>`).join('')}
+    </div>
+    <div class="grid-2">
+      <div class="card" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">📞</div>
+        <div style="font-weight:500;margin-bottom:4px">My Operator</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Your operator will be assigned within 24 hours of joining.</div>
+        <button class="btn btn-outline" onclick="showPanel('operator')">Contact →</button>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:var(--font-d);font-size:48px;color:var(--blue);margin-bottom:4px">$10K</div>
+        <div style="font-weight:500;margin-bottom:4px">Your target</div>
+        <div style="font-size:12px;color:var(--muted)">Per month. That's the AIXMOS promise.</div>
+      </div>
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     TRAINING VAULT
+     ─────────────────────────────────
+     UPDATE THESE PATHS to match your
+     NAS folder structure and files.
+     Files served via WebDAV or nginx
+     static from /nas-mount/training/
+  ══════════════════════════════════ */
+  function renderVault(role) {
+    const files = {
+      admin: [
+        { name:'Operator Training Manual', type:'PDF', icon:'📋', path:'/files/operator-training.html', size:'Full manual' },
+        { name:'GHL Pipeline Guide', type:'DOC', icon:'📊', path:'/files/pipeline.html', size:'12 stages' },
+        { name:'CHUMMO Intake Form', type:'HTML', icon:'📝', path:'/files/intake-form.html', size:'5 steps' },
+        { name:'Payment Flow', type:'DOC', icon:'💳', path:'#', size:'All tiers' },
+        { name:'Company Master Doc', type:'PDF', icon:'🏢', path:'#', size:'Full blueprint' },
+        { name:'Investor One-Pager', type:'PDF', icon:'💼', path:'#', size:'Coming soon' },
+      ],
+      executive: [
+        { name:'Operator Training Manual', type:'PDF', icon:'📋', path:'/files/operator-training.html', size:'Full manual' },
+        { name:'Escalation Protocol', type:'DOC', icon:'⚠️', path:'#', size:'4 levels' },
+        { name:'GHL Pipeline Guide', type:'DOC', icon:'📊', path:'/files/pipeline.html', size:'12 stages' },
+        { name:'Department SOPs', type:'PDF', icon:'📁', path:'#', size:'Coming soon' },
+      ],
+      operator: [
+        { name:'Operator Training Manual', type:'PDF', icon:'📋', path:'/files/operator-training.html', size:'14 sections' },
+        { name:'CHUMMO Call Script', type:'DOC', icon:'📞', path:'#', size:'Full intake script' },
+        { name:'Objection Handling', type:'DOC', icon:'💬', path:'#', size:'5 objections' },
+        { name:'Service Menu', type:'DOC', icon:'🍽️', path:'#', size:'8 tiers' },
+        { name:'GHL Pipeline Stages', type:'DOC', icon:'📊', path:'/files/pipeline.html', size:'12 stages' },
+        { name:'Commission Structure', type:'PDF', icon:'💰', path:'#', size:'Referral + 50/50' },
+      ],
+      member: [
+        { name:'Welcome Guide', type:'PDF', icon:'👋', path:'#', size:'Getting started' },
+        { name:'Credit Guidance Overview', type:'DOC', icon:'💳', path:'#', size:'Your roadmap' },
+        { name:'Business Fundamentals', type:'PDF', icon:'📚', path:'#', size:'Core education' },
+        { name:'Funding Prep Checklist', type:'DOC', icon:'✅', path:'#', size:'Step by step' },
+      ],
+    };
+    const roleFiles = files[role] || files.member;
+    return `
+      <div class="section-header">
+        <h2>Training Vault</h2>
+        <div style="font-size:12px;color:var(--muted)">Hosted on your 60TB UGREEN NAS</div>
+      </div>
+      <div class="file-grid">
+        ${roleFiles.map(f => `
+          <div class="file-card" onclick="openFile('${f.path}')">
+            <div class="file-icon">${f.icon}</div>
+            <div class="file-name">${f.name}</div>
+            <div class="file-size">${f.type} · ${f.size}</div>
+          </div>`).join('')}
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-title"><i class="ti ti-server-2 card-title-icon" aria-hidden="true"></i> Add Files to the Vault</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6">Upload training videos, PDFs, and SOPs directly to your UGREEN NAS shared folder. They'll appear here automatically once the NAS folder is mounted to this portal.</p>
+        <div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:8px;font-size:12px;color:var(--muted);font-family:monospace">
+          NAS path: /share/portal/training/<br>
+          Supported: MP4, PDF, DOCX, PPTX, HTML
+        </div>
+      </div>
+    `;
+  }
+
+  function openFile(path) {
+    if (path === '#') { alert('File coming soon — upload to your NAS training folder to activate.'); return; }
+    window.open(path, '_blank');
+  }
+
+  /* ══════════════════════════════════
+     SOPs PANEL
+  ══════════════════════════════════ */
+  function renderSOPs(role) {
+    const sops = [
+      { title:'Communication Triage SOP', desc:'How inbound calls/emails get routed. Who handles what. What reaches Muhammad.', status:'Ready' },
+      { title:'Operator Onboarding SOP', desc:'First 30 days for a new operator. Calls, GHL setup, first clients.', status:'Ready' },
+      { title:'Client Intake SOP', desc:'CHUMMO intake to operator assignment. Step by step.', status:'Ready' },
+      { title:'Escalation Protocol', desc:'4-level system. What gets escalated. What never reaches Muhammad.', status:'Ready' },
+      { title:'Credit Guidance SOP', desc:'Vendor selection, client routing, turnaround tracking.', status:'In progress' },
+      { title:'Car Rental Operations SOP', desc:'Daily, long-term, luxury rental playbook. Drivers, detailing, chauffeur.', status:'Coming soon' },
+      { title:'GHL Automation SOP', desc:'Post-payment sequences, pipeline automation, reporting.', status:'Coming soon' },
+      { title:'Truck Dispatching SOP', desc:'Owner-operator dispatch model. AIXMOS vertical.', status:'Coming soon' },
+    ];
+    return `
+      <div class="section-header"><h2>SOPs & Documents</h2></div>
+      <div class="card">
+        <table class="table">
+          <thead><tr><th>Document</th><th>Description</th><th>Status</th></tr></thead>
+          <tbody>
+            ${sops.map(s => `<tr>
+              <td style="font-weight:500">${s.title}</td>
+              <td style="color:var(--muted);font-size:12px">${s.desc}</td>
+              <td><span class="badge ${s.status==='Ready'?'badge-green':s.status==='In progress'?'badge-amber':'badge-blue'}">${s.status}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  /* ══════════════════════════════════
+     PIPELINE
+  ══════════════════════════════════ */
+  function renderPipeline() { return `
+    <div class="section-header"><h2>Pipeline</h2><button class="btn btn-blue" onclick="alert('Connect GHL API to pull live pipeline data.')">Sync GHL ↗</button></div>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-num" style="color:var(--red)">—</div><div class="stat-label">Hot leads</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--amber)">100+</div><div class="stat-label">Total contacts</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--green)">—</div><div class="stat-label">Active clients</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-filter card-title-icon" aria-hidden="true"></i> 12 Pipeline Stages</div>
+      ${['New lead','Contacted','Intake submitted','Call booked','Call completed','Proposal sent','Payment received','Active client','Upgrade ready','Paused','Completed','Exited'].map((s,i) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="width:24px;height:24px;border-radius:50%;border:1px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--blue)">${i+1}</div>
+            <span>${s}</span>
+          </div>
+          <span style="color:var(--muted)">— contacts</span>
+        </div>`).join('')}
+      <p style="font-size:12px;color:var(--muted);margin-top:12px">Connect your GHL API key in Settings to pull live pipeline data into this dashboard.</p>
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     OPERATORS
+  ══════════════════════════════════ */
+  function renderOperators() { return `
+    <div class="section-header"><h2>Operators</h2><button class="btn btn-blue">Add operator</button></div>
+    <div class="card">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">No operators onboarded yet. Once you add operators here, their activity, client assignments, and earnings will appear in this dashboard.</p>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Track</th><th>Clients</th><th>Earnings</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No operators yet</td></tr>
+        </tbody>
+      </table>
+      <button class="btn btn-blue" style="margin-top:14px" onclick="showPanel('vault')">View operator training materials →</button>
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     MY CLIENTS (operator)
+  ══════════════════════════════════ */
+  function renderMyClients() { return `
+    <div class="section-header"><h2>My Clients</h2></div>
+    <div class="card">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Clients assigned to you will appear here. Your first leads will be assigned by your executive within 24 hours of your onboarding call.</p>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Tier</th><th>Stage</th><th>Last contact</th><th>Next action</th></tr></thead>
+        <tbody>
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No clients assigned yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     PATHWAY (member)
+  ══════════════════════════════════ */
+  function renderPathway() { return `
+    <div class="section-header"><h2>My Pathway</h2></div>
+    <div class="card">
+      <div style="font-family:var(--font-d);font-size:48px;color:var(--blue);margin-bottom:4px">$10K</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Your 90-day target. Your AIXMOS promise.</div>
+      <div class="progress-bar" style="margin-bottom:20px"><div class="progress-fill" style="width:5%"></div></div>
+      ${[['Week 1–2','Discovery','CHUMMO intake complete. Your operator is reviewing your situation.','done'],['Week 2–3','Pathway built','Your 1:1 custom roadmap is being built. Not a template — yours.','active'],['Week 3–8','Execution','Weekly operator check-ins. MOOSE executing in the background.','pending'],['Week 8–12','Momentum','First revenue milestone. Progress review. Upgrade conversation.','pending'],['Day 90','Target','$10,000/month. Spiritual freedom. Time back. Real wealth.','pending']].map(([t,s,d,st]) => `
+        <div class="pathway-step">
+          <div class="pathway-num ${st==='done'?'done':''}">${st==='done'?'✓':st==='active'?'→':'○'}</div>
+          <div>
+            <div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:2px">${t} · ${s}</div>
+            <div class="pathway-desc">${d}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     EARNINGS (operator)
+  ══════════════════════════════════ */
+  function renderEarnings() { return `
+    <div class="section-header"><h2>Earnings</h2></div>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">This month</div></div>
+      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Total earned</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Clients referred</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-cash card-title-icon" aria-hidden="true"></i> Commission Structure</div>
+      ${[['Membership $97/mo','$9.70/month recurring'],['LLC Formation $397','$39.70'],['Credit Guidance $500–$1K','$50–$100'],['Base Infrastructure $3,750','$375'],['Enterprise $7,500','$750'],['Car Rental $15,000','$1,500'],['E-Commerce $25,000','$2,500'],['Full Ecosystem $50,000','$5,000']].map(([t,e]) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span>${t}</span><span style="color:var(--blue);font-weight:500">${e}</span>
+        </div>`).join('')}
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     TOOLS
+  ══════════════════════════════════ */
+  function renderTools() { return `
+    <div class="section-header"><h2>Tools</h2></div>
+    <div class="grid-3">
+      ${[['CHUMMO Messaging Agent','Generate lead outreach messages, follow-ups, and emails using AI','💬','Open in Claude →','#'],['GHL Pipeline','Manage your client pipeline, stages, and automations','📊','Open GHL →','https://app.gohighlevel.com'],['Intake Form','The CHUMMO client intake — share the link with new leads','📝','View form →','/files/intake-form.html']].map(([n,d,ic,cta,link]) => `
+        <div class="card" style="text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">${ic}</div>
+          <div style="font-weight:500;margin-bottom:6px">${n}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">${d}</div>
+          <a href="${link}" target="_blank"><button class="btn btn-blue">${cta}</button></a>
+        </div>`).join('')}
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     UPGRADE (member)
+  ══════════════════════════════════ */
+  function renderUpgrade() { return `
+    <div class="section-header"><h2>Ready to Level Up?</h2></div>
+    <div class="card" style="text-align:center;padding:32px">
+      <div style="font-family:var(--font-d);font-size:32px;margin-bottom:8px">AIXMODE</div>
+      <div style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">When you're ready to go full in — activate. Full resources, elevated operator, accelerated pathway.</div>
+      <button class="btn btn-blue" onclick="alert('Your operator will reach out to discuss your upgrade pathway.')">Talk to my operator →</button>
+    </div>
+    <div class="grid-2" style="margin-top:14px">
+      ${[['Base Infrastructure','$3,750','GHL · Website · Automations · Funding pathway'],['Enterprise Systems','$7,500','Full systems build · Advanced automation'],['Car Rental in a Box','$15,000','Vehicle ops · Training · Staffing · Automation'],['E-Commerce Ecosystem','$25,000','Full setup · $10K inventory float']].map(([n,p,d]) => `
+        <div class="card">
+          <div style="font-family:var(--font-d);font-size:28px;color:var(--blue);margin-bottom:4px">${p}</div>
+          <div style="font-weight:500;margin-bottom:6px">${n}</div>
+          <div style="font-size:12px;color:var(--muted)">${d}</div>
+        </div>`).join('')}
+    </div>
+  `; }
+
+  function renderComingSoon(title) { return `
+    <div style="text-align:center;padding:60px 20px">
+      <div style="font-size:40px;margin-bottom:16px">🔧</div>
+      <div style="font-family:var(--font-d);font-size:28px;margin-bottom:8px">${title}</div>
+      <div style="font-size:14px;color:var(--muted)">This section is being built. Check back soon.</div>
+    </div>
+  `; }
+
+  /* ══════════════════════════════════
+     INIT — check session on load
+  ══════════════════════════════════ */
+  const saved = sessionStorage.getItem('aixmos_user');
+  if (saved) {
+    try { currentUser = JSON.parse(saved); showPortal(); } catch { sessionStorage.removeItem('aixmos_user'); }
+  }
+</script>
+</body>
+</html>
