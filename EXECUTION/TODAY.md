@@ -10,7 +10,10 @@ Date: 2026-05-16
 
 ## Morning Setup
 
-- [ ] Open this file.
+- [x] Open this file.
+- [x] TMMT OS local bootstrap: `tmmt-os` deps installed, `.env.local` created, `git init` at repo root.
+- [ ] **Apply DB migration** — paste `tmmt-os/supabase/migrations/0001_init.sql` in [Supabase SQL Editor](https://supabase.com/dashboard/project/uapxakmlwnpfsftfeezx/sql/new), then `node tmmt-os/scripts/check-db.mjs`.
+- [ ] Run `cd tmmt-os && npm run dev`, sign up at `/login`, promote your profile to `admin`.
 - [ ] Check messages and write urgent replies only.
 - [ ] Pick one money task.
 - [ ] Pick one customer or lead task.
