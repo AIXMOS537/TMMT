@@ -9,7 +9,7 @@ import {
   uploadStaffLicenseImage,
   removeStaffLicenseImage,
   mintLicenseUploadLink,
-} from "@/app/(admin)/document-actions";
+} from "@/lib/document-actions";
 
 type LicenseTable = "background_checks" | "active_customers";
 
