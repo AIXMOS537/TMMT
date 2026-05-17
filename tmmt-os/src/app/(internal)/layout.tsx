@@ -10,6 +10,10 @@ export default async function InternalLayout({ children }: { children: React.Rea
         { href: "/internal/dashboard", label: "Dashboard" },
         { href: "/internal/cases", label: "Cases" },
         { href: "/internal/vendors", label: "Vendors" },
+        {
+          href: process.env.NEXT_PUBLIC_PORTAL_URL ?? "https://tmmt-c919-two.vercel.app",
+          label: "Rentals portal ↗",
+        },
       ]}
       user={me}
     >
