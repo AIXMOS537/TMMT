@@ -1,0 +1,17 @@
+{
+  "_comment": "Merge into the tmmt-c919-two Vercel project: Settings → General → vercel.json OR add as vercel.json in portal repo root.",
+  "rewrites": [
+    {
+      "source": "/api/webhooks/:path*",
+      "destination": "https://tmmt-ops.vercel.app/api/webhooks/:path*"
+    },
+    {
+      "source": "/api/status",
+      "destination": "https://tmmt-ops.vercel.app/api/status"
+    },
+    {
+      "source": "/internal/:path*",
+      "destination": "https://tmmt-ops.vercel.app/internal/:path*"
+    }
+  ]
+}
