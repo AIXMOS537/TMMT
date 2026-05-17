@@ -1,0 +1,15 @@
+Asset Name,Audience,Format,Status,NAS Path,Portal Path,Priority,Owner,Blocks Onboarding,Notes
+Operator Training Manual,Partner,HTML,Linked in Portal,/share/AIXMOS/files/,/files/operator-training.html,P0,Muhammad,true,Live in repo
+GHL Pipeline Guide,Partner,HTML,Linked in Portal,/share/AIXMOS/files/,/files/pipeline.html,P0,Muhammad,true,Live in repo
+CHUMMO Intake Form,Partner,HTML,Linked in Portal,/share/AIXMOS/files/,/files/intake-form.html,P1,Muhammad,false,Live in repo
+CHUMMO Call Script,Partner,DOC,Missing,/share/AIXMOS/operator-sops/,#,P0,Assistant,true,Portal shows Coming soon
+Objection Handling,Partner,DOC,Missing,/share/AIXMOS/operator-sops/,#,P1,Assistant,false,
+Service Menu (8 tiers),Partner,DOC,Missing,/share/AIXMOS/operator-sops/,#,P0,Muhammad,true,Muhammad to approve pricing copy
+Commission Structure,Partner,PDF,Missing,/share/AIXMOS/operator-sops/,#,P0,Muhammad,true,Referral + 50/50
+Investor One-Pager,Investor,PDF,Missing,/share/AIXMOS/admin-only/,#,P0,Muhammad,false,Muhammad review required
+Welcome Guide,Client,PDF,Missing,/share/AIXMOS/member-resources/,#,P0,Assistant,true,Member vault
+Credit Guidance Overview,Client,DOC,Missing,/share/AIXMOS/member-resources/,#,P1,Assistant,false,
+Business Fundamentals,Client,PDF,Missing,/share/AIXMOS/member-resources/,#,P1,Assistant,false,
+Funding Prep Checklist,Client,DOC,Missing,/share/AIXMOS/member-resources/,#,P1,Assistant,false,
+Escalation Protocol,Employee,DOC,Missing,/share/AIXMOS/operator-sops/,#,P0,Muhammad,false,Executive vault
+Department SOPs,Employee,PDF,Missing,/share/AIXMOS/operator-sops/,#,P2,Assistant,false,

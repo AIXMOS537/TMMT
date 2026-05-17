@@ -48,6 +48,13 @@ const navGroups = [
     ],
   },
   {
+    label: "Workflow",
+    items: [
+      { href: "/cases", label: "Cases", icon: ClipboardCheck },
+      { href: "/workflow-vendors", label: "Outside Vendors", icon: Store },
+    ],
+  },
+  {
     label: "Pipeline",
     items: [
       { href: "/leads", label: "Incoming Leads", icon: UserPlus },

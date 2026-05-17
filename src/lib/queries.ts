@@ -316,3 +316,86 @@ export async function getPaymentStats() {
     all,
   };
 }
+
+/* ──────────── Workflow engine ──────────── */
+
+export async function getCases() {
+  return fetchTable<Record<string, unknown>>("cases", "*", "created_at");
+}
+
+export async function getWorkflowVendors() {
+  return fetchTable<Record<string, unknown>>("vendors", "*", "name");
+}
+
+export async function getVendorJobsForStaff(caseId?: string) {
+  let q = supabase
+    .from("vendor_jobs")
+    .select("*, vendors(name), cases(case_number, title)")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (caseId) q = q.eq("case_id", caseId);
+  const { data, error } = await q;
+  if (error) {
+    console.error("[vendor_jobs]", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getCaseStatusHistory(caseId: string) {
+  const { data, error } = await supabase
+    .from("case_status_history")
+    .select("*")
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return [];
+  return data ?? [];
+}
+
+export async function getVendorPortalJobs() {
+  const { data, error } = await supabase
+    .from("vendor_jobs")
+    .select("*, cases(case_number, title, customer_name, status)")
+    .order("offered_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    console.error("[vendor portal jobs]", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getVendorJobUpdates(vendorJobId: string) {
+  const { data, error } = await supabase
+    .from("vendor_job_updates")
+    .select("*")
+    .eq("vendor_job_id", vendorJobId)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return data ?? [];
+}
+
+export async function getVendorJobFiles(vendorJobId: string) {
+  const { data, error } = await supabase
+    .from("vendor_files")
+    .select("*")
+    .eq("vendor_job_id", vendorJobId)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return data ?? [];
+}
+
+export async function getInvestorUpdates() {
+  const { data, error } = await supabase
+    .from("investor_updates")
+    .select("*")
+    .eq("visible_to_investors", true)
+    .order("published_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error("[investor_updates]", error.message);
+    return [];
+  }
+  return data ?? [];
+}

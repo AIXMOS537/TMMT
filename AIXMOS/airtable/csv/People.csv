@@ -1,0 +1,3 @@
+Name,Email,Person Type,System,Portal Role,Status,Login URL,Portal Password,Sync to Portal,Portal Synced At,Temp Password Sent,Vault Reviewed,Day-1 Call Done,Muhammad Approved,Approved Date,Notes
+Example Operator,operator@example.com,Partner,AIXMOS Portal,operator,Login Created,https://portal.yourdomain.com,CHANGE_AFTER_SYNC,false,,false,false,false,true,2026-05-16,Check Sync to Portal + set password before npm run sync:aixmos-people
+Example Executive,exec@example.com,Employee,AIXMOS Portal,executive,Active,https://portal.yourdomain.com,,true,2026-05-01,true,true,true,true,2026-05-01,Template row — delete or repurpose

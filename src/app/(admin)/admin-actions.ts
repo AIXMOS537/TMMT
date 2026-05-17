@@ -2,6 +2,7 @@
 
 import { createSSRClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import { isStaffUser } from "@/lib/auth-roles";
 
 type SaveResult = { success: true } | { success: false; error: string };
 
@@ -11,6 +12,7 @@ const ADMIN_TABLES = new Set([
   "contracts", "do_not_rent_list", "expenses", "former_customers",
   "fleet_car_inspections", "insurance", "operation_costs", "tickets",
   "shops_mechanics_cleaning", "waitlist",
+  "vendors", "cases", "vendor_jobs",
 ]);
 
 export async function adminUpsert(
@@ -28,6 +30,10 @@ export async function adminUpsert(
 
   // redirect() throws NEXT_REDIRECT — the caller never receives a return value
   if (!user) redirect("/login");
+
+  if (!isStaffUser(user)) {
+    return { success: false, error: "Not authorized." };
+  }
 
   const { error } = await supabase.from(table).upsert(record);
   if (error) {
