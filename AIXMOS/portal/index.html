@@ -346,10 +346,11 @@
 <script>
   /* ══════════════════════════════════
      USER ACCOUNTS
-     Edit this to add/remove users
+     Primary: /data/users.json (Airtable → npm run sync:aixmos-people)
+     Fallback: USERS_FALLBACK (local dev before first sync)
      Roles: admin | executive | operator | member
   ══════════════════════════════════ */
-  const USERS = [
+  const USERS_FALLBACK = [
     { email: 'muhammad@aixmos.com',  password: 'AIXMOSadmin2025!',  name: 'Muhammad Taha',    role: 'admin' },
     { email: 'exec1@aixmos.com',     password: 'Exec2025secure',     name: 'Executive 1',      role: 'executive' },
     { email: 'exec2@aixmos.com',     password: 'Exec2025secure2',    name: 'Executive 2',      role: 'executive' },
@@ -357,6 +358,8 @@
     { email: 'operator@aixmos.com',  password: 'Operator2025!',      name: 'AIXMOS Operator',  role: 'operator' },
     { email: 'member@aixmos.com',    password: 'Member2025!',        name: 'AIXMOS Member',    role: 'member' },
   ];
+  let USERS = [];
+  let usersReady = false;
 
   /* ══════════════════════════════════
      NAV CONFIG PER ROLE
@@ -426,9 +429,37 @@
   let currentPanel = 'dashboard';
 
   /* ══════════════════════════════════
+     LOAD USERS (Airtable sync → data/users.json)
+  ══════════════════════════════════ */
+  async function loadUsers() {
+    const btn = document.querySelector('#v-login .login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+    try {
+      const res = await fetch('/data/users.json', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.users) && data.users.length > 0) {
+          USERS = data.users;
+          usersReady = true;
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[portal] users.json unavailable, using fallback', e);
+    }
+    USERS = USERS_FALLBACK;
+    usersReady = true;
+  }
+
+  /* ══════════════════════════════════
      AUTH
   ══════════════════════════════════ */
   function login() {
+    if (!usersReady) {
+      document.getElementById('l-err').textContent = 'Accounts still loading. Try again.';
+      document.getElementById('l-err').style.display = 'block';
+      return;
+    }
     const email = document.getElementById('l-email').value.trim().toLowerCase();
     const pass  = document.getElementById('l-pass').value;
     const user  = USERS.find(u => u.email.toLowerCase() === email && u.password === pass);
@@ -898,12 +929,24 @@
   `; }
 
   /* ══════════════════════════════════
-     INIT — check session on load
+     INIT — load users, then restore session
   ══════════════════════════════════ */
-  const saved = sessionStorage.getItem('aixmos_user');
-  if (saved) {
-    try { currentUser = JSON.parse(saved); showPortal(); } catch { sessionStorage.removeItem('aixmos_user'); }
-  }
+  (async function initPortal() {
+    await loadUsers();
+    const btn = document.querySelector('#v-login .login-btn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign in →'; }
+    const saved = sessionStorage.getItem('aixmos_user');
+    if (saved) {
+      try {
+        currentUser = JSON.parse(saved);
+        const ok = USERS.some(u => u.email === currentUser.email && u.role === currentUser.role);
+        if (ok) showPortal();
+        else sessionStorage.removeItem('aixmos_user');
+      } catch {
+        sessionStorage.removeItem('aixmos_user');
+      }
+    }
+  })();
 </script>
 </body>
 </html>
