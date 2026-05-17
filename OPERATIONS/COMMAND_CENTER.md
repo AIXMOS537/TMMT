@@ -2,7 +2,7 @@
 
 ## Today
 
-**Date:** Saturday, May 16, 2026
+**Date:** Sunday, May 17, 2026
 
 ### Top 3 Priorities
 
