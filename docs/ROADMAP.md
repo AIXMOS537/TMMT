@@ -13,7 +13,7 @@ Extends this app into a multi-venture command center (~50 businesses) while keep
 
 | Phase | Scope | Status |
 |-------|--------|--------|
-| 0 | Route restructure `/v/[venture]/*`, ventures table, portfolio dashboard | ❌ Not started |
+| 0 | Route restructure `/v/[venture]/*`, ventures table, portfolio dashboard | ✅ Shipped (apply migration in Supabase) |
 | 1 | Team workspaces (notes, links, message log, people) | ❌ Not started |
 | 2 | Scripts library (`scripts-library/` + `/scripts` UI) | ❌ Not started |
 | 3 | Ventures #2 and #3 from AIX_Command_Center seedlings | ❌ Not started |
