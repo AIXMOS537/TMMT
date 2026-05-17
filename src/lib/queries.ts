@@ -386,6 +386,42 @@ export async function getVendorJobFiles(vendorJobId: string) {
   return data ?? [];
 }
 
+export async function getOpsThreads() {
+  const { data, error } = await supabase
+    .from("ops_threads")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error("[ops_threads]", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getOpsMessages(filters?: {
+  audience?: string;
+  status?: string;
+  threadId?: string;
+}) {
+  let q = supabase
+    .from("ops_messages")
+    .select("*, ops_threads(title)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (filters?.audience) q = q.eq("audience", filters.audience);
+  if (filters?.status) q = q.eq("status", filters.status);
+  if (filters?.threadId) q = q.eq("thread_id", filters.threadId);
+
+  const { data, error } = await q;
+  if (error) {
+    console.error("[ops_messages]", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
 export async function getInvestorUpdates() {
   const { data, error } = await supabase
     .from("investor_updates")
