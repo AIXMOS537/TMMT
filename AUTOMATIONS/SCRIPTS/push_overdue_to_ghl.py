@@ -27,19 +27,28 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = ROOT / "AUTOMATIONS" / ".env"
+TMMT_ENV_LOCAL = ROOT / "tmmt-os" / ".env.local"
 
 
-def load_env() -> None:
-    if not ENV_FILE.exists():
+def load_env_file(path: Path) -> None:
+    if not path.exists():
         return
-    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
         key, value = key.strip(), value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        if not key:
+            continue
+        existing = os.environ.get(key, "").strip()
+        if not existing:
             os.environ[key] = value
+
+
+def load_env() -> None:
+    load_env_file(ENV_FILE)
+    load_env_file(TMMT_ENV_LOCAL)  # non-empty values win over empty AUTOMATIONS/.env
 
 
 def supabase_rows(table: str, select: str = "*", limit: int = 200) -> list[dict]:
@@ -102,8 +111,10 @@ def main() -> None:
     args = parser.parse_args()
 
     for key in ("SUPABASE_URL", "TMMT_OPS_URL", "GHL_WEBHOOK_SECRET"):
-        if not os.environ.get(key):
-            raise SystemExit(f"Missing env: {key}")
+        if not (os.environ.get(key) or "").strip():
+            raise SystemExit(
+                f"Missing env: {key} — set in AUTOMATIONS/.env or tmmt-os/.env.local"
+            )
 
     map_path = os.environ.get("GHL_CONTACT_MAP_JSON")
     contact_map: dict[str, str] = {}

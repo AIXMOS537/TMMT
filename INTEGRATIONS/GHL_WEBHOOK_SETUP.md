@@ -65,6 +65,12 @@ AIRTABLE_BASE_ID=
 AIRTABLE_LEADS_TABLE=Leads
 ```
 
+## GHL UI walkthrough
+
+Click-by-click: **`INTEGRATIONS/GHL_WORKFLOW_WALKTHROUGH.md`**
+
+---
+
 ## Smoke test
 
 ```bash
