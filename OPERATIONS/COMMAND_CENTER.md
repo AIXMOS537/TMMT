@@ -61,4 +61,4 @@
 
 ---
 
-**Brief:** [`DAILY_BRIEF_2026-05-16.md`](./DAILY_BRIEF_2026-05-16.md) · **Collections:** [`TODAY_COLLECTIONS.md`](./TODAY_COLLECTIONS.md) · **Metrics:** [`../../docs/INVESTOR_METRICS_SNAPSHOT.md`](../../docs/INVESTOR_METRICS_SNAPSHOT.md)
+**Brief:** [`DAILY_BRIEF_2026-05-16.md`](./DAILY_BRIEF_2026-05-16.md) (Supabase live, regen 22:51) · **Collections:** [`TODAY_COLLECTIONS.md`](./TODAY_COLLECTIONS.md) · **Metrics:** [`../../docs/INVESTOR_METRICS_SNAPSHOT.md`](../../docs/INVESTOR_METRICS_SNAPSHOT.md) · **Vercel:** [`tmmt-os/docs/VERCEL_PRODUCTION_CHECKLIST.md`](../tmmt-os/docs/VERCEL_PRODUCTION_CHECKLIST.md)
