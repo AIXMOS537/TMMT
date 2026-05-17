@@ -1,0 +1,43 @@
+{
+  "fleet_register": "FLEET/FLEET_REGISTER.md",
+  "maintenance_tracker": "FLEET/MAINTENANCE_TRACKER.md",
+  "inspection_log": "FLEET/INSPECTION_LOG.md",
+  "output_directory": "FLEET",
+  "log_directory": "AUTOMATIONS/LOGS",
+  "mileage_warning_buffer": 500,
+  "due_soon_days": 7,
+  "inactive_vehicle_statuses": [
+    "sold/archived",
+    "sold",
+    "archived",
+    "retired"
+  ],
+  "closed_maintenance_statuses": [
+    "done",
+    "complete",
+    "completed",
+    "closed",
+    "resolved"
+  ],
+  "risk_vehicle_statuses": [
+    "maintenance",
+    "inspection needed",
+    "out of service"
+  ],
+  "high_risk_keywords": [
+    "brake",
+    "tire",
+    "engine",
+    "transmission",
+    "overheat",
+    "leak",
+    "damage",
+    "accident",
+    "airbag",
+    "check engine",
+    "unsafe",
+    "tow",
+    "battery",
+    "oil"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "output_directory": "OPERATIONS",
+  "log_directory": "AUTOMATIONS/LOGS",
+  "source_files": {
+    "command_center": "OPERATIONS/COMMAND_CENTER.md",
+    "fleet_register": "FLEET/FLEET_REGISTER.md",
+    "maintenance": "FLEET/MAINTENANCE_TRACKER.md",
+    "inspections": "FLEET/INSPECTION_LOG.md",
+    "finance": "FINANCE/FINANCE_TRACKER.md",
+    "crm": "CUSTOMERS/CRM_TRACKER.md",
+    "automation_backlog": "AUTOMATIONS/AUTOMATION_BACKLOG.md",
+    "sop_index": "SOPS/SOP_INDEX.md"
+  },
+  "risk_keywords": [
+    "overdue",
+    "urgent",
+    "out of service",
+    "inspection needed",
+    "unpaid",
+    "past due",
+    "damage",
+    "incident",
+    "needs review"
+  ],
+  "integrations": {
+    "supabase": {
+      "enabled": true,
+      "url": "",
+      "anon_key": "",
+      "service_key": ""
+    }
+  }
+}
