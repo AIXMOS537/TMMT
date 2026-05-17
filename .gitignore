@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 supabase/.temp/
+
+# AIXMOS portal logins (generated from Airtable — never commit)
+AIXMOS/portal/data/users.json
