@@ -7,7 +7,9 @@
 
 ## Pipeline name in GHL
 
-**[FILL: exact pipeline name in GoHighLevel]**
+**TMMT Rentals** (create per `INTEGRATIONS/GHL_RENTAL_PIPELINE_BLUEPRINT.md`)
+
+**Full workflow list (8 workflows):** same blueprint doc.
 
 ---
 
@@ -54,8 +56,15 @@ See: `AUTOMATIONS/GHL_OVERDUE_WORKFLOW_SETUP.md` · `docs/AUTOMATION_PRIORITY_BA
 
 ---
 
+## Upgrade / plan check
+
+See **Should you upgrade GHL?** in `INTEGRATIONS/GHL_RENTAL_PIPELINE_BLUEPRINT.md`  
+Test: can you add **Webhook** + **WhatsApp** actions in a workflow without "Premium" lock?
+
 ## This week
 
-- [ ] Confirm stage names match GHL exactly
+- [ ] Create pipeline **TMMT Rentals** (9 stages) + custom fields
+- [ ] Publish **WF-07** overdue + **WF-00** stage webhook
+- [ ] Confirm stage names match GHL exactly → update `GHL_PIPELINE_STAGE_MAP_JSON` on Vercel
 - [ ] Move **Leo Auray** to correct stage after follow-up
 - [ ] Tag **Hector Gomez** as JV / partner path (may use Partners pipeline instead)
