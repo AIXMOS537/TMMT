@@ -149,5 +149,5 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - `docs/SENTRY-SETUP.md` — Sentry activation guide (account setup, DSN, alert config)
 - `docs/PARTNER-PORTAL.md` — investor read-only portal: RLS migration, `app_metadata.role`, `partner_fleet_access`
 - `docs/superpowers/specs/` — design specs (command-center-architecture, supabase-auth, airtable-sync, maintenance-toggle)
-- `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync, tier2-hardening)
+- `docs/superpowers/plans/` — implementation plans (command-center-architecture, supabase-auth, airtable-sync, tier2-hardening)
 - `supabase/migrations/` — RLS migration (`20260331_enable_rls.sql`)

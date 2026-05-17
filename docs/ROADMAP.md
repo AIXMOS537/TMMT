@@ -6,7 +6,8 @@
 
 ## Portfolio Command Center (draft)
 
-> **Spec:** `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md` (pending owner review)
+> **Spec:** `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`  
+> **Plan:** `docs/superpowers/plans/2026-05-17-command-center-architecture.md` (pending owner review)
 
 Extends this app into a multi-venture command center (~50 businesses) while keeping TMMT Rentals daily ops unchanged. Phased rollout:
 

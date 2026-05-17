@@ -141,7 +141,9 @@ graph LR
 
 ## Planned — Portfolio Command Center
 
-Draft architecture spec (owner review pending): `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`
+Draft spec + implementation plan (owner review pending):
+- `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`
+- `docs/superpowers/plans/2026-05-17-command-center-architecture.md`
 
 Multi-venture shell, per-team workspaces, unified scripts library, and NAS backup pipeline — see `docs/ROADMAP.md` phased table. No implementation started.
 
