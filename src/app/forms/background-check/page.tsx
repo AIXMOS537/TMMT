@@ -1,0 +1,101 @@
+"use client";
+
+import { useState } from "react";
+import { submitBackgroundCheck } from "@/app/forms/actions";
+import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
+import { Car, CheckCircle, ShieldCheck } from "lucide-react";
+
+const insuranceOptions = ["Yes", "No"];
+
+export default function BackgroundCheckForm() {
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const result = await submitBackgroundCheck(fd);
+    setLoading(false);
+    if (!result.success) { setError(result.error); return; }
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-6">
+        <Card className="p-8 text-center max-w-md">
+          <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 dark:text-emerald-400 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Submitted!</h2>
+          <p className="text-gray-600 dark:text-slate-400">Your background check information has been received. We&apos;ll review and update you on your eligibility status.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 px-4">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Background Check & Verification</h1>
+          </div>
+          <p className="text-gray-500 text-sm mt-1">Required information for your rental application</p>
+        </div>
+
+        <Card className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+            <FormField label="Full Name" required>
+              <input name="customer_name" className={inputClass} required />
+            </FormField>
+            <FormField label="Phone Number" required>
+              <input name="phone_number" type="tel" className={inputClass} required />
+            </FormField>
+            <FormField label="Email" required>
+              <input name="email" type="email" className={inputClass} required />
+            </FormField>
+
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Insurance Information</h3>
+              <FormField label="Do you have your own insurance?" required>
+                <select name="own_insurance" className={selectClass} required>
+                  <option value="">Select...</option>
+                  {insuranceOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </FormField>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Additional Notes</h3>
+              <FormField label="Review Notes (if any)">
+                <textarea name="review_notes" rows={3} className={inputClass} placeholder="Any additional information..." />
+              </FormField>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              <p className="font-medium">Document Requirements</p>
+              <ul className="mt-2 list-disc list-inside space-y-1 text-blue-700">
+                <li>Driver&apos;s License (front & back)</li>
+                <li>Proof of Insurance (if applicable)</li>
+                <li>Recent Paystub or earnings proof</li>
+              </ul>
+              <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">Upload documents via email or bring to your appointment</p>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Verification Form"}
+            </Button>
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
+}
