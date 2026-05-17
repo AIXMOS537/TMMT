@@ -1,0 +1,40 @@
+{
+  "_comment": "Minify and set as GHL_PIPELINE_STAGE_MAP_JSON on Vercel. Keys are lowercase trimmed stage names.",
+  "pipelines": {
+    "RENTALS_PIPELINE_ID": {
+      "business_line": "rentals",
+      "pipeline_name": "TMMT Rentals",
+      "stages": {
+        "new inquiry": "inquiry",
+        "new lead": "inquiry",
+        "contacted": "contacted",
+        "qualifying": "qualifying",
+        "payment link sent": "payment_pending",
+        "booked": "booked",
+        "pickup scheduled": "pickup_scheduled",
+        "active rental": "active_rental",
+        "return due": "return_due",
+        "returned": "returned",
+        "extended": "extended",
+        "overdue": "escalation",
+        "issue / escalation": "escalation",
+        "closed won": "closed_won",
+        "closed lost": "closed_lost"
+      }
+    },
+    "CREDIT_PIPELINE_ID": {
+      "business_line": "credit_education",
+      "pipeline_name": "Credit / Business Funding",
+      "stages": {
+        "new lead": "inquiry",
+        "contacted": "contacted",
+        "qualified": "qualifying",
+        "call booked": "qualifying",
+        "active client": "active_rental",
+        "closed won": "closed_won",
+        "closed lost": "closed_lost"
+      }
+    }
+  },
+  "default_canonical_stage": "inquiry"
+}

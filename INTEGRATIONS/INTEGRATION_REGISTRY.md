@@ -10,7 +10,7 @@ Fill this out as each tool gets connected. Do not store API keys in this file.
 |---|---|---|---|
 | **Supabase** | Rentals ops DB, auth, daily brief source | **Live** | Brief + TMMT OS; project `uapxakmlwnpfsftfeezx` |
 | **Vercel (TMMT OS)** | Production app + `/api/intake` | **Live** | https://tmmt-c919-two.vercel.app — redeploy after env / `next.config` changes |
-| GoHighLevel | CRM, contacts, pipelines, messaging | **Partial** | Collections + speed-to-lead; overdue workflow spec in `AUTOMATIONS/GHL_OVERDUE_WORKFLOW_SETUP.md` |
+| GoHighLevel | CRM, contacts, pipelines, messaging | **Partial** | `INTEGRATIONS/GHL_WEBHOOK_SETUP.md` · `/api/webhooks/ghl` · `/api/webhooks/ghl/overdue` · `AUTOMATIONS/SCRIPTS/push_overdue_to_ghl.py` |
 | ClickUp | Tasks, assignments, due dates | Planned | Main task execution system |
 | Airtable | Manual-friendly views and lightweight operations | Partial | Templates in `AIX_AI_COMMAND_SYSTEM/airtable_templates/`; optional sync |
 | n8n | Automation router and webhooks | Planned | Portable stack in `AIXMOSXTMMT-OPS/` |
