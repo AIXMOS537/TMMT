@@ -1,0 +1,7 @@
+{
+  "contact_id": "contact_example_456",
+  "customer_name": "Test Customer",
+  "amount_due": "450",
+  "due_date": "2026-05-10",
+  "source": "daily_command_center"
+}

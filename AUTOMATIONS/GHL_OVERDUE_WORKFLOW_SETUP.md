@@ -34,8 +34,10 @@ When a payment is **overdue** in your CRM/pipeline (or tagged overdue in Supabas
 
 ### 3. Supabase sync (if using TMMT OS as source of truth)
 
-- n8n or scheduled script: query overdue rows → POST webhook to GHL with contact ID
-- Test payloads: `AUTOMATIONS/WEBHOOKS/command_router_test_payloads.json`
+- **Script:** `python3 AUTOMATIONS/SCRIPTS/push_overdue_to_ghl.py` (tags `payment-overdue` via TMMT OS)
+- **Endpoint:** `POST /api/webhooks/ghl/overdue` — see `INTEGRATIONS/GHL_WEBHOOK_SETUP.md`
+- **Example payload:** `AUTOMATIONS/WEBHOOKS/ghl_overdue_payment.example.json`
+- n8n: schedule daily → HTTP Request to same endpoint
 
 ---
 
