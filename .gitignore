@@ -1,0 +1,24 @@
+.DS_Store
+*.log
+.env
+.env.local
+.env.*.local
+**/.env.local
+
+# Secrets — use AUTOMATIONS/.env or tmmt-os/.env.local
+AUTOMATIONS/.env
+
+# Node
+node_modules/
+.next/
+out/
+build/
+.vercel/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Generated
+tmmt-os/src/types/database.ts
