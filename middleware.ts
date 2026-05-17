@@ -13,13 +13,27 @@ function isPublicPath(pathname: string) {
 
 function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (isPublicPath(pathname)) return true;
+
   switch (tier) {
+    case "owner":
+      return true;
+    case "executive":
+      return pathname.startsWith("/executive");
+    case "operator":
+      return pathname.startsWith("/operator");
     case "vendor":
       return pathname.startsWith("/vendor");
     case "investor":
       return pathname.startsWith("/investor") || pathname.startsWith("/partner");
     default:
-      return !pathname.startsWith("/vendor") && !pathname.startsWith("/investor") && !pathname.startsWith("/partner");
+      return (
+        !pathname.startsWith("/vendor") &&
+        !pathname.startsWith("/investor") &&
+        !pathname.startsWith("/partner") &&
+        !pathname.startsWith("/command") &&
+        !pathname.startsWith("/executive") &&
+        !pathname.startsWith("/operator")
+      );
   }
 }
 
@@ -48,8 +62,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && pathname === "/login") {
-    const tier = getTierForUser(user);
-    return NextResponse.redirect(new URL(homePathForTier(tier), request.url));
+    return NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url));
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {
