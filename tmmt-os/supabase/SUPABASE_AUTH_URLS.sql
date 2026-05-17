@@ -1,0 +1,7 @@
+-- Cannot set Auth URLs via SQL. Use Dashboard → Authentication → URL configuration:
+--
+-- Site URL:              https://tmmt-c919-two.vercel.app
+-- Redirect URLs:         https://tmmt-c919-two.vercel.app/**
+--                        https://*.vercel.app/**
+--
+-- If internal dashboard 404 after login, Auth URLs are the usual cause.

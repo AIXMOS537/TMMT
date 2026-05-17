@@ -15,9 +15,9 @@ Fill this out as each tool gets connected. Do not store API keys in this file.
 | Airtable | Manual-friendly views and lightweight operations | Partial | Templates in `AIX_AI_COMMAND_SYSTEM/airtable_templates/`; optional sync |
 | n8n | Automation router and webhooks | Planned | Portable stack in `AIXMOSXTMMT-OPS/` |
 | Zapier | Backup connector layer | Planned | Use when faster than n8n |
-| Slack | Credit business internal commands/updates | Planned | Credit repair/business funding team |
-| Telegram | Owner command bot | Planned | Recommended first command channel |
-| WhatsApp | Owner/customer messaging | Planned | Prefer through GHL or Twilio |
+| Slack | Credit business internal commands/updates | Planned | **Credit + funding only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |
+| Telegram | Owner command bot | Optional | Not primary stack; see `CHANNEL_SETUP_GUIDE.md` |
+| WhatsApp | Car rental customer + lead messaging | Planned | **Through GHL only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |
 | iMessage | Quick capture | Planned | Use Apple Shortcuts or Mac relay |
 
 ## Mixed workflow (canonical)

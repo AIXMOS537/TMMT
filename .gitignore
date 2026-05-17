@@ -22,3 +22,4 @@ __pycache__/
 
 # Generated
 tmmt-os/src/types/database.ts
+.vercel
