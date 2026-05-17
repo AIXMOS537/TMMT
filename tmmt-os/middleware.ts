@@ -12,7 +12,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/intake") ||  // explicit public webhook
+    pathname.startsWith("/api/intake") ||
+    pathname === "/api/status" ||
+    pathname.startsWith("/api/webhooks/") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/public")
   ) {
