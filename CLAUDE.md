@@ -35,12 +35,18 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 middleware.ts                  — auth gate (getUser) + rate limiter for /forms POST
 src/app/
   layout.tsx                   — sets metadata, injects blocking theme script (dark mode init), suppressHydrationWarning required
-  (admin)/                     — protected, requires auth
-    layout.tsx                 — renders Sidebar
-    actions.ts                 — signOut server action
-    admin-actions.ts           — adminUpsert() auth-gated write (table allowlist)
-    page.tsx                   — dashboard (StatCard metrics, getDashboardData)
-    [17 admin pages]
+  page.tsx                     — portfolio dashboard (all ventures)
+  teams/ scripts/ settings/    — command center stubs (Phase 1–2)
+  auth-actions.ts              — signOut (shared with partner portal)
+  v/[venture]/                 — protected venture ops (TMMT Rentals = tmmt-rentals)
+    layout.tsx                 — venture Sidebar + slug validation
+    page.tsx                   — venture dashboard (StatCard metrics, getDashboardData)
+    [17 admin pages + 4 interfaces]
+src/lib/
+  admin-actions.ts             — adminUpsert() auth-gated write (table allowlist)
+  document-actions.ts          — contract PDF + license uploads
+  ventures.ts                  — getActiveVentures(), getVentureBySlug()
+  venture-paths.ts             — ventureHref() for client nav
   (auth)/
     layout.tsx                 — centered, no sidebar
     login/page.tsx + actions.ts
@@ -69,22 +75,25 @@ src/components/
 - `supabase.ts` is imported by `"use client"` components — never add `next/headers` imports there
 
 ### Route Groups
-- `(admin)/` — all protected admin pages, gets Sidebar via layout
-- `(auth)/` — login page, minimal layout, no Sidebar
-- `forms/` — public, outside both route groups
+- `/` — portfolio (CommandCenterShell)
+- `v/[venture]/` — venture admin pages, Sidebar with venture-prefixed links
+- `(auth)/` — login page, minimal layout
+- `(partner)/` — partner read-only portal
+- `forms/` — public intake forms
+- Legacy `/fleet`, `/leads`, … → 308 to `/v/tmmt-rentals/...` (next.config)
 
 ### Server Actions
 - Must have `"use server"` directive
 - Import `createSSRClient` from `@/lib/supabase-server`, not `@/lib/supabase`
 - `createSSRClient` is async — always `await createSSRClient()`
 - Public form writes: `src/app/forms/actions.ts` (zod-validated, anon insert)
-- Admin writes: `src/app/(admin)/admin-actions.ts` (auth-gated upsert with table allowlist)
+- Admin writes: `src/lib/admin-actions.ts` (auth-gated upsert with table allowlist)
 - Do NOT add writes to `queries.ts` — that file is read-only fetchers
 
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.
-2. ~~**Input validation / server actions**~~ — **DONE**: All 8 public forms use zod-validated server actions (`src/app/forms/actions.ts`). All 17 admin pages use auth-gated server action (`src/app/(admin)/admin-actions.ts`).
+2. ~~**Input validation / server actions**~~ — **DONE**: All 8 public forms use zod-validated server actions (`src/app/forms/actions.ts`). All 17 admin pages use auth-gated server action (`src/lib/admin-actions.ts`).
 3. ~~**Error handling**~~ — **DONE**: ErrorBanner replaces all alert() calls. Error boundaries at root and admin level. `.catch()` on all data fetches.
 4. ~~**Rate limiting**~~ — **DONE**: In-memory rate limiter (5 req/hr per IP) in middleware for `/forms` POST.
 5. ~~**Security headers**~~ — **DONE**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy in `next.config.ts`.

@@ -141,11 +141,12 @@ graph LR
 
 ## Planned — Portfolio Command Center
 
-Draft spec + implementation plan (owner review pending):
-- `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`
-- `docs/superpowers/plans/2026-05-17-command-center-architecture.md`
+**Phase 0 shipped (2026-05-17):** Portfolio at `/`, TMMT admin at `/v/tmmt-rentals/*`, legacy path 308 redirects, `ventures` migration pending apply in Supabase.
 
-Multi-venture shell, per-team workspaces, unified scripts library, and NAS backup pipeline — see `docs/ROADMAP.md` phased table. No implementation started.
+- Spec: `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`
+- Plan: `docs/superpowers/plans/2026-05-17-command-center-architecture.md`
+
+Phases 1–4 (teams, scripts, more ventures, backup) not started.
 
 ## Known Issues
 
