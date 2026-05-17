@@ -2,7 +2,7 @@
 
 import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui";
-import { signOut } from "@/app/(admin)/actions";
+import { signOut } from "@/app/auth-actions";
 import { LogOut } from "lucide-react";
 
 export default function PartnerPortalChrome({
