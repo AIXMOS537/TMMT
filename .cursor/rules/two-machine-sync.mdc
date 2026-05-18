@@ -1,0 +1,34 @@
+---
+description: Two-machine TMMT dev — canonical paths, branch, and sync scripts
+alwaysApply: false
+---
+
+# Office + home dev sync
+
+## Canonical clone
+
+| Machine | Path |
+|---------|------|
+| macOS (both) | `~/dev/TMMT` |
+| App workspace | `~/dev/TMMT/tmmt-os` |
+
+Legacy `~/Desktop/AIX_Command_Center/TMMT MANAGEMENT` — migrate off; do not treat as source of truth.
+
+## Git branch
+
+- **Production / shared default:** `main`
+- Active feature work: short-lived branches → PR → `main`
+- Retire long-lived `cursor/tmmt-management-initial-setup` after merge
+
+## Sync scripts (repo)
+
+- `ops/dev-machine/bootstrap-macos.sh` — first clone + Node 20 + `npm ci`
+- `ops/dev-machine/sync-machine.sh` — `git pull` (cron-safe)
+- `ops/dev-machine/install-launchd.sh` — office auto-pull every 15 min
+
+`SYNC_MODE=code` (default): pull only.  
+`SYNC_MODE=dev`: pull + `npm ci` in `tmmt-os/`.
+
+## Secrets
+
+- `tmmt-os/.env.local` per machine; copy manually; never commit.

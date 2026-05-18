@@ -1,0 +1,34 @@
+---
+description: TMMT OS lock-and-key licensing — what each customer tier gets and how to build for it
+alwaysApply: true
+---
+
+# TMMT licensing: lock and key
+
+## Business model (user intent)
+
+TMMT is sold as a **lock-and-key** product: each deployment is unlocked only for what the customer paid for. Do not ship or expose the full platform to every install.
+
+## Tiers
+
+| Tier | What they get | Typical buyer |
+|------|----------------|---------------|
+| **Rentals app** | Car rental operations only (fleet, bookings, client rental hub, billing for rentals) | Operators who only run vehicle rentals |
+| **Full TMMT OS** | Entire platform (~**$50k** anchor) | Operators building multiple services and businesses on one stack |
+
+**Pricing scales with scope:** what they pay and what unlocks depends on **how many services and businesses** they want set up (modules, ventures, integrations), not a single flat feature dump.
+
+## Engineering implications
+
+When designing auth, routing, Supabase RLS, env config, or new features:
+
+1. **Entitlements first** — model `license_tier`, `enabled_modules`, or `feature_flags` per tenant/org; gate routes, nav, API routes, and migrations behind those keys.
+2. **Rentals-only installs** — must run without credit repair, LTO, operator program, mentorship, or other OS modules unless unlocked.
+3. **Full OS installs** — unlock lifecycle modules (rental → credit → LTO → operator) per purchased services; partial OS = pay for N services, get N keys.
+4. **No silent bleed** — shared codebase is fine; **runtime and DB policy** must enforce the lock. UI hiding alone is not enough.
+5. **Provisioning** — install/setup flow should accept a license key or entitlement manifest that turns modules on; document which keys map to which SKUs.
+
+## Related context
+
+- Canonical clone: `~/dev/TMMT` (macOS) or `C:\dev\TMMT` (Windows); app in `tmmt-os/`. Sync: `ops/dev-machine/`.
+- Lifecycle plan: renter → credit repair → lease-to-own → operator (full OS path only).
