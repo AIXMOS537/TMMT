@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { CanonicalStageBadge } from "@/components/canonical-stage-badge";
 import type { SyncRecordStatus } from "@/lib/crm-sync/labels";
 import type { CanonicalRenterStage } from "@/lib/crm-sync/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
+import { SYNC_STATUS_TONE, toneStyles } from "@/lib/ui/status-colors";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +39,10 @@ export default async function SyncQueuePage({
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">CRM sync queue</h1>
-        <p className="text-sm text-muted-foreground">
-          GHL pipeline moves land here until your team approves. Approving updates Supabase and
-          linked cases.
-        </p>
-      </header>
+      <PageHeader
+        title="CRM sync queue"
+        description="Pipeline moves from GHL — verify here before they update cases (like your Airtable Leads review)."
+      />
 
       {error && (
         <p className="text-sm text-red-600">
@@ -52,7 +51,7 @@ export default async function SyncQueuePage({
         </p>
       )}
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>
             {searchParams.filter === "verified"
@@ -61,29 +60,28 @@ export default async function SyncQueuePage({
                 ? "Rejected"
                 : "Pending review"}
           </CardTitle>
-          <div className="flex gap-3 text-sm">
-            <Link
-              href="/internal/sync"
-              className={!searchParams.filter ? "font-medium underline" : "text-muted-foreground"}
-            >
-              Pending
-            </Link>
-            <Link
-              href="/internal/sync?filter=verified"
-              className={
-                searchParams.filter === "verified" ? "font-medium underline" : "text-muted-foreground"
-              }
-            >
-              Verified
-            </Link>
-            <Link
-              href="/internal/sync?filter=rejected"
-              className={
-                searchParams.filter === "rejected" ? "font-medium underline" : "text-muted-foreground"
-              }
-            >
-              Rejected
-            </Link>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { href: "/internal/sync", label: "Pending", tone: SYNC_STATUS_TONE.pending_verification, active: !searchParams.filter },
+                { href: "/internal/sync?filter=verified", label: "Verified", tone: SYNC_STATUS_TONE.verified, active: searchParams.filter === "verified" },
+                { href: "/internal/sync?filter=rejected", label: "Rejected", tone: SYNC_STATUS_TONE.rejected, active: searchParams.filter === "rejected" },
+              ] as const
+            ).map((tab) => {
+              const s = toneStyles(tab.tone);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                    tab.active ? s.pillActive : s.pill
+                  )}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
           </div>
         </CardHeader>
         <CardContent>
@@ -106,8 +104,11 @@ export default async function SyncQueuePage({
                   </Td>
                 </Tr>
               )}
-              {(rows ?? []).map((r) => (
-                <Tr key={r.id}>
+              {(rows ?? []).map((r) => {
+                const status = r.sync_status as SyncRecordStatus;
+                const row = toneStyles(SYNC_STATUS_TONE[status] ?? "slate");
+                return (
+                <Tr key={r.id} className={cn("border-l-4", row.border, row.row)}>
                   <Td>
                     <Link href={`/internal/sync/${r.id}`} className="font-medium underline">
                       {r.customer_name ?? "—"}
@@ -127,11 +128,12 @@ export default async function SyncQueuePage({
                     <CanonicalStageBadge stage={r.canonical_stage as CanonicalRenterStage} />
                   </Td>
                   <Td>
-                    <SyncStatusBadge status={r.sync_status as SyncRecordStatus} />
+                    <SyncStatusBadge status={status} />
                   </Td>
                   <Td className="text-xs text-muted-foreground">{formatDate(r.updated_at)}</Td>
                 </Tr>
-              ))}
+              );
+              })}
             </Tbody>
           </Table>
         </CardContent>

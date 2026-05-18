@@ -4,6 +4,33 @@ import { Badge } from "@/components/ui/badge";
 import type { PortalSection } from "@/lib/access/sections";
 import type { ResolvedAccess } from "@/lib/access/types";
 import { hasEntitlement } from "@/lib/access/resolve";
+import { toneStyles, type StatusTone } from "@/lib/ui/status-colors";
+import { cn } from "@/lib/utils";
+
+const SECTION_TONE: Record<string, StatusTone> = {
+  apps: "violet",
+  documents: "blue",
+  training: "teal",
+  onboarding: "sky",
+  support: "orange",
+  billing: "amber",
+  announcements: "blue",
+  upgrade: "emerald",
+  mission: "violet",
+  sop: "slate",
+  scripts: "sky",
+  workflows: "teal",
+  crm: "blue",
+  cases: "orange",
+  vendors: "teal",
+  fleet: "emerald",
+  revenue: "amber",
+  users: "violet",
+  packages: "blue",
+  entitlements: "teal",
+  audit: "slate",
+  settings: "slate",
+};
 
 export function PortalSectionGrid({
   sections,
@@ -24,8 +51,17 @@ export function PortalSectionGrid({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => {
           const allowed = hasEntitlement(access, section.entitlement);
+          const tone = SECTION_TONE[section.slug] ?? "slate";
+          const s = toneStyles(tone);
           return (
-            <Card key={section.slug} className={allowed ? "" : "opacity-60"}>
+            <Card
+              key={section.slug}
+              className={cn(
+                "border-l-[3px] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft",
+                s.border,
+                allowed ? s.row : "opacity-55 bg-muted/40"
+              )}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base">{section.title}</CardTitle>
@@ -35,7 +71,7 @@ export function PortalSectionGrid({
               </CardHeader>
               <CardContent>
                 {allowed ? (
-                  <Link href={section.href} className="text-sm font-medium hover:underline">
+                  <Link href={section.href} className="text-sm font-medium text-primary hover:underline">
                     Open →
                   </Link>
                 ) : (
