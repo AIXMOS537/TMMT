@@ -289,6 +289,9 @@ export async function executeOpsCommands(args: {
   }
 
   if (commands.length === 0) {
+    const hint = args.message?.trim()
+      ? `I didn't understand "${args.message.trim().slice(0, 80)}${(args.message?.length ?? 0) > 80 ? "…" : ""}".`
+      : "Empty command.";
     return {
       ok: false,
       parsed_from_message: parsedFromMessage,
@@ -296,8 +299,7 @@ export async function executeOpsCommands(args: {
         {
           action: "help",
           ok: false,
-          message:
-            "Could not parse that. Try: “assign maria@tmmt.com to case TMMT-ABC123”, “approve crm for renter@email.com”, “post $45 expense to renter@email.com for detail show billing”, “what's pending”.",
+          message: `${hint} Try: what's pending · assign name@email.com to case TMMT-ABC123 · approve crm for renter@email.com · post $45 to renter@email.com for detail show billing`,
         },
       ],
     };
