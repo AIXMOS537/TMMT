@@ -75,6 +75,52 @@ LaunchAgent runs every 5 minutes when the Mac is logged in:
 
 Skips pull if the working tree is dirty.
 
+Enable in Terminal.app:
+
+```bash
+~/dev/TMMT/scripts/enable-office-autopull.sh
+```
+
+## Office dev server 24/7 (macOS + Tailscale)
+
+Keeps `npm run dev` running on the office M1, bound to **all interfaces** (`0.0.0.0:3000`) so your home PC can open it over Tailscale.
+
+| Item | Value |
+|------|--------|
+| Script | `scripts/office-dev-server.sh` |
+| Install | `scripts/install-office-dev-server.sh` |
+| Enable | `scripts/enable-office-dev-server.sh` |
+| Log | `~/Library/Logs/tmmt-dev.log` |
+| Requires | `tmmt-os/.env.local` |
+
+**Enable both pull + dev:**
+
+```bash
+~/dev/TMMT/scripts/enable-office-services.sh
+```
+
+**From home (Windows)** — after Tailscale is on both machines:
+
+```text
+http://<office-mac-tailscale-name>:3000
+```
+
+Example: `http://tmmts-macbook-pro:3000` (use the name from Tailscale admin → Machines).
+
+**Stop dev server:**
+
+```bash
+launchctl bootout gui/$(id -u)/com.aixmos.tmmt-dev-server
+```
+
+Security: only expose port 3000 on your **Tailscale mesh**, not public port-forwarding. Next dev is not hardened for the open internet.
+
+After `git pull` updates dependencies, restart dev:
+
+```bash
+launchctl kickstart -k gui/$(id -u)/com.aixmos.tmmt-dev-server
+```
+
 ## Tailscale + SSH (home → office)
 
 1. Install [Tailscale](https://tailscale.com) on both machines; same account.
