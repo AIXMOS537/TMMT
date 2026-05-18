@@ -11,12 +11,12 @@ const ICONS = {
   dollar: DollarSign,
 } as const;
 
-export default function InterfacesHubPage() {
+export default function ManagementHubPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Airtable interfaces"
-        description="Your four TMMT Rentals interfaces — appointments, contracts, vehicles, and payments — with dashboard, table, and calendar or Kanban views. Open in the rentals admin (same layouts you used in Airtable)."
+        title="TMMT Management"
+        description="Appointments, contracts, vehicles, and payments — the same four workspaces you use today. Opens in the rentals admin until these views live fully inside TMMT OS."
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -42,7 +42,7 @@ export default function InterfacesHubPage() {
               </div>
               <h2 className="mt-4 text-lg font-semibold">{iface.title}</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{iface.description}</p>
-              <span className="mt-4 text-sm font-medium text-primary">Open interface →</span>
+              <span className="mt-4 text-sm font-medium text-primary">Open in Management →</span>
             </Link>
           );
         })}

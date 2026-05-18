@@ -11,6 +11,10 @@ import { JobStatusBadge } from "@/components/job-status-badge";
 import { CASE_TRANSITIONS, type CaseStatus, type VendorJobStatus } from "@/lib/workflow/statuses";
 import { formatDate, moneyUSD } from "@/lib/utils";
 import { advanceCaseAction, assignVendorAction } from "./actions";
+import { listLedgerForCase } from "@/lib/ledger/queries";
+import { LedgerEntryForm } from "@/components/ledger/ledger-entry-form";
+import { LedgerTable } from "@/components/ledger/ledger-table";
+import { LedgerLiveSync } from "@/components/ledger/ledger-live-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +28,7 @@ export default async function CaseDetail({ params }: { params: { id: string } })
     .maybeSingle();
   if (!c) notFound();
 
-  const [{ data: history }, { data: jobs }, { data: vendors }] = await Promise.all([
+  const [{ data: history }, { data: jobs }, { data: vendors }, ledgerEntries] = await Promise.all([
     supabase
       .from("case_status_history")
       .select("from_status, to_status, created_at")
@@ -41,12 +45,14 @@ export default async function CaseDetail({ params }: { params: { id: string } })
       .select("id, company_name, services")
       .eq("active", true)
       .order("company_name"),
+    listLedgerForCase(c.id),
   ]);
 
   const next = CASE_TRANSITIONS[c.status as CaseStatus] ?? [];
 
   return (
     <div className="space-y-6">
+      <LedgerLiveSync />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{c.subject}</h1>
@@ -161,6 +167,17 @@ export default async function CaseDetail({ params }: { params: { id: string } })
           </CardContent>
         </Card>
       </div>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium">Financial ledger</h2>
+        <LedgerEntryForm
+          sourceLabel="operations team"
+          defaultEmail={c.customer_email ?? undefined}
+          defaultName={c.customer_name ?? undefined}
+          defaultCaseId={c.id}
+        />
+        <LedgerTable entries={ledgerEntries} allowStatusUpdate />
+      </section>
     </div>
   );
 }

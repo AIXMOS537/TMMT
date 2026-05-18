@@ -5,8 +5,11 @@ export default async function InvestorLayout({ children }: { children: React.Rea
   const me = await requireRole(["investor", "admin"]);
   return (
     <PortalShell
-      brand="TMMT OS · Investor"
-      links={[{ href: "/investor/dashboard", label: "Dashboard" }]}
+      brand="TMMT OS"
+      links={[
+        { href: "/investor/dashboard", label: "Dashboard" },
+        { href: "/investor/ledger", label: "Ledger" },
+      ]}
       user={me}
     >
       {children}

@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { REQUEST_TYPES, suggestedNextStatus } from "@/lib/workflow/statuses";
+import { REQUEST_TYPES } from "@/lib/workflow/statuses";
+import { processUnifiedIntake } from "@/lib/intake/unified";
 
 const IntakeSchema = z.object({
   customer_name: z.string().min(1).max(200),
@@ -28,14 +28,8 @@ export async function submitIntakeAction(formData: FormData) {
   }
   const data = parsed.data;
 
-  // Service client because intake is anonymous (no session). RLS still allows
-  // INSERT into customer_intake_forms for anyone, but we use the service client
-  // so we can also create the corresponding case row in one server hop.
-  const supabase = createSupabaseServiceClient();
-
-  const { data: intake, error: intakeErr } = await supabase
-    .from("customer_intake_forms")
-    .insert({
+  try {
+    const result = await processUnifiedIntake({
       customer_name: data.customer_name,
       customer_email: data.customer_email || null,
       customer_phone: data.customer_phone || null,
@@ -43,38 +37,12 @@ export async function submitIntakeAction(formData: FormData) {
       subject: data.subject,
       details: data.details || null,
       source: "web",
+      tags: [data.request_type],
       payload: { from: "intake-form" },
-    })
-    .select("id")
-    .single();
-  if (intakeErr || !intake) {
-    redirect("/intake?error=" + encodeURIComponent(intakeErr?.message ?? "insert failed"));
+    });
+    redirect(`/intake/thanks?ref=${encodeURIComponent(result.refCode)}`);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "insert failed";
+    redirect("/intake?error=" + encodeURIComponent(message));
   }
-
-  const { data: c, error: caseErr } = await supabase
-    .from("cases")
-    .insert({
-      intake_id: intake.id,
-      customer_name: data.customer_name,
-      customer_email: data.customer_email || null,
-      customer_phone: data.customer_phone || null,
-      request_type: data.request_type,
-      subject: data.subject,
-      description: data.details || null,
-      status: suggestedNextStatus(data.request_type),
-    })
-    .select("ref_code")
-    .single();
-  if (caseErr) {
-    redirect("/intake?error=" + encodeURIComponent(caseErr.message));
-  }
-
-  await supabase.from("activity_logs").insert({
-    entity: "case",
-    entity_id: null,
-    action: "intake_created",
-    data: { intake_id: intake.id, request_type: data.request_type, ref_code: c?.ref_code },
-  });
-
-  redirect(`/intake/thanks?ref=${encodeURIComponent(c?.ref_code ?? "")}`);
 }

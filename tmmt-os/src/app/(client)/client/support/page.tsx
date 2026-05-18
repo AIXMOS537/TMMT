@@ -23,8 +23,8 @@ export default async function ClientSupportPage() {
 
   const { data: cases } = await supabase
     .from("cases")
-    .select("id, ref_code, subject, status, created_at, description")
-    .eq("customer_email", me?.email ?? "")
+    .select("id, ref_code, subject, status, created_at, description, request_type")
+    .ilike("customer_email", me?.email ?? "")
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -36,7 +36,7 @@ export default async function ClientSupportPage() {
         </Link>
         <h1 className="text-2xl font-semibold">Support tickets</h1>
         <p className="text-sm text-muted-foreground">
-          Color-coded by status so you can scan progress at a glance.
+          All requests during your rental — support, maintenance, and more.
         </p>
       </header>
 
@@ -71,7 +71,7 @@ export default async function ClientSupportPage() {
           <p className="text-sm text-muted-foreground">No tickets yet.</p>
         )}
         {(cases ?? []).map((c) => (
-          <ColoredRow key={c.id} tone={getCaseStatusTone(c.status as CaseStatus)}>
+          <ColoredRow key={c.id} href={`/client/support/${c.id}`} tone={getCaseStatusTone(c.status as CaseStatus)}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-medium">{c.subject}</div>

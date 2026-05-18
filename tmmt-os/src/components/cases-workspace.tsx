@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
 import { ViewSwitcher, useActiveView } from "@/components/view-switcher";
 import { CaseStatusBadge } from "@/components/case-status-badge";
@@ -35,7 +37,19 @@ export function CasesWorkspace({
   cases: CaseRow[];
   activeStatus?: string;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const view = useActiveView("board");
+
+  useEffect(() => {
+    if (searchParams.get("view")) return;
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", "list");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   return (
     <div className="space-y-6 animate-fade-in">

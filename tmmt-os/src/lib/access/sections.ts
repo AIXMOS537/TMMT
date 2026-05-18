@@ -8,6 +8,34 @@ export type PortalSection = {
 
 export const CLIENT_SECTIONS: PortalSection[] = [
   {
+    slug: "rental",
+    title: "My rental",
+    description: "Rental status, reminders, tickets, and quick actions.",
+    href: "/client/rental",
+    entitlement: "rental_hub",
+  },
+  {
+    slug: "support",
+    title: "Support tickets",
+    description: "Open and track support requests during your rental.",
+    href: "/client/support",
+    entitlement: "support_tickets",
+  },
+  {
+    slug: "maintenance",
+    title: "Maintenance",
+    description: "Report issues and mandatory service needs.",
+    href: "/client/maintenance",
+    entitlement: "maintenance_requests",
+  },
+  {
+    slug: "billing",
+    title: "Billing & deposits",
+    description: "Deposits, deductions, refunds, and charges.",
+    href: "/client/billing",
+    entitlement: "billing_portal",
+  },
+  {
     slug: "apps",
     title: "Your apps & tools",
     description: "Apps included in your package.",
@@ -34,20 +62,6 @@ export const CLIENT_SECTIONS: PortalSection[] = [
     description: "Steps to get fully set up.",
     href: "/client/onboarding",
     entitlement: "onboarding_steps",
-  },
-  {
-    slug: "support",
-    title: "Support tickets",
-    description: "Open and track support requests.",
-    href: "/client/support",
-    entitlement: "support_tickets",
-  },
-  {
-    slug: "billing",
-    title: "Billing & package",
-    description: "Plan details and invoices.",
-    href: "/client/billing",
-    entitlement: "billing_portal",
   },
   {
     slug: "announcements",

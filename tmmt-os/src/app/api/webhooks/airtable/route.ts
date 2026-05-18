@@ -3,17 +3,20 @@ import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { applyVerifiedSync } from "@/lib/crm-sync/apply-verified";
 import { fetchAirtableRecord } from "@/lib/crm-sync/airtable";
+import { upsertOpsLocationFromAirtable } from "@/lib/routing/ops-locations";
 
 const Body = z.object({
   airtable_record_id: z.string().min(1),
   table: z.string().optional(),
+  event: z.enum(["lead.verified", "ops_location.upsert"]).optional(),
   verified_by: z.string().optional(),
   ghl_contact_id: z.string().optional(),
 });
 
 /**
- * Airtable automation: when Verified checkbox is checked → POST here.
- * Promotes row to Supabase cases + marks crm_sync_records verified.
+ * Airtable automations:
+ * - Leads: Verified checkbox → promote sync record + case
+ * - Ops Locations: roster row changed → upsert ops_locations
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.SYNC_WEBHOOK_SECRET;
@@ -27,14 +30,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { airtable_record_id, table, verified_by, ghl_contact_id } = parsed.data;
+  const { airtable_record_id, table, event, verified_by, ghl_contact_id } = parsed.data;
+  const opsTable = process.env.AIRTABLE_OPS_LOCATIONS_TABLE ?? "Ops Locations";
   const tableName = table ?? process.env.AIRTABLE_LEADS_TABLE ?? "Leads";
   const supabase = createSupabaseServiceClient();
 
-  const fields = await fetchAirtableRecord(tableName, airtable_record_id);
+  const fields = (await fetchAirtableRecord(tableName, airtable_record_id)) ?? {};
+
+  const isOpsSync =
+    event === "ops_location.upsert" ||
+    tableName === opsTable ||
+    table === opsTable;
+
+  if (isOpsSync) {
+    const location = await upsertOpsLocationFromAirtable(fields);
+    await supabase.from("sync_events").insert({
+      source: "airtable",
+      event_type: "ops_location.upsert",
+      external_id: airtable_record_id,
+      payload: { fields, location },
+      processed: true,
+    });
+    return NextResponse.json({ ok: true, ops_location: location });
+  }
+
   const contactId =
-    ghl_contact_id ??
-    (fields?.["GHL Contact ID"] as string | undefined);
+    ghl_contact_id ?? (fields?.["GHL Contact ID"] as string | undefined);
 
   if (!contactId) {
     return NextResponse.json(
@@ -78,7 +99,7 @@ export async function POST(req: NextRequest) {
   const result = await applyVerifiedSync({
     syncRecordId: syncRecord.id,
     verifiedBy: verified_by,
-    airtableFields: fields ?? undefined,
+    airtableFields: fields,
   });
 
   return NextResponse.json({

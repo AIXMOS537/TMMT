@@ -3,7 +3,10 @@ import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { upsertLeadForVerification } from "@/lib/crm-sync/airtable";
 import { resolveCanonicalStage } from "@/lib/crm-sync/stage-map";
-import type { GhlStageWebhookBody } from "@/lib/crm-sync/types";
+import { syncClientAlertsForStage } from "@/lib/client-rental/sync-alerts";
+import { runGhlStageAutoOps } from "@/lib/ops-command/ghl-auto-ops";
+import { isGhlAutoOpsEnabled } from "@/lib/ops-command/stage-rules";
+import type { CanonicalRenterStage, GhlStageWebhookBody } from "@/lib/crm-sync/types";
 
 const Body = z.object({
   event: z.string().optional(),
@@ -25,8 +28,8 @@ const Body = z.object({
 });
 
 /**
- * GHL → Airtable (pending verify) + Supabase audit.
- * Configure GHL workflow: Opportunity stage changed → POST here.
+ * GHL opportunity stage changed → Supabase CRM + optional Airtable mirror.
+ * When GHL_AUTO_OPS is enabled (default), auto-verify, update case, assign staff, route to ClickUp.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.GHL_WEBHOOK_SECRET;
@@ -108,7 +111,6 @@ export async function POST(req: NextRequest) {
       .update({
         airtable_record_id: airtable.recordId,
         airtable_table: process.env.AIRTABLE_LEADS_TABLE ?? "Leads",
-        sync_status: "pending_verification",
       })
       .eq("id", syncRow.id);
   }
@@ -120,11 +122,45 @@ export async function POST(req: NextRequest) {
       .eq("id", eventRow.id);
   }
 
+  const autoOps = await runGhlStageAutoOps(supabase, {
+    syncRecordId: syncRow.id,
+    canonicalStage: canonical,
+    customerEmail: data.contact?.email,
+    customerName: contactName,
+    customerPhone: data.contact?.phone,
+    ghlStageLabel: data.stage,
+    ghlContactId: data.contact_id,
+    pipelineId: data.pipeline_id,
+    pipelineName: data.pipeline_name,
+    businessLine: data.business_line ?? businessLine,
+    customFields: data.custom_fields,
+  });
+
+  const clientEmail = data.contact?.email;
+  if (
+    clientEmail &&
+    process.env.GHL_CLIENT_ALERTS !== "false" &&
+    !autoOps.applied
+  ) {
+    await syncClientAlertsForStage(supabase, {
+      customerEmail: clientEmail,
+      canonicalStage: canonical as CanonicalRenterStage,
+      ghlContactId: data.contact_id,
+      syncRecordId: syncRow.id,
+      ghlStageLabel: data.stage,
+    }).catch(() => undefined);
+  }
+
   return NextResponse.json({
     ok: true,
     sync_record_id: syncRow.id,
     canonical_stage: canonical,
     airtable,
-    message: "Team must verify in Airtable before app updates.",
+    auto_ops: autoOps,
+    message: autoOps.applied
+      ? autoOps.message
+      : isGhlAutoOpsEnabled()
+        ? "Logged — stage not configured for auto-apply."
+        : "Logged — enable GHL_AUTO_OPS for automatic case updates.",
   });
 }

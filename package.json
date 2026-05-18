@@ -1,5 +1,42 @@
 {
+  "name": "tmmt-app",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "vercel-build": "next build"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "check-env": "node scripts/check-env.mjs",
+    "create-partner-test-user": "node scripts/create-partner-test-user.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@sentry/nextjs": "^10.47.0",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.97.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.576.0",
+    "next": "16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.4.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^25.3.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

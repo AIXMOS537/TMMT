@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { PortalSwitcher } from "./portal-switcher";
-import { PortalSidebar } from "./portal-sidebar";
+import { OpsMobileShell } from "./ops-mobile-shell";
 import type { PortalId } from "@/lib/access/types";
 import { cn } from "@/lib/utils";
 
@@ -20,23 +20,20 @@ export function PortalShell({
   children: ReactNode;
   portals?: PortalId[];
   currentPortal?: PortalId;
-  /** Ops-style Airtable interface layout with left nav */
+  /** Ops-style layout with left nav (drawer on phone) */
   sidebar?: boolean;
 }) {
   if (sidebar) {
     return (
-      <div className="flex min-h-screen">
-        <PortalSidebar
-          brand={brand}
-          opsLinks={links}
-          user={user}
-          portals={portals}
-          currentPortal={currentPortal}
-        />
-        <main className="min-w-0 flex-1 overflow-auto">
-          <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">{children}</div>
-        </main>
-      </div>
+      <OpsMobileShell
+        brand={brand}
+        links={links}
+        user={user}
+        portals={portals}
+        currentPortal={currentPortal}
+      >
+        {children}
+      </OpsMobileShell>
     );
   }
 
@@ -44,7 +41,7 @@ export function PortalShell({
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-md">
         <div className="container flex h-14 items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-6">
+          <div className="flex min-w-0 items-center gap-4 sm:gap-6">
             <Link href="/" className="shrink-0 text-sm font-semibold tracking-tight">
               {brand}
             </Link>
@@ -72,11 +69,11 @@ export function PortalShell({
               )}
             </nav>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-2 text-sm sm:gap-3">
             {portals && currentPortal && (
               <PortalSwitcher portals={portals} current={currentPortal} />
             )}
-            <span className="hidden max-w-[12rem] truncate text-muted-foreground md:inline">
+            <span className="hidden max-w-[10rem] truncate text-muted-foreground sm:inline md:max-w-[12rem]">
               {user?.full_name || user?.email}
               {user?.role ? ` · ${user.role}` : ""}
             </span>
@@ -91,7 +88,7 @@ export function PortalShell({
           </div>
         </div>
       </header>
-      <main className={cn("container flex-1 py-8 lg:py-10")}>{children}</main>
+      <main className={cn("container flex-1 px-4 py-6 sm:px-6 lg:py-10")}>{children}</main>
     </div>
   );
 }
