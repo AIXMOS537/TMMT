@@ -1,112 +1,114 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const PORTALS = [
+  {
+    title: "Client Portal",
+    desc: "Apps, training, documents, billing — by package.",
+    href: "/client/dashboard",
+    gradient: "from-violet-500/15 via-violet-500/5 to-transparent",
+    ring: "ring-violet-200/60",
+  },
+  {
+    title: "Team Portal",
+    desc: "SOPs, scripts, workflows, and internal training.",
+    href: "/team/dashboard",
+    gradient: "from-teal-500/15 via-teal-500/5 to-transparent",
+    ring: "ring-teal-200/60",
+  },
+  {
+    title: "Admin Dashboard",
+    desc: "Users, packages, revenue, and access overrides.",
+    href: "/admin/dashboard",
+    gradient: "from-amber-500/15 via-amber-500/5 to-transparent",
+    ring: "ring-amber-200/60",
+  },
+] as const;
+
+const QUICK = [
+  { title: "Learn", href: "/learn", label: "Browse" },
+  { title: "Marketplace", href: "/marketplace", label: "Browse" },
+  { title: "Onboarding", href: "/onboarding", label: "Start" },
+  { title: "Submit a request", href: "/intake", label: "New intake", primary: true },
+  { title: "Internal ops", href: "/internal/dashboard", label: "Open" },
+  { title: "Airtable interfaces", href: "/internal/interfaces", label: "Open" },
+] as const;
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen container py-16 space-y-12">
-      <header>
-        <h1 className="text-4xl font-semibold">TMMT OS</h1>
-      </header>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium">Three portals · one login</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Portal</CardTitle>
-              <CardDescription>Apps, training, documents, billing — by package.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/client/dashboard"><Button variant="outline" className="w-full">Enter</Button></Link>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Portal</CardTitle>
-              <CardDescription>SOPs, scripts, workflows, and internal training.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/team/dashboard"><Button variant="outline" className="w-full">Enter</Button></Link>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Dashboard</CardTitle>
-              <CardDescription>Users, packages, revenue, and access overrides.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/admin/dashboard"><Button variant="outline" className="w-full">Enter</Button></Link>
-            </CardContent>
-          </Card>
+    <main className="min-h-screen">
+      <div className="border-b border-border/60 bg-card/50 backdrop-blur-sm">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <h1 className="text-xl font-semibold tracking-tight">TMMT OS</h1>
+          <Link href="/login">
+            <Button variant="outline" size="sm">
+              Sign in
+            </Button>
+          </Link>
         </div>
-      </section>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Learn</CardTitle>
-            <CardDescription>Operator training and ecosystem guides.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/learn"><Button variant="outline" className="w-full">Browse</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Marketplace</CardTitle>
-            <CardDescription>Rentals catalog and fleet availability.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/marketplace"><Button variant="outline" className="w-full">Browse</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Onboarding</CardTitle>
-            <CardDescription>Complete your profile after sign-in.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/onboarding"><Button variant="outline" className="w-full">Start</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Submit a request</CardTitle>
-            <CardDescription>Anyone can start a case here.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/intake"><Button className="w-full">New intake form</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Internal team</CardTitle>
-            <CardDescription>Cases, tasks, vendor assignment.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/internal/dashboard"><Button variant="outline" className="w-full">Open</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendor portal</CardTitle>
-            <CardDescription>Approved vendors: your job queue.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/vendor/dashboard"><Button variant="outline" className="w-full">Open</Button></Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Investor portal</CardTitle>
-            <CardDescription>Performance updates & reports.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/investor/dashboard"><Button variant="outline" className="w-full">Open</Button></Link>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="container space-y-14 py-12 lg:py-16">
+        <section className="max-w-2xl animate-fade-in">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            One login. Color-coded ops.
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+            The same visual language as your Airtable interfaces — soft boards, status colors, and
+            dashboards that are easy to scan.
+          </p>
+        </section>
+
+        <section className="space-y-5">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Portals
+          </h3>
+          <div className="grid gap-4 md:grid-cols-3">
+            {PORTALS.map((p) => (
+              <Card
+                key={p.href}
+                className={cn(
+                  "overflow-hidden bg-gradient-to-br ring-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift",
+                  p.gradient,
+                  p.ring
+                )}
+              >
+                <CardHeader>
+                  <CardTitle>{p.title}</CardTitle>
+                  <CardDescription>{p.desc}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href={p.href}>
+                    <Button variant="outline" className="w-full">
+                      Enter
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-5">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Quick links
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {QUICK.map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                className="surface-card flex items-center justify-between px-5 py-4"
+              >
+                <span className="font-medium">{c.title}</span>
+                <span className="text-sm text-primary">{c.label} →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

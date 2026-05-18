@@ -8,18 +8,16 @@ export default async function InternalLayout({ children }: { children: React.Rea
   return (
     <PortalShell
       brand="TMMT OS · Internal"
+      sidebar
       portals={access?.portals}
       currentPortal="ops"
       links={[
         { href: "/internal/dashboard", label: "Dashboard" },
         { href: "/internal/cases", label: "Cases" },
         { href: "/internal/sync", label: "CRM sync" },
+        { href: "/internal/interfaces", label: "Interfaces" },
         { href: "/internal/vendors", label: "Vendors" },
         ...(me.role === "admin" ? [{ href: "/internal/admin", label: "Admin" }] : []),
-        {
-          href: process.env.NEXT_PUBLIC_PORTAL_URL ?? "https://tmmt-c919-two.vercel.app",
-          label: "Rentals portal ↗",
-        },
       ]}
       user={me}
     >

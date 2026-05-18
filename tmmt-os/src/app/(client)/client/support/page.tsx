@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CaseStatusBadge } from "@/components/case-status-badge";
+import { ColoredRow } from "@/components/colored-row";
 import { formatDate } from "@/lib/utils";
 import { createSupportCase } from "./actions";
 import type { CaseStatus } from "@/lib/workflow/statuses";
+import { getCaseStatusTone } from "@/lib/ui/status-colors";
 
 export const dynamic = "force-dynamic";
 
@@ -34,15 +36,11 @@ export default async function ClientSupportPage() {
         </Link>
         <h1 className="text-2xl font-semibold">Support tickets</h1>
         <p className="text-sm text-muted-foreground">
-          Requests are tracked as TMMT cases — your ops team sees them in{" "}
-          <Link href="/internal/cases" className="underline">
-            Internal → Cases
-          </Link>
-          .
+          Color-coded by status so you can scan progress at a glance.
         </p>
       </header>
 
-      <Card>
+      <Card className="border-t-4 border-t-orange-500">
         <CardHeader>
           <CardTitle>Open a ticket</CardTitle>
           <CardDescription>We&apos;ll email updates to {me?.email}</CardDescription>
@@ -73,20 +71,20 @@ export default async function ClientSupportPage() {
           <p className="text-sm text-muted-foreground">No tickets yet.</p>
         )}
         {(cases ?? []).map((c) => (
-          <Card key={c.id}>
-            <CardContent className="pt-6 flex items-start justify-between gap-4">
+          <ColoredRow key={c.id} tone={getCaseStatusTone(c.status as CaseStatus)}>
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-medium">{c.subject}</div>
                 <p className="text-xs text-muted-foreground">
                   {c.ref_code} · {formatDate(c.created_at)}
                 </p>
                 {c.description && (
-                  <p className="text-sm text-muted-foreground mt-2">{c.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{c.description}</p>
                 )}
               </div>
               <CaseStatusBadge status={c.status as CaseStatus} />
-            </CardContent>
-          </Card>
+            </div>
+          </ColoredRow>
         ))}
       </section>
     </div>

@@ -1,10 +1,10 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/table";
-import { CaseStatusBadge } from "@/components/case-status-badge";
-import { CASE_STATUSES, type CaseStatus } from "@/lib/workflow/statuses";
-import { formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { CasesWorkspace } from "@/components/cases-workspace";
+import { CASE_STATUSES } from "@/lib/workflow/statuses";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -21,51 +21,19 @@ export default async function CasesIndex({ searchParams }: { searchParams: { sta
   const { data: cases } = await q;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Cases</CardTitle>
-        <form className="flex items-center gap-2">
-          <select
-            name="status"
-            defaultValue={searchParams.status ?? ""}
-            className="h-9 rounded-md border bg-background px-2 text-sm"
-          >
-            <option value="">All statuses</option>
-            {CASE_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <button className="text-sm underline" type="submit">Filter</button>
-        </form>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <Thead>
-            <Tr>
-              <Th>Ref</Th>
-              <Th>Customer</Th>
-              <Th>Request</Th>
-              <Th>Subject</Th>
-              <Th>Status</Th>
-              <Th>Created</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {(cases ?? []).map((c) => (
-              <Tr key={c.id}>
-                <Td className="font-mono text-xs">
-                  <Link href={`/internal/cases/${c.id}`} className="underline">{c.ref_code}</Link>
-                </Td>
-                <Td>{c.customer_name}</Td>
-                <Td>{c.request_type}</Td>
-                <Td>{c.subject}</Td>
-                <Td><CaseStatusBadge status={c.status as CaseStatus} /></Td>
-                <Td className="text-muted-foreground text-xs">{formatDate(c.created_at)}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <PageHeader
+        title="Cases"
+        description="Kanban-style board and list — grouped like your Airtable pipelines, color-coded by status."
+        action={
+          <Link href="/intake">
+            <Button>New intake</Button>
+          </Link>
+        }
+      />
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading views…</p>}>
+        <CasesWorkspace cases={cases ?? []} activeStatus={searchParams.status} />
+      </Suspense>
+    </div>
   );
 }
