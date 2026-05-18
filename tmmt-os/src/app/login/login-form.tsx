@@ -45,9 +45,9 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40">
       <Card className="w-full max-w-md p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">TMMT OS · Ops</h1>
+          <h1 className="text-2xl font-semibold">Sign in to TMMT OS</h1>
           <p className="text-sm text-muted-foreground">
-            Sync queue & webhooks. Rentals UI:{" "}
+            Operations, portals, and Management workspaces. Rentals admin:{" "}
             <a
               href={process.env.NEXT_PUBLIC_PORTAL_URL ?? "https://tmmt-c919-two.vercel.app"}
               className="underline"

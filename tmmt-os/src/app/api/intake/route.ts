@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { REQUEST_TYPES, suggestedNextStatus } from "@/lib/workflow/statuses";
+import { REQUEST_TYPES } from "@/lib/workflow/statuses";
+import { processUnifiedIntake } from "@/lib/intake/unified";
 
 const Body = z.object({
   customer_name: z.string().min(1),
@@ -13,17 +13,13 @@ const Body = z.object({
   source: z.string().optional(),
   airtable_id: z.string().optional(),
   payload: z.record(z.any()).optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 /**
  * Public webhook endpoint for external intake sources (Airtable automation,
  * GoHighLevel webhook, Zapier, n8n, etc.). Gate it with the INTAKE_WEBHOOK_SECRET
  * header so it can't be spammed.
- *
- *   curl -X POST https://YOUR-APP/api/intake \
- *     -H "Content-Type: application/json" \
- *     -H "X-Intake-Secret: $INTAKE_WEBHOOK_SECRET" \
- *     -d '{"customer_name":"Jane","subject":"flat tire","request_type":"tow"}'
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.INTAKE_WEBHOOK_SECRET;
@@ -38,40 +34,28 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
-  const supabase = createSupabaseServiceClient();
-  const { data: intake, error: intakeErr } = await supabase
-    .from("customer_intake_forms")
-    .insert({
+  try {
+    const result = await processUnifiedIntake({
       customer_name: data.customer_name,
-      customer_email: data.customer_email ?? null,
-      customer_phone: data.customer_phone ?? null,
-      request_type: data.request_type ?? "other",
+      customer_email: data.customer_email,
+      customer_phone: data.customer_phone,
+      request_type: data.request_type,
       subject: data.subject,
-      details: data.details ?? null,
+      details: data.details,
       source: data.source ?? "api",
-      airtable_id: data.airtable_id ?? null,
-      payload: data.payload ?? {},
-    })
-    .select("id")
-    .single();
-  if (intakeErr) return NextResponse.json({ error: intakeErr.message }, { status: 500 });
+      airtable_id: data.airtable_id,
+      payload: data.payload,
+      tags: data.tags,
+    });
 
-  const { data: c, error: caseErr } = await supabase
-    .from("cases")
-    .insert({
-      intake_id: intake.id,
-      customer_name: data.customer_name,
-      customer_email: data.customer_email ?? null,
-      customer_phone: data.customer_phone ?? null,
-      request_type: data.request_type ?? "other",
-      subject: data.subject,
-      description: data.details ?? null,
-      airtable_id: data.airtable_id ?? null,
-      status: suggestedNextStatus(data.request_type ?? "other"),
-    })
-    .select("id, ref_code, status")
-    .single();
-  if (caseErr) return NextResponse.json({ error: caseErr.message }, { status: 500 });
-
-  return NextResponse.json({ ok: true, case: c, intake_id: intake.id });
+    return NextResponse.json({
+      ok: true,
+      case: { id: result.caseId, ref_code: result.refCode, status: result.status },
+      intake_id: result.intakeId,
+      routing: result.routing,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "intake failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

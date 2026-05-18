@@ -5,8 +5,11 @@ export default async function VendorLayout({ children }: { children: React.React
   const me = await requireRole(["vendor", "admin"]);
   return (
     <PortalShell
-      brand="TMMT OS · Vendor"
-      links={[{ href: "/vendor/dashboard", label: "My jobs" }]}
+      brand="TMMT OS"
+      links={[
+        { href: "/vendor/dashboard", label: "My jobs" },
+        { href: "/vendor/ledger", label: "Expenses" },
+      ]}
       user={me}
     >
       {children}

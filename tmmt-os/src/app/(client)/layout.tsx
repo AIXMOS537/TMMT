@@ -5,10 +5,16 @@ export default async function ClientPortalLayout({ children }: { children: React
   const access = await requirePortal("client");
   return (
     <PortalShell
-      brand="TMMT · Client Portal"
+      brand="TMMT OS"
       currentPortal="client"
       portals={access.portals}
-      links={[{ href: "/client/dashboard", label: "Home" }]}
+      links={[
+        { href: "/client/dashboard", label: "Home" },
+        { href: "/client/rental", label: "My rental" },
+        { href: "/client/support", label: "Tickets" },
+        { href: "/client/maintenance", label: "Maintenance" },
+        { href: "/client/billing", label: "Billing" },
+      ]}
       user={{
         full_name: access.profile.full_name,
         email: access.profile.email,

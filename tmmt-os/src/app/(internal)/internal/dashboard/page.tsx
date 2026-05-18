@@ -6,6 +6,7 @@ import { StatCard } from "@/components/stat-card";
 import { CaseStatusBadge } from "@/components/case-status-badge";
 import { JobStatusBadge } from "@/components/job-status-badge";
 import { ColoredRow } from "@/components/colored-row";
+import { MobileOpsTriage } from "@/components/mobile-ops-triage";
 import { formatDate } from "@/lib/utils";
 import type { CaseStatus, VendorJobStatus } from "@/lib/workflow/statuses";
 import { getCaseStatusTone, VENDOR_JOB_TONE } from "@/lib/ui/status-colors";
@@ -49,7 +50,13 @@ export default async function InternalDashboard() {
     <div className="space-y-8">
       <PageHeader
         title="Operations"
-        description="At-a-glance metrics and live queues — same rhythm as your Airtable interface dashboards."
+        description="At-a-glance metrics and live queues across TMMT OS operations."
+      />
+
+      <MobileOpsTriage
+        pendingSync={pendingSync ?? 0}
+        blockedCases={blockedCount ?? 0}
+        openCases={openCount ?? 0}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

@@ -41,7 +41,7 @@ export default async function SyncQueuePage({
     <div className="space-y-6">
       <PageHeader
         title="CRM sync queue"
-        description="Pipeline moves from GHL — verify here before they update cases (like your Airtable Leads review)."
+        description="Pipeline moves from GHL — verify here before they update cases and sync to Management."
       />
 
       {error && (
