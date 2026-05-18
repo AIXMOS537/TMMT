@@ -1,16 +1,22 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { PortalSwitcher } from "./portal-switcher";
+import type { PortalId } from "@/lib/access/types";
 
 export function PortalShell({
   brand,
   links,
   user,
   children,
+  portals,
+  currentPortal,
 }: {
   brand: string;
   links: { href: string; label: string }[];
   user?: { full_name?: string | null; email?: string | null; role?: string | null } | null;
   children: ReactNode;
+  portals?: PortalId[];
+  currentPortal?: PortalId;
 }) {
   return (
     <div className="min-h-screen flex flex-col">
@@ -41,6 +47,9 @@ export function PortalShell({
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            {portals && currentPortal && (
+              <PortalSwitcher portals={portals} current={currentPortal} />
+            )}
             <span className="text-muted-foreground hidden sm:inline">
               {user?.full_name || user?.email} {user?.role ? `· ${user.role}` : ""}
             </span>
