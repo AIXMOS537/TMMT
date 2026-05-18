@@ -16,8 +16,12 @@ Project → Settings → Environment Variables → set for **Production** and **
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes (never `NEXT_PUBLIC_`) |
 | `INTAKE_WEBHOOK_SECRET` | Strongly recommended |
+| `GHL_OVERDUE_WEBHOOK_SECRET` | Yes, for n8n overdue → GHL collections workflow |
+| `N8N_WEBHOOK_SECRET` | Yes, if using `/api/webhooks/n8n` for overdue ingress |
 
-Optional (not wired in app yet): `CLICKUP_*`, `AIRTABLE_*`, `GHL_API_KEY`.
+Optional outbound GHL (prefer `AUTOMATIONS/.env` for scripts): `GHL_API_KEY`, `GHL_LOCATION_ID`, `GHL_PIPELINE_STAGE_MAP_JSON`.
+
+Other optional: `CLICKUP_*`, `AIRTABLE_*`.
 
 Optional host override: `NEXT_PUBLIC_APP_HOST=tmmt-c919-two.vercel.app` (defaults in `next.config.mjs`).
 
