@@ -5,7 +5,7 @@ export default async function TeamPortalLayout({ children }: { children: React.R
   const access = await requirePortal("team");
   return (
     <PortalShell
-      brand="TMMT · Team Portal"
+      brand="TMMT OS"
       currentPortal="team"
       portals={access.portals}
       links={[
