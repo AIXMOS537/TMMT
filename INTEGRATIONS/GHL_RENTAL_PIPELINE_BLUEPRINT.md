@@ -203,34 +203,46 @@ After you create the pipeline in GHL:
 
 ---
 
-## Should you upgrade GHL?
+## Agency account (your plan)
 
-### What you need for this blueprint
+You are on **Agency** — you already have:
 
-| Capability | Typical requirement |
-|------------|---------------------|
-| Unlimited workflows | **Unlimited** plan ($297/mo) or agency sub-account with workflow access |
-| **Custom webhook** (WF-00) | LC **Premium** workflow action — counts toward **Workflows Pro** executions |
-| **WhatsApp** | LC Phone / WhatsApp add-on + Meta verification (usage-billed) |
-| Multiple pipelines | Starter limited sub-accounts — **Unlimited** if you run TMMT + dealer + partners |
-| API / outbound tags | `GHL_API_KEY` (agency or location token) — available on higher tiers |
+- Unlimited sub-accounts (TMMT Rentals location + dealer + partners separate)
+- Full workflow builder + LC Phone / WhatsApp (when connected per location)
+- API access for `GHL_API_KEY` (agency token or location token)
+- White-label / SaaS mode if you resell later
 
-### Practical recommendation
+**You do not need** Starter → Unlimited → Agency SaaS upgrades.
 
-| Your situation | Suggestion |
-|----------------|------------|
-| Solo location, 1 rental pipeline, &lt;10k workflow runs/mo | Stay on current plan; add **Workflows Pro Starter ($10/mo)** if webhook/WhatsApp actions show "Premium" |
-| Agency / multiple brands / dealer + rental + credit | **Unlimited ($297/mo)** — unlimited sub-accounts + white label |
-| Hitting "execution limit" on automations | **Workflows Pro Growth ($25/mo)** — 30k premium executions |
+### Only optional add-on: Workflows Pro
 
-**You do not need Agency SaaS ($497)** unless you resell GHL to clients.
+Some actions (Webhook, certain AI/premium steps) bill as **premium executions**. If a workflow step shows **Premium**:
 
-### Before paying — check in GHL
+| Tier | Price | Executions |
+|------|-------|------------|
+| Starter | $10/mo | 10,000 |
+| Growth | $25/mo | 30,000 |
 
-1. **Automation → Workflows** → create test workflow → add **Webhook** action.  
-   - If it shows **Premium** / lock icon → budget for Workflows Pro.  
-2. Add **WhatsApp** send — if locked → LC Phone / plan upgrade.  
-3. **Settings → Company → Billing** → see current plan name.
+Agency base plan does **not** remove premium execution metering — add Workflows Pro only if GHL prompts you at publish time.
+
+### Agency setup checklist
+
+1. **Sub-account:** Open the **TMMT Rentals** location (not agency dashboard) before building pipelines/workflows.
+2. **Pipelines:** Create `TMMT Rentals` inside that location’s Opportunities.
+3. **API key for TMMT OS:**  
+   - **Settings → Business Profile → API Key** (location), or  
+   - Agency **Settings → API Keys** → use location ID in requests.  
+   Put in Vercel: `GHL_API_KEY` + `GHL_LOCATION_ID` (location ID from URL or Settings).
+4. **Separate pipelines per brand:**  
+   - `TMMT Rentals` — this blueprint  
+   - `Applicants – Dealership` — dealer (existing doc)  
+   - `Partners – Empire` — JV / shops (optional)
+
+### Before paying extra — check in GHL
+
+1. In the **rental location**, create test workflow → add **Webhook** + **WhatsApp**.  
+2. Publish — if no premium warning, **Workflows Pro not required**.  
+3. If blocked, enable **Workflows Pro Starter ($10/mo)** at agency billing.
 
 ---
 

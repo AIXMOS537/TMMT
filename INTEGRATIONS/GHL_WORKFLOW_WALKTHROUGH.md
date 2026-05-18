@@ -39,7 +39,7 @@
 ```text
 OVERDUE: {{contact.name}}
 Amount: {{contact.amount_due}}
-Due: {{contact.due_date}}
+Due: {{contact.payment_due_date}}
 Phone: {{contact.phone}}
 ```
 
