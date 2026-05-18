@@ -14,7 +14,7 @@ type ChatLine = {
 };
 
 const EXAMPLES = [
-  "what's pending",
+  "what is pending",
   "assign maria@tmmtrentals.net to case TMMT-ABC123",
   "approve crm for partner-portal-test@tmmt-rentals.local",
   "post $45 expense to partner-portal-test@tmmt-rentals.local for interior detail show billing",
