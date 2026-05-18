@@ -1,7 +1,5 @@
 # TMMT OS
 
-The business operating system for TMMT Auto Services / TMMT Rentals / Project AIXMOS.
-
 A Next.js 14 + Supabase workflow engine. Every customer request becomes a **case**.
 Cases move through a typed pipeline (intake → review → vendor work → approval → close).
 Three role-gated portals share one schema:
@@ -156,6 +154,70 @@ forgets a check, vendors cannot see other vendors' work.
 
 One private bucket: `vendor-files`. Path convention is `{vendor_job_id}/{filename}`.
 Storage policies use the first path segment to match against the vendor's jobs.
+
+## Three portals (Client · Team · Admin)
+
+One login, role-based portals, package-based entitlements. See **[docs/PORTALS.md](docs/PORTALS.md)**.
+
+- `/client/dashboard` — paying customers (Starter / Growth / Elite)
+- `/team/dashboard` — internal team (department-scoped)
+- `/admin/dashboard` — owners & leadership (admin scope)
+- `/portals` — switch when you have access to more than one
+
+Apply migration: `supabase/migrations/0005_portals_entitlements.sql`
+
+## AIXMOS / TMMT ecosystem map
+
+| Layer | In this repo |
+|-------|----------------|
+| **Dashboard** | `/internal/dashboard` (ops), `/vendor/dashboard` (operators/vendors), `/investor/dashboard` |
+| **Onboarding** | `/onboarding` — profile setup after login |
+| **Learn** | `/learn` — education module scaffold |
+| **Marketplace** | `/marketplace` — services + vehicles catalog (`0004` migration) |
+| **Admin** | `/internal/admin` — admin-only console |
+| **CRM / webhooks** | `/api/webhooks/ghl`, `/api/webhooks/airtable`, `/api/webhooks/n8n` |
+| **Intake** | `/intake` + `/api/intake` |
+| **AI agents** | VISION · TANK · FLY GUY · BOB · STICKS — `/api/agents/evaluate` (3-of-5 votes) |
+| **Activity log** | `activity_logs` + `sync_events` on every webhook transition |
+
+Apply `supabase/migrations/0004_aixmos_ecosystem.sql` for bookings, payments, rewards, and the agent panel tables.
+
+### Agent evaluation (3-of-5)
+
+```bash
+# Open a panel for a case
+curl -X POST https://YOUR-APP/api/agents/evaluate \
+  -H "Content-Type: application/json" \
+  -H "X-Agent-Secret: $AGENT_WEBHOOK_SECRET" \
+  -d '{"action":"open","subject_type":"case","subject_id":"CASE-UUID"}'
+
+# Cast a vote (repeat for each agent)
+curl -X POST https://YOUR-APP/api/agents/evaluate \
+  -H "Content-Type: application/json" \
+  -H "X-Agent-Secret: $AGENT_WEBHOOK_SECRET" \
+  -d '{"action":"vote","session_id":"SESSION-UUID","agent":"vision","vote":"approve","rationale":"Policy OK"}'
+```
+
+### n8n webhook
+
+```bash
+curl -X POST https://YOUR-APP/api/webhooks/n8n \
+  -H "Content-Type: application/json" \
+  -H "X-N8N-Secret: $N8N_WEBHOOK_SECRET" \
+  -d '{"event":"booking.confirmed","entity":"booking","entity_id":"UUID","open_agent_evaluation":true}'
+```
+
+## Deployment (Vercel)
+
+1. `npm run build` must pass locally (uses `.env.local`).
+2. Set all variables from `.env.example` in Vercel → Settings → Environment Variables.
+3. Run migrations `0001` → `0002` (if using CRM sync) → `0004` in Supabase SQL Editor.
+4. Configure Supabase Auth redirect URLs (see `docs/VERCEL_PRODUCTION_CHECKLIST.md`).
+5. `vercel deploy --prod` or push to the connected Git branch.
+6. Promote first admin via `supabase/PROMOTE_FIRST_ADMIN.sql`.
+7. Point GHL / Airtable / n8n webhooks at your production host.
+
+Never commit `.env.local`, `.env.vercel`, or service-role keys.
 
 ## Where to go next
 
