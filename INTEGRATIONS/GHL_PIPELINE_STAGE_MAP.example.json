@@ -1,0 +1,22 @@
+{
+  "_comment": "Replace RENTALS_PIPELINE_ID with GHL pipeline ID. Stage keys = lowercase names from TMMT Rentals pipeline.",
+  "pipelines": {
+    "RENTALS_PIPELINE_ID": {
+      "business_line": "rentals",
+      "pipeline_name": "TMMT Rentals",
+      "stages": {
+        "new lead": "inquiry",
+        "contacted": "contacted",
+        "qualified": "qualifying",
+        "booking sent": "payment_pending",
+        "booked": "booked",
+        "booked / active": "booked",
+        "active rental": "active_rental",
+        "payment overdue": "escalation",
+        "returned / closed": "returned",
+        "lost / dnr": "closed_lost"
+      }
+    }
+  },
+  "default_canonical_stage": "inquiry"
+}

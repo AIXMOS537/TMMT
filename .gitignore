@@ -1,7 +1,16 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.DS_Store
+*.log
+*.pem
 
-# dependencies
-/node_modules
+# Env & secrets — use AUTOMATIONS/.env or tmmt-os/.env.local
+.env
+.env.local
+.env.*.local
+**/.env.local
+AUTOMATIONS/.env
+
+# Node / Next.js
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,35 +18,30 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
+.next/
+out/
+build/
 /coverage
 /test-results/
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# TypeScript / generated
 *.tsbuildinfo
 next-env.d.ts
+tmmt-os/src/types/database.ts
+
+# Supabase
 supabase/.temp/

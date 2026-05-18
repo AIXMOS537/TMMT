@@ -1,6 +1,24 @@
 # TMMT Rentals — Project Roadmap & Status
 
-> Last updated: March 28, 2026
+> Last updated: May 17, 2026
+
+---
+
+## Portfolio Command Center (draft)
+
+> **Spec:** `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`  
+> **Plan:** `docs/superpowers/plans/2026-05-17-command-center-architecture.md` (pending owner review)
+
+Extends this app into a multi-venture command center (~50 businesses) while keeping TMMT Rentals daily ops unchanged. Phased rollout:
+
+| Phase | Scope | Status |
+|-------|--------|--------|
+| 0 | Route restructure `/v/[venture]/*`, ventures table, portfolio dashboard | ✅ Shipped (apply migration in Supabase) |
+| 1 | Team workspaces (notes, links, message log, people) | ❌ Not started |
+| 2 | Scripts library (`scripts-library/` + `/scripts` UI) | ❌ Not started |
+| 3 | Ventures #2 and #3 from AIX_Command_Center seedlings | ❌ Not started |
+| 4 | NAS / flash-drive backup pipeline | ❌ Not started |
+| 5 | Polish (ACL, Storage mirror, portfolio widgets) | ❌ Not started |
 
 ---
 

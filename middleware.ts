@@ -52,6 +52,14 @@ export async function middleware(request: NextRequest) {
       if (!allowed) {
         return NextResponse.redirect(new URL("/partner", request.url));
       }
+      if (
+        pathname.startsWith("/v/") ||
+        pathname.startsWith("/teams") ||
+        pathname.startsWith("/scripts") ||
+        pathname.startsWith("/settings")
+      ) {
+        return NextResponse.redirect(new URL("/partner", request.url));
+      }
     } else if (pathname.startsWith("/partner")) {
       return NextResponse.redirect(new URL("/", request.url));
     }

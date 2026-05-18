@@ -1,0 +1,38 @@
+[
+  {
+    "test_name": "telegram_tmmt_followup",
+    "source_channel": "telegram",
+    "sender_id": "owner",
+    "sender_name": "Owner",
+    "message_text": "TMMT: follow up with Chris about rental pickup tomorrow 9am high priority"
+  },
+  {
+    "test_name": "slack_credit_lead",
+    "source_channel": "slack",
+    "sender_id": "owner",
+    "sender_name": "Owner",
+    "message_text": "CREDIT: add lead Jasmine interested in business funding education, follow up Friday"
+  },
+  {
+    "test_name": "telegram_ecommerce_content",
+    "source_channel": "telegram",
+    "sender_id": "owner",
+    "sender_name": "Owner",
+    "message_text": "ECOM: create task to write 5 product descriptions for waist trainer offer due Monday"
+  },
+  {
+    "test_name": "money_entry_requires_review",
+    "source_channel": "telegram",
+    "sender_id": "owner",
+    "sender_name": "Owner",
+    "message_text": "Log TMMT expense $45 car wash today"
+  },
+  {
+    "test_name": "customer_message_requires_approval",
+    "source_channel": "gohighlevel",
+    "sender_id": "owner",
+    "sender_name": "Owner",
+    "message_text": "Draft reply to customer asking if credit funding approval is guaranteed"
+  }
+]
+

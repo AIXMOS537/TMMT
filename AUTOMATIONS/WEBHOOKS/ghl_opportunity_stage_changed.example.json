@@ -1,0 +1,19 @@
+{
+  "event": "opportunity.stage_changed",
+  "pipeline_id": "RENTALS_PIPELINE_ID",
+  "pipeline_name": "TMMT Rentals",
+  "opportunity_id": "opp_example_123",
+  "contact_id": "contact_example_456",
+  "contact": {
+    "name": "Test Customer",
+    "email": "test@example.com",
+    "phone": "+15551234567"
+  },
+  "previous_stage": "contacted",
+  "stage": "payment link sent",
+  "business_line": "rentals",
+  "custom_fields": {
+    "amount_due": "450",
+    "vehicle": "2020 Camry"
+  }
+}

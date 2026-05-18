@@ -1,0 +1,5 @@
+# Supabase CLI — project uapxakmlwnpfsftfeezx (TMMT Rentals + TMMT OS)
+project_id = "uapxakmlwnpfsftfeezx"
+
+[db]
+major_version = 15
