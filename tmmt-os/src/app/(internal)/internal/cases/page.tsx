@@ -24,7 +24,7 @@ export default async function CasesIndex({ searchParams }: { searchParams: { sta
     <div className="space-y-6">
       <PageHeader
         title="Cases"
-        description="Kanban-style board and list — grouped like your Airtable pipelines, color-coded by status."
+        description="Kanban board and list view — color-coded by status for quick scanning."
         action={
           <Link href="/intake">
             <Button>New intake</Button>

@@ -1,4 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { syncClientAlertsForStage } from "@/lib/client-rental/sync-alerts";
+import { executeRouting } from "@/lib/routing/execute";
 import type { CanonicalRenterStage } from "./types";
 
 /**
@@ -83,6 +85,32 @@ export async function applyVerifiedSync(args: {
       case_id: caseId,
     })
     .eq("id", args.syncRecordId);
+
+  if (record.business_line !== "dispatch" && record.customer_email) {
+    await syncClientAlertsForStage(supabase, {
+      customerEmail: record.customer_email,
+      canonicalStage: canonical,
+      ghlContactId: record.ghl_contact_id,
+      syncRecordId: args.syncRecordId,
+      ghlStageLabel: record.ghl_stage ?? undefined,
+    }).catch(() => undefined);
+  }
+
+  await executeRouting({
+    pipelineId: record.ghl_pipeline_id ?? undefined,
+    pipelineName: record.ghl_pipeline_name ?? undefined,
+    stage: record.ghl_stage,
+    source: "airtable_verify",
+    businessLine: record.business_line,
+    syncRecordId: args.syncRecordId,
+    caseId: caseId ?? undefined,
+    customerName: record.customer_name ?? undefined,
+    subject: record.ghl_pipeline_name
+      ? `${record.ghl_pipeline_name} — ${record.ghl_stage}`
+      : record.ghl_stage,
+    customFields: (record.payload as { custom_fields?: Record<string, unknown> })
+      ?.custom_fields,
+  });
 
   return { caseId, canonical };
 }

@@ -5,7 +5,7 @@ export default async function AdminPortalLayout({ children }: { children: React.
   const access = await requirePortal("admin");
   return (
     <PortalShell
-      brand="TMMT · Admin"
+      brand="TMMT OS"
       currentPortal="admin"
       portals={access.portals}
       links={[{ href: "/admin/dashboard", label: "Home" }]}

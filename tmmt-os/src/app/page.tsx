@@ -32,8 +32,8 @@ const QUICK = [
   { title: "Marketplace", href: "/marketplace", label: "Browse" },
   { title: "Onboarding", href: "/onboarding", label: "Start" },
   { title: "Submit a request", href: "/intake", label: "New intake", primary: true },
-  { title: "Internal ops", href: "/internal/dashboard", label: "Open" },
-  { title: "Airtable interfaces", href: "/internal/interfaces", label: "Open" },
+  { title: "Operations", href: "/internal/dashboard", label: "Open" },
+  { title: "TMMT Management", href: "/internal/interfaces", label: "Open" },
 ] as const;
 
 export default function HomePage() {
@@ -56,8 +56,8 @@ export default function HomePage() {
             One login. Color-coded ops.
           </h2>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            The same visual language as your Airtable interfaces — soft boards, status colors, and
-            dashboards that are easy to scan.
+            One product for portals and ops — with TMMT Management for appointments, contracts,
+            fleet, and payments.
           </p>
         </section>
 

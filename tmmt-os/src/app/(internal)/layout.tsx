@@ -7,15 +7,16 @@ export default async function InternalLayout({ children }: { children: React.Rea
   const access = await getUserAccess();
   return (
     <PortalShell
-      brand="TMMT OS · Internal"
+      brand="TMMT OS"
       sidebar
       portals={access?.portals}
       currentPortal="ops"
       links={[
         { href: "/internal/dashboard", label: "Dashboard" },
+        { href: "/internal/assistant", label: "Command" },
         { href: "/internal/cases", label: "Cases" },
         { href: "/internal/sync", label: "CRM sync" },
-        { href: "/internal/interfaces", label: "Interfaces" },
+        { href: "/internal/ledger", label: "Finance" },
         { href: "/internal/vendors", label: "Vendors" },
         ...(me.role === "admin" ? [{ href: "/internal/admin", label: "Admin" }] : []),
       ]}
