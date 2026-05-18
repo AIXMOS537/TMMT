@@ -1,51 +1,59 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { PORTAL_PATH_ACCESS } from "@/lib/access/portals";
 
-const PORTAL_ROLES: Record<string, string[]> = {
-  "/internal": ["admin", "internal_team"],
-  "/vendor": ["vendor", "admin"],
-  "/investor": ["investor", "admin"],
-};
+function canAccessPath(
+  pathname: string,
+  role: string | null,
+  portal_role: string | null
+): boolean {
+  for (const [prefix, rules] of Object.entries(PORTAL_PATH_ACCESS)) {
+    if (!pathname.startsWith(prefix)) continue;
+
+    if (portal_role && (rules.portalRoles as readonly string[]).includes(portal_role)) {
+      return true;
+    }
+    if (role && rules.legacyRoles && (rules.legacyRoles as readonly string[]).includes(role)) {
+      return true;
+    }
+    return false;
+  }
+  return true;
+}
 
 export async function middleware(request: NextRequest) {
-  // Public assets / Next internals always pass through.
   const { pathname } = request.nextUrl;
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/intake") ||
     pathname === "/api/status" ||
     pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/agents/") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/public")
   ) {
     return NextResponse.next();
   }
 
-  const { response, user, role } = await updateSession(request);
+  const { response, user, role, portal_role } = await updateSession(request);
 
-  // Public routes
   const isPublic =
     pathname === "/" ||
     pathname.startsWith("/intake") ||
+    pathname.startsWith("/learn") ||
+    pathname.startsWith("/marketplace") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth");
   if (isPublic) return response;
 
-  // Authenticated routes require a session
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Role-gate the three portal segments
-  for (const prefix of Object.keys(PORTAL_ROLES)) {
-    if (pathname.startsWith(prefix)) {
-      const allowed = PORTAL_ROLES[prefix];
-      if (!role || !allowed.includes(role)) {
-        return NextResponse.redirect(new URL("/login?error=forbidden", request.url));
-      }
-    }
+  if (!canAccessPath(pathname, role, portal_role)) {
+    return NextResponse.redirect(new URL("/portals?error=forbidden", request.url));
   }
 
   return response;

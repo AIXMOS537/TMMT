@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "TMMT OS",
-  description: "TMMT business operating system",
+  description: "TMMT OS",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

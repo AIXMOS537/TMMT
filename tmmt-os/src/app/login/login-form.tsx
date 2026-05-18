@@ -25,7 +25,7 @@ export function LoginForm() {
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return setError(error.message);
-    const next = params.get("next") || "/internal/dashboard";
+    const next = params.get("next") || "/portals";
     router.replace(next);
     router.refresh();
   }
