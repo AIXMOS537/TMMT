@@ -34,7 +34,7 @@ const PORTAL_STATUSES = new Set([
   "Active",
 ]);
 
-const PORTAL_SYSTEMS = new Set(["AIXMOS Portal", "Both"]);
+const PORTAL_SYSTEMS = new Set(["AIXMOS Portal", "TMMT Rentals", "Both"]);
 const VALID_ROLES = new Set(["admin", "executive", "operator", "member"]);
 
 if (!AIRTABLE_PAT) {
@@ -131,7 +131,7 @@ function toUser(record) {
     return { skip: true, reason: `Status "${status}" not portal-active` };
   }
   if (!PORTAL_SYSTEMS.has(system)) {
-    return { skip: true, reason: `System "${system}" not AIXMOS portal` };
+    return { skip: true, reason: `System "${system}" not in portal scope` };
   }
   if (!VALID_ROLES.has(role) || role === "pending") {
     return { skip: true, reason: `Invalid Portal Role "${role}"` };
