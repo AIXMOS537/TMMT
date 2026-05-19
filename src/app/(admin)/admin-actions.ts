@@ -25,6 +25,9 @@ const ADMIN_TABLES = new Set([
   "tickets",
   "shops_mechanics_cleaning",
   "waitlist",
+  "vendors",
+  "cases",
+  "vendor_jobs",
 ]);
 
 export async function adminUpsert(
