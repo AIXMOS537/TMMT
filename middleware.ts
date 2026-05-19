@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
+import {
+  isOwnerHubHost,
+  publicSiteOrigin,
+} from "@/lib/site-domains";
 
 function isPublicPath(pathname: string) {
   return (
@@ -40,6 +44,13 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
   const { pathname } = request.nextUrl;
+  const host = request.headers.get("host");
+  const ownerHub = isOwnerHubHost(host);
+
+  // Public intake forms live on .com only — not the private .net owner hub.
+  if (ownerHub && pathname.startsWith("/forms")) {
+    return NextResponse.redirect(new URL(pathname, publicSiteOrigin()));
+  }
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
@@ -62,7 +73,23 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url));
+    const tier = getTierForUser(user);
+    if (ownerHub) {
+      if (tier === "owner") {
+        return NextResponse.redirect(new URL("/command", request.url));
+      }
+      return NextResponse.redirect(new URL("/login?hub=owner", publicSiteOrigin()));
+    }
+    return NextResponse.redirect(new URL(homePathForTier(tier), request.url));
+  }
+
+  // .net is Muhammad's private access hub — admin (owner) only.
+  if (ownerHub && user && getTierForUser(user) !== "owner") {
+    return NextResponse.redirect(new URL("/login?hub=owner", publicSiteOrigin()));
+  }
+
+  if (ownerHub && user && pathname === "/") {
+    return NextResponse.redirect(new URL("/command", request.url));
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {
