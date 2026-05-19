@@ -25,7 +25,7 @@ export default async function PartnerPortalPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-  if (getTierForUser(user) !== "partner") redirect("/");
+  if (getTierForUser(user) !== "investor") redirect("/");
 
   const { data, error } = await supabase.rpc("get_partner_fleet");
 
