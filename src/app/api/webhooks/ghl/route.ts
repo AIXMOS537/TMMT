@@ -1,0 +1,77 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+/**
+ * GoHighLevel webhook → append AIXMOS/TMMT tags to customer service_notes.
+ * Configure GHL workflow to POST JSON: { email, tags?, event?, contact_id? }
+ * Header: x-ghl-webhook-secret must match GHL_WEBHOOK_SECRET
+ */
+export async function POST(request: NextRequest) {
+  const secret = process.env.GHL_WEBHOOK_SECRET;
+  if (secret) {
+    const header = request.headers.get("x-ghl-webhook-secret");
+    if (header !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const email =
+    (typeof body.email === "string" && body.email) ||
+    (typeof body.contact_email === "string" && body.contact_email) ||
+    "";
+  const tags = Array.isArray(body.tags)
+    ? body.tags.map(String)
+    : typeof body.tag === "string"
+      ? [body.tag]
+      : [];
+  const event = typeof body.event === "string" ? body.event : "ghl_webhook";
+
+  if (!email) {
+    return NextResponse.json({ ok: true, skipped: "no email" });
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const supabase = createClient(url, serviceKey);
+  const stamp = new Date().toISOString();
+  const line = `[${stamp}] GHL ${event}${tags.length ? `: ${tags.join(", ")}` : ""}`;
+
+  const { data: rows } = await supabase
+    .from("active_customers")
+    .select("id, service_notes")
+    .ilike("email", email)
+    .limit(1);
+
+  if (rows?.[0]) {
+    const prev = String(rows[0].service_notes ?? "").trim();
+    const service_notes = prev ? `${prev}\n${line}` : line;
+    await supabase.from("active_customers").update({ service_notes }).eq("id", rows[0].id);
+    return NextResponse.json({ ok: true, updated: "active_customers" });
+  }
+
+  const { data: leads } = await supabase
+    .from("incoming_leads")
+    .select("id, notes")
+    .ilike("email", email)
+    .limit(1);
+
+  if (leads?.[0]) {
+    const prev = String((leads[0] as { notes?: string }).notes ?? "").trim();
+    const notes = prev ? `${prev}\n${line}` : line;
+    await supabase.from("incoming_leads").update({ notes }).eq("id", leads[0].id);
+    return NextResponse.json({ ok: true, updated: "incoming_leads" });
+  }
+
+  return NextResponse.json({ ok: true, skipped: "no matching contact" });
+}

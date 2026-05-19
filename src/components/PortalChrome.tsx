@@ -1,6 +1,7 @@
 "use client";
 
 import ThemeToggle from "@/components/ThemeToggle";
+import CommandHubNav from "@/components/CommandHubNav";
 import { Button } from "@/components/ui";
 import { signOut } from "@/app/(admin)/actions";
 import { LogOut } from "lucide-react";
@@ -36,6 +37,7 @@ export default function PortalChrome({
           </div>
         </div>
       </header>
+      <CommandHubNav />
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">{children}</main>
     </div>
   );

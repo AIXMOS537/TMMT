@@ -50,29 +50,20 @@ Do **not** forward `.net` to `.com`. They serve different purposes.
 
 ---
 
-## Vercel — two projects
+## Vercel — one project (`tmmt-c919`)
 
-### Project 1: `aixmos-landing` (public `.com`)
-
-```
-Repository:  Metavibez4L/TMMT
-Root:        AIXMOS/public
-Framework:   Other (static)
-Domains:     allinonemanagementsolutions.com
-             www.allinonemanagementsolutions.com
-```
-
-### Project 2: `tmmt-owner-hub` (private `.net`)
+Use a **single** Vercel project connected to `AIXMOS537/TMMT` (repo root). Do **not** deploy separate `tmmt-ops` or `tmmt-command-center` projects.
 
 ```
-Repository:  Metavibez4L/TMMT
-Root:        /  (repo root)
-Framework:   Next.js
-Domains:     allinonemanagementsolutions.net
-             www.allinonemanagementsolutions.net
+Vercel project:  tmmt-c919
+Repository:      AIXMOS537/TMMT
+Root:            /
+Framework:       Next.js
+Domains:         allinonemanagementsolutions.net  (owner hub)
+                 allinonemanagementsolutions.com  (public — attach when ready)
 ```
 
-Env vars for Project 2:
+Env vars:
 
 ```env
 NEXT_PUBLIC_PUBLIC_SITE_HOST=allinonemanagementsolutions.com

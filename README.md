@@ -35,6 +35,13 @@ This app replaces all of that. The full Airtable dataset (1,453 records, 44 tabl
 - **Dark Mode** — Toggle with localStorage persistence and system preference fallback
 - **Responsive** — Mobile sidebar with hamburger menu
 
+## Ops + Command Center (one app)
+
+Private owner hub on **`.net`**, public AIXMOS on **`.com`**, single Vercel deploy (`tmmt-c919`).
+
+**Business funnel:** rental → $97 membership → credit guidance — [`docs/AIXMOS-TMMT-FUNNEL.md`](docs/AIXMOS-TMMT-FUNNEL.md)
+See [`docs/ONE-APP-CONSOLIDATION.md`](docs/ONE-APP-CONSOLIDATION.md) and [`DEPLOY.md`](DEPLOY.md).
+
 ## Quick Start
 
 ```bash

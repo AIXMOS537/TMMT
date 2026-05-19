@@ -4,14 +4,25 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import {
   isOwnerHubHost,
+  isPublicSiteHost,
   publicSiteOrigin,
 } from "@/lib/site-domains";
+
+function isAixmosStaticPath(pathname: string) {
+  return (
+    pathname.startsWith("/aixmos") ||
+    pathname === "/apply" ||
+    pathname === "/operator-apply" ||
+    pathname === "/thankyou"
+  );
+}
 
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
     pathname.startsWith("/forms") ||
-    pathname.startsWith("/login/")
+    pathname.startsWith("/login/") ||
+    isAixmosStaticPath(pathname)
   );
 }
 
@@ -46,6 +57,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
   const ownerHub = isOwnerHubHost(host);
+  const publicSite = isPublicSiteHost(host);
 
   // Public intake forms live on .com only — not the private .net owner hub.
   if (ownerHub && pathname.startsWith("/forms")) {
@@ -67,6 +79,10 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (publicSite && pathname === "/" && !ownerHub && !user) {
+    return NextResponse.rewrite(new URL("/aixmos/index.html", request.url));
+  }
 
   if (!user && !isPublicPath(pathname)) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -108,6 +124,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|aixmos/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|html)$).*)",
   ],
 };
