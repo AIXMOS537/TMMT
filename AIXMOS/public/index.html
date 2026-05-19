@@ -3,849 +3,492 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="AIXMOS — AI-powered operations for modern teams. License, train, and scale with operator-backed playbooks." />
-  <title>AIXMOS — AI Operations Platform</title>
+  <meta name="description" content="AIXMOS helps everyday entrepreneurs get organized, build systems, and grow with operators and AI — a clear path toward $10,000/month." />
+  <title>AIXMOS — Start Where You Are</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #050816;
-      --bg-soft: #0b1024;
-      --surface: rgba(255, 255, 255, 0.06);
-      --surface-strong: rgba(255, 255, 255, 0.1);
-      --border: rgba(255, 255, 255, 0.12);
-      --text: #f4f6ff;
-      --muted: #9aa3c7;
-      --accent: #1440c4;
-      --accent-soft: rgba(20, 64, 196, 0.35);
-      --glow: 0 0 80px rgba(20, 64, 196, 0.35);
-      --radius: 16px;
-      --radius-sm: 12px;
+      --blue:      #1440C4;
+      --blue-2:    #2563EB;
+      --blue-dim:  rgba(20,64,196,0.07);
+      --navy:      #0A1628;
+      --white:     #FFFFFF;
+      --surface:   #F4F7FF;
+      --border:    rgba(10,37,102,0.10);
+      --muted:     rgba(10,22,40,0.50);
+      --green:     #1D9E75;
+      --font-d:    'Bebas Neue', sans-serif;
+      --font-b:    'DM Sans', sans-serif;
+      --nav-h:     72px;
       --container: min(1120px, 100% - 48px);
-      --nav-h: 72px;
+      --radius-sm: 8px;
+      --radius:    12px;
+      --radius-lg: 16px;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
     body {
       margin: 0;
-      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(1200px 600px at 10% -10%, rgba(20, 64, 196, 0.35), transparent 55%),
-        radial-gradient(900px 500px at 90% 0%, rgba(120, 80, 255, 0.18), transparent 50%),
-        var(--bg);
-      color: var(--text);
+      font-family: var(--font-b);
+      background: var(--white);
+      color: var(--navy);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
 
-    img { max-width: 100%; display: block; }
     a { color: inherit; text-decoration: none; }
 
     .skip-link {
-      position: absolute;
-      left: -9999px;
-      top: auto;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
+      position: absolute; left: -9999px; top: auto;
+      width: 1px; height: 1px; overflow: hidden;
     }
     .skip-link:focus {
-      left: 16px;
-      top: 16px;
-      width: auto;
-      height: auto;
-      padding: 10px 14px;
-      background: #fff;
-      color: #000;
-      border-radius: 8px;
-      z-index: 10000;
+      left: 16px; top: 16px; width: auto; height: auto;
+      padding: 10px 14px; background: var(--blue); color: var(--white);
+      border-radius: var(--radius-sm); z-index: 10000;
     }
 
-    .container {
-      width: var(--container);
-      margin-inline: auto;
-    }
+    .container { width: var(--container); margin-inline: auto; }
 
-    /* —— Nav —— */
+    /* ── Header ── */
     .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      backdrop-filter: blur(14px);
-      background: rgba(5, 8, 22, 0.72);
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
-
     .nav-inner {
       height: var(--nav-h);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
     }
-
     .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      font-size: 1.05rem;
+      font-family: var(--font-d);
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      color: var(--navy);
+      flex-shrink: 0;
     }
-
-    .brand-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), #6b8cff);
-      box-shadow: var(--glow);
-    }
+    .brand span { color: var(--blue); }
 
     .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-      font-size: 0.95rem;
-      color: var(--muted);
+      display: flex; align-items: center; gap: 22px;
+      font-size: 0.9rem; color: var(--muted);
     }
+    .nav-links a:hover, .nav-links a.is-active { color: var(--navy); font-weight: 500; }
 
-    .nav-links a:hover { color: var(--text); }
-    .nav-links a.is-active {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .nav-ctas {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .nav-ctas { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 0 18px;
-      border-radius: 999px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 44px; padding: 0 18px;
+      border-radius: var(--radius-sm);
+      font-weight: 500; font-size: 0.9rem; font-family: var(--font-b);
+      border: 1px solid transparent; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    @media (prefers-reduced-motion: reduce) {
-      .btn { transition: none; }
+    .btn-outline {
+      background: transparent; border-color: var(--border); color: var(--navy);
     }
-
-    .btn-ghost {
-      background: transparent;
-      border-color: var(--border);
-      color: var(--text);
-    }
-    .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.35); }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #3d6dff);
-      color: #fff;
-      box-shadow: 0 8px 28px rgba(20, 64, 196, 0.45);
-    }
-    .btn-primary:hover { transform: translateY(-1px); }
-    @media (prefers-reduced-motion: reduce) {
-      .btn-primary:hover { transform: none; }
-    }
+    .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-primary { background: var(--blue); color: var(--white); }
+    .btn-primary:hover { background: var(--blue-2); }
 
     .nav-toggle {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--white); cursor: pointer;
     }
-
-    .nav-toggle-lines {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
+    .nav-toggle-lines { display: flex; flex-direction: column; gap: 5px; }
     .nav-toggle-lines span {
-      display: block;
-      width: 20px;
-      height: 2px;
-      background: currentColor;
-      border-radius: 2px;
+      display: block; width: 20px; height: 2px;
+      background: var(--navy); border-radius: 2px;
     }
 
-    /* —— Mobile drawer —— */
     .nav-drawer-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      z-index: 90;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
+      position: fixed; inset: 0;
+      background: rgba(10, 22, 40, 0.4);
+      z-index: 90; opacity: 0; visibility: hidden; pointer-events: none;
       transition: opacity 0.28s ease, visibility 0.28s ease;
     }
-
     .nav-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      height: 100dvh;
-      width: min(88vw, 320px);
-      z-index: 100;
-      background: rgba(255, 255, 255, 0.98);
-      color: #0a0f1f;
-      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+      position: fixed; top: 0; right: 0; height: 100dvh;
+      width: min(88vw, 320px); z-index: 100;
+      background: var(--white); border-left: 1px solid var(--border);
       transform: translateX(100%);
       transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.32s;
       visibility: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: calc(var(--nav-h) - 12px) 20px 24px;
-      overflow-y: auto;
+      display: flex; flex-direction: column;
+      padding: calc(var(--nav-h) - 8px) 20px 24px; overflow-y: auto;
     }
-
-    @media (prefers-reduced-motion: reduce) {
-      .nav-drawer-backdrop,
-      .nav-drawer {
-        transition: none;
-      }
-    }
-
-    body.drawer-open .nav-drawer-backdrop {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    body.drawer-open .nav-drawer {
-      transform: translateX(0);
-      visibility: visible;
-    }
-
-    .nav-drawer-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .nav-drawer-title {
-      font-weight: 700;
-      font-size: 1rem;
-      letter-spacing: 0.06em;
-    }
-
+    body.drawer-open .nav-drawer-backdrop { opacity: 1; visibility: visible; pointer-events: auto; }
+    body.drawer-open .nav-drawer { transform: translateX(0); visibility: visible; }
+    .nav-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .nav-drawer-title { font-family: var(--font-d); font-size: 1.2rem; letter-spacing: 0.06em; }
     .nav-drawer-close {
-      min-width: 44px;
-      min-height: 44px;
-      border-radius: 12px;
-      border: 1px solid rgba(10, 15, 31, 0.12);
-      background: #fff;
-      cursor: pointer;
-      font-size: 1.25rem;
-      line-height: 1;
+      min-width: 44px; min-height: 44px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 1.25rem;
     }
-
-    .nav-drawer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
+    .nav-drawer-links { display: flex; flex-direction: column; gap: 4px; }
     .nav-drawer-links a {
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      border-radius: 10px;
-      font-weight: 500;
-      color: #1a2238;
+      min-height: 44px; display: flex; align-items: center;
+      padding: 0 12px; border-radius: var(--radius-sm); font-weight: 500; color: var(--navy);
     }
-    .nav-drawer-links a:hover,
-    .nav-drawer-links a:focus-visible {
-      background: rgba(20, 64, 196, 0.08);
-      outline: none;
-    }
+    .nav-drawer-links a:hover { background: var(--blue-dim); }
+    .nav-drawer-ctas { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+    .nav-drawer-ctas .btn { width: 100%; min-height: 48px; }
 
-    .nav-drawer-ctas {
-      margin-top: auto;
-      padding-top: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .nav-drawer-ctas .btn {
-      width: 100%;
-      min-height: 48px;
-    }
-
-    .nav-drawer-ctas .btn-ghost {
-      border-color: rgba(10, 15, 31, 0.15);
-      color: #0a0f1f;
-    }
-
-    .nav-drawer-ctas .btn-primary {
-      color: #fff;
-    }
-
-    /* —— Reveal —— */
+    /* ── Reveal ── */
     .reveal {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.55s ease, transform 0.55s ease;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
     }
-    .reveal.reveal-visible {
-      opacity: 1;
-      transform: none;
-    }
+    .reveal.reveal-visible { opacity: 1; transform: none; }
     @media (prefers-reduced-motion: reduce) {
-      .reveal {
-        opacity: 1;
-        transform: none;
-        transition: none;
-      }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .nav-drawer-backdrop, .nav-drawer, .ticker-inner { transition: none; animation: none; }
     }
 
-    /* —— Hero —— */
-    .hero {
-      padding: clamp(48px, 8vw, 96px) 0 clamp(56px, 10vw, 120px);
-      min-height: min(88vh, 820px);
-      display: flex;
-      align-items: center;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: clamp(32px, 6vw, 64px);
-      align-items: center;
-    }
-
+    /* ── Shared ── */
     .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: var(--muted);
-      margin-bottom: 16px;
+      display: inline-block; font-size: 0.75rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--blue); font-weight: 600; margin-bottom: 14px;
     }
-    .eyebrow-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 12px var(--accent);
+    section { padding: clamp(72px, 11vw, 104px) 0; scroll-margin-top: var(--nav-h); }
+    .section-alt { background: var(--surface); border-block: 1px solid var(--border); }
+
+    .section-head { max-width: 680px; margin-bottom: 44px; }
+    .pill {
+      display: inline-block; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: 0.75rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 14px;
+    }
+    .section-head h2 {
+      font-family: var(--font-d);
+      font-size: clamp(2rem, 3vw + 1rem, 2.9rem);
+      font-weight: 400; letter-spacing: 0.02em;
+      margin: 0 0 12px; line-height: 1.05;
+    }
+    .section-head p { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 58ch; }
+    .section-tagline {
+      font-size: 1.15rem; color: var(--navy); font-weight: 500;
+      margin: 8px 0 0; max-width: 48ch;
     }
 
+    /* ── Hero ── */
+    .hero {
+      padding: clamp(64px, 10vw, 108px) 0 clamp(56px, 8vw, 80px);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1.15fr 0.85fr;
+      gap: clamp(32px, 5vw, 56px); align-items: center;
+    }
     .hero h1 {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(2.4rem, 4vw + 1rem, 3.6rem);
-      line-height: 1.08;
-      margin: 0 0 20px;
+      font-family: var(--font-d);
+      font-size: clamp(2.6rem, 5.5vw + 0.5rem, 4.5rem);
+      font-weight: 400; line-height: 0.98; letter-spacing: 0.02em;
+      margin: 0 0 20px; color: var(--navy);
     }
-
     .hero-lead {
-      color: var(--muted);
-      font-size: 1.1rem;
-      max-width: 52ch;
-      margin-bottom: 28px;
+      font-size: 1.12rem; color: var(--muted);
+      max-width: 52ch; margin: 0 0 28px;
     }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .hero-proof {
+      display: flex; flex-wrap: wrap; gap: 20px;
+      padding-top: 20px; border-top: 1px solid var(--border);
+    }
+    .hero-proof-item strong {
+      display: block; font-family: var(--font-d);
+      font-size: 1.8rem; color: var(--blue); line-height: 1; letter-spacing: 0.02em;
+    }
+    .hero-proof-item span { font-size: 0.82rem; color: var(--muted); }
 
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 40px;
+    .hero-panel {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px;
     }
+    .hero-panel h3 {
+      font-family: var(--font-d); font-size: 1.35rem;
+      letter-spacing: 0.04em; margin: 0 0 10px;
+    }
+    .hero-panel p { margin: 0 0 16px; color: var(--muted); font-size: 0.95rem; }
+    .hero-panel ul { margin: 0; padding: 0; list-style: none; }
+    .hero-panel li {
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.92rem; color: var(--navy);
+    }
+    .hero-panel li:last-child { border-bottom: none; }
 
-    .hero-stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: clamp(16px, 3vw, 32px);
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    .stat {
-      min-width: 120px;
-    }
-    .stat strong {
-      display: block;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-    .stat span {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .hero-card {
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-      padding: 28px;
-      box-shadow: var(--glow);
-    }
-
-    .hero-card h3 {
-      margin: 0 0 12px;
-      font-size: 1.1rem;
-    }
-    .hero-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    /* —— Ticker —— */
+    /* ── Ticker ── */
     .ticker {
-      border-block: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.02);
-      padding: 14px 0;
-      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      background: var(--white); padding: 12px 0; overflow: hidden;
     }
     .ticker-inner {
-      display: flex;
-      gap: 48px;
-      white-space: nowrap;
-      animation: ticker 28s linear infinite;
-      color: var(--muted);
-      font-size: 0.85rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      display: flex; gap: 40px; white-space: nowrap;
+      animation: ticker 36s linear infinite;
+      color: var(--muted); font-size: 0.78rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
     }
     @keyframes ticker {
       from { transform: translateX(0); }
       to { transform: translateX(-50%); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .ticker-inner { animation: none; white-space: normal; flex-wrap: wrap; justify-content: center; }
+
+    /* ── Path selector ── */
+    .path-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .path-card {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 22px 18px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--white);
+      text-align: left; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      font-family: var(--font-b); color: var(--navy);
+    }
+    .path-card:hover, .path-card.is-selected {
+      border-color: var(--blue);
+      background: var(--blue-dim);
+    }
+    .path-card:focus-visible {
+      outline: 2px solid var(--blue); outline-offset: 2px;
+    }
+    .path-card-num {
+      font-family: var(--font-d); font-size: 1.4rem; color: var(--blue);
+      letter-spacing: 0.04em; line-height: 1;
+    }
+    .path-card h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .path-card p { margin: 0; font-size: 0.88rem; color: var(--muted); line-height: 1.45; }
+
+    /* ── Roadmaps ── */
+    .roadmap-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+    }
+    .roadmap-card {
+      padding: 28px; border-radius: var(--radius-lg);
+      border: 1px solid var(--border); background: var(--white);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .roadmap-card.is-highlight {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px var(--blue);
+    }
+    .roadmap-card h3 {
+      font-family: var(--font-d); font-size: 1.5rem;
+      letter-spacing: 0.04em; margin: 0 0 8px;
+    }
+    .roadmap-card p { margin: 0 0 16px; color: var(--muted); font-size: 0.95rem; }
+    .roadmap-steps { margin: 0; padding: 0; list-style: none; }
+    .roadmap-steps li {
+      font-size: 0.88rem; color: var(--navy);
+      padding: 6px 0 6px 18px; position: relative;
+    }
+    .roadmap-steps li::before {
+      content: ""; position: absolute; left: 0; top: 0.75em;
+      width: 6px; height: 6px; border-radius: 50%; background: var(--blue);
     }
 
-    /* —— Sections —— */
-    section {
-      padding: clamp(64px, 10vw, 112px) 0;
+    /* ── Journey ── */
+    .journey-flow {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+      position: relative;
+    }
+    .journey-step {
+      padding: 20px 16px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--white);
+      text-align: center;
+    }
+    .journey-step-num {
+      font-family: var(--font-d); font-size: 1.5rem; color: var(--blue);
+      margin-bottom: 6px; line-height: 1;
+    }
+    .journey-step h3 { margin: 0 0 6px; font-size: 0.9rem; font-weight: 600; }
+    .journey-step p { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+    .journey-banner {
+      margin-top: 32px; padding: 28px 32px;
+      border-radius: var(--radius-lg); border: 1px solid var(--border);
+      background: var(--white);
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 20px;
+    }
+    .journey-banner-num {
+      font-family: var(--font-d); font-size: 3.2rem; color: var(--blue);
+      line-height: 1; margin-right: 16px;
+    }
+    .journey-banner-copy { flex: 1; min-width: 200px; }
+    .journey-banner-copy p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    /* ── System ── */
+    .system-quote {
+      font-size: 1.2rem; font-weight: 500; color: var(--navy);
+      margin: 0 0 32px; max-width: 40ch;
+    }
+    .agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .agent {
+      border-radius: var(--radius); border: 1px solid var(--border);
+      padding: 24px; background: var(--white);
+    }
+    .agent-name {
+      font-family: var(--font-d); font-size: 1.6rem;
+      color: var(--blue); letter-spacing: 0.06em; margin: 0 0 6px;
+    }
+    .agent-role {
+      font-size: 0.75rem; font-weight: 600; color: var(--muted);
+      margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .agent p { margin: 0; font-size: 0.9rem; color: var(--muted); }
+    .operators-note {
+      margin-top: 20px; padding: 20px 24px;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--blue-dim); font-size: 0.95rem; color: var(--navy);
     }
 
-    .section-head {
-      max-width: 640px;
-      margin-bottom: 40px;
+    /* ── Operators ── */
+    .track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .track-card {
+      padding: 28px; border-radius: var(--radius-lg);
+      border: 1px solid var(--border); background: var(--white);
     }
-    .section-head h2 {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(2rem, 2vw + 1.4rem, 2.6rem);
-      margin: 0 0 12px;
+    .track-card h3 {
+      font-family: var(--font-d); font-size: 1.4rem;
+      letter-spacing: 0.04em; margin: 0 0 10px;
     }
-    .section-head p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.05rem;
+    .track-card p { margin: 0 0 12px; color: var(--muted); font-size: 0.95rem; }
+    .track-card ul { margin: 0; padding: 0 0 0 18px; color: var(--muted); font-size: 0.9rem; }
+    .partner-cta {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      align-items: center; justify-content: space-between;
+      padding: 28px; border-radius: var(--radius-lg);
+      border: 1px solid var(--border); background: var(--white);
     }
+    .partner-cta p { margin: 0; color: var(--muted); max-width: 52ch; font-size: 0.95rem; }
 
-    .pill {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
-
-    /* About */
-    .about-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    .about-card {
-      padding: 24px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .about-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
-    .about-card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
-
-    /* Services / menu */
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      align-items: stretch;
-    }
-
+    /* ── Services ── */
+    .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .menu-card {
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--bg-soft);
-      padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      cursor: default;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--white); padding: 24px;
+      display: flex; flex-direction: column; gap: 10px;
     }
-
     .menu-card.featured {
-      border-color: rgba(20, 64, 196, 0.55);
-      background: linear-gradient(180deg, rgba(20, 64, 196, 0.2), rgba(5, 8, 22, 0.9));
-      box-shadow: var(--glow);
+      border-color: var(--blue);
+      background: var(--blue-dim);
       cursor: pointer;
     }
-
-    .menu-card h3 { margin: 0; font-size: 1.15rem; }
+    .menu-card h3 { margin: 0; font-size: 1rem; font-weight: 600; }
     .price {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-family: var(--font-d); font-size: 2.2rem;
+      color: var(--blue); line-height: 1; letter-spacing: 0.02em;
     }
-    .price small { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
-    .menu-card ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-    .menu-card li {
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .menu-card li:last-child { border-bottom: 0; }
-
+    .price small { font-size: 0.9rem; font-family: var(--font-b); font-weight: 400; color: var(--muted); }
+    .menu-card ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: 0.9rem; }
+    .menu-card li { padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .menu-card li:last-child { border-bottom: none; }
     .badge {
-      align-self: flex-start;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(20, 64, 196, 0.25);
-      color: #dbe4ff;
+      align-self: flex-start; font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--blue-dim); color: var(--blue);
     }
 
-    /* Agents */
-    .agent-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+    /* ── Apply CTA ── */
+    .apply-strip {
+      text-align: center; max-width: 640px; margin-inline: auto;
     }
-    .agent {
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      padding: 20px;
-      background: var(--surface);
+    .apply-strip h2 {
+      font-family: var(--font-d);
+      font-size: clamp(2rem, 3vw + 1rem, 2.6rem);
+      margin: 0 0 12px; letter-spacing: 0.02em;
     }
-    .agent h4 { margin: 0 0 6px; font-size: 0.95rem; }
-    .agent p { margin: 0; font-size: 0.85rem; color: var(--muted); }
+    .apply-strip p { color: var(--muted); margin: 0 0 24px; font-size: 1.05rem; }
+    .apply-strip-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 
-    /* Journey */
-    .journey-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: start;
-    }
-    .journey-col ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-    .journey-col li {
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .journey-col li strong { color: var(--text); display: block; margin-bottom: 4px; }
-
-    .journey-target {
-      position: sticky;
-      top: calc(var(--nav-h) + 24px);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 28px;
-      background: linear-gradient(145deg, rgba(20, 64, 196, 0.15), var(--surface));
-    }
-    .journey-target h3 { margin: 0 0 10px; }
-    .journey-target p { margin: 0; color: var(--muted); font-size: 0.95rem; }
-
-    /* AIXMODE */
-    .aixmode-section {
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: clamp(32px, 5vw, 48px);
-      background: radial-gradient(600px 280px at 0% 0%, rgba(20, 64, 196, 0.35), transparent 60%),
-        var(--bg-soft);
-    }
-    .aixmode-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      align-items: center;
-    }
-    .aixmode-section h2 {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(1.8rem, 2vw + 1.2rem, 2.4rem);
-      margin: 0 0 12px;
-    }
-    .aixmode-section p { margin: 0; color: var(--muted); }
-
-    /* Partner */
-    .partner-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 28px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .partner-logos {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      color: var(--muted);
-      font-size: 0.85rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    /* Apply */
-    .apply-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      align-items: start;
-    }
-    .apply-copy h2 {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(1.8rem, 2vw + 1.2rem, 2.3rem);
-      margin: 0 0 16px;
-    }
-    .apply-copy p { color: var(--muted); margin: 0 0 20px; }
-
-    .apply-list {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-    .apply-list li {
-      position: relative;
-      padding-left: 28px;
-      margin-bottom: 14px;
-      color: var(--muted);
-    }
-    .apply-list li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0.55em;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #1440c4;
-    }
-
-    .apply-form-embed {
-      border-radius: var(--radius);
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      min-height: 420px;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.02);
-    }
-    .apply-form-embed iframe {
-      display: block;
-    }
-
-    /* Footer */
+    /* ── Footer ── */
     .site-footer {
-      padding: 40px 0 48px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.9rem;
+      padding: 40px 0; border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 0.9rem; background: var(--white);
     }
     .footer-inner {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; flex-wrap: wrap; gap: 16px;
+      justify-content: space-between; align-items: center;
     }
-    .footer-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    .footer-links a:hover { color: var(--text); }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 20px; }
+    .footer-links a:hover { color: var(--navy); }
+    .footer-tagline { font-family: var(--font-d); font-size: 1rem; letter-spacing: 0.06em; color: var(--navy); }
 
-    /* —— 768 —— */
+    @media (max-width: 960px) {
+      .path-grid { grid-template-columns: repeat(2, 1fr); }
+      .journey-flow { grid-template-columns: 1fr 1fr; }
+      .agent-grid { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
-      :root {
-        --container: min(1120px, 100% - 32px);
-      }
-
-      .nav-links,
-      .nav-ctas { display: none; }
-
+      :root { --container: min(1120px, 100% - 32px); }
+      .nav-links, .nav-ctas { display: none; }
       .nav-toggle { display: inline-flex; }
-
-      .hero {
-        min-height: auto;
-        padding-bottom: 56px;
-      }
-
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-stats {
-        gap: 20px;
-        padding-top: 20px;
-      }
-
-      .about-grid { grid-template-columns: 1fr; }
-
-      .menu-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .menu-card.featured {
-        gap: 16px;
-      }
-
-      .agent-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .journey-layout {
-        grid-template-columns: 1fr;
-        gap: 28px;
-      }
-
-      .journey-target {
-        position: static;
-        margin-top: 8px;
-      }
-
-      .aixmode-inner {
-        grid-template-columns: 1fr;
-      }
-
-      .apply-grid {
-        grid-template-columns: 1fr;
-      }
+      .hero-grid, .roadmap-grid, .track-grid, .menu-grid { grid-template-columns: 1fr; }
+      .journey-flow { grid-template-columns: 1fr; }
+      .journey-banner { flex-direction: column; align-items: flex-start; }
+      .menu-card[style*="grid-column"] { grid-column: auto !important; }
     }
 
-    /* —— ~480 —— */
     @media (max-width: 480px) {
-      .container {
-        width: 100%;
-        max-width: none;
-        margin-inline: 0;
-        padding-inline: 16px;
-      }
-
-      .agent-grid {
-        grid-template-columns: 1fr;
-      }
+      .container { width: 100%; padding-inline: 16px; }
+      .path-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <div
-    id="nav-drawer-backdrop"
-    class="nav-drawer-backdrop"
-    aria-hidden="true"
-    hidden
-  ></div>
-
-  <div
-    id="nav-drawer"
-    class="nav-drawer"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Mobile navigation"
-    aria-hidden="true"
-    inert
-  >
+  <div id="nav-drawer-backdrop" class="nav-drawer-backdrop" aria-hidden="true" hidden></div>
+  <div id="nav-drawer" class="nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation" aria-hidden="true" inert>
     <div class="nav-drawer-head">
       <span class="nav-drawer-title">Menu</span>
       <button type="button" class="nav-drawer-close" id="nav-drawer-close" aria-label="Close menu">×</button>
     </div>
     <nav class="nav-drawer-links" aria-label="Mobile">
-      <a href="#about" data-nav-target="about">About</a>
-      <a href="#services" data-nav-target="services">Services</a>
-      <a href="#agents" data-nav-target="agents">System</a>
+      <a href="#top" data-nav-target="top">Start</a>
+      <a href="#starting-point" data-nav-target="starting-point">Paths</a>
+      <a href="#roadmaps" data-nav-target="roadmaps">Roadmaps</a>
       <a href="#journey" data-nav-target="journey">Journey</a>
-      <a href="#aixmode" data-nav-target="aixmode">AIXMODE</a>
-      <a href="#partner" data-nav-target="partner">Partner</a>
-      <a href="#apply" data-nav-target="apply">Apply</a>
+      <a href="#system" data-nav-target="system">System</a>
+      <a href="#operators" data-nav-target="operators">Operators</a>
+      <a href="#services" data-nav-target="services">Services</a>
     </nav>
     <div class="nav-drawer-ctas">
-      <a class="btn btn-ghost" href="#apply">Apply now</a>
-      <a class="btn btn-primary" data-ghl-href="checkout97" href="[PASTE YOUR LINK]" target="_blank" rel="noopener noreferrer">Join — $97/mo</a>
+      <a class="btn btn-outline" href="apply.html">Talk first</a>
+      <a class="btn btn-primary" data-ghl-href="checkout97" href="#" target="_blank" rel="noopener noreferrer">Join — $97/mo</a>
     </div>
   </div>
 
   <header class="site-header">
     <div class="container nav-inner">
-      <a class="brand" href="#top" aria-label="AIXMOS home">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span>AIXMOS</span>
-      </a>
-
+      <a class="brand" href="#top" aria-label="AIXMOS home">AIX<span>MOS</span></a>
       <nav class="nav-links" aria-label="Primary">
-        <a href="#about" data-nav-target="about">About</a>
-        <a href="#services" data-nav-target="services">Services</a>
-        <a href="#agents" data-nav-target="agents">System</a>
+        <a href="#starting-point" data-nav-target="starting-point">Paths</a>
+        <a href="#roadmaps" data-nav-target="roadmaps">Roadmaps</a>
         <a href="#journey" data-nav-target="journey">Journey</a>
-        <a href="#aixmode" data-nav-target="aixmode">AIXMODE</a>
-        <a href="#partner" data-nav-target="partner">Partner</a>
-        <a href="#apply" data-nav-target="apply">Apply</a>
+        <a href="#system" data-nav-target="system">System</a>
+        <a href="#operators" data-nav-target="operators">Operators</a>
+        <a href="#services" data-nav-target="services">Services</a>
       </nav>
-
       <div class="nav-ctas">
-        <a class="btn btn-ghost" href="#apply">Apply now</a>
-        <a class="btn btn-primary" data-ghl-href="checkout97" href="[PASTE YOUR LINK]" target="_blank" rel="noopener noreferrer">Join — $97/mo</a>
+        <a class="btn btn-outline" href="apply.html">Talk first</a>
+        <a class="btn btn-primary" data-ghl-href="checkout97" href="#" target="_blank" rel="noopener noreferrer">Join — $97/mo</a>
       </div>
-
-      <button
-        type="button"
-        class="nav-toggle"
-        id="nav-toggle"
-        aria-expanded="false"
-        aria-controls="nav-drawer"
-        aria-label="Open menu"
-      >
-        <span class="nav-toggle-lines" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </span>
+      <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
+        <span class="nav-toggle-lines" aria-hidden="true"><span></span><span></span><span></span></span>
       </button>
     </div>
   </header>
@@ -854,159 +497,132 @@
     <div id="top"></div>
 
     <section class="hero" aria-labelledby="hero-heading">
-      <div class="container hero-grid reveal">
-        <div class="hero-content">
-          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Operator-grade AI systems</p>
-          <h1 id="hero-heading">Run revenue, support, and fulfillment on one AIXMOS spine.</h1>
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">For the people. By the people.</span>
+          <h1 id="hero-heading">Start where you are. Build what comes next.</h1>
           <p class="hero-lead">
-            License proven workflows, plug in autonomous agents, and keep humans in the loop where judgment matters — without rebuilding your stack from scratch.
+            AIXMOS is a guide for everyday entrepreneurs who need help organizing paperwork, tools, follow-up, AI, operators, and systems — without the corporate runaround.
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" data-ghl-href="checkout97" href="[PASTE YOUR LINK]" target="_blank" rel="noopener noreferrer">Start for $97/mo</a>
-            <a class="btn btn-ghost" href="#services">Compare plans</a>
+            <a class="btn btn-primary" href="#starting-point">Find your starting point</a>
+            <a class="btn btn-outline" href="apply.html">Talk to us first →</a>
           </div>
-          <div class="hero-stats">
-            <div class="stat"><strong>48h</strong><span>to first live workflow</span></div>
-            <div class="stat"><strong>12+</strong><span>vertical playbooks</span></div>
-            <div class="stat"><strong>SLA</strong><span>operator-backed routing</span></div>
+          <div class="hero-proof">
+            <div class="hero-proof-item">
+              <strong>24h</strong>
+              <span>Operator assigned after intake</span>
+            </div>
+            <div class="hero-proof-item">
+              <strong>48h</strong>
+              <span>Custom pathway mapped</span>
+            </div>
+            <div class="hero-proof-item">
+              <strong>$10K</strong>
+              <span>90-day target per client</span>
+            </div>
           </div>
         </div>
-        <div class="hero-card">
-          <h3>What you ship this week</h3>
-          <p>
-            Intake → triage → resolution templates with audit trails. Drop into your CRM or helpdesk; AIXMOS agents execute with guardrails you control.
-          </p>
-        </div>
+        <aside class="hero-panel">
+          <h3>What we help you sort out</h3>
+          <p>Pick one lane — we meet you there and build the rest with you.</p>
+          <ul>
+            <li>Paperwork, LLC, and compliance clarity</li>
+            <li>Tools, automations, and follow-up systems</li>
+            <li>AI agents plus real operators in the loop</li>
+            <li>A pathway you can actually follow week by week</li>
+          </ul>
+        </aside>
       </div>
     </section>
 
     <div class="ticker reveal" aria-hidden="true">
       <div class="container">
         <div class="ticker-inner">
-          <span>Workflow licensing</span>
-          <span>Human-in-the-loop</span>
-          <span>Audit-ready logs</span>
-          <span>Multi-agent routing</span>
-          <span>Workflow licensing</span>
-          <span>Human-in-the-loop</span>
-          <span>Audit-ready logs</span>
-          <span>Multi-agent routing</span>
+          <span>Get organized</span><span>Launch clean</span><span>Build infrastructure</span>
+          <span>Scale with operators</span><span>CHUMMO · MOOSE · VISION</span><span>$10K target</span>
+          <span>Get organized</span><span>Launch clean</span><span>Build infrastructure</span>
+          <span>Scale with operators</span><span>CHUMMO · MOOSE · VISION</span><span>$10K target</span>
         </div>
       </div>
     </div>
 
-    <section id="about" class="reveal">
+    <section id="starting-point" class="reveal">
       <div class="container">
         <div class="section-head">
-          <span class="pill">About</span>
-          <h2>Built for teams that cannot afford brittle automation.</h2>
-          <p>AIXMOS packages operator playbooks as repeatable systems — so every handoff is documented, measurable, and improvable.</p>
+          <span class="pill">Start here</span>
+          <h2>Which situation sounds most like you?</h2>
+          <p>No wrong answer. Tap the path that fits — we will show you the roadmap and the right next step.</p>
         </div>
-        <div class="about-grid">
-          <article class="about-card">
-            <h3>Composable agents</h3>
-            <p>Swap models and tools without rewriting flows. One spine, many surfaces.</p>
-          </article>
-          <article class="about-card">
-            <h3>Guardrailed execution</h3>
-            <p>Policies, approvals, and escalation paths ship as first-class primitives.</p>
-          </article>
-          <article class="about-card">
-            <h3>Evidence by default</h3>
-            <p>Every step emits structured logs for compliance and coaching.</p>
-          </article>
+        <div class="path-grid" role="group" aria-label="Choose your starting point">
+          <a class="path-card" href="#roadmaps" data-path="organize" data-roadmap="organize">
+            <span class="path-card-num">01</span>
+            <h3>Getting organized</h3>
+            <p>Paperwork, tools, and follow-up feel scattered. You need a clear picture first.</p>
+          </a>
+          <a class="path-card" href="#roadmaps" data-path="llc" data-roadmap="launch">
+            <span class="path-card-num">02</span>
+            <h3>Starting my LLC</h3>
+            <p>You want to launch clean — entity, brand basics, and a real operating spine.</p>
+          </a>
+          <a class="path-card" href="#roadmaps" data-path="systems" data-roadmap="build">
+            <span class="path-card-num">03</span>
+            <h3>Building systems</h3>
+            <p>GHL, website, automations, and backend ops need to work together.</p>
+          </a>
+          <a class="path-card" href="operator.html" data-path="operator">
+            <span class="path-card-num">04</span>
+            <h3>Becoming an operator</h3>
+            <p>You want to help others win — partnership or referral track inside AIXMOS.</p>
+          </a>
         </div>
       </div>
     </section>
 
-    <section id="services" class="reveal">
+    <section id="roadmaps" class="section-alt reveal">
       <div class="container">
         <div class="section-head">
-          <span class="pill">Services</span>
-          <h2>Pick the runway that matches your risk.</h2>
-          <p>All plans include core routing, templates, and documentation. Upgrade when you need LLC-grade assets or a full base build.</p>
+          <span class="pill">Public roadmaps</span>
+          <h2>Practical pathways in plain language.</h2>
+          <p>Each roadmap is how AIXMOS actually works with people — not a template dump, a sequence you can follow.</p>
         </div>
-        <div class="menu-grid">
-          <article class="menu-card">
-            <span class="badge">Starter</span>
-            <h3>Operator access</h3>
-            <p class="price">$97<small>/mo</small></p>
-            <ul>
-              <li>Shared playbook library</li>
-              <li>Community office hours</li>
-              <li>Email support</li>
+        <div class="roadmap-grid">
+          <article class="roadmap-card" id="roadmap-launch" data-roadmap-id="launch">
+            <h3>Launch clean</h3>
+            <p>Entity, filings, and first systems so you are not building on chaos.</p>
+            <ul class="roadmap-steps">
+              <li>LLC formation + filing guidance</li>
+              <li>Brand and policy templates</li>
+              <li>Operator call within 24 hours</li>
             </ul>
           </article>
-          <article
-            class="menu-card featured"
-            data-ghl-card="checkout97"
-            role="link"
-            tabindex="0"
-            aria-label="Open $97 per month checkout"
-          >
-            <span class="badge">Most chosen</span>
-            <h3>Launch lane</h3>
-            <p class="price">$97<small>/mo</small></p>
-            <ul>
-              <li>Live workflow in under 48 hours</li>
-              <li>Two agent seats included</li>
-              <li>Checkout: external GHL link</li>
+          <article class="roadmap-card" id="roadmap-organize" data-roadmap-id="organize">
+            <h3>Get organized</h3>
+            <p>Sort paperwork, tools, and follow-up before you scale spend or stress.</p>
+            <ul class="roadmap-steps">
+              <li>CHUMMO intake and triage</li>
+              <li>Credit or vendor routing when needed</li>
+              <li>Weekly clarity with your operator</li>
             </ul>
-            <span class="btn btn-primary" style="margin-top: auto; align-self: flex-start;">Join $97/mo</span>
           </article>
-          <article
-            class="menu-card featured"
-            data-ghl-card="checkoutLLC"
-            role="link"
-            tabindex="0"
-            aria-label="Open LLC checkout"
-          >
-            <span class="badge">LLC bundle</span>
-            <h3>LLC kit</h3>
-            <p class="price">$397</p>
-            <ul>
-              <li>Entity-ready document pack</li>
-              <li>Brand + policy templates</li>
-              <li>One onboarding intensive</li>
+          <article class="roadmap-card" id="roadmap-build" data-roadmap-id="build">
+            <h3>Build infrastructure</h3>
+            <p>GHL, website, automations, and MOOSE running the backend while you sell.</p>
+            <ul class="roadmap-steps">
+              <li>Base or enterprise build tiers</li>
+              <li>Custom pathway in 48 hours</li>
+              <li>30-day hypercare on launches</li>
             </ul>
-            <span class="btn btn-ghost" style="margin-top: auto; align-self: flex-start;">Get LLC kit</span>
           </article>
-        </div>
-        <div class="menu-grid" style="margin-top: 20px;">
-          <article
-            class="menu-card featured"
-            data-ghl-card="checkout3750"
-            role="link"
-            tabindex="0"
-            aria-label="Open base build checkout"
-            style="grid-column: 1 / -1;"
-          >
-            <span class="badge">Base build</span>
-            <h3>White-glove base</h3>
-            <p class="price">$3,750</p>
-            <ul>
-              <li>Custom spine mapped to your tools</li>
-              <li>Two workflow engineering sprints</li>
-              <li>30-day hypercare</li>
+          <article class="roadmap-card" id="roadmap-scale" data-roadmap-id="scale">
+            <h3>Scale with operators</h3>
+            <p>Human judgment on the front — AI and systems handling volume behind you.</p>
+            <ul class="roadmap-steps">
+              <li>Assigned operator + executive support</li>
+              <li>VISION quality on every deliverable</li>
+              <li>Path to $10K/month by day 90</li>
             </ul>
-            <span class="btn btn-primary" style="margin-top: auto; align-self: flex-start;">Book base build</span>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="agents" class="reveal">
-      <div class="container">
-        <div class="section-head">
-          <span class="pill">Agents</span>
-          <h2>Specialists that know when to escalate.</h2>
-          <p>Each agent ships with default prompts, tools, and review gates you can tune per lane.</p>
-        </div>
-        <div class="agent-grid">
-          <div class="agent"><h4>Router</h4><p>Classifies intent and assigns the right specialist.</p></div>
-          <div class="agent"><h4>Closer</h4><p>Follows scripts with compliance checkpoints.</p></div>
-          <div class="agent"><h4>Concierge</h4><p>Handles scheduling, reminders, and confirmations.</p></div>
-          <div class="agent"><h4>Analyst</h4><p>Summarizes tickets and surfaces anomalies.</p></div>
         </div>
       </div>
     </section>
@@ -1014,81 +630,223 @@
     <section id="journey" class="reveal">
       <div class="container">
         <div class="section-head">
-          <span class="pill">Journey</span>
-          <h2>From kickoff to live traffic in three beats.</h2>
-          <p>We mirror how operators actually ship: narrow scope, harden, then expand surface area.</p>
+          <span class="pill">90-day journey</span>
+          <h2>From intake to your $10K target.</h2>
+          <p>Five connected phases — so you always know what just happened and what comes next.</p>
         </div>
-        <div class="journey-layout">
-          <div class="journey-col">
-            <ul>
-              <li><strong>Week 0 — Map</strong>Inventory systems, owners, and failure modes. Pick the first workflow.</li>
-              <li><strong>Week 1 — Wire</strong>Connect tools, policies, and human approvals inside AIXMOS.</li>
-              <li><strong>Week 2+ — Scale</strong>Add agents, channels, and reporting without losing traceability.</li>
-            </ul>
+        <div class="journey-flow">
+          <div class="journey-step">
+            <div class="journey-step-num">1</div>
+            <h3>Intake</h3>
+            <p>CHUMMO listens. Your operator is assigned within 24 hours.</p>
           </div>
-          <aside class="journey-target" aria-label="Journey highlight">
-            <h3>Sticky brief</h3>
-            <p>On larger screens this card stays in view while you read the timeline. On mobile it stacks naturally with comfortable spacing.</p>
-          </aside>
+          <div class="journey-step">
+            <div class="journey-step-num">2</div>
+            <h3>Roadmap</h3>
+            <p>Custom pathway in 48 hours — not a generic playbook.</p>
+          </div>
+          <div class="journey-step">
+            <div class="journey-step-num">3</div>
+            <h3>Execute</h3>
+            <p>MOOSE wires tools, automations, and vendor routes.</p>
+          </div>
+          <div class="journey-step">
+            <div class="journey-step-num">4</div>
+            <h3>Review</h3>
+            <p>VISION holds the 5-star standard on what goes out.</p>
+          </div>
+          <div class="journey-step">
+            <div class="journey-step-num">5</div>
+            <h3>Grow</h3>
+            <p>Weekly progress toward $10,000/month by day 90.</p>
+          </div>
+        </div>
+        <div class="journey-banner reveal">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px">
+            <span class="journey-banner-num">$10K</span>
+            <div class="journey-banner-copy">
+              <strong style="display:block;font-size:1rem;margin-bottom:4px">The target on every client-facing page</strong>
+              <p>Spiritual freedom, time back, real wealth — your operator tracks it with you, not against you.</p>
+            </div>
+          </div>
+          <a class="btn btn-primary" href="apply.html">Start intake →</a>
         </div>
       </div>
     </section>
 
-    <section id="aixmode" class="aixmode-section reveal">
-      <div class="container aixmode-inner">
-        <div>
-          <span class="pill">AIXMODE</span>
-          <h2>Simulation mode for leadership reviews.</h2>
-          <p>Replay decisions with alternate policies, compare outcomes, and export narratives your board can follow.</p>
-        </div>
-        <div>
-          <p style="color: var(--muted); margin: 0 0 16px;">Toggle AIXMODE from the control plane whenever you need a dry run before flipping production switches.</p>
-          <a class="btn btn-ghost" href="#apply">Talk with us</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="partner" class="reveal">
+    <section id="system" class="section-alt reveal">
       <div class="container">
         <div class="section-head">
-          <span class="pill">Partner</span>
-          <h2>Bring AIXMOS behind your consultancy or studio.</h2>
-          <p>Co-sell implementation sprints, share margins on base builds, and keep clients on a supported spine.</p>
+          <span class="pill">AIXMOS system</span>
+          <h2>CHUMMO, MOOSE, VISION — plus human operators.</h2>
+          <p class="section-tagline">AI handles volume. People handle judgment.</p>
         </div>
-        <div class="partner-row">
-          <div class="partner-logos">
-            <span>Systems integrators</span>
-            <span>RevOps studios</span>
-            <span>Boutique agencies</span>
-          </div>
-          <a class="btn btn-primary" data-ghl-href="operatorApply" href="[PASTE YOUR LINK]">Apply to partner</a>
+        <p class="system-quote">Three agents and a real operator network run your operation while you build.</p>
+        <div class="agent-grid">
+          <article class="agent">
+            <div class="agent-name">CHUMMO</div>
+            <div class="agent-role">Intake · Triage · Relationship</div>
+            <p>Friend first. Warm and direct. Listens, translates, and triages — never corporate, never scripted.</p>
+          </article>
+          <article class="agent">
+            <div class="agent-name">MOOSE</div>
+            <div class="agent-role">Fulfillment · Automation · Ops</div>
+            <p>Gets things done without being told. Follow-ups, backend ops, vendor routing — relentless execution.</p>
+          </article>
+          <article class="agent">
+            <div class="agent-name">VISION</div>
+            <div class="agent-role">Quality · Review · Standards</div>
+            <p>Precise and uncompromising. Nothing leaves the AIXMOS system below the 5-star standard.</p>
+          </article>
+        </div>
+        <p class="operators-note">Your assigned operator sits on top of this stack — real guidance, real accountability, one name you can call.</p>
+      </div>
+    </section>
+
+    <section id="operators" class="reveal">
+      <div class="container">
+        <div class="section-head">
+          <span class="pill">Operator network</span>
+          <h2>Real people in the loop.</h2>
+          <p>Operators bring heart and hustle. AIXMOS brings infrastructure, systems, and client flow.</p>
+        </div>
+        <div class="track-grid">
+          <article class="track-card">
+            <h3>Partnership splits</h3>
+            <p>AIXMOS manages. You execute. Choose the split that matches the support level and lane you are ready to run.</p>
+            <ul>
+              <li>80/20 split for high-output operators with their own client flow</li>
+              <li>70/30 split for operators bringing pipeline with AIXMOS support</li>
+              <li>60/40 split for supported lane builders growing into ownership</li>
+              <li>50/50 partnership with clients assigned and backend support included</li>
+              <li>Playbook, CHUMMO tools, client assignments</li>
+              <li>MOOSE backend support</li>
+            </ul>
+          </article>
+          <article class="track-card">
+            <h3>Referral track</h3>
+            <p>10% commission on everything you refer. Your network, your pace — no client management required.</p>
+            <ul>
+              <li>Commission on every tier — $97/mo to $50K builds</li>
+              <li>Training materials included</li>
+              <li>Independent lane inside the ecosystem</li>
+            </ul>
+          </article>
+        </div>
+        <div class="partner-cta">
+          <p>Same mission everywhere: help everyday people win with infrastructure that used to be gatekept.</p>
+          <a class="btn btn-primary" href="operator.html">Apply as operator →</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="section-alt reveal">
+      <div class="container">
+        <div class="section-head">
+          <span class="pill">Services + prices</span>
+          <h2>Pick the offer that matches where you are.</h2>
+          <p>By now you have seen the path. Choose the tier that fits — your operator walks with you on upgrades.</p>
+        </div>
+        <div class="menu-grid">
+          <article class="menu-card featured" data-ghl-card="checkout97" role="link" tabindex="0" aria-label="Open $97 per month checkout">
+            <span class="badge">Entry point</span>
+            <h3>Membership</h3>
+            <p class="price">$97<small>/mo</small></p>
+            <ul>
+              <li>Community + operator office hours</li>
+              <li>Playbook library access</li>
+              <li>Pathway to $10K/month</li>
+            </ul>
+            <span class="btn btn-primary" style="margin-top:auto;align-self:flex-start">Join $97/mo</span>
+          </article>
+          <article class="menu-card featured" data-ghl-card="checkoutLLC" role="link" tabindex="0" aria-label="Open LLC checkout">
+            <span class="badge">Formation</span>
+            <h3>LLC Formation</h3>
+            <p class="price">$397</p>
+            <ul>
+              <li>Entity formation + filing guidance</li>
+              <li>Brand + policy templates</li>
+              <li>One onboarding intensive</li>
+            </ul>
+            <span class="btn btn-outline" style="margin-top:auto;align-self:flex-start">Get LLC kit</span>
+          </article>
+          <article class="menu-card">
+            <span class="badge">Guidance</span>
+            <h3>Credit Guidance</h3>
+            <p class="price">$500<small>–$1K</small></p>
+            <ul>
+              <li>Personalized credit roadmap</li>
+              <li>Vendor routing included</li>
+              <li>Guide only — we delegate execution</li>
+            </ul>
+          </article>
+        </div>
+        <div class="menu-grid" style="margin-top:16px">
+          <article class="menu-card featured" data-ghl-card="checkout3750" role="link" tabindex="0" aria-label="Open base build checkout">
+            <span class="badge">Most popular build</span>
+            <h3>Base Infrastructure</h3>
+            <p class="price">$3,750</p>
+            <ul>
+              <li>GHL + website + automations</li>
+              <li>Custom pathway mapped to your tools</li>
+              <li>30-day hypercare</li>
+            </ul>
+            <span class="btn btn-primary" style="margin-top:auto;align-self:flex-start">Book base build</span>
+          </article>
+          <article class="menu-card">
+            <span class="badge">Project</span>
+            <h3>Enterprise Systems</h3>
+            <p class="price">$7,500</p>
+            <ul>
+              <li>Full build + advanced automation</li>
+              <li>Multi-vertical routing</li>
+              <li>Dedicated operator team</li>
+            </ul>
+          </article>
+          <article class="menu-card">
+            <span class="badge">Vertical</span>
+            <h3>Car Rental in a Box</h3>
+            <p class="price">$15,000</p>
+            <ul>
+              <li>50% down · vehicle ops + staffing</li>
+              <li>Systems + operator training</li>
+              <li>Built from $90K/mo playbook</li>
+            </ul>
+          </article>
+        </div>
+        <div class="menu-grid" style="margin-top:16px">
+          <article class="menu-card">
+            <span class="badge">Vertical</span>
+            <h3>E-Commerce Ecosystem</h3>
+            <p class="price">$35,000</p>
+            <ul>
+              <li>50% down · full setup</li>
+              <li>$10K inventory included</li>
+              <li>End-to-end automation</li>
+            </ul>
+          </article>
+          <article class="menu-card" style="grid-column:span 2">
+            <span class="badge">Full stack</span>
+            <h3>Full Ecosystem</h3>
+            <p class="price">$50,000</p>
+            <ul>
+              <li>All verticals · structured revenue share</li>
+              <li>Complete AIXMOS deployment</li>
+              <li>White-glove operator + executive team</li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
 
     <section id="apply" class="reveal">
-      <div class="container apply-grid">
-        <div class="apply-copy">
-          <span class="pill">Apply</span>
-          <h2>Ready when you are.</h2>
-          <p>Tell us about your volume, tools, and compliance needs. We respond with a concrete plan and timeline.</p>
-          <ul class="apply-list">
-            <li>Dedicated onboarding manager for base builds</li>
-            <li>Security questionnaire available on request</li>
-            <li>MSA + DPA templates for enterprise procurement</li>
-            <li>Weekly office hours for licensed operators</li>
-          </ul>
-        </div>
-        <div>
-          <div class="apply-form-embed" id="ghl-form-placeholder">
-            <iframe
-              src="[YOUR DOMAIN]/apply/aixmos-intake-form.html"
-              title="AIXMOS intake form"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              style="width: 100%; min-height: 520px; border: 0; border-radius: var(--radius); background: rgba(255, 255, 255, 0.02);"
-            ></iframe>
-          </div>
+      <div class="container apply-strip">
+        <span class="pill">Ready when you are</span>
+        <h2>Tell us where you are. We will call you by name.</h2>
+        <p>Five-minute CHUMMO intake. Operator within 24 hours. Pathway in 48. One conversation at a time.</p>
+        <div class="apply-strip-actions">
+          <a class="btn btn-primary" href="apply.html">Start intake form →</a>
+          <a class="btn btn-outline" data-ghl-href="checkout97" href="#" target="_blank" rel="noopener noreferrer">Join membership — $97/mo</a>
         </div>
       </div>
     </section>
@@ -1096,52 +854,43 @@
 
   <footer class="site-footer reveal">
     <div class="container footer-inner">
-      <p>© 2026 AIXMOS. All rights reserved.</p>
+      <div>
+        <div class="footer-tagline">AIX<span style="color:var(--blue)">MOS</span></div>
+        <p style="margin:4px 0 0">© 2026 AIXMOS · For the people. By the people.</p>
+      </div>
       <nav class="footer-links" aria-label="Footer">
-        <a href="#services">Plans</a>
-        <a href="#apply">Contact</a>
-        <a data-ghl-href="operatorApply" href="[PASTE YOUR LINK]">Operator application</a>
+        <a href="#services">Services</a>
+        <a href="apply.html">Apply</a>
+        <a href="operator.html">Become an operator</a>
+        <a href="thankyou.html">Application status</a>
       </nav>
     </div>
   </footer>
 
+  <script src="ghl-config.js"></script>
   <script>
-    const AIXMOS_GHL = {
-      checkout97: "[PASTE YOUR LINK]",
-      checkoutLLC: "[PASTE YOUR LINK]",
-      checkout3750: "[PASTE YOUR LINK]",
-      operatorApply: "[PASTE YOUR LINK]",
-    };
-    window.AIXMOS_GHL = AIXMOS_GHL;
-
     function prefersReducedMotion() {
       return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
 
-    function wireGhlFromConfig() {
-      document.querySelectorAll("[data-ghl-href]").forEach((el) => {
-        const key = el.getAttribute("data-ghl-href");
-        const url = AIXMOS_GHL[key];
-        if (url) el.setAttribute("href", url);
+
+    function revealInView() {
+      document.querySelectorAll(".reveal").forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
+          el.classList.add("reveal-visible");
+        }
       });
+    }
 
-      document.querySelectorAll("[data-ghl-card]").forEach((card) => {
-        const key = card.getAttribute("data-ghl-card");
-        const url = AIXMOS_GHL[key];
-        if (!url) return;
-
-        const open = () => {
-          window.open(url, "_blank", "noopener,noreferrer");
-        };
-
-        card.addEventListener("click", open);
-        card.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            open();
-          }
-        });
-      });
+    function initHashSections() {
+      const id = window.location.hash.replace("#", "");
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      target.classList.add("reveal-visible");
+      target.querySelectorAll(".reveal").forEach((el) => el.classList.add("reveal-visible"));
+      requestAnimationFrame(() => target.scrollIntoView({ behavior: "auto" }));
     }
 
     function initReveal() {
@@ -1149,7 +898,6 @@
         document.querySelectorAll(".reveal").forEach((el) => el.classList.add("reveal-visible"));
         return;
       }
-
       const io = new IntersectionObserver(
         (entries, obs) => {
           entries.forEach((entry) => {
@@ -1160,31 +908,27 @@
         },
         { root: null, rootMargin: "0px 0px -10% 0px", threshold: 0.08 }
       );
-
       document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+      requestAnimationFrame(() => {
+        document.querySelectorAll(".reveal").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.92) el.classList.add("reveal-visible");
+        });
+      });
     }
 
     function initNavScrollSpy() {
       const targets = document.querySelectorAll("[data-nav-target]");
-      const sectionIds = ["about", "services", "agents", "journey", "aixmode", "partner", "apply"];
+      const sectionIds = ["starting-point", "roadmaps", "journey", "system", "operators", "services"];
       const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
-      if (!sections.length || !targets.length) return;
-
+      if (!sections.length) return;
       const setActive = (id) => {
-        targets.forEach((el) => {
-          el.classList.toggle("is-active", el.getAttribute("data-nav-target") === id);
-        });
+        targets.forEach((el) => el.classList.toggle("is-active", el.getAttribute("data-nav-target") === id));
       };
-
       const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) setActive(entry.target.id);
-          });
-        },
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); }),
         { root: null, rootMargin: "-42% 0px -42% 0px", threshold: 0 }
       );
-
       sections.forEach((sec) => io.observe(sec));
     }
 
@@ -1194,94 +938,69 @@
       const drawer = document.getElementById("nav-drawer");
       const backdrop = document.getElementById("nav-drawer-backdrop");
       const closeBtn = document.getElementById("nav-drawer-close");
-
       if (!toggle || !drawer || !backdrop) return;
 
       let lastFocus = null;
-      const focusableSelector =
-        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-
-      function getFocusables() {
-        return Array.from(drawer.querySelectorAll(focusableSelector)).filter(
-          (el) => el.offsetParent !== null || el === closeBtn
-        );
-      }
-
       function setOpen(open) {
         body.classList.toggle("drawer-open", open);
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
         toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         drawer.setAttribute("aria-hidden", open ? "false" : "true");
         backdrop.setAttribute("aria-hidden", open ? "false" : "true");
-        if (open) {
-          backdrop.hidden = false;
-          drawer.removeAttribute("inert");
-        } else {
-          backdrop.hidden = true;
-          drawer.setAttribute("inert", "");
-        }
-
+        if (open) { backdrop.hidden = false; drawer.removeAttribute("inert"); }
+        else { backdrop.hidden = true; drawer.setAttribute("inert", ""); }
         if (open) {
           lastFocus = document.activeElement;
-          const focusables = getFocusables();
-          const firstNav = drawer.querySelector(".nav-drawer-links a");
-          const toFocus = firstNav || focusables[0];
-          if (toFocus) toFocus.focus({ preventScroll: true });
+          const first = drawer.querySelector(".nav-drawer-links a");
+          if (first) first.focus({ preventScroll: true });
+        } else if (lastFocus) {
+          lastFocus.focus({ preventScroll: true });
         } else {
-          if (lastFocus && typeof lastFocus.focus === "function") {
-            lastFocus.focus({ preventScroll: true });
-          } else {
-            toggle.focus({ preventScroll: true });
-          }
+          toggle.focus({ preventScroll: true });
         }
       }
-
-      function closeDrawer() {
-        setOpen(false);
-      }
-
-      toggle.addEventListener("click", () => {
-        const open = !body.classList.contains("drawer-open");
-        setOpen(open);
-      });
-
-      backdrop.addEventListener("click", closeDrawer);
-      closeBtn.addEventListener("click", closeDrawer);
-
+      toggle.addEventListener("click", () => setOpen(!body.classList.contains("drawer-open")));
+      backdrop.addEventListener("click", () => setOpen(false));
+      closeBtn.addEventListener("click", () => setOpen(false));
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && body.classList.contains("drawer-open")) {
-          e.preventDefault();
-          closeDrawer();
-        }
+        if (e.key === "Escape" && body.classList.contains("drawer-open")) setOpen(false);
       });
+      drawer.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setOpen(false)));
+    }
 
-      drawer.querySelectorAll("a").forEach((link) => {
-        link.addEventListener("click", () => {
-          closeDrawer();
+    function initPathSelector() {
+      const cards = document.querySelectorAll(".path-card[data-roadmap]");
+      const roadmaps = document.querySelectorAll(".roadmap-card[data-roadmap-id]");
+      if (!cards.length) return;
+
+      function highlight(roadmapId) {
+        roadmaps.forEach((r) => r.classList.toggle("is-highlight", r.dataset.roadmapId === roadmapId));
+        cards.forEach((c) => c.classList.toggle("is-selected", c.dataset.roadmap === roadmapId));
+      }
+
+      cards.forEach((card) => {
+        card.addEventListener("click", () => {
+          const id = card.dataset.roadmap;
+          if (id) highlight(id);
         });
       });
 
-      drawer.addEventListener("keydown", (e) => {
-        if (e.key !== "Tab" || !body.classList.contains("drawer-open")) return;
-        const focusables = getFocusables();
-        if (!focusables.length) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      });
+      if (window.location.hash === "#roadmaps") {
+        const params = new URLSearchParams(window.location.search);
+        const path = params.get("path");
+        if (path) highlight(path);
+      }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      wireGhlFromConfig();
+      if (window.wireAixmosGhl) wireAixmosGhl();
       initDrawer();
       initReveal();
       initNavScrollSpy();
+      initPathSelector();
+      revealInView();
+      initHashSections();
+      window.addEventListener("hashchange", initHashSections);
     });
   </script>
 </body>
