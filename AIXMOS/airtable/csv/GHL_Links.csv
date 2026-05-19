@@ -1,0 +1,7 @@
+Link Name,Placeholder Token,Status,Used On,Live URL,Notes
+Membership $97/mo,YOUR_GHL_97_CHECKOUT_LINK,Placeholder,Landing,,public/index.html
+LLC $397,YOUR_GHL_LLC_CHECKOUT_LINK,Placeholder,Landing,,public/index.html
+Base $3750 down,YOUR_GHL_3750_CHECKOUT_LINK,Placeholder,Landing,,public/index.html
+Operator application,YOUR_GHL_OPERATOR_APPLICATION_LINK,Placeholder,Landing,,Partner section Apply button
+Form webhook,YOUR_GHL_WEBHOOK_URL,Placeholder,GHL workflow,,apply.html submissions
+GHL form embed,YOUR_GHL_FORM_ID,Placeholder,Landing,,If using native embed

@@ -1,0 +1,83 @@
+# .cursorrules
+# AIXMOS Project — Cursor AI Rules
+# Place this file in the root of the AIXMOS project folder
+# Cursor reads this automatically to understand the project
+
+## PROJECT
+You are working on AIXMOS — a workforce infrastructure platform.
+Read CLAUDE.md for the full project context, service menu, and build queue.
+
+## DESIGN SYSTEM — NEVER CHANGE WITHOUT ASKING
+- Primary blue: #1440C4
+- Hover blue: #2563EB
+- Background: #FFFFFF (white — NO dark mode)
+- Surface: #F4F7FF (light blue tint)
+- Dark text: #0A1628
+- Muted text: rgba(10,22,40,0.50)
+- Display font: 'Bebas Neue', sans-serif (Google Fonts)
+- Body font: 'DM Sans', sans-serif (Google Fonts)
+- Border radius: 8px (inputs), 12px (cards), 16px (sections)
+- No gradients. No heavy shadows. No dark backgrounds on main pages.
+
+## STACK
+- Pure HTML + CSS + Vanilla JS for landing page and portal
+- React (.jsx) for the CHUMMO messaging agent only
+- No build step required for HTML files (must work served directly by nginx)
+- No TypeScript unless explicitly asked
+- No Tailwind (use CSS variables and inline styles)
+- No React Router (use vanilla JS view switching in portal)
+- External scripts: Google Fonts only (loaded via <link> in <head>)
+
+## FILE STRUCTURE
+public/
+  index.html        ← Landing page (main AIXMOS site)
+  apply.html        ← Intake form page
+  thankyou.html     ← Post-submission confirmation
+  operator.html     ← Operator application page
+portal/
+  index.html        ← 4-role private portal
+files/
+  operator-training.html
+  intake-form.html
+  pipeline.html
+agent/
+  ChummoAgent.jsx   ← React Anthropic API messaging agent
+docker/
+  docker-compose.yml
+  nginx-portal.conf
+CLAUDE.md           ← Master project context
+
+## GHL PLACEHOLDERS — SEARCH AND REPLACE
+YOUR_GHL_97_CHECKOUT_LINK     → $97/month Stripe subscription
+YOUR_GHL_LLC_CHECKOUT_LINK    → $397 one-time
+YOUR_GHL_3750_CHECKOUT_LINK   → $3,750 down payment
+YOUR_GHL_OPERATOR_APPLICATION_LINK → Operator apply form
+YOUR_GHL_WEBHOOK_URL          → GHL webhook endpoint
+
+## PRIORITIES (build in this order)
+1. thankyou.html — post-payment/form confirmation page
+2. operator.html — operator application page
+3. Mobile hamburger drawer in index.html
+4. Scroll animations in index.html (IntersectionObserver, no libraries)
+5. Portal sidebar mobile collapse
+6. Server-side auth upgrade (Supabase or JWT)
+7. Video player component in portal Training Vault
+
+## RULES
+- Never change color system without asking
+- Never add npm dependencies without asking
+- Never break GHL integration points
+- Always test mobile (320px min width)
+- HTML files must be self-contained — no external build step
+- Keep all files under 1000 lines where possible (split into components if needed)
+- Comments in English, concise, explain WHY not WHAT
+- Never add inline styles when a CSS variable already covers it
+- Preserve existing section IDs (used for anchor links in nav)
+- Portal user accounts live in the USERS array in portal/index.html — do not move to external file without asking
+
+## VOICE / COPY RULES
+- Friend first. Never corporate.
+- "For the people. By the people." is the tagline — never change it
+- $10,000/month target appears on every client-facing page
+- CHUMMO = caring/listening agent. MOOSE = executing agent. VISION = quality control.
+- Operator communications are warm, direct, human — not salesy
