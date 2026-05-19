@@ -3,24 +3,34 @@
 TMMT Rentals is a Next.js app. It deploys to Vercel directly from this private
 GitHub repo (`AIXMOS537/TMMT`).
 
-## One-time setup — connect the repo to Vercel
+## Vercel project (already connected)
 
-You run these steps (they need your Vercel login).
+| | |
+|---|---|
+| Vercel project name | `tmmt-c919` |
+| Project ID | `prj_moZzMHYtwiZIS0TETOBOKODbp7eM` |
+| Source repo | `AIXMOS537/TMMT` (`origin`) |
+| Framework preset | Next.js (auto-detected) |
 
-1. Go to [vercel.com](https://vercel.com) and sign in.
-2. **Add New… → Project** → import `AIXMOS537/TMMT`.
-3. Framework preset: **Next.js** (auto-detected). Leave build settings default:
-   - Build command: `next build`
-   - Install command: `npm install`
-   - Output: default (`.next`)
-4. Add the environment variables below **before** the first deploy.
-5. Deploy. After it succeeds, set the Vercel project to **private** /
-   restrict preview deployments, since this app exposes admin and partner data.
-6. Copy the production URL into the command center README
-   (`AIX-Command-Center/README.md` → "Apps & Deployment").
+The project already exists, so there is **no fresh import to do**. Every push
+to the production branch auto-deploys; other branches get preview deployments.
 
-After this, every push to the production branch auto-deploys; other branches
-get preview deployments.
+## Routine deploy
+
+1. Make sure the build passes locally (see "Verify" below).
+2. Commit and push to the production branch — Vercel builds and deploys
+   automatically.
+3. Check the deployment in the Vercel dashboard under project `tmmt-c919`.
+
+## If you ever need to re-link or check the project
+
+You run these (they need your Vercel login):
+
+- Dashboard: [vercel.com](https://vercel.com) → project `tmmt-c919`.
+- CLI: `npx vercel link` then enter project ID `prj_moZzMHYtwiZIS0TETOBOKODbp7eM`.
+- Build settings should stay default: build `next build`, install `npm install`,
+  output `.next`.
+- Keep the Vercel project **private** — this app exposes admin and partner data.
 
 ## Required environment variables
 
