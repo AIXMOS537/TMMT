@@ -26,7 +26,7 @@ import {
   formatCaseStatus,
   INTAKE_REQUEST_TYPES,
 } from "@/lib/workflow";
-import { staffUpdateCase, staffAssignVendorJob } from "@/app/workflow-actions";
+import { staffUpdateCase, staffAssignVendorJob, staffSyncCaseToClickUp } from "@/app/workflow-actions";
 import Link from "next/link";
 import { ExternalLink, Plus } from "lucide-react";
 
@@ -155,6 +155,24 @@ export default function CasesPage() {
     load();
   };
 
+  const handleSyncClickUp = async () => {
+    if (!editing) return;
+    setSaving(true);
+    setError(null);
+    const fd = new FormData();
+    fd.set("id", String(editing.id));
+    const result = await staffSyncCaseToClickUp(fd);
+    setSaving(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    if (result.clickupUrl) {
+      setEditing({ ...editing, clickup_url: result.clickupUrl });
+    }
+    load();
+  };
+
   const handleAssign = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editing) return;
@@ -253,12 +271,25 @@ export default function CasesPage() {
               <FormField label="ClickUp URL">
                 <input name="clickup_url" type="url" className={inputClass} defaultValue={String(editing.clickup_url ?? "")} />
               </FormField>
+              {editing.clickup_url ? (
+                <a
+                  href={String(editing.clickup_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                >
+                  Open in ClickUp <ExternalLink size={14} />
+                </a>
+              ) : null}
               <FormField label="Internal notes">
                 <textarea name="internal_notes" rows={3} className={inputClass} defaultValue={String(editing.internal_notes ?? "")} />
               </FormField>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={saving}>
                   {saving ? "Saving…" : "Save case"}
+                </Button>
+                <Button type="button" variant="secondary" disabled={saving} onClick={handleSyncClickUp}>
+                  Sync to ClickUp
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setAssignOpen(true)}>
                   <Plus size={16} />
