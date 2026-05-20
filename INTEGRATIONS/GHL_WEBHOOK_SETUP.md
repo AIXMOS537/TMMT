@@ -13,7 +13,42 @@
 
 Example payload: `AUTOMATIONS/WEBHOOKS/ghl_opportunity_stage_changed.example.json`
 
-**Flow:** GHL → Supabase `crm_sync_records` + Airtable (pending verify) → team approves → case created.
+**Flow:** GHL → Supabase `crm_sync_records` + `ghl_contacts` + Airtable (pending verify) → team approves → case created.
+
+## 1b. Contact created / updated → live contacts table
+
+| Item | Value |
+|------|--------|
+| **URL** | `POST {BASE}/api/webhooks/ghl/contact` (or `/api/webhooks/ghl` with `"event":"contact.created"`) |
+| **Header** | `X-GHL-Secret: {GHL_WEBHOOK_SECRET}` |
+| **GHL trigger** | Workflow → Contact created / Contact changed |
+
+Example: `AUTOMATIONS/WEBHOOKS/ghl_contact_created.example.json`  
+**Supabase:** `ghl_contacts`
+
+## 1c. Form submitted → forms + optional case
+
+| Item | Value |
+|------|--------|
+| **URL** | `POST {BASE}/api/webhooks/ghl/form` |
+| **Header** | `X-GHL-Secret: {GHL_WEBHOOK_SECRET}` |
+| **GHL trigger** | Workflow → Form submitted |
+
+Example: `AUTOMATIONS/WEBHOOKS/ghl_form_submitted.example.json`  
+**Supabase:** `ghl_form_submissions` (+ `customer_intake_forms` / `cases` when `GHL_FORM_AUTO_CASE` is not `false`)
+
+## 1d. Appointment booked
+
+| Item | Value |
+|------|--------|
+| **URL** | `POST {BASE}/api/webhooks/ghl/appointment` |
+| **Header** | `X-GHL-Secret: {GHL_WEBHOOK_SECRET}` |
+| **GHL trigger** | Workflow → Appointment status / booked |
+
+Example: `AUTOMATIONS/WEBHOOKS/ghl_appointment_booked.example.json`  
+**Supabase:** `ghl_appointments`
+
+**Migration:** run `supabase/migrations/0012_ghl_live_sync.sql` in SQL Editor (or `supabase db push`).
 
 ## 2. Overdue payment → collections workflow
 

@@ -3,6 +3,8 @@ import { requirePortal } from "@/lib/auth-portals";
 import { TEAM_SECTIONS } from "@/lib/access/sections";
 import { hasEntitlement } from "@/lib/access/resolve";
 import { PortalSectionPage } from "@/components/portal-section-page";
+import { getTeamPlaybook } from "@/lib/team-playbooks/content";
+import { TeamPlaybookView } from "@/components/team-playbook-view";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,11 @@ export default async function TeamSectionPage({
   if (!section) notFound();
   if (!hasEntitlement(access, section.entitlement)) {
     redirect("/portals?error=entitlement");
+  }
+
+  const playbook = getTeamPlaybook(params.section);
+  if (playbook) {
+    return <TeamPlaybookView playbook={playbook} portalHome="/team/dashboard" />;
   }
 
   return (

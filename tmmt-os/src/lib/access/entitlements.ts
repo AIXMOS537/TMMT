@@ -44,6 +44,7 @@ export const TEAM_DEPARTMENT_ENTITLEMENTS: Record<TeamDepartment, string[]> = {
 export const ADMIN_SCOPE_ENTITLEMENTS: Record<AdminScope, string[]> = {
   super: [
     "admin_users",
+    "admin_licenses",
     "admin_packages",
     "admin_entitlements",
     "admin_revenue",

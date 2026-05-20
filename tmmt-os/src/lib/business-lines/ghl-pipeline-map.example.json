@@ -1,0 +1,50 @@
+{
+  "pipelines": {
+    "REPLACE_WITH_RENTALS_PIPELINE_ID": {
+      "business_line": "rentals",
+      "stages": {
+        "new lead": "lead",
+        "active renter": "active_renter"
+      }
+    },
+    "REPLACE_WITH_EXPRESS_PIPELINE_ID": {
+      "business_line": "express",
+      "stages": {
+        "new lead": "lead",
+        "active renter": "active_renter"
+      }
+    },
+    "REPLACE_WITH_BLACK_PIPELINE_ID": {
+      "business_line": "black",
+      "stages": {
+        "new lead": "lead",
+        "booked": "active_renter"
+      }
+    },
+    "REPLACE_WITH_LUXURY_PIPELINE_ID": {
+      "business_line": "luxury",
+      "stages": {
+        "new lead": "lead",
+        "booked": "active_renter"
+      }
+    },
+    "REPLACE_WITH_AUTO_PIPELINE_ID": {
+      "business_line": "auto",
+      "stages": {
+        "new job": "lead"
+      }
+    },
+    "REPLACE_WITH_MOVING_PIPELINE_ID": {
+      "business_line": "moving",
+      "stages": {
+        "new lead": "lead"
+      }
+    },
+    "REPLACE_WITH_CLEANING_PIPELINE_ID": {
+      "business_line": "cleaning",
+      "stages": {
+        "new lead": "lead"
+      }
+    }
+  }
+}

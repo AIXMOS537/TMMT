@@ -16,18 +16,32 @@ Project → Settings → Environment Variables → set for **Production** and **
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes (never `NEXT_PUBLIC_`) |
 | `INTAKE_WEBHOOK_SECRET` | Strongly recommended |
-| `GHL_OVERDUE_WEBHOOK_SECRET` | Yes, for n8n overdue → GHL collections workflow |
-| `N8N_WEBHOOK_SECRET` | Yes, if using `/api/webhooks/n8n` for overdue ingress |
+| `GHL_WEBHOOK_SECRET` | If using CRM sync webhooks |
+| `GHL_OVERDUE_WEBHOOK_SECRET` | If using overdue n8n → GHL flow |
+| `SYNC_WEBHOOK_SECRET` | If using Airtable sync webhook |
+| `N8N_WEBHOOK_SECRET` | If using `/api/webhooks/n8n` |
+| `AGENT_WEBHOOK_SECRET` | If using `/api/agents/evaluate` |
 
-Optional outbound GHL (prefer `AUTOMATIONS/.env` for scripts): `GHL_API_KEY`, `GHL_LOCATION_ID`, `GHL_PIPELINE_STAGE_MAP_JSON`.
-
-Other optional: `CLICKUP_*`, `AIRTABLE_*`.
+Optional outbound: `CLICKUP_*`, `AIRTABLE_*`, `GHL_API_KEY`, `GHL_PIPELINE_STAGE_MAP_JSON`.
 
 Optional host override: `NEXT_PUBLIC_APP_HOST=tmmt-c919-two.vercel.app` (defaults in `next.config.mjs`).
 
 ---
 
-## 2. Supabase Auth URL configuration
+## 2. Supabase Auth email (magic links)
+
+If login shows **"Error sending magic link email"**, check **Authentication → SMTP Settings**:
+
+- Custom SMTP host must be a real mail server hostname (e.g. `smtp.resend.com`), not a bare domain with no DNS.
+- Supabase Auth logs often show: `lookup tmmtrentals.net: no such host` when the SMTP host is wrong.
+- **Quick fix for dev:** turn off custom SMTP and use Supabase’s built-in mail (rate-limited).
+- **Production:** use Resend, SendGrid, Postmark, or Google Workspace SMTP with verified sender + SPF/DKIM.
+
+Until SMTP works, use **Password** on `/login` (see `scripts/set-test-passwords.mjs` for dev accounts).
+
+---
+
+## 3. Supabase Auth URL configuration
 
 Supabase Dashboard → Authentication → URL configuration:
 
@@ -39,7 +53,7 @@ Supabase Dashboard → Authentication → URL configuration:
 
 ---
 
-## 3. Redeploy
+## 4. Redeploy
 
 Vercel → Deployments → Redeploy latest (or push to connected git branch).
 
@@ -47,7 +61,7 @@ Vercel → Deployments → Redeploy latest (or push to connected git branch).
 
 ---
 
-## 4. First admin
+## 5. First admin
 
 1. Sign up at `/login`
 2. Supabase SQL Editor:
@@ -58,7 +72,7 @@ update public.profiles set role = 'admin' where email = 'YOUR_EMAIL';
 
 ---
 
-## 5. Smoke test
+## 6. Smoke test
 
 | Route | Expect |
 |-------|--------|
@@ -79,7 +93,7 @@ curl -sS -X POST "https://tmmt-c919-two.vercel.app/api/intake" \
 
 ---
 
-## 6. Wire external automations
+## 7. Wire external automations
 
 Point GHL/Airtable/n8n to:
 

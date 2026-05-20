@@ -10,6 +10,7 @@ DEV_SCRIPT="${REPO_ROOT}/scripts/office-dev-server.sh"
 LOG_DIR="${HOME}/Library/Logs"
 
 chmod +x "${REPO_ROOT}/scripts/office-dev-server.sh"
+xattr -dr com.apple.quarantine "${REPO_ROOT}/scripts" 2>/dev/null || true
 mkdir -p "$LOG_DIR"
 
 cat >"$PLIST_PATH" <<EOF
@@ -25,20 +26,22 @@ cat >"$PLIST_PATH" <<EOF
     <string>${DEV_SCRIPT}</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>${REPO_ROOT}/tmmt-os</string>
+  <string>${REPO_ROOT}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>TMMT_REPO_ROOT</key>
+    <string>${REPO_ROOT}</string>
+    <key>TMMT_DEV_PORT</key>
+    <string>3000</string>
+  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>ThrottleInterval</key>
   <integer>30</integer>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-    <key>TMMT_DEV_PORT</key>
-    <string>3000</string>
-  </dict>
   <key>StandardOutPath</key>
   <string>${LOG_DIR}/tmmt-dev.log</string>
   <key>StandardErrorPath</key>

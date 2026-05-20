@@ -8,6 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 
+function friendlyAuthError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("invalid login credentials") || lower.includes("invalid_credentials")) {
+    return "Wrong email or password. For test accounts run: node scripts/set-test-passwords.mjs (sets TmmtPortalTest!2026).";
+  }
+  if (lower.includes("error sending magic link email")) {
+    return "Email could not be sent. In Supabase → Authentication → SMTP, fix or disable custom SMTP (your server host must resolve in DNS). Use Password sign-in meanwhile.";
+  }
+  if (lower.includes("email link is invalid") || lower.includes("otp_expired")) {
+    return "That sign-in link expired or was already used. Request a new magic link or use Password sign-in.";
+  }
+  return message;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -15,16 +29,19 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(
-    params.get("error") === "forbidden" ? "You don't have access to that portal." : null
-  );
+  const authMessage = params.get("message");
+  const [error, setError] = useState<string | null>(() => {
+    if (params.get("error") === "forbidden") return "You don't have access to that portal.";
+    if (params.get("error") === "auth" && authMessage) return friendlyAuthError(authMessage);
+    return null;
+  });
   const [mode, setMode] = useState<"password" | "magic">("password");
 
   async function onPasswordSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return setError(error.message);
+    if (error) return setError(friendlyAuthError(error.message));
     const next = params.get("next") || "/portals";
     router.replace(next);
     router.refresh();
@@ -33,11 +50,13 @@ export function LoginForm() {
   async function onMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const next = params.get("next") || "/portals";
+    const redirectTo = `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      options: { emailRedirectTo: redirectTo },
     });
-    if (error) return setError(error.message);
+    if (error) return setError(friendlyAuthError(error.message));
     setSent(true);
   }
 

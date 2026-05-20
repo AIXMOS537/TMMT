@@ -1,20 +1,21 @@
 import { PortalShell } from "@/components/portal-shell";
 import { requirePortal } from "@/lib/auth-portals";
+import { buildClientNavLinks } from "@/lib/access/client-nav";
+import { getOrganizationVertical, getOrganizationPartnerAppSlug } from "@/lib/verticals/resolve";
+import { resolveBranding } from "@/lib/verticals/branding";
 
 export default async function ClientPortalLayout({ children }: { children: React.ReactNode }) {
   const access = await requirePortal("client");
+  const vertical = await getOrganizationVertical();
+  const partnerSlug = await getOrganizationPartnerAppSlug();
+  const brand = resolveBranding(vertical, partnerSlug);
+
   return (
     <PortalShell
-      brand="TMMT OS"
+      brand={brand.clientBrand}
       currentPortal="client"
       portals={access.portals}
-      links={[
-        { href: "/client/dashboard", label: "Home" },
-        { href: "/client/rental", label: "My rental" },
-        { href: "/client/support", label: "Tickets" },
-        { href: "/client/maintenance", label: "Maintenance" },
-        { href: "/client/billing", label: "Billing" },
-      ]}
+      links={buildClientNavLinks(access)}
       user={{
         full_name: access.profile.full_name,
         email: access.profile.email,

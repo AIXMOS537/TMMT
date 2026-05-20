@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="${TMMT_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 BRANCH="$(cat "$REPO_ROOT/scripts/default-branch" 2>/dev/null || echo main)"
 LOG="${HOME}/Library/Logs/tmmt-git-pull.log"
 

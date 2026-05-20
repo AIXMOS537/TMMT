@@ -1,0 +1,7 @@
+-- Provision org license for a real tenant (replace name and SKU).
+-- SKUs: rentals_app | full_os | credit_repair_addon | lto_addon (see src/lib/access/provision.ts)
+--
+-- insert into public.organizations (name, kind) values ('Your Company', 'tmmt');
+-- insert into public.organization_licenses (organization_id, license_tier, modules, max_ventures)
+-- select id, 'rentals_app', array['rentals_app']::text[], 1
+-- from public.organizations where name = 'Your Company';

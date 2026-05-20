@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveOnboardingProfile } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 const ROLE_NEXT: Record<string, { href: string; label: string }> = {
   admin: { href: "/portals", label: "Choose portal" },
   internal_team: { href: "/portals", label: "Choose portal" },

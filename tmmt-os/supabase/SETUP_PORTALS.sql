@@ -13,13 +13,7 @@ update public.profiles
 set portal_role = 'team_member', team_department = 'sales', role = 'internal_team'
 where email = 'management@tmmtrentals.net';
 
--- Growth client
-update public.profiles
-set portal_role = 'client',
-    package_id = (select id from public.packages where slug = 'growth')
-where email = 'partner-portal-test@tmmt-rentals.local';
-
--- Starter client example (uncomment and set email)
+-- Starter client example (uncomment and set a real client email)
 -- update public.profiles
 -- set portal_role = 'client',
 --     package_id = (select id from public.packages where slug = 'starter')

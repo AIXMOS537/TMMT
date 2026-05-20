@@ -1,16 +1,19 @@
-/** TMMT Rentals admin — hosts the four Airtable-style interfaces. */
-const DEFAULT_RENTALS_ORIGIN = "https://tmmt-c919-two.vercel.app";
-const VENTURE_SLUG = "tmmt-rentals";
+/** TMMT Rentals admin — same-origin paths inside TMMT OS (merged from tmmt-app). */
+export const RENTALS_VENTURE_SLUG = "tmmt-rentals";
 
-export function rentalsPortalOrigin() {
-  const fromEnv = process.env.NEXT_PUBLIC_PORTAL_URL?.replace(/\/$/, "");
-  return fromEnv || DEFAULT_RENTALS_ORIGIN;
+export function rentalsPortalOrigin(): string {
+  return "";
 }
 
 export function rentalsInterfaceHref(
   iface: "appointments" | "contracts" | "vehicles" | "payments"
 ) {
-  return `${rentalsPortalOrigin()}/v/${VENTURE_SLUG}/interfaces/${iface}`;
+  return `/v/${RENTALS_VENTURE_SLUG}/interfaces/${iface}`;
+}
+
+export function rentalsVentureHref(segment: string) {
+  const path = segment.startsWith("/") ? segment : `/${segment}`;
+  return `/v/${RENTALS_VENTURE_SLUG}${path}`;
 }
 
 export const RENTALS_INTERFACES = [

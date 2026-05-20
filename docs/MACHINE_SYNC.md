@@ -18,6 +18,8 @@ Two machines, one codebase. **GitHub is the source of truth for code.** Supabase
 
 Do **not** edit duplicate folders on Desktop. One clone per machine.
 
+**macOS canonical layout (after cleanup):** `~/dev/AIX_Command_Center` and `~/dev/TMMT` (symlink). Desktop should stay empty; archives live in `~/Documents/AIX-Archives/`.
+
 ## Default branch
 
 Until `cursor/tmmt-management-initial-setup` is merged to `main`, both machines use:
@@ -93,11 +95,30 @@ Keeps `npm run dev` running on the office M1, bound to **all interfaces** (`0.0.
 | Log | `~/Library/Logs/tmmt-dev.log` |
 | Requires | `tmmt-os/.env.local` |
 
-**Enable both pull + dev:**
+**Enable pull + dev + flash USB sync:**
 
 ```bash
 ~/dev/TMMT/scripts/enable-office-services.sh
 ```
+
+## AIXMOS02 flash USB (auto-sync Mac → drive)
+
+When the **AIXMOS02** USB is plugged in, a LaunchAgent copies your canonical `tmmt-os` from this Mac to the drive (every ~2 minutes while mounted; immediate sync on plug-in).
+
+| Item | Value |
+|------|--------|
+| Script | `scripts/flash-usb-sync.sh` |
+| Volume name | `scripts/flash-usb-volume-name` → `AIXMOS02` |
+| Install / enable | `scripts/enable-flash-usb-sync.sh` |
+| Log | `~/Library/Logs/tmmt-flash-usb-sync.log` |
+
+**Manual sync (any time USB is mounted):**
+
+```bash
+~/dev/TMMT/scripts/flash-usb-sync.sh
+```
+
+Syncs app source + `.env.local`, removes bad `intake/intake` and `webhooks/webhooks` duplicates on the USB, runs typecheck on the drive. Does **not** overwrite `node_modules` or `.next` on the USB (faster, offline-ready).
 
 **From home (Windows)** — after Tailscale is on both machines:
 

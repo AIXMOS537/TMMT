@@ -8,7 +8,9 @@ import {
   PORTAL_ROLES,
   TEAM_DEPARTMENTS,
   PACKAGE_SLUGS,
+  type PortalRole,
 } from "@/lib/access/types";
+import { legacyRoleForPortalRole } from "@/lib/access/legacy-role-sync";
 
 export async function updateUserAccess(formData: FormData) {
   await requireEntitlement("admin_users", "/admin/dashboard");
@@ -19,6 +21,7 @@ export async function updateUserAccess(formData: FormData) {
   const packageSlug = String(formData.get("package_slug") ?? "");
   const teamDepartment = String(formData.get("team_department") ?? "");
   const adminScope = String(formData.get("admin_scope") ?? "");
+  const organizationId = String(formData.get("organization_id") ?? "");
 
   if (!profileId) throw new Error("Missing profile");
 
@@ -35,6 +38,7 @@ export async function updateUserAccess(formData: FormData) {
   }
 
   const payload: Record<string, unknown> = {
+    organization_id: organizationId || null,
     package_id: packageSlug === "" ? null : packageId,
     team_department:
       teamDepartment && TEAM_DEPARTMENTS.includes(teamDepartment as (typeof TEAM_DEPARTMENTS)[number])
@@ -46,10 +50,15 @@ export async function updateUserAccess(formData: FormData) {
         : null,
   };
 
+  const syncLegacyFromPortal = formData.get("sync_legacy_from_portal") === "on";
+
   if (PORTAL_ROLES.includes(portalRole as (typeof PORTAL_ROLES)[number])) {
     payload.portal_role = portalRole;
+    if (syncLegacyFromPortal) {
+      payload.role = legacyRoleForPortalRole(portalRole as PortalRole);
+    }
   }
-  if (legacyRole) {
+  if (legacyRole && !syncLegacyFromPortal) {
     payload.role = legacyRole;
   }
 
@@ -61,7 +70,11 @@ export async function updateUserAccess(formData: FormData) {
     entity: "profile",
     entity_id: profileId,
     action: "admin_updated_access",
-    data: { portal_role: portalRole, package_slug: packageSlug || null },
+    data: {
+      portal_role: portalRole,
+      package_slug: packageSlug || null,
+      organization_id: organizationId || null,
+    },
   });
 
   revalidatePath("/admin/users");

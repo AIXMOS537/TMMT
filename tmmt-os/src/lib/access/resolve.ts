@@ -4,10 +4,18 @@ import {
   mergeEntitlements,
   teamEntitlementsFor,
 } from "./entitlements";
+import {
+  capEntitlementsByOrg,
+  expandOrgLicenseToEntitlements,
+  hasOrgModule,
+  parseOrgLicenseRow,
+  type OrgModule,
+} from "./org-license";
 import { resolvePortals } from "./portals";
 import type {
   AdminScope,
   LegacyUserRole,
+  OrgLicense,
   PackageSlug,
   PortalRole,
   ResolvedAccess,
@@ -27,6 +35,23 @@ function mapLegacyPortalRole(role: string): PortalRole {
   }
 }
 
+async function loadOrgLicense(organizationId: string | null): Promise<OrgLicense | null> {
+  if (!organizationId) return null;
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("organization_licenses")
+    .select("organization_id, license_tier, modules, max_ventures")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error?.message.includes("organization_licenses")) {
+    return null;
+  }
+  if (!data) return null;
+  return parseOrgLicenseRow(data);
+}
+
 export async function getUserAccess(): Promise<ResolvedAccess | null> {
   const supabase = createSupabaseServerClient();
   const {
@@ -43,6 +68,7 @@ export async function getUserAccess(): Promise<ResolvedAccess | null> {
     admin_scope?: string | null;
     team_department?: string | null;
     package_id?: string | null;
+    organization_id?: string | null;
     packages?: { slug: string } | { slug: string }[] | null;
   };
 
@@ -60,13 +86,18 @@ export async function getUserAccess(): Promise<ResolvedAccess | null> {
       admin_scope,
       team_department,
       package_id,
+      organization_id,
       packages:package_id ( slug )
     `
     )
     .eq("id", user.id)
     .maybeSingle();
 
-  if (full.error?.message.includes("portal_role") || full.error?.message.includes("package_id")) {
+  if (
+    full.error?.message.includes("portal_role") ||
+    full.error?.message.includes("package_id") ||
+    full.error?.message.includes("organization_id")
+  ) {
     const basic = await supabase
       .from("profiles")
       .select("id, email, full_name, role")
@@ -95,13 +126,21 @@ export async function getUserAccess(): Promise<ResolvedAccess | null> {
     admin_scope: (row.admin_scope as AdminScope | null) ?? null,
     team_department: (row.team_department as TeamDepartment | null) ?? null,
     package_slug: packageSlug,
+    organization_id: row.organization_id ?? null,
   };
 
-  const entitlements = await loadEntitlements(profile);
+  const userEntitlements = await loadEntitlements(profile);
+  const orgLicense = await loadOrgLicense(profile.organization_id);
+  const orgEntitlementCap = expandOrgLicenseToEntitlements(orgLicense);
+  const entitlements = capEntitlementsByOrg(userEntitlements, orgEntitlementCap);
+
   return {
     profile,
     portals: resolvePortals(profile),
     entitlements,
+    userEntitlements,
+    orgLicense,
+    orgEntitlementCap,
     packageSlug: profile.package_slug,
   };
 }
@@ -149,6 +188,14 @@ export function hasEntitlement(access: ResolvedAccess, slug: string): boolean {
   return access.entitlements.has(slug);
 }
 
-export function requireEntitlement(access: ResolvedAccess, slug: string): boolean {
-  return hasEntitlement(access, slug);
+export function hasUserEntitlement(access: ResolvedAccess, slug: string): boolean {
+  if (access.profile.portal_role === "super_admin") return true;
+  return access.userEntitlements.has(slug);
 }
+
+export function isBlockedByOrgLicense(access: ResolvedAccess, slug: string): boolean {
+  if (!access.orgEntitlementCap) return false;
+  return access.userEntitlements.has(slug) && !access.orgEntitlementCap.has(slug);
+}
+
+export { hasOrgModuleAccess } from "./org-license";

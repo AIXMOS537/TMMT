@@ -21,3 +21,10 @@ export const Th = ({ className, ...p }: React.ThHTMLAttributes<HTMLTableCellElem
 export const Td = ({ className, ...p }: React.TdHTMLAttributes<HTMLTableCellElement>) => (
   <td className={cn("p-3 align-middle", className)} {...p} />
 );
+
+/** shadcn-style aliases */
+export const TableHeader = Thead;
+export const TableBody = Tbody;
+export const TableRow = Tr;
+export const TableHead = Th;
+export const TableCell = Td;

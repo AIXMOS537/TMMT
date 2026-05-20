@@ -15,6 +15,10 @@ import { listLedgerForCase } from "@/lib/ledger/queries";
 import { LedgerEntryForm } from "@/components/ledger/ledger-entry-form";
 import { LedgerTable } from "@/components/ledger/ledger-table";
 import { LedgerLiveSync } from "@/components/ledger/ledger-live-sync";
+import { CaseFieldDocumentation } from "@/components/case-field-documentation";
+import { PostClientUpdateForm } from "@/components/post-client-update-form";
+import { LinkGhlContactForm } from "@/components/link-ghl-contact-form";
+import { isGhlConfigured } from "@/lib/ghl/client";
 
 export const dynamic = "force-dynamic";
 
@@ -28,25 +32,37 @@ export default async function CaseDetail({ params }: { params: { id: string } })
     .maybeSingle();
   if (!c) notFound();
 
-  const [{ data: history }, { data: jobs }, { data: vendors }, ledgerEntries] = await Promise.all([
-    supabase
-      .from("case_status_history")
-      .select("from_status, to_status, created_at")
-      .eq("case_id", c.id)
-      .order("created_at", { ascending: false })
-      .limit(20),
-    supabase
-      .from("vendor_jobs")
-      .select("id, title, status, offered_price, agreed_price, due_at, created_at, vendor_id, vendors(company_name)")
-      .eq("case_id", c.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("vendors")
-      .select("id, company_name, services")
-      .eq("active", true)
-      .order("company_name"),
-    listLedgerForCase(c.id),
+  async function optionalRows<T extends Record<string, unknown>>(
+    query: PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+  ): Promise<T[]> {
+    const { data, error } = await query;
+    if (error) return [];
+    return data ?? [];
+  }
+
+  const [history, jobs, vendors, ledgerEntries] = await Promise.all([
+    optionalRows(
+      supabase
+        .from("case_status_history")
+        .select("from_status, to_status, created_at")
+        .eq("case_id", c.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ),
+    optionalRows(
+      supabase
+        .from("vendor_jobs")
+        .select("id, title, status, offered_price, agreed_price, due_at, created_at, vendor_id, vendors(company_name)")
+        .eq("case_id", c.id)
+        .order("created_at", { ascending: false })
+    ),
+    optionalRows(
+      supabase.from("vendors").select("id, company_name, services").eq("active", true).order("company_name")
+    ),
+    listLedgerForCase(c.id).catch(() => []),
   ]);
+
+  const vendorsAvailable = vendors.length > 0;
 
   const next = CASE_TRANSITIONS[c.status as CaseStatus] ?? [];
 
@@ -99,6 +115,11 @@ export default async function CaseDetail({ params }: { params: { id: string } })
       <Card>
         <CardHeader><CardTitle>Assign a vendor</CardTitle></CardHeader>
         <CardContent>
+          {!vendorsAvailable ? (
+            <p className="text-sm text-muted-foreground">
+              Vendor tables are not on this database yet — apply <code className="text-xs">0001_init.sql</code> to enable assignments.
+            </p>
+          ) : (
           <form action={assignVendorAction} className="grid sm:grid-cols-2 gap-3">
             <input type="hidden" name="case_id" value={c.id} />
             <div className="sm:col-span-2">
@@ -131,6 +152,7 @@ export default async function CaseDetail({ params }: { params: { id: string } })
               <Button type="submit">Offer to vendor</Button>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
 
@@ -167,6 +189,25 @@ export default async function CaseDetail({ params }: { params: { id: string } })
           </CardContent>
         </Card>
       </div>
+
+      <LinkGhlContactForm
+        caseId={c.id}
+        refCode={c.ref_code ?? c.id.slice(0, 8)}
+        customerEmail={c.customer_email}
+        ghlContactId={(c.metadata as { ghl?: { contact_id?: string } })?.ghl?.contact_id ?? null}
+        ghlConfigured={isGhlConfigured()}
+      />
+
+      {c.customer_email && (
+        <>
+          <PostClientUpdateForm
+            caseId={c.id}
+            customerEmail={c.customer_email ?? ""}
+            refCode={c.ref_code ?? c.id.slice(0, 8)}
+          />
+          <CaseFieldDocumentation caseId={c.id} customerEmail={c.customer_email} />
+        </>
+      )}
 
       <section className="space-y-4">
         <h2 className="text-lg font-medium">Financial ledger</h2>

@@ -29,7 +29,7 @@ type StageMapFile = {
 
 let cachedMap: StageMapFile | null = null;
 
-function loadMap(): StageMapFile {
+export function loadStageMap(): StageMapFile {
   if (cachedMap) return cachedMap;
   try {
     // Optional runtime config — copy GHL_PIPELINE_STAGE_MAP.example.json on deploy host or bake at build
@@ -50,7 +50,7 @@ export function resolveCanonicalStage(args: {
   pipelineName?: string;
   stageName: string;
 }): { canonical: CanonicalRenterStage; businessLine: string } {
-  const map = loadMap();
+  const map = loadStageMap();
   const norm = args.stageName.trim().toLowerCase();
   const defaultStage = map.default_canonical_stage ?? "inquiry";
 
@@ -102,7 +102,7 @@ export function resolveDispatchStage(args: {
   pipelineName?: string;
   stageName: string;
 }): { canonical: CanonicalDispatchStage; businessLine: string } {
-  const map = loadMap();
+  const map = loadStageMap();
   const norm = args.stageName.trim().toLowerCase();
   const defaultStage = map.dispatch_default_stage ?? "lead";
 

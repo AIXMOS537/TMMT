@@ -22,11 +22,9 @@ export function StatCard({
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">{value}</p>
-          {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+          {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        {icon && (
-          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">{icon}</div>
-        )}
+        {icon ? <div className="rounded-xl bg-primary/10 p-2.5 text-primary">{icon}</div> : null}
       </div>
     </div>
   );
