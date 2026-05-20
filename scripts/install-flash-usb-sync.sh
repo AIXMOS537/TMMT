@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Install LaunchAgent: sync TMMT OS to AIXMOS02 whenever the USB is plugged in.
+# Install LaunchAgent: sync TMMT OS + docked LEXAR/CYBORG when USB volumes are mounted.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLIST_LABEL="com.aixmos.tmmt-flash-usb-sync"
 PLIST_PATH="${HOME}/Library/LaunchAgents/${PLIST_LABEL}.plist"
-SYNC_SCRIPT="${REPO_ROOT}/scripts/flash-usb-sync.sh"
+SYNC_SCRIPT="${REPO_ROOT}/scripts/sync-all-flash-drives.sh"
 LOG_DIR="${HOME}/Library/Logs"
 
 chmod +x "${SYNC_SCRIPT}"
