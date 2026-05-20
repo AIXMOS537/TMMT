@@ -10,10 +10,6 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      { source: "/apply", destination: "/aixmos/apply.html" },
-      { source: "/operator-apply", destination: "/aixmos/operator.html" },
-      { source: "/thankyou", destination: "/aixmos/thankyou.html" },
-      { source: "/aixmos", destination: "/aixmos/index.html" },
       // Legacy engine paths → unified Learn face
       { source: "/onboarding", destination: "/learn/onboarding" },
       { source: "/dashboard", destination: "/learn/dashboard" },

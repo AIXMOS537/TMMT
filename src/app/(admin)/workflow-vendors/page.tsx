@@ -3,6 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { getWorkflowVendors } from "@/lib/queries";
 import {
+  VENDOR_SERVICE_VERTICALS,
+  formatServiceVerticals,
+  parseServiceVerticals,
+  serializeServiceVerticals,
+  type VendorServiceVertical,
+} from "@/lib/vendor-verticals";
+import {
   PageHeader,
   DataTable,
   Column,
@@ -24,6 +31,7 @@ export default function WorkflowVendorsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
+  const [selectedVerticals, setSelectedVerticals] = useState<VendorServiceVertical[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -47,7 +55,7 @@ export default function WorkflowVendorsPage() {
       data.filter(
         (r) =>
           !search ||
-          [r.name, r.email, r.contact_name, r.vendor_type]
+          [r.name, r.email, r.contact_name, r.vendor_type, ...((r.service_verticals as string[] | undefined) ?? [])]
             .filter(Boolean)
             .some((v) => String(v).toLowerCase().includes(search.toLowerCase()))
       ),
@@ -56,7 +64,27 @@ export default function WorkflowVendorsPage() {
 
   const columns: Column<Vendor>[] = [
     { key: "name", label: "Name", render: (r) => <span className="font-medium">{r.name as string}</span> },
-    { key: "vendor_type", label: "Type" },
+    { key: "vendor_type", label: "Legacy type" },
+    {
+      key: "service_verticals",
+      label: "Verticals",
+      render: (r) => (
+        <span className="text-sm">
+          {formatServiceVerticals(
+            parseServiceVerticals(r.service_verticals ?? r.vendor_type)
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "agreement_status",
+      label: "Agreement",
+      render: (r) => (
+        <span className="text-xs uppercase tracking-wide text-gray-600 dark:text-slate-400">
+          {String(r.agreement_status ?? "pending")}
+        </span>
+      ),
+    },
     { key: "contact_name", label: "Contact" },
     { key: "email", label: "Email" },
     {
@@ -82,9 +110,12 @@ export default function WorkflowVendorsPage() {
     const fd = new FormData(e.currentTarget);
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => {
-      if (k !== "active") record[k] = v || null;
+      if (k !== "active" && k !== "agreement_status") record[k] = v || null;
     });
     record.active = fd.get("active") === "on";
+    record.agreement_status = String(fd.get("agreement_status") ?? "pending");
+    record.service_verticals = selectedVerticals;
+    record.vendor_type = serializeServiceVerticals(selectedVerticals);
     if (editing?.id) record.id = editing.id;
     const result = await adminUpsert("vendors", record);
     setSaving(false);
@@ -103,7 +134,11 @@ export default function WorkflowVendorsPage() {
         title="Outside vendors"
         description="Vendors with portal access — link auth_user_id to their Supabase login"
         action={
-          <Button onClick={() => { setEditing(null); setModalOpen(true); }}>
+          <Button onClick={() => {
+            setEditing(null);
+            setSelectedVerticals([]);
+            setModalOpen(true);
+          }}>
             <Plus size={16} />
             Add vendor
           </Button>
@@ -124,7 +159,11 @@ export default function WorkflowVendorsPage() {
         <DataTable
           columns={columns}
           data={filtered}
-          onRowClick={(r) => { setEditing(r); setModalOpen(true); }}
+          onRowClick={(r) => {
+            setEditing(r);
+            setSelectedVerticals(parseServiceVerticals(r.service_verticals ?? r.vendor_type));
+            setModalOpen(true);
+          }}
         />
       )}
 
@@ -134,8 +173,46 @@ export default function WorkflowVendorsPage() {
           <FormField label="Business name" required>
             <input name="name" className={inputClass} required defaultValue={String(editing?.name ?? "")} />
           </FormField>
-          <FormField label="Type (mechanic, detailer, tow…)">
-            <input name="vendor_type" className={inputClass} defaultValue={String(editing?.vendor_type ?? "")} />
+          <FormField label="Service verticals">
+            <div className="flex flex-wrap gap-3">
+              {VENDOR_SERVICE_VERTICALS.map((v) => (
+                <label key={v.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedVerticals.includes(v.id)}
+                    onChange={(e) => {
+                      setSelectedVerticals((prev) =>
+                        e.target.checked
+                          ? [...prev, v.id]
+                          : prev.filter((id) => id !== v.id)
+                      );
+                    }}
+                  />
+                  {v.label}
+                </label>
+              ))}
+            </div>
+          </FormField>
+          <FormField label="Agreement status">
+            <select
+              name="agreement_status"
+              className={inputClass}
+              defaultValue={String(editing?.agreement_status ?? "pending")}
+            >
+              <option value="pending">Pending signature</option>
+              <option value="trial">Trial week (paid)</option>
+              <option value="active">Active preferred vendor</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </FormField>
+          <FormField label="Notes">
+            <textarea
+              name="notes"
+              rows={3}
+              className={inputClass}
+              defaultValue={String(editing?.notes ?? "")}
+              placeholder="LLC name, insurance expiry, commission tier…"
+            />
           </FormField>
           <FormField label="Contact name">
             <input name="contact_name" className={inputClass} defaultValue={String(editing?.contact_name ?? "")} />
