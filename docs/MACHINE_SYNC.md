@@ -143,6 +143,26 @@ When **AIXMOS02**, **CYBORG**, and **LEXAR** are on the same hub (or alternate l
 
 Force immediate LEXAR/CYBORG pass (bypasses their 5-minute throttle): `TMMT_FORCE_DOCK_SYNC=1 ~/dev/TMMT/scripts/sync-all-flash-drives.sh`
 
+## Flash → office Mac (pull inbox)
+
+When the dock is on the **office** Mac and volumes mount, a separate LaunchAgent can **copy from the drives into this Mac** (ingest for review — does not run executables from USB).
+
+| Item | Value |
+|------|--------|
+| Script | `scripts/pull-from-flash-drives.sh` |
+| Inbox | `~/Documents/TMMT-Flash-Inbox/current/` |
+| Install / enable | `scripts/install-flash-usb-pull.sh` → `scripts/enable-flash-usb-pull.sh` |
+| Log | `~/Library/Logs/tmmt-flash-usb-pull.log` |
+| Included in | `scripts/enable-office-services.sh` |
+
+**Manual pull now** (bypass throttle):
+
+```bash
+TMMT_FORCE_FLASH_PULL=1 ~/dev/TMMT/scripts/pull-from-flash-drives.sh
+```
+
+**Agent channels (Telegram + iMessage):** [AGENT_IMESSAGE_TELEGRAM_SETUP.md](./AGENT_IMESSAGE_TELEGRAM_SETUP.md) — Telegram bot for reliable commands; iMessage outbound + optional local watcher (Apple has no official iMessage Bot API). **One-pager for agents:** [AGENT_HANDOFF_ONE_PAGER.md](./AGENT_HANDOFF_ONE_PAGER.md).
+
 **From home (Windows)** — after Tailscale is on both machines:
 
 ```text
