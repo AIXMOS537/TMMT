@@ -51,6 +51,7 @@ async function tableExists(table) {
 }
 
 const workflowPath = resolve(root, "supabase/migrations/20260516120000_workflow_engine.sql");
+const opsCompatPath = resolve(root, "supabase/migrations/20260520160000_ops_cases_compat.sql");
 const vendorColsPath = resolve(
   root,
   "supabase/migrations/20260520140000_vendor_service_verticals.sql"
@@ -70,6 +71,10 @@ try {
     await managementQuery(vendorSql);
     console.log("OK: applied vendor service_verticals columns (idempotent)");
   }
+
+  const opsCompatSql = readFileSync(opsCompatPath, "utf8");
+  await managementQuery(opsCompatSql);
+  console.log("OK: applied 20260520160000_ops_cases_compat.sql");
 
   const rpc = await fetch(
     `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/submit_customer_intake`,

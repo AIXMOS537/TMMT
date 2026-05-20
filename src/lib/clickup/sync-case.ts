@@ -1,23 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  caseClickUpUrl,
+  caseInternalNotes,
+  casePriority,
+  caseRef,
+  caseSubject,
+} from "@/lib/case-fields";
 import { addClickUpComment, createClickUpTask } from "@/lib/clickup/client";
 import {
   listIdForRequestType,
   listNameForId,
 } from "@/lib/clickup/config";
 
-export type CaseRecord = {
+export type CaseRecord = Record<string, unknown> & {
   id: string;
-  case_number: string;
-  title: string;
   request_type: string;
   status: string;
-  priority?: string | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  customer_email?: string | null;
-  internal_notes?: string | null;
   clickup_task_id?: string | null;
-  clickup_url?: string | null;
 };
 
 function priorityToClickUp(priority?: string | null): 1 | 2 | 3 | 4 | undefined {
@@ -29,14 +28,15 @@ function priorityToClickUp(priority?: string | null): 1 | 2 | 3 | 4 | undefined 
 }
 
 function buildDescription(c: CaseRecord, extra?: string): string {
+  const notes = caseInternalNotes(c);
   const lines = [
-    `TMMT case: ${c.case_number}`,
+    `TMMT case: ${caseRef(c)}`,
     `Status: ${c.status}`,
     `Type: ${c.request_type}`,
     c.customer_name ? `Customer: ${c.customer_name}` : "",
     c.customer_phone ? `Phone: ${c.customer_phone}` : "",
     c.customer_email ? `Email: ${c.customer_email}` : "",
-    c.internal_notes ? `\nNotes:\n${c.internal_notes}` : "",
+    notes ? `\nNotes:\n${notes}` : "",
     extra ?? "",
     `\nSource: TMMT OS (/cases)`,
   ].filter(Boolean);
@@ -59,23 +59,24 @@ export async function syncCaseToClickUp(
   }
 
   const c = row as CaseRecord;
+  const existingUrl = caseClickUpUrl(c);
   if (c.clickup_task_id && !options?.force) {
     return {
       taskId: c.clickup_task_id,
-      url: c.clickup_url ?? "",
+      url: existingUrl,
       skipped: true,
     };
   }
 
-  const listId = listIdForRequestType(c.request_type);
+  const listId = listIdForRequestType(String(c.request_type));
   const listName = listNameForId(listId);
-  const tags = ["tmmt-os", c.request_type.replace(/_/g, "-")];
+  const tags = ["tmmt-os", String(c.request_type).replace(/_/g, "-")];
 
   const task = await createClickUpTask({
     listId,
-    name: `[${c.case_number}] ${c.title}`,
+    name: `[${caseRef(c)}] ${caseSubject(c)}`,
     description: buildDescription(c),
-    priority: priorityToClickUp(c.priority),
+    priority: priorityToClickUp(casePriority(c)),
     tags,
   });
 
@@ -83,7 +84,7 @@ export async function syncCaseToClickUp(
     .from("cases")
     .update({
       clickup_task_id: task.id,
-      clickup_url: task.url,
+      clickup_task_url: task.url,
     })
     .eq("id", caseId);
 
