@@ -330,7 +330,7 @@ export async function getWorkflowVendors() {
 export async function getVendorJobsForStaff(caseId?: string) {
   let q = supabase
     .from("vendor_jobs")
-    .select("*, vendors(name), cases(case_number, title)")
+    .select("*, vendors(name), cases(ref_code, subject, case_number, title)")
     .order("created_at", { ascending: false })
     .limit(500);
   if (caseId) q = q.eq("case_id", caseId);
@@ -356,7 +356,7 @@ export async function getCaseStatusHistory(caseId: string) {
 export async function getVendorPortalJobs() {
   const { data, error } = await supabase
     .from("vendor_jobs")
-    .select("*, cases(case_number, title, customer_name, status)")
+    .select("*, cases(ref_code, subject, case_number, title, customer_name, status)")
     .order("offered_at", { ascending: false })
     .limit(200);
   if (error) {

@@ -22,6 +22,12 @@ import {
 } from "@/components/ui";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import {
+  caseClickUpUrl,
+  caseInternalNotes,
+  caseRef,
+  caseSubject,
+} from "@/lib/case-fields";
+import {
   CASE_STATUSES,
   formatCaseStatus,
   INTAKE_REQUEST_TYPES,
@@ -68,7 +74,7 @@ export default function CasesPage() {
     return data.filter((r) => {
       const matchSearch =
         !search ||
-        [r.case_number, r.title, r.customer_name, r.customer_email, r.customer_phone]
+        [caseRef(r), caseSubject(r), r.customer_name, r.customer_email, r.customer_phone]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(search.toLowerCase()));
       const matchStatus = !statusFilter || r.status === statusFilter;
@@ -89,12 +95,12 @@ export default function CasesPage() {
 
   const columns: Column<CaseRow>[] = [
     {
-      key: "case_number",
+      key: "ref_code",
       label: "Case",
       render: (r) => (
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">{r.case_number as string}</p>
-          <p className="text-xs text-gray-500 dark:text-slate-400">{r.title as string}</p>
+          <p className="font-medium text-gray-900 dark:text-white">{caseRef(r)}</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">{caseSubject(r)}</p>
         </div>
       ),
     },
@@ -168,7 +174,7 @@ export default function CasesPage() {
       return;
     }
     if (result.clickupUrl) {
-      setEditing({ ...editing, clickup_url: result.clickupUrl });
+      setEditing({ ...editing, clickup_task_url: result.clickupUrl });
     }
     load();
   };
@@ -250,7 +256,7 @@ export default function CasesPage() {
       <Modal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditing(null); }}
-        title={editing ? String(editing.case_number) : "Case"}
+        title={editing ? caseRef(editing) : "Case"}
       >
         {editing && (
           <div className="space-y-4">
@@ -269,11 +275,11 @@ export default function CasesPage() {
                 <input name="clickup_task_id" className={inputClass} defaultValue={String(editing.clickup_task_id ?? "")} />
               </FormField>
               <FormField label="ClickUp URL">
-                <input name="clickup_url" type="url" className={inputClass} defaultValue={String(editing.clickup_url ?? "")} />
+                <input name="clickup_url" type="url" className={inputClass} defaultValue={caseClickUpUrl(editing)} />
               </FormField>
-              {editing.clickup_url ? (
+              {caseClickUpUrl(editing) ? (
                 <a
-                  href={String(editing.clickup_url)}
+                  href={caseClickUpUrl(editing)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
@@ -282,7 +288,7 @@ export default function CasesPage() {
                 </a>
               ) : null}
               <FormField label="Internal notes">
-                <textarea name="internal_notes" rows={3} className={inputClass} defaultValue={String(editing.internal_notes ?? "")} />
+                <textarea name="internal_notes" rows={3} className={inputClass} defaultValue={caseInternalNotes(editing)} />
               </FormField>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={saving}>
@@ -342,7 +348,7 @@ export default function CasesPage() {
               </select>
             </FormField>
             <FormField label="Job title" required>
-              <input name="title" className={inputClass} required defaultValue={`Work for ${editing.case_number}`} />
+              <input name="title" className={inputClass} required defaultValue={`Work for ${caseRef(editing)}`} />
             </FormField>
             <FormField label="Instructions">
               <textarea name="description" rows={3} className={inputClass} />

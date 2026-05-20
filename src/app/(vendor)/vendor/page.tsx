@@ -19,11 +19,12 @@ import {
 } from "@/components/ui";
 import { vendorUpdateJobStatus, vendorUploadJobFile } from "@/app/workflow-actions";
 import { formatCaseStatus, formatVendorJobStatus, VENDOR_JOB_STATUSES } from "@/lib/workflow";
+import { caseRef, caseSubject } from "@/lib/case-fields";
 import { formatDateTime } from "@/lib/utils";
 import { Briefcase, Upload } from "lucide-react";
 
 type Job = Record<string, unknown> & {
-  cases?: { case_number?: string; title?: string; customer_name?: string; status?: string };
+  cases?: { ref_code?: string; subject?: string; case_number?: string; title?: string; customer_name?: string; status?: string };
 };
 
 export default function VendorPortalPage() {
@@ -160,7 +161,7 @@ export default function VendorPortalPage() {
                         {job.title as string}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                        Case {job.cases?.case_number ?? "—"} · {job.cases?.title ?? ""}
+                        Case {job.cases ? caseRef(job.cases) : "—"} · {job.cases ? caseSubject(job.cases) : ""}
                       </p>
                     </div>
                     <StatusBadge status={formatVendorJobStatus(String(job.status))} />
@@ -183,7 +184,7 @@ export default function VendorPortalPage() {
             <div className="text-sm text-gray-600 dark:text-slate-400 space-y-1">
               <p>
                 <span className="font-medium text-gray-800 dark:text-slate-200">Case:</span>{" "}
-                {selected.cases?.case_number} — {formatCaseStatus(String(selected.cases?.status ?? ""))}
+                {selected.cases ? caseRef(selected.cases) : "—"} — {formatCaseStatus(String(selected.cases?.status ?? ""))}
               </p>
               {selected.description ? <p>{selected.description as string}</p> : null}
             </div>

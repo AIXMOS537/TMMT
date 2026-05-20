@@ -87,13 +87,28 @@ export async function staffUpdateCase(formData: FormData): Promise<ActionResult>
   if (!parsed.success) return { success: false, error: "Invalid case data." };
 
   const d = parsed.data;
+  const { data: existing, error: fetchErr } = await supabase
+    .from("cases")
+    .select("metadata")
+    .eq("id", d.id)
+    .single();
+  if (fetchErr) {
+    console.error("[staffUpdateCase fetch]", fetchErr.message);
+    return { success: false, error: "Failed to update case." };
+  }
+
+  const metadata = {
+    ...((existing?.metadata as Record<string, unknown> | null) ?? {}),
+    internal_notes: d.internal_notes ?? null,
+  };
+
   const { error } = await supabase
     .from("cases")
     .update({
       status: d.status,
-      internal_notes: d.internal_notes ?? null,
       clickup_task_id: d.clickup_task_id || null,
-      clickup_url: d.clickup_url || null,
+      clickup_task_url: d.clickup_url || null,
+      metadata,
     })
     .eq("id", d.id);
 
