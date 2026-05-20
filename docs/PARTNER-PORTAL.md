@@ -2,6 +2,17 @@
 
 Read-only fleet status for investor accounts. Data access is enforced in Postgres (RLS + `get_partner_fleet()`), not only in the UI.
 
+## Additive — does not replace admin
+
+This portal is a **separate route and layout** on top of the existing staff app:
+
+| Audience | Route | Layout |
+|----------|--------|--------|
+| **Staff** (`admin`, `va`, or empty `role`) | `/` and all existing admin pages (`/fleet`, `/leads`, …) | `(admin)/` + Sidebar — **unchanged** |
+| **Partners** (`role` = `partner`) | `/partner` only (middleware blocks other admin URLs) | `(partner)/` — no Sidebar |
+
+Same `/login` for everyone; middleware sends partners to `/partner` and staff to `/`. Nothing in this feature removes or replaces the admin dashboard or its 17+ pages.
+
 ## Apply the database migration
 
 Run [`supabase/migrations/20260503120000_partner_portal_rls.sql`](../supabase/migrations/20260503120000_partner_portal_rls.sql) in the Supabase SQL editor (or your migration pipeline) **before** onboarding partners.
