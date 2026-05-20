@@ -60,12 +60,29 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
     ],
   },
   {
-    title: "AIXMOS funnel",
+    title: "AIXMOS cube",
     links: [
       {
+        href: "/work/program",
+        label: "Program desk (Work face)",
+        description: "Credit & funding readiness — staff review queue",
+        icon: TrendingUp,
+        badge: "Cube",
+      },
+      {
+        href:
+          process.env.NEXT_PUBLIC_CUBE_SAME_ORIGIN === "false"
+            ? (process.env.NEXT_PUBLIC_CUBE_LEARN_URL ?? "http://localhost:3001/dashboard")
+            : "/learn/dashboard",
+        label: "Learn face (client)",
+        description: "Education, coach, questionnaires",
+        icon: ExternalLink,
+        external: process.env.NEXT_PUBLIC_CUBE_SAME_ORIGIN === "false",
+      },
+      {
         href: ghlLinks.upsellPipeline,
-        label: "AIXMOS upsell queue",
-        description: "GHL contacts tagged ready-for-aixmos → membership → credit",
+        label: "GHL upsell queue",
+        description: "Contacts tagged ready-for-aixmos → membership",
         icon: TrendingUp,
         badge: "GHL",
         external: true,
@@ -73,7 +90,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       {
         href: "/aixmos/index.html",
         label: "Public AIXMOS site",
-        description: "Marketing landing on .com (membership, apply, operator)",
+        description: "Marketing landing (membership, apply)",
         icon: ExternalLink,
         external: true,
       },

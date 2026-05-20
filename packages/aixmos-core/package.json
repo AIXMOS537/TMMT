@@ -1,0 +1,30 @@
+{
+  "name": "@aixmos/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cube": "./src/cube/index.ts",
+    "./store": "./src/store/provider.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next": ">=16.0.0",
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

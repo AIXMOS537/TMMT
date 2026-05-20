@@ -27,14 +27,34 @@ export async function POST(request: NextRequest) {
     (typeof body.contact_email === "string" && body.contact_email) ||
     "";
   const tags = Array.isArray(body.tags)
-    ? body.tags.map(String)
+    ? body.tags.map((t) => String(t).toLowerCase())
     : typeof body.tag === "string"
-      ? [body.tag]
+      ? [String(body.tag).toLowerCase()]
       : [];
   const event = typeof body.event === "string" ? body.event : "ghl_webhook";
 
   if (!email) {
     return NextResponse.json({ ok: true, skipped: "no email" });
+  }
+
+  const programTrigger =
+    event === "aixmos.program.start" ||
+    tags.some((t) => t.includes("ready-for-aixmos") || t === "aixmos-program");
+
+  if (programTrigger) {
+    const origin = request.nextUrl.origin;
+    const programRes = await fetch(`${origin}/api/webhooks/ghl/program`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(secret ? { "x-ghl-webhook-secret": secret } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const programJson = await programRes.json();
+    if (programRes.ok && programJson.learnUrl) {
+      return NextResponse.json({ ok: true, program: programJson });
+    }
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
