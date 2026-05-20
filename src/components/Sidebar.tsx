@@ -34,67 +34,16 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { signOut } from "@/app/auth-actions";
+import { buildRentalsNavGroups } from "@/lib/rentals-nav";
+import type { OrgLicense } from "@/lib/org-license";
 
 type SidebarProps = {
   ventureSlug: string;
   ventureName: string;
   ventureColor?: string | null;
+  /** Serializable org license — nav is built client-side (icons cannot cross RSC boundary). */
+  orgLicense?: OrgLicense | null;
 };
-
-function buildNavGroups(base: string) {
-  return [
-    {
-      label: "Overview",
-      items: [{ href: base, label: "Dashboard", icon: LayoutDashboard }],
-    },
-    {
-      label: "Interfaces",
-      items: [
-        { href: `${base}/interfaces/appointments`, label: "Appointments", icon: CalendarRange },
-        { href: `${base}/interfaces/contracts`, label: "Contracts", icon: FileText },
-        { href: `${base}/interfaces/vehicles`, label: "Vehicles", icon: Car },
-        { href: `${base}/interfaces/payments`, label: "Payments", icon: DollarSign },
-      ],
-    },
-    {
-      label: "Pipeline",
-      items: [
-        { href: `${base}/leads`, label: "Incoming Leads", icon: UserPlus },
-        { href: `${base}/background-checks`, label: "Background Checks", icon: ShieldCheck },
-        { href: `${base}/waitlist`, label: "Waitlist", icon: Clock },
-        { href: `${base}/appointments`, label: "Appointments", icon: CalendarCheck },
-      ],
-    },
-    {
-      label: "Customers",
-      items: [
-        { href: `${base}/customers`, label: "Active Customers", icon: Users },
-        { href: `${base}/payments`, label: "Payments", icon: CreditCard },
-        { href: `${base}/former-customers`, label: "Former Customers", icon: Users },
-        { href: `${base}/do-not-rent`, label: "Do Not Rent", icon: Ban },
-      ],
-    },
-    {
-      label: "Fleet",
-      items: [
-        { href: `${base}/fleet`, label: "Fleet Vehicles", icon: Car },
-        { href: `${base}/inspections`, label: "Car Inspections", icon: ClipboardCheck },
-        { href: `${base}/maintenance`, label: "Maintenance", icon: Wrench },
-        { href: `${base}/insurance`, label: "Insurance", icon: Shield },
-      ],
-    },
-    {
-      label: "Operations",
-      items: [
-        { href: `${base}/tickets`, label: "Tickets", icon: AlertTriangle },
-        { href: `${base}/expenses`, label: "Expenses", icon: DollarSign },
-        { href: `${base}/contracts`, label: "Contracts", icon: FileText },
-        { href: `${base}/vendors`, label: "Vendors / Shops", icon: Store },
-        { href: `${base}/operation-costs`, label: "Software & Tools", icon: UserCog },
-      ],
-    },
-  ];
-}
 
 const commandCenterItems = [
   { href: "/", label: "Portfolio", icon: LayoutGrid },
@@ -103,13 +52,21 @@ const commandCenterItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({ ventureSlug, ventureName, ventureColor }: SidebarProps) {
+export default function Sidebar({
+  ventureSlug,
+  ventureName,
+  ventureColor,
+  orgLicense = null,
+}: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const base = ventureHref(ventureSlug, "/");
-  const navGroups = useMemo(() => buildNavGroups(base), [base]);
+  const navGroups = useMemo(
+    () => buildRentalsNavGroups(base, orgLicense),
+    [base, orgLicense]
+  );
 
   const toggle = (label: string) =>
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));

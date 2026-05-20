@@ -56,7 +56,8 @@
   }
 
   .nav-pill {
-    @apply flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-muted transition-all duration-200;
+    @apply flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200;
+    color: hsl(var(--sidebar-muted));
   }
 
   .nav-pill-active {

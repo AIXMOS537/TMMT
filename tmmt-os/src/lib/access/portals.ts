@@ -114,4 +114,8 @@ export const PORTAL_PATH_ACCESS: Record<
     portalRoles: ["client", "admin", "super_admin"],
     legacyRoles: ["investor", "admin"],
   },
+  "/v": {
+    portalRoles: ["team_member", "manager", "admin", "super_admin"],
+    legacyRoles: ["internal_team", "admin"],
+  },
 };

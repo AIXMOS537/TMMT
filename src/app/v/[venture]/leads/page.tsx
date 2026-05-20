@@ -73,7 +73,7 @@ export default function LeadsPage() {
     <div>
       <PageHeader
         title="Incoming Leads"
-        description={`${data.length} total leads`}
+        description={loading ? "Loading leads…" : `${data.length} total leads`}
         action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Lead</Button>}
       />
 

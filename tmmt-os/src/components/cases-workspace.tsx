@@ -8,7 +8,10 @@ import { ViewSwitcher, useActiveView } from "@/components/view-switcher";
 import { CaseStatusBadge } from "@/components/case-status-badge";
 import { RequestTypeBadge } from "@/components/request-type-badge";
 import { CaseStatusFilter } from "@/components/case-status-filter";
-import { CASE_STATUS_LABEL, type CaseStatus, type RequestType } from "@/lib/workflow/statuses";
+import { BusinessLineFilter } from "@/components/business-line-filter";
+import { Badge } from "@/components/ui/badge";
+import { type CaseStatus, type RequestType } from "@/lib/workflow/statuses";
+import { businessLineLabel } from "@/lib/business-lines/registry";
 import { getCaseStatusTone, toneStyles } from "@/lib/ui/status-colors";
 import { formatDate, cn } from "@/lib/utils";
 
@@ -20,6 +23,7 @@ export type CaseRow = {
   subject: string;
   status: string;
   created_at: string;
+  business_line?: string | null;
 };
 
 const BOARD_COLUMNS: { label: string; statuses: CaseStatus[] }[] = [
@@ -33,9 +37,11 @@ const BOARD_COLUMNS: { label: string; statuses: CaseStatus[] }[] = [
 export function CasesWorkspace({
   cases,
   activeStatus,
+  activeLine,
 }: {
   cases: CaseRow[];
   activeStatus?: string;
+  activeLine?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +67,7 @@ export function CasesWorkspace({
       />
 
       <CaseStatusFilter active={activeStatus} />
+      <BusinessLineFilter active={activeLine} activeStatus={activeStatus} />
 
       {view === "board" ? (
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
@@ -99,6 +106,11 @@ export function CasesWorkspace({
                         <div className="mt-2 flex flex-wrap gap-1">
                           <CaseStatusBadge status={c.status as CaseStatus} />
                           <RequestTypeBadge type={c.request_type as RequestType} />
+                          {c.business_line && (
+                            <Badge variant="outline" className="text-[10px] font-normal">
+                              {businessLineLabel(c.business_line)}
+                            </Badge>
+                          )}
                         </div>
                       </Link>
                     </li>
@@ -115,6 +127,7 @@ export function CasesWorkspace({
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Ref</th>
+                  <th className="px-4 py-3 font-medium">Line</th>
                   <th className="px-4 py-3 font-medium">Customer</th>
                   <th className="px-4 py-3 font-medium">Request</th>
                   <th className="px-4 py-3 font-medium">Subject</th>
@@ -134,6 +147,9 @@ export function CasesWorkspace({
                         <Link href={`/internal/cases/${c.id}`} className="font-medium text-primary hover:underline">
                           {c.ref_code}
                         </Link>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {businessLineLabel(c.business_line)}
                       </td>
                       <td className="px-4 py-3">{c.customer_name}</td>
                       <td className="px-4 py-3">

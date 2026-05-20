@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { CaseStatusBadge } from "@/components/case-status-badge";
 import { ColoredRow } from "@/components/colored-row";
 import { formatDate } from "@/lib/utils";
+import { ContactFirstBanner } from "@/components/contact-first-banner";
+import { CasesLiveSync } from "@/components/cases-live-sync";
 import { createSupportCase } from "./actions";
 import type { CaseStatus } from "@/lib/workflow/statuses";
 import { getCaseStatusTone } from "@/lib/ui/status-colors";
@@ -30,6 +32,8 @@ export default async function ClientSupportPage() {
 
   return (
     <div className="space-y-8">
+      <CasesLiveSync />
+      <ContactFirstBanner variant="client" />
       <header className="space-y-2">
         <Link href="/client/dashboard" className="text-sm text-muted-foreground hover:underline">
           ← Client portal
@@ -43,7 +47,13 @@ export default async function ClientSupportPage() {
       <Card className="border-t-4 border-t-orange-500">
         <CardHeader>
           <CardTitle>Open a ticket</CardTitle>
-          <CardDescription>We&apos;ll email updates to {me?.email}</CardDescription>
+          <CardDescription>
+            Your team responds here — track status on{" "}
+            <Link href="/client/updates" className="text-primary underline">
+              Updates
+            </Link>{" "}
+            instead of calling.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={createSupportCase} className="space-y-4 max-w-lg">

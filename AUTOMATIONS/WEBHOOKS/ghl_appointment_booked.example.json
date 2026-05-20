@@ -1,0 +1,16 @@
+{
+  "event": "appointment.booked",
+  "appointment_id": "appt_example_101",
+  "contact_id": "contact_example_456",
+  "title": "Vehicle pickup",
+  "status": "confirmed",
+  "calendar_id": "CALENDAR_ID",
+  "starts_at": "2026-06-01T14:00:00.000Z",
+  "ends_at": "2026-06-01T15:00:00.000Z",
+  "timezone": "America/New_York",
+  "contact": {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "[phone removed]"
+  }
+}

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser } from "@/lib/auth-roles";
+import { loadOrgLicenseForUser } from "@/lib/load-org-license";
+import { staffPathBlocked } from "@/lib/org-license";
 
 function isPublicPath(pathname: string) {
   return (
@@ -62,6 +64,11 @@ export async function middleware(request: NextRequest) {
       }
     } else if (pathname.startsWith("/partner")) {
       return NextResponse.redirect(new URL("/", request.url));
+    } else if (pathname.startsWith("/v/")) {
+      const license = await loadOrgLicenseForUser(supabase, user.id);
+      if (staffPathBlocked(pathname, license)) {
+        return NextResponse.redirect(new URL("/?error=module", request.url));
+      }
     }
   }
 

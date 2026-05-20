@@ -8,11 +8,46 @@ export type PortalSection = {
 
 export const CLIENT_SECTIONS: PortalSection[] = [
   {
+    slug: "updates",
+    title: "Updates",
+    description: "Live status, team messages, and notifications — check here before calling.",
+    href: "/client/updates",
+    entitlement: "updates_hub",
+  },
+  {
+    slug: "path",
+    title: "My path",
+    description: "Rental → credit → LTO → operator — track your gates.",
+    href: "/client/path",
+    entitlement: "journey_path",
+  },
+  {
+    slug: "credit",
+    title: "Credit repair",
+    description: "Why credit matters and your enrollment status.",
+    href: "/client/credit",
+    entitlement: "credit_education_hub",
+  },
+  {
     slug: "rental",
     title: "My rental",
     description: "Rental status, reminders, tickets, and quick actions.",
     href: "/client/rental",
     entitlement: "rental_hub",
+  },
+  {
+    slug: "marketplace",
+    title: "Marketplace",
+    description: "Deals, vendors, and opportunities for your income system.",
+    href: "/client/marketplace",
+    entitlement: "marketplace_hub",
+  },
+  {
+    slug: "vehicle",
+    title: "My vehicle",
+    description: "Vehicle details, photos, damages, expenses, and tickets.",
+    href: "/client/vehicle",
+    entitlement: "vehicle_hub",
   },
   {
     slug: "support",
@@ -51,10 +86,10 @@ export const CLIENT_SECTIONS: PortalSection[] = [
   },
   {
     slug: "training",
-    title: "Training modules",
-    description: "Courses and progress for your plan.",
+    title: "Credit rebuild training",
+    description: "Self-guided modules to rebuild your credit.",
     href: "/client/training",
-    entitlement: "training_fundamentals",
+    entitlement: "training_credit_rebuild",
   },
   {
     slug: "onboarding",
@@ -73,7 +108,7 @@ export const CLIENT_SECTIONS: PortalSection[] = [
   {
     slug: "upgrade",
     title: "Upgrade options",
-    description: "Move to Growth or Elite.",
+    description: "Credit paths and mentorship done-for-you.",
     href: "/client/upgrade",
     entitlement: "upgrade_center",
   },
@@ -159,6 +194,13 @@ export const ADMIN_SECTIONS: PortalSection[] = [
     description: "Starter, Growth, Elite, custom.",
     href: "/admin/packages",
     entitlement: "admin_packages",
+  },
+  {
+    slug: "licenses",
+    title: "Organization licenses",
+    description: "Lock-and-key SKUs, modules, and venture limits per operator.",
+    href: "/admin/licenses",
+    entitlement: "admin_licenses",
   },
   {
     slug: "entitlements",

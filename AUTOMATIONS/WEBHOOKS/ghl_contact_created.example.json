@@ -1,0 +1,11 @@
+{
+  "event": "contact.created",
+  "contact_id": "contact_example_456",
+  "location_id": "LOCATION_ID",
+  "contact": {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "[phone removed]"
+  },
+  "tags": ["rental-lead"]
+}

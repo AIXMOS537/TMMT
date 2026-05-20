@@ -5,12 +5,27 @@ import { submitBackgroundCheck } from "@/app/forms/actions";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, ShieldCheck } from "lucide-react";
 
-const insuranceOptions = ["Yes", "No"];
+const coverageOptions = [
+  {
+    value: "renter_own",
+    label: "Yes — I have my own auto insurance policy",
+  },
+  {
+    value: "tmmt_internal",
+    label: "No — I want TMMT internal rental coverage (after background check)",
+  },
+  {
+    value: "corporate_non_owner",
+    label:
+      "No — I need a corporate non-owner policy before the vehicle leaves the lot",
+  },
+] as const;
 
 export default function BackgroundCheckForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coverageSource, setCoverageSource] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,7 +34,10 @@ export default function BackgroundCheckForm() {
     const fd = new FormData(e.currentTarget);
     const result = await submitBackgroundCheck(fd);
     setLoading(false);
-    if (!result.success) { setError(result.error); return; }
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -29,11 +47,16 @@ export default function BackgroundCheckForm() {
         <Card className="p-8 text-center max-w-md">
           <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 dark:text-emerald-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Submitted!</h2>
-          <p className="text-gray-600 dark:text-slate-400">Your background check information has been received. We&apos;ll review and update you on your eligibility status.</p>
+          <p className="text-gray-600 dark:text-slate-400">
+            Your background check information has been received. Insurance must be verified before
+            your vehicle can leave the lot.
+          </p>
         </Card>
       </div>
     );
   }
+
+  const showOwnPolicyFields = coverageSource === "renter_own";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 px-4">
@@ -45,9 +68,11 @@ export default function BackgroundCheckForm() {
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Background Check & Verification</h1>
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">
+              Background Check & Verification
+            </h1>
           </div>
-          <p className="text-gray-500 text-sm mt-1">Required information for your rental application</p>
+          <p className="text-gray-500 text-sm mt-1">Required before pickup — economy, mid-tier, or luxury fleet</p>
         </div>
 
         <Card className="p-6">
@@ -64,19 +89,54 @@ export default function BackgroundCheckForm() {
             </FormField>
 
             <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Insurance Information</h3>
-              <FormField label="Do you have your own insurance?" required>
-                <select name="own_insurance" className={selectClass} required>
+              <h3 className="font-semibold text-gray-800 dark:text-slate-200 mb-3">Insurance</h3>
+              <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">
+                Insurance is billed separately from rent. Without your own policy, TMMT can offer
+                internal coverage (based on your background check) or arrange a corporate non-owner
+                policy — required before the vehicle leaves the lot.
+              </p>
+              <FormField label="How will you be insured for this rental?" required>
+                <select
+                  name="insurance_coverage_source"
+                  className={selectClass}
+                  required
+                  value={coverageSource}
+                  onChange={(e) => setCoverageSource(e.target.value)}
+                >
                   <option value="">Select...</option>
-                  {insuranceOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {coverageOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </FormField>
+              {showOwnPolicyFields && (
+                <>
+                  <FormField label="Insurance carrier" required>
+                    <input name="insurance_policy_carrier" className={inputClass} required />
+                  </FormField>
+                  <FormField label="Policy number" required>
+                    <input name="insurance_policy_number" className={inputClass} required />
+                  </FormField>
+                </>
+              )}
+              <input
+                type="hidden"
+                name="own_insurance"
+                value={coverageSource === "renter_own" ? "Yes" : coverageSource ? "No" : ""}
+              />
             </div>
 
             <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Additional Notes</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-slate-200 mb-3">Additional Notes</h3>
               <FormField label="Review Notes (if any)">
-                <textarea name="review_notes" rows={3} className={inputClass} placeholder="Any additional information..." />
+                <textarea
+                  name="review_notes"
+                  rows={3}
+                  className={inputClass}
+                  placeholder="Vehicle tier preference, dates, etc."
+                />
               </FormField>
             </div>
 
@@ -84,10 +144,12 @@ export default function BackgroundCheckForm() {
               <p className="font-medium">Document Requirements</p>
               <ul className="mt-2 list-disc list-inside space-y-1 text-blue-700">
                 <li>Driver&apos;s License (front & back)</li>
-                <li>Proof of Insurance (if applicable)</li>
+                <li>Proof of Insurance (required if using your own policy)</li>
                 <li>Recent Paystub or earnings proof</li>
               </ul>
-              <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">Upload documents via email or bring to your appointment</p>
+              <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                Upload documents via email or bring to your appointment
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

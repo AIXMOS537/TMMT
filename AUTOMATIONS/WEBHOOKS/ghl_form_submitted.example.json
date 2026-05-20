@@ -1,0 +1,17 @@
+{
+  "event": "form.submitted",
+  "submission_id": "sub_example_789",
+  "form_id": "FORM_ID",
+  "form_name": "Rental Application",
+  "contact_id": "contact_example_456",
+  "business_line": "rentals",
+  "contact": {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "[phone removed]"
+  },
+  "fields": {
+    "vehicle_interest": "SUV",
+    "pickup_date": "2026-06-01"
+  }
+}

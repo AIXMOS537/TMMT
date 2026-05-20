@@ -2,7 +2,7 @@
 
 Fill this out as each tool gets connected. Do not store API keys in this file.
 
-**Last updated:** 2026-05-16
+**Last updated:** 2026-05-20
 
 ## Core Systems
 
@@ -11,10 +11,11 @@ Fill this out as each tool gets connected. Do not store API keys in this file.
 | **Supabase** | Rentals ops DB, auth, daily brief source | **Live** | Brief + TMMT OS; project `uapxakmlwnpfsftfeezx` |
 | **Vercel (TMMT OS)** | Production app + `/api/intake` | **Live** | https://tmmt-c919-two.vercel.app — redeploy after env / `next.config` changes |
 | GoHighLevel | CRM, contacts, pipelines, messaging | **Partial** | `INTEGRATIONS/GHL_WEBHOOK_SETUP.md` · `/api/webhooks/ghl` · `/api/webhooks/ghl/overdue` · `AUTOMATIONS/SCRIPTS/push_overdue_to_ghl.py` |
+| Fathom AI | Meeting transcripts, summaries, action items | Planned | Use `INTEGRATIONS/FATHOM_TO_GHL_CLIENT_TRANSCRIPTS.md` for client transcript sending |
 | ClickUp | Tasks, assignments, due dates | Planned | Main task execution system |
 | Airtable | Manual-friendly views and lightweight operations | Partial | Templates in `AIX_AI_COMMAND_SYSTEM/airtable_templates/`; optional sync |
 | n8n | Automation router and webhooks | Planned | Portable stack in `AIXMOSXTMMT-OPS/` |
-| Zapier | Backup connector layer | Planned | Use when faster than n8n |
+| Zapier | Backup connector layer | Partial | Fast path for Fathom -> LeadConnector/GHL transcript automation |
 | Slack | Credit business internal commands/updates | Planned | **Credit + funding only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |
 | Telegram | Owner command bot | Optional | Not primary stack; see `CHANNEL_SETUP_GUIDE.md` |
 | WhatsApp | Car rental customer + lead messaging | Planned | **Through GHL only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |

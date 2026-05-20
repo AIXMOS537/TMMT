@@ -16,8 +16,8 @@ type ChatLine = {
 const EXAMPLES = [
   "what is pending",
   "assign maria@tmmtrentals.net to case TMMT-ABC123",
-  "approve crm for partner-portal-test@tmmt-rentals.local",
-  "post $45 expense to partner-portal-test@tmmt-rentals.local for interior detail show billing",
+  "approve crm for renter@example.com",
+  "post $45 expense to renter@example.com for interior detail show billing",
   "assign vendor Detail Pro to case TMMT-ABC123",
   "move case TMMT-ABC123 to blocked",
 ];

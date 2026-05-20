@@ -11,6 +11,7 @@ LOG_DIR="${HOME}/Library/Logs"
 
 chmod +x "${REPO_ROOT}/scripts/sync-machine.sh"
 chmod +x "${REPO_ROOT}/scripts/office-git-pull.sh"
+xattr -dr com.apple.quarantine "${REPO_ROOT}/scripts" 2>/dev/null || true
 mkdir -p "$LOG_DIR"
 
 cat >"$PLIST_PATH" <<EOF
@@ -25,6 +26,15 @@ cat >"$PLIST_PATH" <<EOF
     <string>/bin/bash</string>
     <string>${PULL_SCRIPT}</string>
   </array>
+  <key>WorkingDirectory</key>
+  <string>${REPO_ROOT}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>TMMT_REPO_ROOT</key>
+    <string>${REPO_ROOT}</string>
+  </dict>
   <key>StartInterval</key>
   <integer>300</integer>
   <key>RunAtLoad</key>

@@ -16,6 +16,21 @@
         "returned / closed": "returned",
         "lost / dnr": "closed_lost"
       }
+    },
+    "DEALER_PIPELINE_ID": {
+      "business_line": "dealer",
+      "pipeline_name": "Dealer Sales",
+      "stages": {
+        "new lead": "inquiry",
+        "contacted": "contacted",
+        "qualified": "qualifying",
+        "appointment set": "qualifying",
+        "showed": "payment_pending",
+        "application in": "payment_pending",
+        "approved / conditional": "payment_pending",
+        "sold / placed": "closed_won",
+        "lost": "closed_lost"
+      }
     }
   },
   "default_canonical_stage": "inquiry"

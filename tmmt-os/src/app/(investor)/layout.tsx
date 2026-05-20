@@ -8,6 +8,7 @@ export default async function InvestorLayout({ children }: { children: React.Rea
       brand="TMMT OS"
       links={[
         { href: "/investor/dashboard", label: "Dashboard" },
+        { href: "/investor/contact", label: "Request update" },
         { href: "/investor/ledger", label: "Ledger" },
       ]}
       user={me}

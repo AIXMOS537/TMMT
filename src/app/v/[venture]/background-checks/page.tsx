@@ -13,6 +13,11 @@ type BgCheck = Record<string, unknown>;
 const eligibilityOptions = ["Eligible", "Not Eligible", "Need Manager's Review", "ou", "out of radius", "Not found"];
 const bgStatusOptions = ["Pending", "Verified", "Failed"];
 const insuranceOwn = ["Yes", "No"];
+const insuranceSourceOptions = [
+  { value: "renter_own", label: "Renter own policy" },
+  { value: "tmmt_internal", label: "TMMT internal" },
+  { value: "corporate_non_owner", label: "Corporate non-owner" },
+];
 
 export default function BackgroundChecksPage() {
   const [data, setData] = useState<BgCheck[]>([]);
@@ -48,6 +53,12 @@ export default function BackgroundChecksPage() {
     { key: "background_check_status", label: "BG Check", render: (r) => <StatusBadge status={r.background_check_status as string} /> },
     { key: "insurance_check_status", label: "Insurance", render: (r) => <StatusBadge status={r.insurance_check_status as string} /> },
     { key: "earnings_verification_status", label: "Earnings", render: (r) => <StatusBadge status={r.earnings_verification_status as string} /> },
+    { key: "insurance_coverage_source", label: "Coverage", render: (r) => (
+      <span className="text-xs">
+        {(r.insurance_coverage_source as string) ||
+          (r.own_insurance === "Yes" ? "renter_own" : r.own_insurance === "No" ? "pending" : "—")}
+      </span>
+    )},
     { key: "own_insurance", label: "Own Ins?", render: (r) => <span>{r.own_insurance as string || "—"}</span> },
     { key: "date_verified", label: "Verified", render: (r) => <span className="text-sm">{formatDate(r.date_verified as string)}</span> },
   ];
@@ -96,11 +107,25 @@ export default function BackgroundChecksPage() {
             <FormField label="Customer Name" required><input name="customer_name" defaultValue={editing?.customer_name as string || ""} className={inputClass} required /></FormField>
           <FormField label="Phone"><input name="phone_number" defaultValue={editing?.phone_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Email"><input name="email" type="email" defaultValue={editing?.email as string || ""} className={inputClass} /></FormField>
-          <FormField label="Own Insurance?">
+          <FormField label="Insurance coverage source">
+            <select name="insurance_coverage_source" defaultValue={editing?.insurance_coverage_source as string || ""} className={selectClass}>
+              <option value="">Select...</option>
+              {insuranceSourceOptions.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="Own Insurance? (legacy)">
             <select name="own_insurance" defaultValue={editing?.own_insurance as string || ""} className={selectClass}>
               <option value="">Select...</option>
               {insuranceOwn.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+          </FormField>
+          <FormField label="Policy carrier">
+            <input name="insurance_policy_carrier" defaultValue={editing?.insurance_policy_carrier as string || ""} className={inputClass} />
+          </FormField>
+          <FormField label="Policy number">
+            <input name="insurance_policy_number" defaultValue={editing?.insurance_policy_number as string || ""} className={inputClass} />
           </FormField>
           <FormField label="Eligibility Status">
             <select name="eligibility_status" defaultValue={editing?.eligibility_status as string || ""} className={selectClass}>
