@@ -103,11 +103,12 @@ Keeps `npm run dev` running on the office M1, bound to **all interfaces** (`0.0.
 
 ## AIXMOS02 flash USB (auto-sync Mac → drive)
 
-When the **AIXMOS02** USB is plugged in, a LaunchAgent copies your canonical `tmmt-os` from this Mac to the drive (every ~2 minutes while mounted; immediate sync on plug-in).
+When matching USB volumes are plugged in, a LaunchAgent runs `scripts/sync-all-flash-drives.sh` (every ~2 minutes while mounted). That script updates **AIXMOS02** (`tmmt-os` + `.env.local`), and when **LEXAR** / **CYBORG** are present, refreshes those drives too (see **Three-drive dock** below).
 
 | Item | Value |
 |------|--------|
-| Script | `scripts/flash-usb-sync.sh` |
+| Orchestrator | `scripts/sync-all-flash-drives.sh` |
+| AIXMOS02 only (manual) | `scripts/flash-usb-sync.sh` |
 | Volume name | `scripts/flash-usb-volume-name` → `AIXMOS02` |
 | Install / enable | `scripts/enable-flash-usb-sync.sh` |
 | Log | `~/Library/Logs/tmmt-flash-usb-sync.log` |
@@ -115,10 +116,32 @@ When the **AIXMOS02** USB is plugged in, a LaunchAgent copies your canonical `tm
 **Manual sync (any time USB is mounted):**
 
 ```bash
+~/dev/TMMT/scripts/sync-all-flash-drives.sh
+# or AIXMOS02 only:
 ~/dev/TMMT/scripts/flash-usb-sync.sh
 ```
 
 Syncs app source + `.env.local`, removes bad `intake/intake` and `webhooks/webhooks` duplicates on the USB, runs typecheck on the drive. Does **not** overwrite `node_modules` or `.next` on the USB (faster, offline-ready).
+
+## Three-drive dock (work MacBook)
+
+When **AIXMOS02**, **CYBORG**, and **LEXAR** are on the same hub (or alternate labels **AIX-CARRY**, **AIX-INVESTORS**, **AIX-HOME-PC**), the LaunchAgent runs `scripts/sync-all-flash-drives.sh` every ~2 minutes:
+
+| Volume | Role |
+|--------|------|
+| AIXMOS02 (or AIX-CARRY) | Full `tmmt-os` + `.env.local` — same as `flash-usb-sync.sh` |
+| LEXAR (or AIX-HOME-PC) | Command-center bundle from `~/dev/AIX_Command_Center` (no secrets) |
+| CYBORG (or AIX-INVESTORS) | Merges into `HOME_AI_PC/01_AIX_Command_Center` and `APP_BUILD_FILES_*/01_AIX_Command_Center` if those folders exist |
+
+**Rule:** only one Mac should be connected to the dock while drives are syncing. Sleep or disconnect the carry MacBook before plugging the hub into the work MacBook.
+
+**Manual sync all mounted drives:**
+
+```bash
+~/dev/TMMT/scripts/sync-all-flash-drives.sh
+```
+
+Force immediate LEXAR/CYBORG pass (bypasses their 5-minute throttle): `TMMT_FORCE_DOCK_SYNC=1 ~/dev/TMMT/scripts/sync-all-flash-drives.sh`
 
 **From home (Windows)** — after Tailscale is on both machines:
 
