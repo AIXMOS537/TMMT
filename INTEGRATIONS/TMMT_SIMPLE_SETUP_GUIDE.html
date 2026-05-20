@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TMMT Simple Setup Guide</title>
+  <style>
+    @media print { .no-print { display: none; } body { font-size: 14pt; } }
+    body { font-family: Georgia, serif; max-width: 700px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #111; }
+    h1 { font-size: 28pt; border-bottom: 4px solid #2563eb; padding-bottom: 12px; }
+    h2 { font-size: 20pt; margin-top: 36px; color: #1e40af; page-break-after: avoid; }
+    .box { background: #f0f9ff; border: 3px solid #2563eb; border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .warn { background: #fef3c7; border-color: #d97706; }
+    .ok { background: #ecfdf5; border-color: #059669; }
+    ol.steps { counter-reset: step; list-style: none; padding: 0; }
+    ol.steps > li { counter-increment: step; margin: 24px 0; padding-left: 56px; position: relative; min-height: 40px; }
+    ol.steps > li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: 0;
+      width: 40px; height: 40px; line-height: 40px; text-align: center;
+      background: #2563eb; color: white; font-weight: bold; font-size: 18pt; border-radius: 50%;
+    }
+    .check { font-size: 18pt; margin-right: 8px; }
+    ul.simple { list-style: none; padding: 0; }
+    ul.simple li { margin: 10px 0; padding: 10px 14px; background: #f8fafc; border-left: 5px solid #94a3b8; }
+    .big { font-size: 16pt; font-weight: bold; }
+    .tiny { font-size: 11pt; color: #64748b; }
+    .print-btn { display: block; margin: 30px 0; padding: 16px 24px; font-size: 16pt; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    td, th { border: 2px solid #cbd5e1; padding: 12px; text-align: left; }
+    th { background: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">Click here to make your PDF (then choose Save as PDF)</button>
+
+<h1>TMMT Simple Setup Guide</h1>
+<p class="big">For: Muhammad / TMMT team</p>
+<p>This paper tells you <strong>what to click</strong>. You do not need to be a computer expert.</p>
+
+<div class="box ok">
+  <p class="big">Remember these 3 websites:</p>
+  <table>
+    <tr><th>Who</th><th>Website to open</th></tr>
+    <tr><td>Your team (office)</td><td><strong>tmmtrentals.com</strong></td></tr>
+    <tr><td>Customers, vendors, investors</td><td><strong>tmmtrentals.net</strong></td></tr>
+    <tr><td>Fix email &amp; login (behind the scenes)</td><td><strong>supabase.com</strong> and <strong>gohighlevel.com</strong></td></tr>
+  </table>
+</div>
+
+<div class="box warn">
+  <p class="big">Why login broke</p>
+  <p>Someone typed <strong>tmmtrentals.net</strong> as the “mail computer address.” That is wrong. A mail computer address looks like <strong>smtp.mailgun.org</strong> — you get the real one from GoHighLevel.</p>
+</div>
+
+<h2>Part 1 — Fix login emails (GoHighLevel → Supabase)</h2>
+<p>Do this first. About <strong>30–60 minutes</strong>. Wait for green checkmarks.</p>
+
+<ol class="steps">
+  <li>
+    Open <strong>gohighlevel.com</strong> and log in.<br>
+    Pick your shop: <strong>TMMT Rentals</strong> (not the whole agency).
+  </li>
+  <li>
+    Click the <strong>gear ⚙ Settings</strong> (bottom left).
+  </li>
+  <li>
+    Find <strong>Email Services</strong> or <strong>LC Email</strong>. Click it.
+  </li>
+  <li>
+    Click <strong>Dedicated Domain</strong> → add <strong>tmmtrentals.net</strong>.
+  </li>
+  <li>
+    GHL shows a list of DNS records (little codes).<br>
+    Open <strong>Squarespace</strong> → Domains → <strong>tmmtrentals.net</strong> → DNS → add each record GHL shows.<br>
+    <span class="tiny">Come back tomorrow if it says “waiting.” That is normal.</span>
+  </li>
+  <li>
+    When GHL says the domain is <strong>Verified ✓</strong>, go to <strong>SMTP Settings</strong> (same email area).<br>
+    Click <strong>Create SMTP credentials</strong>. Copy these 4 things on paper:<br>
+    ☑ Host &nbsp; ☑ Port &nbsp; ☑ Username &nbsp; ☑ Password
+  </li>
+  <li>
+    Open <strong>supabase.com</strong> → your project → <strong>Authentication</strong> → <strong>SMTP Settings</strong>.
+  </li>
+  <li>
+    Turn ON custom SMTP. Paste the 4 things from step 6.<br>
+    <strong>Sender email:</strong> noreply@tmmtrentals.net<br>
+    <strong>Sender name:</strong> TMMT Rentals<br>
+    Click Save.
+  </li>
+  <li>
+    Still in Supabase: <strong>Authentication</strong> → <strong>URL Configuration</strong>.<br>
+    Add these lines (one per line):<br>
+    <span class="tiny">https://tmmtrentals.net/** &nbsp; https://tmmtrentals.com/** &nbsp; https://tmmt-ops.vercel.app/** &nbsp; http://localhost:3000/**</span>
+  </li>
+  <li>
+    Test: open <strong>tmmtrentals.net/login</strong> → Magic link tab → your email → Send.<br>
+  Check your inbox (and spam). Click the link. You should get in. ☐ It worked!
+  </li>
+</ol>
+
+<h2>Part 2 — Who uses which website</h2>
+<div class="box">
+  <p>You do <strong>not</strong> buy Gmail for every person.</p>
+  <ul class="simple">
+    <li><span class="check">☐</span> <strong>Team</strong> → send them <strong>tmmtrentals.com/login</strong></li>
+    <li><span class="check">☐</span> <strong>Customers &amp; partners</strong> → send them <strong>tmmtrentals.net/login</strong></li>
+    <li><span class="check">☐</span> <strong>Your one Google email</strong> → only for YOU to read mail (optional)</li>
+  </ul>
+</div>
+
+<h2>Part 3 — GoHighLevel sends “open your portal” emails</h2>
+<p>After Part 1 works, add ONE simple workflow in GHL.</p>
+
+<ol class="steps">
+  <li>GHL → <strong>Automation</strong> → <strong>Workflows</strong> → <strong>Create workflow</strong>.</li>
+  <li>Name it: <strong>Send portal link when booked</strong>.</li>
+  <li>Trigger: <strong>Opportunity stage changed</strong> → Pipeline <strong>TMMT Rentals</strong> → Stage <strong>Booked</strong>.</li>
+  <li>Action: <strong>Send Email</strong>.<br>
+    Subject: Your TMMT portal<br>
+    Message: Hi! Open your portal here: https://tmmtrentals.net/login<br>
+    Then they can click Magic link on that page.</li>
+  <li>Turn workflow <strong>ON</strong>. ☐ Done</li>
+</ol>
+
+<h2>Part 4 — Make someone an admin (one time)</h2>
+<ol class="steps">
+  <li>They sign up once at <strong>tmmtrentals.com/login</strong> (or .net).</li>
+  <li>Supabase → <strong>SQL Editor</strong> → paste and change the email:<br>
+    <code style="display:block;background:#1e293b;color:#f8fafc;padding:12px;margin-top:8px;font-size:11pt;">
+      update public.profiles set role = 'admin' where email = 'YOUR-EMAIL@HERE.com';
+    </code>
+  </li>
+  <li>Click <strong>Run</strong>. They can open the team dashboard. ☐ Done</li>
+</ol>
+
+<h2>Part 5 — If you are stuck</h2>
+<div class="box warn">
+  <ul class="simple">
+    <li><strong>Magic link still fails?</strong> → Part 1 step 6–8 again. Host must NOT be “tmmtrentals.net”.</li>
+    <li><strong>Need in right now?</strong> → Login page → <strong>Password</strong> tab (ask your tech person to set a password).</li>
+    <li><strong>Blank page on cases?</strong> → Refresh. Or use tmmt-ops.vercel.app instead.</li>
+  </ul>
+</div>
+
+<h2>Checklist — am I done?</h2>
+<ul class="simple">
+  <li><span class="check">☐</span> GHL domain tmmtrentals.net = Verified</li>
+  <li><span class="check">☐</span> Supabase SMTP = filled in from GHL (not the word tmmtrentals.net as host)</li>
+  <li><span class="check">☐</span> Magic link email arrives</li>
+  <li><span class="check">☐</span> Team uses .com link</li>
+  <li><span class="check">☐</span> Customers use .net link</li>
+  <li><span class="check">☐</span> GHL “Booked” workflow sends portal link</li>
+</ul>
+
+<p class="tiny" style="margin-top:48px;">TMMT OS · Simple guide · Print this page: File → Print → Save as PDF</p>
+
+<button class="print-btn no-print" onclick="window.print()">Make PDF now (Print → Save as PDF)</button>
+
+</body>
+</html>

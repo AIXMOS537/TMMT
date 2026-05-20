@@ -19,6 +19,16 @@ export type TeamDepartment = (typeof TEAM_DEPARTMENTS)[number];
 export const PACKAGE_SLUGS = ["starter", "growth", "elite", "custom"] as const;
 export type PackageSlug = (typeof PACKAGE_SLUGS)[number];
 
+export const LICENSE_TIERS = ["rentals_app", "full_os", "custom"] as const;
+export type LicenseTier = (typeof LICENSE_TIERS)[number];
+
+export type OrgLicense = {
+  organization_id: string;
+  license_tier: LicenseTier;
+  modules: string[];
+  max_ventures: number;
+};
+
 /** Legacy workflow role from profiles.role */
 export type LegacyUserRole =
   | "admin"
@@ -36,11 +46,17 @@ export type UserAccessProfile = {
   admin_scope: AdminScope | null;
   team_department: TeamDepartment | null;
   package_slug: PackageSlug | null;
+  organization_id: string | null;
 };
 
 export type ResolvedAccess = {
   profile: UserAccessProfile;
   portals: PortalId[];
+  /** Effective entitlements after org license cap. */
   entitlements: Set<string>;
+  /** Raw user entitlements before org cap (package + grants + role). */
+  userEntitlements: Set<string>;
+  orgLicense: OrgLicense | null;
+  orgEntitlementCap: Set<string> | null;
   packageSlug: PackageSlug | null;
 };

@@ -82,7 +82,14 @@ const bgCheckSchema = z.object({
   customer_name: z.string().min(1).max(200),
   phone_number: z.string().min(7).max(20),
   email: z.string().email().max(254),
+  insurance_coverage_source: z.enum([
+    "renter_own",
+    "tmmt_internal",
+    "corporate_non_owner",
+  ]),
   own_insurance: z.enum(["Yes", "No"]),
+  insurance_policy_carrier: z.string().max(200).optional(),
+  insurance_policy_number: z.string().max(100).optional(),
   review_notes: z.string().max(2000).optional(),
 });
 
@@ -92,11 +99,24 @@ export async function submitBackgroundCheck(formData: FormData): Promise<FormRes
   if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
 
   const d = parsed.data;
+  if (
+    d.insurance_coverage_source === "renter_own" &&
+    (!d.insurance_policy_carrier?.trim() || !d.insurance_policy_number?.trim())
+  ) {
+    return {
+      success: false,
+      error: "Enter your insurance carrier and policy number when using your own policy.",
+    };
+  }
+
   return insertRow("background_checks", {
     customer_name: d.customer_name.trim(),
     phone_number: d.phone_number,
     email: d.email,
     own_insurance: d.own_insurance,
+    insurance_coverage_source: d.insurance_coverage_source,
+    insurance_policy_carrier: d.insurance_policy_carrier?.trim() || null,
+    insurance_policy_number: d.insurance_policy_number?.trim() || null,
     review_notes: d.review_notes || null,
     background_check_status: "Pending",
     insurance_check_status: "Pending",

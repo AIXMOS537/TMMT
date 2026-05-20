@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { requireEntitlement } from "@/lib/auth-portals";
+import { syncContactPortalFields } from "@/lib/ghl/sync-contact-portal-fields";
 
 export async function createSupportCase(formData: FormData) {
   const access = await requireEntitlement("support_tickets", "/client/dashboard");
@@ -31,6 +32,12 @@ export async function createSupportCase(formData: FormData) {
     .single();
 
   if (error) throw new Error(error.message);
+
+  void syncContactPortalFields({
+    refCode: c.ref_code,
+    caseId: c.id,
+    customerEmail: me.email,
+  });
 
   await supabase.from("activity_logs").insert({
     actor_id: me.id,

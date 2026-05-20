@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
   await requireEntitlement("admin_users", "/admin/dashboard");
   const supabase = createSupabaseServerClient();
 
-  const [{ data: profiles }, { data: packages }] = await Promise.all([
+  const [{ data: profiles }, { data: packages }, { data: organizations }] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -28,11 +28,14 @@ export default async function AdminUsersPage() {
         portal_role,
         admin_scope,
         team_department,
-        packages:package_id ( slug, name )
+        organization_id,
+        packages:package_id ( slug, name ),
+        organizations:organization_id ( name )
       `
       )
       .order("email"),
     supabase.from("packages").select("slug, name").order("tier"),
+    supabase.from("organizations").select("id, name").order("name"),
   ]);
 
   return (
@@ -40,7 +43,8 @@ export default async function AdminUsersPage() {
       <header>
         <h1 className="text-2xl font-semibold">User management</h1>
         <p className="text-sm text-muted-foreground">
-          Assign portal roles, packages (Starter / Growth / Elite), and team departments.
+          Assign portal roles, packages (Starter / Growth / Elite), and team departments. Enable
+          &quot;Sync ops role&quot; so team members can use /internal and edit cases in the database.
         </p>
       </header>
 
@@ -48,6 +52,8 @@ export default async function AdminUsersPage() {
         {(profiles ?? []).map((p) => {
           const raw = p.packages as { slug: string; name: string } | { slug: string; name: string }[] | null;
           const pkg = Array.isArray(raw) ? raw[0] : raw;
+          const orgRaw = p.organizations as { name: string } | { name: string }[] | null;
+          const orgName = Array.isArray(orgRaw) ? orgRaw[0]?.name : orgRaw?.name;
           return (
             <Card key={p.id}>
               <CardHeader className="pb-2">
@@ -57,7 +63,7 @@ export default async function AdminUsersPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form action={updateUserAccess} className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+                <form action={updateUserAccess} className="grid gap-3 md:grid-cols-3 lg:grid-cols-7">
                   <input type="hidden" name="profile_id" value={p.id} />
                   <label className="text-xs space-y-1">
                     Portal role
@@ -85,6 +91,22 @@ export default async function AdminUsersPage() {
                       <option value="vendor">vendor</option>
                       <option value="investor">investor</option>
                       <option value="admin">admin</option>
+                    </select>
+                  </label>
+                  <label className="text-xs space-y-1">
+                    Organization
+                    <select
+                      name="organization_id"
+                      defaultValue={p.organization_id ?? ""}
+                      className="w-full border rounded-md h-9 px-2 text-sm bg-background"
+                      title={orgName ? `Current: ${orgName}` : "No org — no license cap"}
+                    >
+                      <option value="">— none —</option>
+                      {(organizations ?? []).map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                        </option>
+                      ))}
                     </select>
                   </label>
                   <label className="text-xs space-y-1">
@@ -132,7 +154,11 @@ export default async function AdminUsersPage() {
                       ))}
                     </select>
                   </label>
-                  <div className="flex items-end">
+                  <div className="flex flex-col justify-end gap-2">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" name="sync_legacy_from_portal" defaultChecked />
+                      Sync ops role
+                    </label>
                     <Button type="submit" size="sm" className="w-full">
                       Save
                     </Button>
@@ -151,9 +177,9 @@ export default async function AdminUsersPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {packages.map((p) => (
-              <div key={p.slug}>
+              <p key={p.slug}>
                 {p.name} ({p.slug})
-              </div>
+              </p>
             ))}
           </CardContent>
         </Card>

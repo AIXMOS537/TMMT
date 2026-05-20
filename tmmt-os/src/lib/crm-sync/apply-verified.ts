@@ -1,6 +1,8 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { syncClientAlertsForStage } from "@/lib/client-rental/sync-alerts";
-import { executeRouting } from "@/lib/routing/execute";
+import { pushCanonicalStageToGhl } from "@/lib/ghl/sync-outbound";
+import { syncContactPortalFields } from "@/lib/ghl/sync-contact-portal-fields";
+import { isRentalFamilyLine } from "@/lib/business-lines/registry";
 import type { CanonicalRenterStage } from "./types";
 
 /**
@@ -38,20 +40,26 @@ export async function applyVerifiedSync(args: {
   let caseId = record.case_id as string | null;
 
   if (!caseId) {
+    const caseInsert = {
+      customer_name: record.customer_name ?? "Unknown",
+      customer_email: record.customer_email,
+      customer_phone: record.customer_phone,
+      request_type: isRentalFamilyLine(record.business_line ?? "")
+        ? "rental_booking"
+        : "other",
+      business_line: record.business_line ?? null,
+      subject: `GHL ${record.ghl_pipeline_name ?? "pipeline"} — ${record.ghl_stage}`,
+      description: `Synced from GHL; canonical: ${canonical}`,
+      airtable_id: record.airtable_record_id,
+      metadata: { ghl: ghlMeta },
+      status: "internal_review" as const,
+    };
+
     const { data: newCase, error: caseErr } = await supabase
       .from("cases")
-      .insert({
-        customer_name: record.customer_name ?? "Unknown",
-        customer_email: record.customer_email,
-        customer_phone: record.customer_phone,
-        request_type: record.business_line === "rentals" ? "rental_booking" : "other",
-        subject: `GHL ${record.ghl_pipeline_name ?? "pipeline"} — ${record.ghl_stage}`,
-        description: `Synced from GHL; canonical: ${canonical}`,
-        airtable_id: record.airtable_record_id,
-        metadata: { ghl: ghlMeta },
-        status: "internal_review",
-      })
-      .select("id")
+      // business_line column added in migration 0010 — types may lag
+      .insert(caseInsert as never)
+      .select("id, ref_code")
       .single();
     if (caseErr) throw new Error(caseErr.message);
     caseId = newCase.id;
@@ -86,7 +94,7 @@ export async function applyVerifiedSync(args: {
     })
     .eq("id", args.syncRecordId);
 
-  if (record.business_line !== "dispatch" && record.customer_email) {
+  if (record.customer_email) {
     await syncClientAlertsForStage(supabase, {
       customerEmail: record.customer_email,
       canonicalStage: canonical,
@@ -96,21 +104,28 @@ export async function applyVerifiedSync(args: {
     }).catch(() => undefined);
   }
 
-  await executeRouting({
-    pipelineId: record.ghl_pipeline_id ?? undefined,
-    pipelineName: record.ghl_pipeline_name ?? undefined,
-    stage: record.ghl_stage,
-    source: "airtable_verify",
-    businessLine: record.business_line,
+  void pushCanonicalStageToGhl({
     syncRecordId: args.syncRecordId,
-    caseId: caseId ?? undefined,
-    customerName: record.customer_name ?? undefined,
-    subject: record.ghl_pipeline_name
-      ? `${record.ghl_pipeline_name} — ${record.ghl_stage}`
-      : record.ghl_stage,
-    customFields: (record.payload as { custom_fields?: Record<string, unknown> })
-      ?.custom_fields,
+    canonical,
+    source: "apply_verified",
   });
+
+  if (caseId) {
+    const { data: caseRow } = await supabase
+      .from("cases")
+      .select("ref_code, customer_email")
+      .eq("id", caseId)
+      .maybeSingle();
+
+    if (caseRow?.ref_code) {
+      void syncContactPortalFields({
+        refCode: caseRow.ref_code,
+        caseId,
+        customerEmail: caseRow.customer_email ?? record.customer_email,
+        ghlContactId: record.ghl_contact_id,
+      });
+    }
+  }
 
   return { caseId, canonical };
 }

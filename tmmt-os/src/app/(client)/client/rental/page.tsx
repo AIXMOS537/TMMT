@@ -107,6 +107,11 @@ export default async function ClientRentalPage() {
         <Link href="/client/maintenance">
           <Button>Request maintenance</Button>
         </Link>
+        <Link href="/client/vehicle">
+          <Button variant="outline">
+            Vehicle hub
+          </Button>
+        </Link>
         <Link href="/client/billing">
           <Button variant="outline">
             Billing & deposits

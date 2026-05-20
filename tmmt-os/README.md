@@ -175,7 +175,7 @@ Apply migration: `supabase/migrations/0005_portals_entitlements.sql`
 | **Learn** | `/learn` — education module scaffold |
 | **Marketplace** | `/marketplace` — services + vehicles catalog (`0004` migration) |
 | **Admin** | `/internal/admin` — admin-only console |
-| **CRM / webhooks** | `/api/webhooks/ghl`, `/api/webhooks/airtable`, `/api/webhooks/n8n` |
+| **CRM / webhooks** | `/api/webhooks/ghl` (+ `/ghl/contact`, `/ghl/form`, `/ghl/appointment`), `/api/webhooks/airtable`, `/api/webhooks/n8n` |
 | **Intake** | `/intake` + `/api/intake` |
 | **AI agents** | VISION · TANK · FLY GUY · BOB · STICKS — `/api/agents/evaluate` (3-of-5 votes) |
 | **Activity log** | `activity_logs` + `sync_events` on every webhook transition |

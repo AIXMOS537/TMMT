@@ -1,34 +1,41 @@
 ---
-description: Two-machine TMMT dev — canonical paths, branch, and sync scripts
+description: TMMT fleet — MacBooks dev, home PC 24/7 hub, Windows workers
 alwaysApply: false
 ---
 
-# Office + home dev sync
+# TMMT fleet (multi-machine)
 
-## Canonical clone
+## Roles
 
-| Machine | Path |
-|---------|------|
-| macOS (both) | `~/dev/TMMT` |
-| App workspace | `~/dev/TMMT/tmmt-os` |
+| Tier | Machines | Job |
+|------|----------|-----|
+| **Dev** | MacBook(s) | Cursor, feature work, `git push`, Vercel deploy |
+| **Hub** | Powerful **Windows** home PC (24/7) | Full AI Brain: Ollama, n8n, Open WebUI, AUTOMATIONS, AIX command system |
+| **Workers** | i5 PC, 2× AMD, Surface Pro 4 | Same repo clone, **code sync only** — scripts/agents, not Next dev |
 
-Legacy `~/Desktop/AIX_Command_Center/TMMT MANAGEMENT` — migrate off; do not treat as source of truth.
+## Canonical paths
 
-## Git branch
+- macOS: `~/dev/TMMT` → app `tmmt-os/`
+- Windows: `C:\Users\<you>\dev\TMMT` → app `tmmt-os\`
 
-- **Production / shared default:** `main`
-- Active feature work: short-lived branches → PR → `main`
-- Retire long-lived `cursor/tmmt-management-initial-setup` after merge
+Legacy `Desktop/AIX_Command_Center/TMMT MANAGEMENT` — migrate off.
 
-## Sync scripts (repo)
+## Git
 
-- `ops/dev-machine/bootstrap-macos.sh` — first clone + Node 20 + `npm ci`
-- `ops/dev-machine/sync-machine.sh` — `git pull` (cron-safe)
-- `ops/dev-machine/install-launchd.sh` — office auto-pull every 15 min
+- Shared branch: **`main`**
+- MacBooks push; hub + workers pull (never competing writes on same branch)
 
-`SYNC_MODE=code` (default): pull only.  
-`SYNC_MODE=dev`: pull + `npm ci` in `tmmt-os/`.
+## Scripts (`ops/dev-machine/`)
 
-## Secrets
+- `FLEET.md` — full topology
+- macOS: `bootstrap-macos.sh`, `sync-machine.sh`, `install-launchd.sh`
+- Windows hub: `install-hub-brain-windows.ps1` (full 24/7 brain)
+- Windows workers: `set-machine-role.ps1 -Role worker`
 
-- `tmmt-os/.env.local` per machine; copy manually; never commit.
+## Do not run on every box
+
+- `npm run dev` / full Next build fleet-wide
+- Vercel production deploy (MacBook only)
+- Duplicate GHL webhook listeners
+
+Production: **Vercel**. Hub runs **optional** local jobs (Python, n8n, cron), not four copies of the web app.

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "../supabase/server";
 import { caseStatusForVendorJob, type CaseStatus, type VendorJobStatus } from "./statuses";
+import { notifyClientOnCaseStatusChange } from "../client-updates/notify-client";
+import { notifyCaseStatusChange, notifyVendorJobAssigned } from "../ghl/notify";
 
 /**
  * Workflow engine — thin server-side helpers that move cases & vendor jobs
@@ -35,7 +37,11 @@ export async function advanceCase(caseId: string, to: CaseStatus, note?: string)
     .eq("id", caseId);
   if (error) throw new Error(error.message);
   await logActivity("case", caseId, "status_changed", { to, note });
+  void notifyCaseStatusChange({ caseId, to, note });
+  void notifyClientOnCaseStatusChange({ caseId, to, note });
   revalidatePath(`/internal/cases/${caseId}`);
+  revalidatePath(`/client/updates`);
+  revalidatePath(`/client/support/${caseId}`);
   revalidatePath(`/internal/cases`);
   return { ok: true };
 }
@@ -85,6 +91,11 @@ export async function assignCaseToVendor(args: {
     });
   }
 
+  void notifyVendorJobAssigned({
+    caseId: args.caseId,
+    vendorId: args.vendorId,
+    title: args.title,
+  });
   revalidatePath(`/internal/cases/${args.caseId}`);
   revalidatePath(`/vendor/dashboard`);
   return { jobId: job.id };
@@ -115,6 +126,7 @@ export async function setVendorJobStatus(jobId: string, to: VendorJobStatus, not
   const mirror = caseStatusForVendorJob(to);
   if (mirror) {
     await supabase.from("cases").update({ status: mirror }).eq("id", job.case_id);
+    void notifyCaseStatusChange({ caseId: job.case_id, to: mirror, note });
   }
 
   await logActivity("vendor_job", jobId, "status_changed", { from: job.status, to });

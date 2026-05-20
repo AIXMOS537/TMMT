@@ -13,8 +13,47 @@ if (process.env.VERCEL_URL) {
   serverActionOrigins.add(process.env.VERCEL_URL);
 }
 
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+  : null;
+
+const RENTALS_VENTURE = "tmmt-rentals";
+const legacyRentalsRedirects = [
+  "fleet",
+  "leads",
+  "customers",
+  "payments",
+  "background-checks",
+  "waitlist",
+  "appointments",
+  "former-customers",
+  "do-not-rent",
+  "inspections",
+  "maintenance",
+  "insurance",
+  "tickets",
+  "expenses",
+  "contracts",
+  "vendors",
+  "operation-costs",
+  "interfaces/appointments",
+  "interfaces/contracts",
+  "interfaces/vehicles",
+  "interfaces/payments",
+].map((segment) => ({
+  source: `/${segment}`,
+  destination: `/v/${RENTALS_VENTURE}/${segment}`,
+  permanent: true,
+}));
+
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return legacyRentalsRedirects;
+  },
+  images: supabaseHost
+    ? { remotePatterns: [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/sign/**" }] }
+    : undefined,
   experimental: {
     serverActions: {
       allowedOrigins: [...serverActionOrigins],
