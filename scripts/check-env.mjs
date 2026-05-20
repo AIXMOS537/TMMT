@@ -130,3 +130,13 @@ if (!restOk) {
 console.log("Supabase REST (anon credentials): reachable")
 
 console.log("\nEnv check passed. Keys present; Supabase responded.")
+
+const revenueMode = process.argv.includes("--revenue")
+if (revenueMode) {
+  const { spawnSync } = await import("child_process")
+  const r = spawnSync("node", ["scripts/ghl-activation-check.mjs"], {
+    cwd: root,
+    stdio: "inherit",
+  })
+  process.exit(r.status ?? 1)
+}

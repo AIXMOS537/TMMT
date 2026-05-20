@@ -2,30 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import {
-  isOwnerHubHost,
-  isPublicSiteHost,
-  publicSiteOrigin,
-} from "@/lib/site-domains";
-
-function isAixmosStaticPath(pathname: string) {
-  return (
-    pathname.startsWith("/aixmos") ||
-    pathname === "/apply" ||
-    pathname === "/operator-apply" ||
-    pathname === "/thankyou"
-  );
-}
+import { isOwnerHubHost } from "@/lib/site-domains";
 
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
+    pathname === "/robots.txt" ||
     pathname.startsWith("/forms") ||
-    pathname.startsWith("/login/") ||
-    pathname.startsWith("/learn") ||
-    pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/cube") ||
-    isAixmosStaticPath(pathname)
+    pathname.startsWith("/login/")
   );
 }
 
@@ -57,23 +41,26 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+
+  const withRobotsHeader = (res: NextResponse): NextResponse => {
+    res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return res;
+  };
+
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
   const ownerHub = isOwnerHubHost(host);
-  const publicSite = isPublicSiteHost(host);
-
-  // Public intake forms live on .com only — not the private .net owner hub.
-  if (ownerHub && pathname.startsWith("/forms")) {
-    return NextResponse.redirect(new URL(pathname, publicSiteOrigin()));
-  }
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: "Too many submissions. Please try again later." },
-        { status: 429 }
+      return withRobotsHeader(
+        NextResponse.json(
+          { error: "Too many submissions. Please try again later." },
+          { status: 429 }
+        )
       );
     }
   }
@@ -83,50 +70,55 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (publicSite && pathname === "/" && !ownerHub && !user) {
-    return NextResponse.rewrite(new URL("/aixmos/index.html", request.url));
-  }
-
   if (!user && !isPublicPath(pathname)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 
   if (user && pathname === "/login") {
     const tier = getTierForUser(user);
     if (ownerHub) {
       if (tier === "owner") {
-        return NextResponse.redirect(new URL("/command", request.url));
+        return withRobotsHeader(
+          NextResponse.redirect(new URL("/command", request.url))
+        );
       }
-      return NextResponse.redirect(new URL("/login?hub=owner", publicSiteOrigin()));
+      return withRobotsHeader(
+        NextResponse.redirect(new URL("/login?hub=owner", request.url))
+      );
     }
-    return NextResponse.redirect(new URL(homePathForTier(tier), request.url));
+    return withRobotsHeader(
+      NextResponse.redirect(new URL(homePathForTier(tier), request.url))
+    );
   }
 
-  // .net is Muhammad's private access hub — admin (owner) only.
   if (ownerHub && user && getTierForUser(user) !== "owner") {
-    return NextResponse.redirect(new URL("/login?hub=owner", publicSiteOrigin()));
+    return withRobotsHeader(
+      NextResponse.redirect(new URL("/login?hub=owner", request.url))
+    );
   }
 
   if (ownerHub && user && pathname === "/") {
-    return NextResponse.redirect(new URL("/command", request.url));
+    return withRobotsHeader(NextResponse.redirect(new URL("/command", request.url)));
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {
-    return NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url));
+    return withRobotsHeader(
+      NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
+    );
   }
 
   if (pathname.startsWith("/partner")) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace(/^\/partner/, "/investor") || "/investor";
-    return NextResponse.redirect(url);
+    return withRobotsHeader(NextResponse.redirect(url));
   }
 
-  return response;
+  return withRobotsHeader(response);
 }
 
 export const config = {
   matcher: [
     "/",
-    "/((?!_next/static|_next/image|favicon.ico|aixmos/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|html)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|html)$).*)",
   ],
 };

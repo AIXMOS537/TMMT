@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
 
 /**
  * GoHighLevel webhook → append AIXMOS/TMMT tags to customer service_notes.
@@ -67,6 +68,11 @@ export async function POST(request: NextRequest) {
   const stamp = new Date().toISOString();
   const line = `[${stamp}] GHL ${event}${tags.length ? `: ${tags.join(", ")}` : ""}`;
 
+  let paymentResult: { recorded: boolean; id?: string; reason?: string } | undefined;
+  if (shouldRecordPayment(body, tags)) {
+    paymentResult = await recordGhlPayment(supabase, body, tags);
+  }
+
   const { data: rows } = await supabase
     .from("active_customers")
     .select("id, service_notes")
@@ -77,7 +83,11 @@ export async function POST(request: NextRequest) {
     const prev = String(rows[0].service_notes ?? "").trim();
     const service_notes = prev ? `${prev}\n${line}` : line;
     await supabase.from("active_customers").update({ service_notes }).eq("id", rows[0].id);
-    return NextResponse.json({ ok: true, updated: "active_customers" });
+    return NextResponse.json({
+      ok: true,
+      updated: "active_customers",
+      ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+    });
   }
 
   const { data: leads } = await supabase
@@ -90,7 +100,15 @@ export async function POST(request: NextRequest) {
     const prev = String((leads[0] as { notes?: string }).notes ?? "").trim();
     const notes = prev ? `${prev}\n${line}` : line;
     await supabase.from("incoming_leads").update({ notes }).eq("id", leads[0].id);
-    return NextResponse.json({ ok: true, updated: "incoming_leads" });
+    return NextResponse.json({
+      ok: true,
+      updated: "incoming_leads",
+      ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+    });
+  }
+
+  if (paymentResult?.recorded) {
+    return NextResponse.json({ ok: true, payment: paymentResult });
   }
 
   return NextResponse.json({ ok: true, skipped: "no matching contact" });

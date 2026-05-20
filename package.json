@@ -1,21 +1,17 @@
 {
-  "name": "tmmt-cube",
+  "name": "tmmt-app",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "scripts": {
-    "prebuild": "node scripts/generate-ghl-config.mjs",
     "dev": "next dev",
-    "dev:engine": "npm run dev --workspace=@aixmos/engine",
-    "dev:workforce": "next dev",
-    "dev:cube": "concurrently -n work,learn -c blue,teal \"npm run dev:workforce\" \"npm run dev:engine\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "check-env": "node scripts/check-env.mjs",
+    "check-env:revenue": "node scripts/check-env.mjs --revenue",
+    "ghl:check": "node scripts/ghl-activation-check.mjs",
+    "ghl:test-webhook": "node scripts/test-ghl-webhook.mjs",
+    "onboard:vendor": "node scripts/onboard-preferred-vendor.mjs",
     "create-partner-test-user": "node scripts/create-partner-test-user.mjs",
     "test:e2e": "playwright test",
     "test:e2e:prod": "playwright test e2e/smoke.spec.ts --config=playwright.prod.config.ts",
@@ -25,7 +21,6 @@
     "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs"
   },
   "dependencies": {
-    "@aixmos/core": "file:packages/aixmos-core",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -43,7 +38,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25.3.3",

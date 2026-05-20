@@ -13,59 +13,76 @@ GitHub repo (`AIXMOS537/TMMT`).
 | Root directory | `./` |
 | Framework preset | Next.js (auto-detected) |
 
-The project already exists, so there is **no fresh import to do**. Every push
-to the production branch auto-deploys; other branches get preview deployments.
-
-See also [`docs/ONE-APP-CONSOLIDATION.md`](docs/ONE-APP-CONSOLIDATION.md) for how AIX Command Center docs merge into this single app.
+Every push to the production branch auto-deploys; other branches get preview deployments.
 
 ## Routine deploy
 
-1. Make sure the build passes locally (see "Verify" below).
-2. Commit and push to the production branch — Vercel builds and deploys
-   automatically.
-3. Check the deployment in the Vercel dashboard under project `tmmt-c919`.
+1. `npm run build` locally (must pass).
+2. Commit and push to the production branch — Vercel builds automatically.
+3. Confirm in Vercel dashboard → project `tmmt-c919`.
 
 ## Required environment variables
 
-Set these in Vercel → Project → **Settings → Environment Variables**, for the
-**Production** (and **Preview**, if you use it) environments.
+Set in Vercel → **Settings → Environment Variables** (Production + Preview).
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (https) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key — **server-side only, keep secret** |
-| `NEXT_PUBLIC_PUBLIC_SITE_HOST` | Public marketing domain (default: `allinonemanagementsolutions.com`) |
-| `NEXT_PUBLIC_OWNER_HUB_HOST` | Private owner hub (default: `allinonemanagementsolutions.net`) |
-| `NEXT_PUBLIC_GHL_CHECKOUT_97` | $97 membership checkout URL (feeds `prebuild` → `public/aixmos/ghl-config.js`) |
-| `NEXT_PUBLIC_GHL_UPSELL_PIPELINE_URL` | GHL filtered view for owner hub “AIXMOS upsell queue” |
-| `GHL_WEBHOOK_SECRET` | Validates `/api/webhooks/ghl` (see [`docs/GHL-WEBHOOK-SETUP.md`](docs/GHL-WEBHOOK-SETUP.md)) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only — webhooks, admin scripts |
+| `NEXT_PUBLIC_OWNER_HUB_HOST` | Staff domain — **`tmmtrentals.net`** (after DNS cutover) |
+| `GHL_WEBHOOK_SECRET` | Validates `/api/webhooks/ghl` |
+| `NEXT_PUBLIC_GHL_CHECKOUT_97` | $97 membership checkout (GHL) |
+| `NEXT_PUBLIC_GHL_UPSELL_PIPELINE_URL` | Owner hub upsell queue filter |
+| `NEXT_PUBLIC_GHL_CREDIT_GUIDANCE` | Credit guidance checkout |
+| `NEXT_PUBLIC_GHL_OPERATOR_APPLY` | Operator apply funnel |
+| `NEXT_PUBLIC_CUBE_SAME_ORIGIN` | `true` |
+| `NEXT_PUBLIC_CUBE_PERSISTENCE` | `supabase` |
+| `NEXT_PUBLIC_AIXMOS_SITE_URL` | Public AIXMOS origin on GHL |
 
-Sentry (error monitoring) is also wired in — see [`docs/SENTRY-SETUP.md`](docs/SENTRY-SETUP.md).
+Public marketing (`.com`) lives on **GoHighLevel**, not this Vercel project.
 
-`npm run build` runs `prebuild` first to generate `public/aixmos/ghl-config.js` from `NEXT_PUBLIC_GHL_*` vars.
+Run `npm run ghl:check` locally after updating env vars.
 
-## Verify before deploying
-
-Locally, from the repo root:
+## Post-deploy verification
 
 ```bash
-npm install
-npm run build          # must succeed before pushing
+npm run smoke:prod   # if configured for your domain
+curl -sI https://tmmtrentals.net/login | grep -i x-robots-tag
+npm run ghl:test-webhook payment   # against production URL via GHL_TEST_BASE_URL
 ```
 
 ## Domains on `tmmt-c919`
 
-Attach both domains to **this project only**:
+Attach staff domains only:
 
-- `allinonemanagementsolutions.net` (+ optional `www`) — owner command hub
-- `allinonemanagementsolutions.com` (+ optional `www`) — public / forms (see `docs/DOMAIN-SETUP.md`)
+- `tmmtrentals.net`
+- `admin.tmmtrentals.net` (optional alias)
 
-Do **not** create separate Vercel projects for ops or command center.
+Do **not** attach `.com` domains after GHL cutover — they point to GoHighLevel.
 
-## Notes
+See [`docs/superpowers/plans/2026-05-20-aixmos-domain-architecture.md`](docs/superpowers/plans/2026-05-20-aixmos-domain-architecture.md).
 
-- The repo is **private**. Keep the Vercel project private too.
-- `SUPABASE_SERVICE_ROLE_KEY` bypasses row-level security — never expose it to
-  the browser and never commit it. `.env` is gitignored.
-- Owner access on `.net` requires Supabase `app_metadata.role` = `"admin"`.
+## Supabase migrations before deploy
+
+Apply new migrations in order:
+
+```bash
+supabase db push
+# or run SQL from supabase/migrations/ in the Supabase dashboard
+```
+
+Required for latest revenue + vendor work:
+
+- `20260520120000_aixmos_program_cube.sql`
+- `20260520140000_vendor_service_verticals.sql`
+
+## Vendor onboarding (Michael / preferred vendors)
+
+After migration + deploy:
+
+```bash
+npm run onboard:vendor -- --email michael@real-email.com --contact "Michael Bibbs"
+```
+
+Vendor signs in at `/login` → `/vendor`. Staff assigns jobs from `/workflow-vendors`.
