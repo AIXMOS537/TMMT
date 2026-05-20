@@ -53,5 +53,12 @@ for item in "TMMT MANAGEMENT" AIX_AI_COMMAND_SYSTEM AIXMODE INSTALL.md START_HER
   fi
 done
 
+if [[ -d "$LEXAR/TMMT MANAGEMENT" ]]; then
+  FLASH_VOL_ROOT="$LEXAR" bash "${SRC}/TMMT MANAGEMENT/scripts/sync-flash-operator-kit.sh" "$LEXAR/TMMT MANAGEMENT"
+else
+  mkdir -p "$LEXAR/TMMT MANAGEMENT"
+  FLASH_VOL_ROOT="$LEXAR" bash "${SRC}/TMMT MANAGEMENT/scripts/sync-flash-operator-kit.sh" "$LEXAR/TMMT MANAGEMENT"
+fi
+
 log "Done → $LEXAR"
 date +%s >"$LAST_FILE"

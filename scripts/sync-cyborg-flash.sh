@@ -66,6 +66,13 @@ if [[ -d "$CYBORG/TMMT MANAGEMENT" ]]; then
   rsync "${RSYNC_OPTS[@]}" \
     --exclude=tmmt-os/.env.local \
     "$SRC_TMMT/" "$CYBORG/TMMT MANAGEMENT/"
+  FLASH_VOL_ROOT="$CYBORG" bash "$SRC_TMMT/scripts/sync-flash-operator-kit.sh" "$CYBORG/TMMT MANAGEMENT"
+elif [[ -d "$CYBORG/HOME_AI_PC/01_AIX_Command_Center/TMMT MANAGEMENT" ]]; then
+  FLASH_VOL_ROOT="$CYBORG" bash "$SRC_TMMT/scripts/sync-flash-operator-kit.sh" \
+    "$CYBORG/HOME_AI_PC/01_AIX_Command_Center/TMMT MANAGEMENT"
+else
+  mkdir -p "$CYBORG/TMMT MANAGEMENT"
+  FLASH_VOL_ROOT="$CYBORG" bash "$SRC_TMMT/scripts/sync-flash-operator-kit.sh" "$CYBORG/TMMT MANAGEMENT"
 fi
 
 log "Done → $CYBORG (carry Mac files outside 01_AIX_Command_Center left intact)"

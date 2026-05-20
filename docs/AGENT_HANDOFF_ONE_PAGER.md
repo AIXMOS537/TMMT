@@ -61,15 +61,19 @@
 | [MACHINE_SYNC.md](./MACHINE_SYNC.md) | Two-machine + dock + services |
 | [INTEGRATION_REGISTRY.md](../INTEGRATIONS/INTEGRATION_REGISTRY.md) | Registry row for Office Mac / Telegram / iMessage |
 
-**Enable bot (after `.env` exists):**
+| **Enable bot (after `.env` exists):** | On the **office Mac** only — see setup doc above. |
 
-```bash
-cd ~/dev/TMMT
-cp scripts/office-agent-channel/.env.example scripts/office-agent-channel/.env
-# edit .env — then:
-bash scripts/install-telegram-owner-bot.sh
-bash scripts/enable-telegram-owner-bot.sh
-```
+## On flash drives (after sync)
+
+After `~/dev/TMMT/scripts/sync-all-flash-drives.sh` (or auto-sync with dock plugged in):
+
+| Location | Contents |
+|----------|----------|
+| **USB root** | `AGENT_START_HERE.txt` — points to handoff doc |
+| **`TMMT MANAGEMENT/docs/`** | `AGENT_HANDOFF_ONE_PAGER.md`, `AGENT_IMESSAGE_TELEGRAM_SETUP.md`, flash + machine sync docs |
+| **`TMMT MANAGEMENT/scripts/office-agent-channel/`** | `.env.example` + bot scripts (**no** `.env` / tokens on USB) |
+
+Volumes: **AIXMOS02**, **LEXAR**, **CYBORG** (aliases: AIX-CARRY, AIX-HOME-PC, AIX-INVESTORS).
 
 ---
 
