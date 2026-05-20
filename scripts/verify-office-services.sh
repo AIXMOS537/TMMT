@@ -36,8 +36,16 @@ else
   echo "  Not mounted"
 fi
 
+echo "=== Flash → Mac pull inbox ==="
+if [[ -d "$HOME/Documents/TMMT-Flash-Inbox/current" ]]; then
+  du -sh "$HOME/Documents/TMMT-Flash-Inbox/current" 2>/dev/null || true
+  tail -2 "${HOME}/Library/Logs/tmmt-flash-usb-pull.log" 2>/dev/null || echo "  (no pull log yet)"
+else
+  echo "  (no inbox yet — plug flash drives or run Pull From Flash Drives)"
+fi
+
 echo ""
-for f in tmmt-dev tmmt-git-pull tmmt-flash-usb-sync; do
+for f in tmmt-dev tmmt-git-pull tmmt-flash-usb-sync tmmt-flash-usb-pull; do
   echo "--- ~/${f}.log ---"
   tail -3 "${HOME}/Library/Logs/${f}.log" 2>/dev/null || echo "  (missing)"
 done
