@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ventureHref } from "@/lib/venture-paths";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   LayoutDashboard,
@@ -27,83 +28,53 @@ import {
   Menu,
   X,
   LogOut,
+  LayoutGrid,
+  FileCode,
+  Settings,
 } from "lucide-react";
-import { useState } from "react";
-import { signOut } from "@/app/(admin)/actions";
+import { useMemo, useState } from "react";
+import { signOut } from "@/app/auth-actions";
+import { buildRentalsNavGroups } from "@/lib/rentals-nav";
+import type { OrgLicense } from "@/lib/org-license";
 
-const navGroups = [
-  {
-    label: "Overview",
-    items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: "Interfaces",
-    items: [
-      { href: "/interfaces/appointments", label: "Appointments", icon: CalendarRange },
-      { href: "/interfaces/contracts", label: "Contracts", icon: FileText },
-      { href: "/interfaces/vehicles", label: "Vehicles", icon: Car },
-      { href: "/interfaces/payments", label: "Payments", icon: DollarSign },
-    ],
-  },
-  {
-    label: "Workflow",
-    items: [
-      { href: "/cases", label: "Cases", icon: ClipboardCheck },
-      { href: "/workflow-vendors", label: "Outside Vendors", icon: Store },
-    ],
-  },
-  {
-    label: "Pipeline",
-    items: [
-      { href: "/leads", label: "Incoming Leads", icon: UserPlus },
-      { href: "/background-checks", label: "Background Checks", icon: ShieldCheck },
-      { href: "/waitlist", label: "Waitlist", icon: Clock },
-      { href: "/appointments", label: "Appointments", icon: CalendarCheck },
-    ],
-  },
-  {
-    label: "Customers",
-    items: [
-      { href: "/customers", label: "Active Customers", icon: Users },
-      { href: "/payments", label: "Payments", icon: CreditCard },
-      { href: "/former-customers", label: "Former Customers", icon: Users },
-      { href: "/do-not-rent", label: "Do Not Rent", icon: Ban },
-    ],
-  },
-  {
-    label: "Fleet",
-    items: [
-      { href: "/fleet", label: "Fleet Vehicles", icon: Car },
-      { href: "/inspections", label: "Car Inspections", icon: ClipboardCheck },
-      { href: "/maintenance", label: "Maintenance", icon: Wrench },
-      { href: "/insurance", label: "Insurance", icon: Shield },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { href: "/tickets", label: "Tickets", icon: AlertTriangle },
-      { href: "/expenses", label: "Expenses", icon: DollarSign },
-      { href: "/contracts", label: "Contracts", icon: FileText },
-      { href: "/vendors", label: "Vendors / Shops", icon: Store },
-      { href: "/operation-costs", label: "Software & Tools", icon: UserCog },
-    ],
-  },
+type SidebarProps = {
+  ventureSlug: string;
+  ventureName: string;
+  ventureColor?: string | null;
+  /** Serializable org license — nav is built client-side (icons cannot cross RSC boundary). */
+  orgLicense?: OrgLicense | null;
+};
+
+const commandCenterItems = [
+  { href: "/", label: "Portfolio", icon: LayoutGrid },
+  { href: "/teams", label: "Teams", icon: Users },
+  { href: "/scripts", label: "Scripts", icon: FileCode },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({
+  ventureSlug,
+  ventureName,
+  ventureColor,
+  orgLicense = null,
+}: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
+  const base = ventureHref(ventureSlug, "/");
+  const navGroups = useMemo(
+    () => buildRentalsNavGroups(base, orgLicense),
+    [base, orgLicense]
+  );
+
   const toggle = (label: string) =>
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
 
+  const accent = ventureColor ?? "#2563eb";
+
   return (
     <>
-      {/* Mobile hamburger */}
       <button
         className="fixed top-4 left-4 z-50 lg:hidden bg-white dark:bg-slate-800 rounded-lg p-2 shadow-md"
         onClick={() => setOpen(!open)}
@@ -112,7 +83,6 @@ export default function Sidebar() {
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Overlay */}
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/30 dark:bg-black/50 lg:hidden"
@@ -120,7 +90,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         aria-label="Main navigation"
         className={cn(
@@ -128,15 +97,56 @@ export default function Sidebar() {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-            <Car className="h-7 w-7 text-blue-600 dark:text-blue-400" />
-            <span className="text-xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+        <div
+          className="p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between"
+          style={{ borderLeftWidth: 4, borderLeftColor: accent }}
+        >
+          <Link href={base} className="flex items-center gap-2 min-w-0" onClick={() => setOpen(false)}>
+            <Car className="h-7 w-7 shrink-0 text-blue-600 dark:text-blue-400" />
+            <span className="text-lg font-bold text-gray-900 dark:text-white truncate">{ventureName}</span>
           </Link>
           <ThemeToggle />
         </div>
 
         <nav className="p-3 space-y-1">
+          <div className="mb-2">
+            <button
+              onClick={() => toggle("Command Center")}
+              aria-expanded={!collapsed["Command Center"]}
+              className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider hover:text-gray-600 dark:hover:text-slate-300"
+            >
+              Command Center
+              <ChevronDown
+                size={14}
+                className={cn("transition-transform", collapsed["Command Center"] && "-rotate-90")}
+              />
+            </button>
+            {!collapsed["Command Center"] && (
+              <div className="space-y-0.5 mb-2">
+                {commandCenterItems.map((item) => {
+                  const isActive =
+                    item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                          : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <item.icon size={18} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {navGroups.map((group) => (
             <div key={group.label}>
               <button
@@ -147,10 +157,7 @@ export default function Sidebar() {
                 {group.label}
                 <ChevronDown
                   size={14}
-                  className={cn(
-                    "transition-transform",
-                    collapsed[group.label] && "-rotate-90"
-                  )}
+                  className={cn("transition-transform", collapsed[group.label] && "-rotate-90")}
                 />
               </button>
 
@@ -158,8 +165,8 @@ export default function Sidebar() {
                 <div className="space-y-0.5 mb-2">
                   {group.items.map((item) => {
                     const isActive =
-                      item.href === "/"
-                        ? pathname === "/"
+                      item.href === base
+                        ? pathname === base
                         : pathname.startsWith(item.href);
                     return (
                       <Link

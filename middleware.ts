@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
+import { loadOrgLicenseForUser } from "@/lib/load-org-license";
+import { staffPathBlocked } from "@/lib/org-license";
 import {
   isOwnerHubHost,
   isPublicSiteHost,
@@ -42,12 +44,17 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
       return pathname.startsWith("/investor") || pathname.startsWith("/partner");
     default:
       return (
-        !pathname.startsWith("/vendor") &&
-        !pathname.startsWith("/investor") &&
-        !pathname.startsWith("/partner") &&
-        !pathname.startsWith("/command") &&
-        !pathname.startsWith("/executive") &&
-        !pathname.startsWith("/operator")
+        pathname === "/" ||
+        pathname.startsWith("/v/") ||
+        pathname.startsWith("/teams") ||
+        pathname.startsWith("/scripts") ||
+        pathname.startsWith("/settings") ||
+        (!pathname.startsWith("/vendor") &&
+          !pathname.startsWith("/investor") &&
+          !pathname.startsWith("/partner") &&
+          !pathname.startsWith("/command") &&
+          !pathname.startsWith("/executive") &&
+          !pathname.startsWith("/operator"))
       );
   }
 }
@@ -116,6 +123,25 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace(/^\/partner/, "/investor") || "/investor";
     return NextResponse.redirect(url);
+  }
+
+  if (user) {
+    const tier = getTierForUser(user);
+    if (tier === "investor") {
+      const blocked =
+        pathname.startsWith("/v/") ||
+        pathname.startsWith("/teams") ||
+        pathname.startsWith("/scripts") ||
+        pathname.startsWith("/settings");
+      if (blocked) {
+        return NextResponse.redirect(new URL("/investor", request.url));
+      }
+    } else if (pathname.startsWith("/v/")) {
+      const license = await loadOrgLicenseForUser(supabase, user.id);
+      if (staffPathBlocked(pathname, license)) {
+        return NextResponse.redirect(new URL("/?error=module", request.url));
+      }
+    }
   }
 
   return response;

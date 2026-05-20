@@ -1,0 +1,27 @@
+CURSOR AGENTS — PLUG AND PLAY
+=============================
+
+FASTEST (every time you plug in)
+  Double-click:  install\RUN-AGENTS.bat
+
+ONE-TIME ON THIS PC (Administrator)
+  Double-click:  install\INSTALL-ON-THIS-PC.bat
+  Then eject and re-insert USB — agents setup should start automatically.
+
+FULL SETUP (apps + agents)
+  Double-click:  START-SETUP.bat  (in USB root)
+
+EXECUTION POLICY BLOCKED?
+  Always use the .bat files above — they use -ExecutionPolicy Bypass.
+  Or run once:  Enable-Scripts on Desktop (if you copied helpers there)
+
+SECOND USB (your application)
+  Put installers in:  setup\apps\installers\
+  Then run START-SETUP.bat or RUN-AGENTS.bat (installs apps if present).
+
+LABEL (optional, Admin)
+  Drive should be named:  CURSOR-SETUP
+  install\Set-UsbVolumeLabel.ps1 -DriveLetter D
+
+LOGS
+  logs\ folder on this USB

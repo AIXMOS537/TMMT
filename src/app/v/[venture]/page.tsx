@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ventureHref } from "@/lib/venture-paths";
+import { useVentureSlug } from "@/hooks/use-venture-slug";
 import { getDashboardData } from "@/lib/queries";
 import { Card, StatCard, StatusBadge } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -18,6 +20,7 @@ import Link from "next/link";
 type DashData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function DashboardPage() {
+  const ventureSlug = useVentureSlug();
   const [data, setData] = useState<DashData | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -66,7 +69,7 @@ export default function DashboardPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 dark:text-white">Recent Leads</h2>
-            <Link href="/leads" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
+            <Link href={ventureHref(ventureSlug, "/leads")} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
           </div>
           <div className="space-y-3">
             {data.recentLeads.map((lead, i) => (
@@ -86,7 +89,7 @@ export default function DashboardPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 dark:text-white">Recent Tickets</h2>
-            <Link href="/tickets" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
+            <Link href={ventureHref(ventureSlug, "/tickets")} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">View all →</Link>
           </div>
           <div className="space-y-3">
             {data.recentTickets.map((ticket, i) => (

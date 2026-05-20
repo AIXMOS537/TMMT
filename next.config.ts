@@ -1,11 +1,46 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const VENTURE = "tmmt-rentals";
+
+const legacyAdminRedirects = [
+  "fleet",
+  "leads",
+  "customers",
+  "payments",
+  "background-checks",
+  "waitlist",
+  "appointments",
+  "former-customers",
+  "do-not-rent",
+  "inspections",
+  "maintenance",
+  "insurance",
+  "tickets",
+  "expenses",
+  "contracts",
+  "vendors",
+  "operation-costs",
+  "cases",
+  "workflow-vendors",
+  "interfaces/appointments",
+  "interfaces/contracts",
+  "interfaces/vehicles",
+  "interfaces/payments",
+].map((segment) => ({
+  source: `/${segment}`,
+  destination: `/v/${VENTURE}/${segment}`,
+  permanent: false,
+}));
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",
     },
+  },
+  async redirects() {
+    return legacyAdminRedirects;
   },
   async rewrites() {
     return [
