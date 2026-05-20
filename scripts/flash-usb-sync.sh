@@ -102,6 +102,9 @@ run_sync() {
 
   cleanup_flash_api_duplicates
 
+  # Repo docs + office scripts (agent handoff, flash pull, Telegram kit — no secrets)
+  FLASH_VOL_ROOT="$FLASH_VOL" bash "${REPO_ROOT}/scripts/sync-flash-operator-kit.sh" "${FLASH_VOL}/TMMT MANAGEMENT"
+
   if command -v npm >/dev/null 2>&1 && [[ -f "${FLASH_OS}/package.json" ]]; then
     log "Flash typecheck"
     (cd "$FLASH_OS" && CI=1 npm run typecheck) || log "WARNING: flash typecheck failed"
@@ -119,10 +122,7 @@ if [[ ! -d "$FLASH_VOL" ]]; then
   exit 0
 fi
 
-if [[ ! -d "$FLASH_OS" ]]; then
-  log "ERROR: ${FLASH_OS} not found on USB"
-  exit 1
-fi
+mkdir -p "$FLASH_OS"
 
 new_mount=0
 if ! was_mounted; then
