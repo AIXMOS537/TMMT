@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { ghlLinks } from "@/lib/ghl-links";
+import { CLICKUP_WORKSPACE_URL } from "@/lib/clickup/config";
 import {
   LayoutDashboard,
   Car,
@@ -126,8 +127,16 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       {
         href: "/cases",
         label: "Cases",
-        description: "Operational cases and kanban workflow",
+        description: "Cases sync to ClickUp on intake and vendor assign",
         icon: ClipboardCheck,
+      },
+      {
+        href: CLICKUP_WORKSPACE_URL,
+        label: "ClickUp workspace",
+        description: "TMMT RENTALS — fleet, ops, admin lists",
+        icon: ExternalLink,
+        badge: "ClickUp",
+        external: true,
       },
       {
         href: "/workflow-vendors",

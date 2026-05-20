@@ -36,6 +36,9 @@ Set in Vercel → **Settings → Environment Variables** (Production + Preview).
 | `NEXT_PUBLIC_GHL_UPSELL_PIPELINE_URL` | Owner hub upsell queue filter |
 | `NEXT_PUBLIC_GHL_CREDIT_GUIDANCE` | Credit guidance checkout |
 | `NEXT_PUBLIC_GHL_OPERATOR_APPLY` | Operator apply funnel |
+| `CLICKUP_API_TOKEN` | Create tasks from cases + GHL webhooks |
+| `CLICKUP_LIST_FLEET` | Default `901318986996` (FLEET TASKS) |
+| `CLICKUP_LIST_OPS` | Default `901318985770` (CUSTOMER POLICY) |
 | `NEXT_PUBLIC_CUBE_SAME_ORIGIN` | `true` |
 | `NEXT_PUBLIC_CUBE_PERSISTENCE` | `supabase` |
 | `NEXT_PUBLIC_AIXMOS_SITE_URL` | Public AIXMOS origin on GHL |
@@ -76,6 +79,22 @@ Required for latest revenue + vendor work:
 
 - `20260520120000_aixmos_program_cube.sql`
 - `20260520140000_vendor_service_verticals.sql`
+
+## ClickUp integration
+
+When `CLICKUP_API_TOKEN` is set:
+
+| TMMT event | ClickUp action |
+|------------|----------------|
+| Customer intake form (`/forms/customer-intake`) | Creates task in FLEET or OPS list |
+| Assign vendor on `/cases` | Comment on linked ClickUp task |
+| GHL webhook (customer/fleet tags) | Creates task + logs URL in Supabase notes |
+
+Verify: `npm run clickup:check`
+
+List routing: `src/lib/clickup/config.ts` — maintenance → FLEET TASKS, rental/general → CUSTOMER POLICY.
+
+**Requires** workflow tables (`cases`, `clickup_tasks`) — apply `20260516120000_workflow_engine.sql` on Supabase when ready.
 
 ## Vendor onboarding (Michael / preferred vendors)
 

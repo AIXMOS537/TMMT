@@ -4,6 +4,11 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
+import { isClickUpEnabled } from "@/lib/clickup/client";
+import {
+  notifyClickUpVendorAssignment,
+  syncCaseToClickUp,
+} from "@/lib/clickup/sync-case";
 import { isStaffUser, isVendorUser } from "@/lib/auth-roles";
 import {
   assertVendorUploadFile,
@@ -48,7 +53,17 @@ export async function submitCustomerIntake(formData: FormData): Promise<ActionRe
     return { success: false, error: "Submission failed. Please try again." };
   }
 
-  return { success: true, id: data as string };
+  const caseId = data as string;
+  if (isClickUpEnabled() && caseId) {
+    try {
+      const service = createServiceRoleClient();
+      await syncCaseToClickUp(service, caseId);
+    } catch (e) {
+      console.error("[clickup intake sync]", e instanceof Error ? e.message : e);
+    }
+  }
+
+  return { success: true, id: caseId };
 }
 
 // ─── Staff: case + vendor job management ──────────────────────────
@@ -89,6 +104,33 @@ export async function staffUpdateCase(formData: FormData): Promise<ActionResult>
   return { success: true };
 }
 
+export async function staffSyncCaseToClickUp(formData: FormData): Promise<
+  ActionResult & { clickupUrl?: string }
+> {
+  const supabase = await createSSRClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !isStaffUser(user)) redirect("/login");
+
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) {
+    return { success: false, error: "Missing case id." };
+  }
+  if (!isClickUpEnabled()) {
+    return { success: false, error: "CLICKUP_API_TOKEN not configured in Vercel." };
+  }
+
+  try {
+    const service = createServiceRoleClient();
+    const result = await syncCaseToClickUp(service, id, { force: true });
+    return { success: true, clickupUrl: result.url };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "ClickUp sync failed.";
+    return { success: false, error: message };
+  }
+}
+
 const assignVendorJobSchema = z.object({
   case_id: z.string().uuid(),
   vendor_id: z.string().uuid(),
@@ -122,6 +164,39 @@ export async function staffAssignVendorJob(formData: FormData): Promise<ActionRe
   if (jobErr) {
     console.error("[staffAssignVendorJob]", jobErr.message);
     return { success: false, error: "Failed to assign vendor job." };
+  }
+
+  const { data: vendorRow } = await supabase
+    .from("vendors")
+    .select("name")
+    .eq("id", d.vendor_id)
+    .single();
+
+  const { data: caseRow } = await supabase
+    .from("cases")
+    .select("clickup_task_id")
+    .eq("id", d.case_id)
+    .single();
+
+  if (isClickUpEnabled()) {
+    try {
+      const service = createServiceRoleClient();
+      let taskId = caseRow?.clickup_task_id as string | null;
+      if (!taskId) {
+        const synced = await syncCaseToClickUp(service, d.case_id);
+        taskId = synced.taskId;
+      }
+      if (taskId) {
+        await notifyClickUpVendorAssignment({
+          clickupTaskId: taskId,
+          vendorName: String(vendorRow?.name ?? "Vendor"),
+          jobTitle: d.title,
+          description: d.description,
+        });
+      }
+    } catch (e) {
+      console.error("[clickup vendor assign]", e instanceof Error ? e.message : e);
+    }
   }
 
   await supabase.from("cases").update({ status: "vendor_assigned" }).eq("id", d.case_id);

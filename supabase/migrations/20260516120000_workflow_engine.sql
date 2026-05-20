@@ -48,20 +48,6 @@ AS $$
   SELECT trim(coalesce(auth.jwt () -> 'app_metadata' ->> 'role', '')) = 'vendor';
 $$;
 
-CREATE OR REPLACE FUNCTION public.current_vendor_id ()
-RETURNS uuid
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT v.id
-  FROM public.vendors v
-  WHERE v.auth_user_id = auth.uid ()
-    AND v.active = true
-  LIMIT 1;
-$$;
-
 -- ─── Core tables ────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.organizations (
@@ -98,6 +84,20 @@ CREATE TABLE IF NOT EXISTS public.vendors (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE OR REPLACE FUNCTION public.current_vendor_id ()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT v.id
+  FROM public.vendors v
+  WHERE v.auth_user_id = auth.uid ()
+    AND v.active = true
+  LIMIT 1;
+$$;
 
 ALTER TABLE public.profiles
   DROP CONSTRAINT IF EXISTS profiles_vendor_id_fkey;
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 
 CREATE TABLE IF NOT EXISTS public.clickup_tasks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
-  case_id uuid NOT NULL REFERENCES public.cases (id) ON DELETE CASCADE,
+  case_id uuid REFERENCES public.cases (id) ON DELETE CASCADE,
   clickup_task_id text NOT NULL,
   clickup_url text,
   list_name text,

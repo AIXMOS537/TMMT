@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
+import { isClickUpEnabled } from "@/lib/clickup/client";
+import { syncGhlEventToClickUp } from "@/lib/clickup/sync-case";
 
 /**
  * GoHighLevel webhook → append AIXMOS/TMMT tags to customer service_notes.
@@ -66,12 +68,33 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(url, serviceKey);
   const stamp = new Date().toISOString();
-  const line = `[${stamp}] GHL ${event}${tags.length ? `: ${tags.join(", ")}` : ""}`;
 
   let paymentResult: { recorded: boolean; id?: string; reason?: string } | undefined;
   if (shouldRecordPayment(body, tags)) {
     paymentResult = await recordGhlPayment(supabase, body, tags);
   }
+
+  let clickupResult: { taskId: string; url: string } | null = null;
+  if (isClickUpEnabled()) {
+    try {
+      clickupResult = await syncGhlEventToClickUp({
+        email,
+        event,
+        tags,
+        contactId:
+          (typeof body.contact_id === "string" && body.contact_id) ||
+          (typeof body.id === "string" && body.id) ||
+          undefined,
+      });
+    } catch (e) {
+      console.error("[ghl clickup]", e instanceof Error ? e.message : e);
+    }
+  }
+
+  const clickupLine = clickupResult
+    ? `\n[${stamp}] ClickUp task: ${clickupResult.url}`
+    : "";
+  const line = `[${stamp}] GHL ${event}${tags.length ? `: ${tags.join(", ")}` : ""}${clickupLine}`;
 
   const { data: rows } = await supabase
     .from("active_customers")
@@ -87,6 +110,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       updated: "active_customers",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(clickupResult ? { clickup: clickupResult } : {}),
     });
   }
 
@@ -104,11 +128,16 @@ export async function POST(request: NextRequest) {
       ok: true,
       updated: "incoming_leads",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(clickupResult ? { clickup: clickupResult } : {}),
     });
   }
 
-  if (paymentResult?.recorded) {
-    return NextResponse.json({ ok: true, payment: paymentResult });
+  if (paymentResult?.recorded || clickupResult) {
+    return NextResponse.json({
+      ok: true,
+      ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(clickupResult ? { clickup: clickupResult } : {}),
+    });
   }
 
   return NextResponse.json({ ok: true, skipped: "no matching contact" });
