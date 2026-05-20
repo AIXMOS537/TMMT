@@ -17,9 +17,10 @@ Fill this out as each tool gets connected. Do not store API keys in this file.
 | n8n | Automation router and webhooks | Planned | Portable stack in `AIXMOSXTMMT-OPS/` |
 | Zapier | Backup connector layer | Partial | Fast path for Fathom -> LeadConnector/GHL transcript automation |
 | Slack | Credit business internal commands/updates | Planned | **Credit + funding only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |
-| Telegram | Owner command bot | Optional | Not primary stack; see `CHANNEL_SETUP_GUIDE.md` |
+| Telegram | Owner command bot | Optional | `scripts/office-agent-channel/` · [AGENT_IMESSAGE_TELEGRAM_SETUP.md](../docs/AGENT_IMESSAGE_TELEGRAM_SETUP.md) · [AGENT_HANDOFF_ONE_PAGER.md](../docs/AGENT_HANDOFF_ONE_PAGER.md) |
+| Office Mac | Flash pull + Telegram / iMessage helpers | **Partial** | [MACHINE_SYNC.md](../docs/MACHINE_SYNC.md), [OFFICE_FLASH_PULL_AND_REMOTE.md](../docs/OFFICE_FLASH_PULL_AND_REMOTE.md), [AGENT_IMESSAGE_TELEGRAM_SETUP.md](../docs/AGENT_IMESSAGE_TELEGRAM_SETUP.md), [AGENT_HANDOFF_ONE_PAGER.md](../docs/AGENT_HANDOFF_ONE_PAGER.md), `scripts/pull-from-flash-drives.sh`, `scripts/office-agent-channel/` |
 | WhatsApp | Car rental customer + lead messaging | Planned | **Through GHL only** — see `CHANNEL_STACK_GHL_WHATSAPP_SLACK.md` |
-| iMessage | Quick capture | Planned | Use Apple Shortcuts or Mac relay |
+| iMessage | Owner / agent messaging + Mac relay | Partial | `docs/AGENT_IMESSAGE_TELEGRAM_SETUP.md` — outbound AppleScript; optional `chat.db` watcher |
 
 ## Mixed workflow (canonical)
 
