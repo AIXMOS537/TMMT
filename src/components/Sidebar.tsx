@@ -38,8 +38,8 @@ import { buildRentalsNavGroups } from "@/lib/rentals-nav";
 import type { OrgLicense } from "@/lib/org-license";
 
 type SidebarProps = {
-  ventureSlug: string;
-  ventureName: string;
+  ventureSlug?: string;
+  ventureName?: string;
   ventureColor?: string | null;
   /** Serializable org license — nav is built client-side (icons cannot cross RSC boundary). */
   orgLicense?: OrgLicense | null;
@@ -53,11 +53,11 @@ const commandCenterItems = [
 ];
 
 export default function Sidebar({
-  ventureSlug,
-  ventureName,
+  ventureSlug = "tmmt-rentals",
+  ventureName = "TMMT Rentals",
   ventureColor,
   orgLicense = null,
-}: SidebarProps) {
+}: SidebarProps = {}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
