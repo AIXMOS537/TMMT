@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,9 +23,15 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@aixmos/core": ["./packages/aixmos-core/src/index.ts"],
-      "@aixmos/core/*": ["./packages/aixmos-core/src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@aixmos/core": [
+        "../../packages/aixmos-core/src/index.ts"
+      ],
+      "@aixmos/core/*": [
+        "../../packages/aixmos-core/src/*"
+      ]
     }
   },
   "include": [
@@ -29,8 +39,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "TMMT", "AIXMOS", "apps/engine", "packages/aixmos-core", "imports"]
+  "exclude": [
+    "node_modules"
+  ]
 }
