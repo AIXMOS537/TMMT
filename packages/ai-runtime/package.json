@@ -1,0 +1,10 @@
+{
+  "name": "tmmt-ai-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified launcher for the AIXMOS agents across the TMMT machine fleet",
+  "bin": { "tmmt": "tmmt.js" },
+  "scripts": {
+    "test": "node --test"
+  }
+}
