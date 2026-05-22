@@ -1,0 +1,6 @@
+{
+  "agents": [
+    { "id": "jarvis", "label": "JARVIS - ops assistant", "script": "jarvis", "requiresDocker": false },
+    { "id": "tank", "label": "TANK - infra stack", "script": "tank:up", "requiresDocker": true }
+  ]
+}
