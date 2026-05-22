@@ -7,14 +7,23 @@ GitHub repo (`AIXMOS537/TMMT`).
 
 | | |
 |---|---|
-| Vercel project name | **`tmmt-c919`** (use this — not `tmmt`, `tmmt-ops`, or `tmmt-command-center`) |
+| Vercel project name (internal, for CLI / `vercel link`) | `tmmt-c919` |
+| **Live production URL** | **`https://tmmt-command-center.vercel.app`** (verified 2026-05-21 — `tmmt-c919.vercel.app` 404s) |
 | Project ID | `prj_moZzMHYtwiZIS0TETOBOKODbp7eM` |
+| Org ID | `team_UzatfZkJUpFKABaO6cZTQUq7` |
 | Source repo | `AIXMOS537/TMMT` (`origin`) |
+| Production branch | `master` |
 | Root directory | `./` |
 | Framework preset | Next.js (auto-detected) |
+| Intended custom domains (not yet pointed at app) | `allinonemanagementsolutions.com`, `allinonemanagementsolutions.net` |
 
 The project already exists, so there is **no fresh import to do**. Every push
-to the production branch auto-deploys; other branches get preview deployments.
+to the production branch (`master`) auto-deploys; other branches get preview deployments.
+
+⚠️ **Known stale deployment (2026-05-21):** `/forms/customer-intake` returns 404 in prod
+despite existing in `master`. The Vercel deployment appears to be older than the
+master tip. Trigger a manual redeploy from the Vercel dashboard (Project → Deployments →
+top entry → ⋯ → Redeploy) or push a new commit to master to refresh.
 
 See also [`docs/ONE-APP-CONSOLIDATION.md`](docs/ONE-APP-CONSOLIDATION.md) for how AIX Command Center docs merge into this single app.
 
