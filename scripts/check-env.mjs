@@ -7,13 +7,9 @@ import { fileURLToPath } from "url"
 import { dirname, join } from "path"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const envPath = join(root, ".env")
 
-function loadDotEnv() {
-  if (!existsSync(envPath)) {
-    console.error("Missing .env at project root. Copy values from README / Supabase dashboard.")
-    process.exit(1)
-  }
+function loadDotEnvFile(envPath) {
+  if (!existsSync(envPath)) return
   const raw = readFileSync(envPath, "utf8")
   for (const line of raw.split("\n")) {
     const t = line.trim()
@@ -32,6 +28,17 @@ function loadDotEnv() {
       process.env[key] = val
     }
   }
+}
+
+function loadDotEnv() {
+  const envLocal = join(root, ".env.local")
+  const envDefault = join(root, ".env")
+  if (!existsSync(envLocal) && !existsSync(envDefault)) {
+    console.error("Missing .env or .env.local at project root. Copy values from README / Supabase dashboard.")
+    process.exit(1)
+  }
+  loadDotEnvFile(envLocal)
+  loadDotEnvFile(envDefault)
 }
 
 function requireNonEmpty(name) {

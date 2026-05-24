@@ -1,6 +1,6 @@
 # TMMT Rentals — Project Status
 
-> Last updated: March 28, 2026
+> Last updated: May 17, 2026
 
 ## Business Context
 
@@ -138,6 +138,15 @@ graph LR
 | Supabase tables | 44 (25 main + 19 junction) |
 | Migrated records | 1,453 |
 | Junction links | 368 |
+
+## Planned — Portfolio Command Center
+
+**Phase 0 shipped (2026-05-17):** Portfolio at `/`, TMMT admin at `/v/tmmt-rentals/*`, legacy path 308 redirects, `ventures` migration pending apply in Supabase.
+
+- Spec: `docs/superpowers/specs/2026-05-17-command-center-architecture-design.md`
+- Plan: `docs/superpowers/plans/2026-05-17-command-center-architecture.md`
+
+Phases 1–4 (teams, scripts, more ventures, backup) not started.
 
 ## Known Issues
 
