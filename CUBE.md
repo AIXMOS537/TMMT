@@ -24,8 +24,10 @@ NEXT_PUBLIC_AIXMOS_SITE_URL=https://aixmos.com
 Apply migration:
 
 ```bash
-supabase db push
-# or run supabase/migrations/20260520120000_aixmos_program_cube.sql
+# Project ref: uapxakmlwnpfsftfeezx (muhammad@allinonemanagementsolutions.com's Project)
+supabase link --project-ref uapxakmlwnpfsftfeezx
+supabase db query --linked -f supabase/migrations/20260520120000_aixmos_program_cube.sql
+# or paste the same file in SQL Editor: https://supabase.com/dashboard/project/uapxakmlwnpfsftfeezx/sql/new
 ```
 
 Tables: `program_applications`, `program_audit_log` (Realtime enabled).
