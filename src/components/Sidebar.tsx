@@ -23,6 +23,7 @@ import {
   UserCog,
   Ban,
   ClipboardCheck,
+  Siren,
   ChevronDown,
   Menu,
   X,
@@ -36,6 +37,7 @@ const navGroups = [
     label: "Overview",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dispatch", label: "Dispatch", icon: Siren },
     ],
   },
   {
