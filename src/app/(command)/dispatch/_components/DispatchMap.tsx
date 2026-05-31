@@ -1,7 +1,8 @@
 "use client";
 import { useMemo } from "react";
-import Map, { Marker, NavigationControl } from "react-map-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import type { Incident, Unit } from "@/lib/dispatch-types";
 
 const unitColor: Record<Unit["status"], string> = {
@@ -18,56 +19,82 @@ const severityColor: Record<number, string> = {
   3: "#10b981",
 };
 
-export function DispatchMap({ units, incidents, focusedIncidentId, onIncidentClick }: {
+function unitIcon(status: Unit["status"]) {
+  const color = unitColor[status];
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+}
+
+function incidentIcon(severity: number | null, focused: boolean) {
+  const color = severity ? severityColor[severity] : "#6b7280";
+  const ring = focused ? "box-shadow:0 0 0 4px rgba(59,130,246,0.4);" : "";
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:${color};${ring}width:24px;height:24px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;font-family:ui-monospace,monospace;">${severity ?? "?"}</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+  });
+}
+
+export default function DispatchMap({ units, incidents, focusedIncidentId, onIncidentClick }: {
   units: Unit[];
   incidents: Incident[];
   focusedIncidentId?: string;
   onIncidentClick?: (id: string) => void;
 }) {
-  const initialView = useMemo(() => {
+  const center = useMemo<[number, number]>(() => {
     const u = units.find(u => u.current_lat && u.current_lng);
-    return {
-      longitude: u?.current_lng ?? -118.2437,
-      latitude: u?.current_lat ?? 34.0522,
-      zoom: 11,
-    };
+    return [u?.current_lat ?? 34.0522, u?.current_lng ?? -118.2437];
   }, [units]);
 
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  if (!token) {
-    return <div className="flex h-full items-center justify-center text-sm text-rose-600">NEXT_PUBLIC_MAPBOX_TOKEN not set</div>;
-  }
-
   return (
-    <Map
-      mapboxAccessToken={token}
-      initialViewState={initialView}
+    <MapContainer
+      center={center}
+      zoom={12}
       style={{ width: "100%", height: "100%" }}
-      mapStyle="mapbox://styles/mapbox/dark-v11"
+      scrollWheelZoom
     >
-      <NavigationControl position="top-right" />
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
       {units.filter(u => u.current_lat && u.current_lng).map(u => (
-        <Marker key={u.id} longitude={u.current_lng!} latitude={u.current_lat!} anchor="center">
-          <div
-            title={`${u.callsign} (${u.status})`}
-            className="h-3 w-3 rounded-full border-2 border-white shadow"
-            style={{ backgroundColor: unitColor[u.status] }}
-          />
+        <Marker
+          key={u.id}
+          position={[u.current_lat!, u.current_lng!]}
+          icon={unitIcon(u.status)}
+        >
+          <Popup>
+            <div style={{ fontFamily: "ui-monospace,monospace" }}>
+              <strong>{u.callsign}</strong>
+              <br />
+              <span style={{ color: unitColor[u.status] }}>{u.status}</span>
+            </div>
+          </Popup>
         </Marker>
       ))}
       {incidents.filter(i => i.location_lat && i.location_lng).map(i => (
-        <Marker key={i.id} longitude={i.location_lng!} latitude={i.location_lat!} anchor="bottom">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onIncidentClick?.(i.id); }}
-            title={i.ref_code ?? "incident"}
-            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${focusedIncidentId === i.id ? "ring-4 ring-blue-300" : ""}`}
-            style={{ backgroundColor: i.severity ? severityColor[i.severity] : "#6b7280", borderColor: "white" }}
-          >
-            <span className="text-xs font-bold text-white">{i.severity ?? "?"}</span>
-          </button>
+        <Marker
+          key={i.id}
+          position={[i.location_lat!, i.location_lng!]}
+          icon={incidentIcon(i.severity, focusedIncidentId === i.id)}
+          eventHandlers={{ click: () => onIncidentClick?.(i.id) }}
+        >
+          <Popup>
+            <div>
+              <strong>{i.ref_code ?? "incident"}</strong>
+              <br />
+              S{i.severity} · {i.status}
+              <br />
+              {i.location_text}
+            </div>
+          </Popup>
         </Marker>
       ))}
-    </Map>
+    </MapContainer>
   );
 }
