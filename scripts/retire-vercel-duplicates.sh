@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# Retire duplicate Vercel projects for AIXMOS537/TMMT.
-# Keep ONE project: tmmt-c919 (then rename → tmmt-command-center for the operator URL).
+# Retire ONLY legacy duplicate Vercel projects for AIXMOS537/TMMT.
 #
-# Prereq: vercel login && cd repo root
+# KEEP (three separate apps — see docs/THREE-APP-ECOSYSTEM.md):
+#   tmmt-ops          → TMMT Ops / TMMT OS
+#   tmmt-command-center → owner command center
+#   aixmos-landing    → AIXMOS public funnel
+#
+# RETIRE (legacy duplicates that re-deploy the same repo on every push):
+#   tmmt-c919, tmmt
+#
 # Usage: bash scripts/retire-vercel-duplicates.sh [--apply]
 
 set -euo pipefail
@@ -10,61 +16,44 @@ set -euo pipefail
 APPLY=false
 [[ "${1:-}" == "--apply" ]] && APPLY=true
 
-CANONICAL_PROJECT="tmmt-c919"
-CANONICAL_PROJECT_ID="prj_moZzMHYtwiZIS0TETOBOKODbp7eM"
-DUPLICATES=(tmmt tmmt-ops tmmt-command-center aixmos-landing)
-TARGET_ALIAS="tmmt-command-center.vercel.app"
+LEGACY_DUPLICATES=(tmmt-c919 tmmt)
+KEEP=(tmmt-ops tmmt-command-center aixmos-landing)
 
 run() {
-  if $APPLY; then
-    echo ">> $*"
-    "$@"
-  else
-    echo "DRY-RUN: $*"
-  fi
+  if $APPLY; then echo ">> $*"; "$@"; else echo "DRY-RUN: $*"; fi
 }
 
-echo "=== TMMT Vercel duplicate retirement ==="
-echo "Canonical project: $CANONICAL_PROJECT ($CANONICAL_PROJECT_ID)"
-echo "Duplicates to remove: ${DUPLICATES[*]}"
+echo "=== Retire legacy Vercel duplicates (NOT the three apps) ==="
+echo ""
+echo "KEEP these three separate apps:"
+for p in "${KEEP[@]}"; do echo "  ✓ $p"; done
+echo ""
+echo "RETIRE legacy duplicates only:"
+for p in "${LEGACY_DUPLICATES[@]}"; do echo "  ✗ $p"; done
 echo ""
 
 if ! $APPLY; then
-  echo "Dry run only. Re-run with: bash scripts/retire-vercel-duplicates.sh --apply"
+  echo "Dry run. Re-run with: bash scripts/retire-vercel-duplicates.sh --apply"
   echo ""
 fi
 
-echo "--- Step 1: Confirm canonical project builds ---"
-run vercel project ls 2>/dev/null | grep -E "tmmt|aixmos" || true
-
-echo ""
-echo "--- Step 2: Move operator alias BEFORE deleting tmmt-command-center ---"
-echo "In Vercel dashboard → $CANONICAL_PROJECT → Settings → General → Project Name"
-echo "  Rename '$CANONICAL_PROJECT' → 'tmmt-command-center'"
-echo "  (Frees the name and gives you $TARGET_ALIAS on the good deployment.)"
-echo "  OR: Settings → Domains → verify production deploy is latest on master"
+echo "--- Before deleting tmmt-c919 ---"
+echo "1. Vercel → tmmt-c919 → Settings → Environment Variables"
+echo "   Copy any vars missing from tmmt-ops / tmmt-command-center / aixmos-landing"
+echo "2. Vercel → tmmt-c919 → Settings → Domains"
+echo "   Move custom domains to the correct app (see docs/THREE-APP-ECOSYSTEM.md)"
+echo "3. Confirm each of the three apps has a successful production deploy on master"
 echo ""
 
-echo "--- Step 3: Disconnect GitHub from duplicate projects ---"
-for p in "${DUPLICATES[@]}"; do
-  echo "Project: $p → Settings → Git → Disconnect (or delete project below)"
-done
-
-echo ""
-echo "--- Step 4: Delete duplicate projects ---"
-for p in "${DUPLICATES[@]}"; do
-  if [[ "$p" == "tmmt-command-center" ]]; then
-    echo "SKIP CLI delete for tmmt-command-center until $CANONICAL_PROJECT is renamed (Step 2)."
-    echo "  Then: vercel project rm tmmt-command-center --yes   # removes the OLD empty shell"
-    continue
-  fi
+echo "--- Delete legacy projects ---"
+for p in "${LEGACY_DUPLICATES[@]}"; do
   run vercel project rm "$p" --yes
 done
 
 echo ""
-echo "--- Step 5: Verify ---"
-echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://$TARGET_ALIAS/forms/customer-intake   # expect 200"
-echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://$TARGET_ALIAS/login               # expect 200"
-echo "  npm run smoke:prod"
+echo "--- Verify the three apps ---"
+echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://tmmt-ops.vercel.app/login"
+echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://tmmt-command-center.vercel.app/forms/customer-intake"
+echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://aixmos-landing.vercel.app/"
 echo ""
-echo "Done."
+echo "See docs/THREE-APP-ECOSYSTEM.md"

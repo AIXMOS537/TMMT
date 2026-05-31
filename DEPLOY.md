@@ -1,46 +1,40 @@
 # Deploying TMMT Rentals to Vercel
 
-TMMT Rentals is a Next.js app. It deploys to Vercel directly from this private
-GitHub repo (`AIXMOS537/TMMT`).
+TMMT Rentals deploys from the private GitHub repo `AIXMOS537/TMMT`.
 
-## Vercel project (already connected)
+**Three separate Vercel apps** work together — see [`docs/THREE-APP-ECOSYSTEM.md`](docs/THREE-APP-ECOSYSTEM.md):
+
+| App | Vercel project | URL |
+|-----|----------------|-----|
+| TMMT Ops | `tmmt-ops` | https://tmmt-ops.vercel.app |
+| TMMT Command Center | `tmmt-command-center` | https://tmmt-command-center.vercel.app |
+| AIXMOS | `aixmos-landing` | https://aixmos-landing.vercel.app |
+
+This doc focuses on **Command Center** deploy settings (also the main monorepo checkout). Ops and AIXMOS have their own Vercel project settings — same repo, different env/host routing.
+
+## Vercel project — Command Center
 
 | | |
 |---|---|
-| **Canonical live URL** | **`https://tmmt-command-center.vercel.app`** (operators + smoke tests) |
-| Vercel project name | **`tmmt-c919`** (dashboard + env vars — not `tmmt`, `tmmt-ops`) |
-| Project ID | `prj_moZzMHYtwiZIS0TETOBOKODbp7eM` |
+| **Operator URL** | **`https://tmmt-command-center.vercel.app`** |
+| Vercel project name | **`tmmt-command-center`** |
+| Legacy name (retire) | `tmmt-c919` — migrate env/domains here, then delete |
 | Source repo | `AIXMOS537/TMMT` (`origin`) |
 | Production branch | **`master`** |
-| Root directory | `./` |
-| Framework preset | Next.js (auto-detected) |
+| Root directory | `./` (confirm in Vercel → Settings → Git) |
 
-`tmmt-c919.vercel.app` is not the public alias. Attach custom domains (`tmmtrentals.net`) to project **`tmmt-c919`**; keep **`tmmt-command-center.vercel.app`** as the stable Vercel alias for the same deployment.
+Every push to **`master`** triggers deploys on all connected projects. Fix build failures on **each** app you keep; do not delete Ops or AIXMOS thinking they are duplicates.
 
-Every push to **`master`** auto-deploys production; other branches get preview deployments.
+## Retire legacy duplicates only
 
-## Retire duplicate Vercel projects
-
-The same GitHub repo (`AIXMOS537/TMMT`) was connected to **multiple** Vercel projects. That causes failed parallel deploys and a stale public URL. **Keep one project only.**
-
-| Project | Action |
-|---------|--------|
-| **`tmmt-c919`** | **KEEP** — production, env vars, custom domains |
-| `tmmt-command-center` | **DELETE** after renaming `tmmt-c919` → `tmmt-command-center` (see below) |
-| `tmmt` | **DELETE** |
-| `tmmt-ops` | **DELETE** |
-| `aixmos-landing` | **DELETE** if it deploys the same TMMT repo root (landing lives in GHL / `AIXMOS/public`) |
-
-**Operator URL (`tmmt-command-center.vercel.app`):** Vercel assigns `{project-name}.vercel.app`. Rename **`tmmt-c919`** → **`tmmt-command-center`** in dashboard (Settings → General → Project Name), confirm latest `master` production deploy, then delete the **old** empty `tmmt-command-center` project shell.
-
-Automated checklist (dry-run by default):
+Extra projects **`tmmt-c919`** and **`tmmt`** re-deploy the same repo and cause parallel failed builds. **Do not delete** `tmmt-ops`, `tmmt-command-center`, or `aixmos-landing`.
 
 ```bash
-bash scripts/retire-vercel-duplicates.sh          # print steps
-bash scripts/retire-vercel-duplicates.sh --apply  # run vercel project rm for safe duplicates
+bash scripts/retire-vercel-duplicates.sh          # dry-run
+bash scripts/retire-vercel-duplicates.sh --apply  # removes tmmt-c919 + tmmt only
 ```
 
-After retirement, only one GitHub deployment status should show for production pushes.
+Before `--apply`: copy env vars and custom domains off `tmmt-c919` onto the correct app in the table above.
 
 
 ## Routine deploy
@@ -85,14 +79,14 @@ curl -sI https://tmmtrentals.net/login | grep -i x-robots-tag   # after DNS cuto
 npm run ghl:test-webhook payment   # against production URL via GHL_TEST_BASE_URL
 ```
 
-## Domains on `tmmt-c919`
+## Domains on Command Center + Ops
 
-Attach staff domains only:
+Attach staff domains to the **correct** app (see [`THREE-APP-ECOSYSTEM.md`](docs/THREE-APP-ECOSYSTEM.md)):
 
-- `tmmtrentals.net`
+- `tmmtrentals.net` → typically **Command Center** or **Ops** (confirm in Vercel Domains)
 - `admin.tmmtrentals.net` (optional alias)
 
-Do **not** attach `.com` domains after GHL cutover — they point to GoHighLevel.
+Do **not** attach `.com` marketing domains to Ops/Command Center after GHL cutover — they belong on **AIXMOS** / GoHighLevel.
 
 See [`docs/superpowers/plans/2026-05-20-aixmos-domain-architecture.md`](docs/superpowers/plans/2026-05-20-aixmos-domain-architecture.md).
 

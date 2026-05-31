@@ -1,8 +1,10 @@
 # One app: TMMT Ops + Command Center
 
+> **Updated:** Vercel runs **three separate apps** — [`THREE-APP-ECOSYSTEM.md`](THREE-APP-ECOSYSTEM.md). This doc is historical context for merging ops routes into the monorepo; it does **not** mean delete `tmmt-ops` or `aixmos-landing` on Vercel.
+
 **Canonical local folder:** `~/Documents/TMMT`  
 **Branch (active work):** `cursor/aixmos-landing-ghl-intake-embed`  
-**Deploy target:** Vercel project **`tmmt-c919`** → GitHub `AIXMOS537/TMMT` (repo root `./`)
+**Deploy targets:** `tmmt-ops`, `tmmt-command-center`, `aixmos-landing` (see ecosystem doc)
 
 `~/TMMT` (branch `master`) is the synced clone with `DEPLOY.md`; merge this work there before pushing to production, or push from `~/Documents/TMMT` on the feature branch and open a PR.
 
@@ -14,9 +16,11 @@
 |--------|-------------------------|
 | **`~/Documents/TMMT`** (this repo) | **Single Next.js 16 app** — TMMT admin, forms, role portals, owner command hub |
 | **`~/TMMT`** | Same GitHub repo; use for deploy docs / `master` sync |
-| **`~/AIX-Command-Center`** | **Docs + SOPs + prompts only** — not a second Vercel app. Daily ops: `OWNER_DAILY_COMMAND.md`. App code lives in TMMT. |
-| Vercel `tmmt-ops`, `tmmt-command-center` | **Unused** — delete or ignore; do not deploy |
-| Vercel `tmmt` (duplicate) | **Avoid** — use **`tmmt-c919` only** |
+| **`~/AIX-Command-Center`** | **Docs + SOPs + prompts only** — not a fourth Vercel app. Daily ops: `OWNER_DAILY_COMMAND.md`. App code lives in TMMT. |
+| Vercel `tmmt-ops` | **TMMT Ops** — daily rental operations (keep) |
+| Vercel `tmmt-command-center` | **Command Center** — owner hub (keep) |
+| Vercel `aixmos-landing` | **AIXMOS** — public funnel (keep) |
+| Vercel `tmmt-c919`, `tmmt` | **Legacy duplicates** — retire after migrating env/domains |
 
 ---
 
