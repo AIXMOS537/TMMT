@@ -7,13 +7,17 @@ GitHub repo (`AIXMOS537/TMMT`).
 
 | | |
 |---|---|
-| Vercel project name | **`tmmt-c919`** (use this — not `tmmt`, `tmmt-ops`, or `tmmt-command-center`) |
+| **Canonical live URL** | **`https://tmmt-command-center.vercel.app`** (operators + smoke tests) |
+| Vercel project name | **`tmmt-c919`** (dashboard + env vars — not `tmmt`, `tmmt-ops`) |
 | Project ID | `prj_moZzMHYtwiZIS0TETOBOKODbp7eM` |
 | Source repo | `AIXMOS537/TMMT` (`origin`) |
+| Production branch | **`master`** |
 | Root directory | `./` |
 | Framework preset | Next.js (auto-detected) |
 
-Every push to the production branch auto-deploys; other branches get preview deployments.
+` tmmt-c919.vercel.app` is not the public alias. Attach custom domains (`tmmtrentals.net`) to project **`tmmt-c919`**; keep **`tmmt-command-center.vercel.app`** as the stable Vercel alias for the same deployment.
+
+Every push to **`master`** auto-deploys production; other branches get preview deployments.
 
 ## Routine deploy
 
@@ -50,8 +54,10 @@ Run `npm run ghl:check` locally after updating env vars.
 ## Post-deploy verification
 
 ```bash
-npm run smoke:prod   # if configured for your domain
-curl -sI https://tmmtrentals.net/login | grep -i x-robots-tag
+npm run smoke:prod   # hits tmmt-command-center.vercel.app by default
+SMOKE_BASE_URL=https://tmmt-command-center.vercel.app bash scripts/smoke-prod.sh
+npm run test:e2e:prod
+curl -sI https://tmmtrentals.net/login | grep -i x-robots-tag   # after DNS cutover
 npm run ghl:test-webhook payment   # against production URL via GHL_TEST_BASE_URL
 ```
 
