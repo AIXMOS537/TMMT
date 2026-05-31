@@ -10,6 +10,7 @@
     "check-env": "node scripts/check-env.mjs",
     "check-env:revenue": "node scripts/check-env.mjs --revenue",
     "ghl:check": "node scripts/ghl-activation-check.mjs",
+    "ghl:sync-vercel": "node scripts/ghl-sync-vercel-env.mjs",
     "ghl:test-webhook": "node scripts/test-ghl-webhook.mjs",
     "clickup:check": "node scripts/clickup-check.mjs",
     "onboard:vendor": "node scripts/onboard-preferred-vendor.mjs",

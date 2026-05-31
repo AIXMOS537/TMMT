@@ -34,6 +34,21 @@ loadDotEnv();
 const GHL_VARS = [
   { key: "GHL_WEBHOOK_SECRET", tier: "P0", note: "Validates inbound GHL webhooks" },
   {
+    key: "NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT",
+    tier: "P0",
+    note: "/kits — Ops Kit online checkout (GHL funnel URL)",
+  },
+  {
+    key: "NEXT_PUBLIC_GHL_CHECKOUT_COMMAND_KIT",
+    tier: "P0",
+    note: "/kits — Command Kit online checkout",
+  },
+  {
+    key: "NEXT_PUBLIC_GHL_CHECKOUT_DEALER_BUNDLE",
+    tier: "P0",
+    note: "/kits — Dealer bundle checkout",
+  },
+  {
     key: "NEXT_PUBLIC_GHL_CHECKOUT_97",
     tier: "P0",
     note: "$97/mo membership checkout URL",
@@ -42,6 +57,16 @@ const GHL_VARS = [
     key: "NEXT_PUBLIC_GHL_UPSELL_PIPELINE_URL",
     tier: "P0",
     note: "Owner hub upsell queue filter in GHL",
+  },
+  {
+    key: "NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT_USB",
+    tier: "P1",
+    note: "/kits — Ops Kit + ship USB",
+  },
+  {
+    key: "NEXT_PUBLIC_GHL_CHECKOUT_COMMAND_KIT_USB",
+    tier: "P1",
+    note: "/kits — Command Kit + ship USB",
   },
   {
     key: "NEXT_PUBLIC_GHL_CREDIT_GUIDANCE",
