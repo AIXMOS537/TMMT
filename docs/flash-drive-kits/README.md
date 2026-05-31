@@ -19,6 +19,12 @@ bash ../../scripts/build-retail-usb.sh growth  /Volumes/YOURUSB3
 
 ## Collect payment
 
-1. Create Stripe products in GHL for each SKU (see FLASH-DRIVE-PRODUCT-LINE.md)
-2. Paste checkout URLs into `GHL-CHECKOUT.env.example` → update ORDER-FORM QR boxes
-3. Tag buyers in GHL when paid → ship → tag `kit-shipped`
+**USB:** QR on [`ORDER-FORM.html`](ORDER-FORM.html)  
+**Online:** Host [`BUY-ONLINE.html`](BUY-ONLINE.html) on GHL or link from AIXMOS landing  
+
+Full guide: [`../SALES-CHANNELS.md`](../SALES-CHANNELS.md)
+
+1. Connect Stripe in GHL → create 8 products (setup + monthly per SKU)
+2. Paste checkout URLs into `GHL-CHECKOUT.env.example` + BUY-ONLINE.html script
+3. Tag buyers in GHL when paid → ship USB **or** send digital email
+4. Webhook → TMMT `/api/webhooks/ghl` for Supabase payment log

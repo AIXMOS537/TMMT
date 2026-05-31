@@ -13,7 +13,13 @@ Three USB products aligned with the three apps in [`THREE-APP-ECOSYSTEM.md`](THR
 
 *Adjust prices in GHL before printing [`ORDER-FORM.html`](flash-drive-kits/ORDER-FORM.html).*
 
-## Payment collection (GoHighLevel)
+## Sales channels (USB + online)
+
+Same SKUs sell **two ways**: flash drive by mail **or** instant digital access after checkout.
+
+Full setup: **[`SALES-CHANNELS.md`](SALES-CHANNELS.md)** — GHL + Stripe products, workflows, webhooks, [`BUY-ONLINE.html`](flash-drive-kits/BUY-ONLINE.html) store page.
+
+## Payment collection (GoHighLevel + Stripe)
 
 Create **one Stripe product per SKU** in GHL → paste checkout URLs into:
 
