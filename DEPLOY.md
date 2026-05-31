@@ -13,7 +13,30 @@ GitHub repo (`AIXMOS537/TMMT`).
 | Root directory | `./` |
 | Framework preset | Next.js (auto-detected) |
 
-Every push to the production branch auto-deploys; other branches get preview deployments.
+Every push to **`master`** auto-deploys production; other branches get preview deployments.
+
+## Retire duplicate Vercel projects
+
+The same GitHub repo (`AIXMOS537/TMMT`) was connected to **multiple** Vercel projects. That causes failed parallel deploys and a stale public URL. **Keep one project only.**
+
+| Project | Action |
+|---------|--------|
+| **`tmmt-c919`** | **KEEP** — production, env vars, custom domains |
+| `tmmt-command-center` | **DELETE** after renaming `tmmt-c919` → `tmmt-command-center` (see below) |
+| `tmmt` | **DELETE** |
+| `tmmt-ops` | **DELETE** |
+| `aixmos-landing` | **DELETE** if it deploys the same TMMT repo root (landing lives in GHL / `AIXMOS/public`) |
+
+**Operator URL (`tmmt-command-center.vercel.app`):** Vercel assigns `{project-name}.vercel.app`. Rename **`tmmt-c919`** → **`tmmt-command-center`** in dashboard (Settings → General → Project Name), confirm latest `master` production deploy, then delete the **old** empty `tmmt-command-center` project shell.
+
+Automated checklist (dry-run by default):
+
+```bash
+bash scripts/retire-vercel-duplicates.sh          # print steps
+bash scripts/retire-vercel-duplicates.sh --apply  # run vercel project rm for safe duplicates
+```
+
+After retirement, only one GitHub deployment status should show for production pushes.
 
 ## Routine deploy
 
