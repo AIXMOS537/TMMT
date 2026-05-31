@@ -419,4 +419,23 @@ CREATE POLICY "responder_parent_incident" ON public.incidents FOR SELECT
 
 GRANT SELECT ON public.incident_assignments_v TO authenticated;
 
+-- ════════════════════════════════════════════════════
+-- Seed: TMMT Rentals as Tenant #1 with the owner as tenant_admin + dispatcher.
+-- Idempotent: re-running the migration is a no-op for these inserts.
+-- ════════════════════════════════════════════════════
+
+INSERT INTO public.org_roles (org_id, user_id, role)
+SELECT o.id, p.id, 'tenant_admin'
+FROM public.organizations o
+JOIN public.profiles p ON p.organization_id = o.id
+WHERE o.name = 'TMMT Rentals' AND p.role = 'admin'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.org_roles (org_id, user_id, role)
+SELECT o.id, p.id, 'dispatcher'
+FROM public.organizations o
+JOIN public.profiles p ON p.organization_id = o.id
+WHERE o.name = 'TMMT Rentals' AND p.role = 'admin'
+ON CONFLICT DO NOTHING;
+
 COMMIT;
