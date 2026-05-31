@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { DispatchMap } from "./DispatchMap";
+import dynamic from "next/dynamic";
+const DispatchMap = dynamic(() => import("./DispatchMap"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-zinc-500">Loading map…</div> });
 import { IncidentQueue } from "./IncidentQueue";
 import type { Incident, Unit } from "@/lib/dispatch-types";
 import { lockExpiredAssignments } from "../actions";

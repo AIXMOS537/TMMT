@@ -26,9 +26,9 @@ export class LRU<V> {
   }
 }
 
-export const geocodeCache = new LRU<MapboxGeocodeResult[]>(500, 24 * 60 * 60 * 1000);
-
-export interface MapboxGeocodeResult {
+export interface GeocodeResult {
   place_name: string;
-  center: [number, number];
+  center: [number, number]; // [lng, lat]
 }
+
+export const geocodeCache = new LRU<GeocodeResult[]>(500, 24 * 60 * 60 * 1000);

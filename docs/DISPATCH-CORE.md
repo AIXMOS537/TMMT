@@ -9,7 +9,7 @@
 - `/dispatch/me` — responder self-view
 
 ## Day-1 setup
-1. Set `NEXT_PUBLIC_MAPBOX_TOKEN`, `MAPBOX_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_CHAT_ID`, `AIXMOS_AGENT_HOST`, optional `AIXMOS_AGENT_TOKEN` in `.env`.
+1. Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_CHAT_ID`, `AIXMOS_AGENT_HOST`, optional `AIXMOS_AGENT_TOKEN` in `.env`. (Map and geocoding use OpenStreetMap — no keys required.)
 2. Apply `supabase/migrations/20260530120000_rescue_dispatch_core.sql` (Supabase SQL Editor or `supabase db push --linked`).
 3. For each responder, set `profiles.telegram_chat_id` (responder → /start the bot → record their chat_id).
 4. For each vehicle, set `fleet.vehicle_class` and `fleet.capability_tags`.
@@ -17,12 +17,13 @@
 
 ## Failure modes
 - **CAPTAIN down:** deterministic SQL ranking is used; `reasoning_json.captain_skipped=true` is logged.
-- **Mapbox down:** map shows a banner; queue/forms still work.
+- **OSM tile server down:** map shows blank tiles; queue/forms still work.
+- **Nominatim down or rate-limited:** address autocomplete returns empty; user can still create incidents by entering raw coordinates if you add a fallback input later.
 - **Telegram down:** assignment proceeds; the responder ping is silently skipped.
 - **Realtime drops:** UI polls every 10s via the lock tick; assignment freshness within 10s of reality.
 
 ## Cost guardrails
-- Mapbox geocoding is debounced 250ms client-side and cached server-side (in-process LRU, 500 entries, 24h TTL).
+- Nominatim geocoding is debounced 250ms client-side and cached server-side (in-process LRU, 500 entries, 24h TTL). Includes a unique User-Agent per Nominatim's usage policy.
 - The `geocodeAddress` server action is auth-gated, so anonymous traffic cannot burn quota.
 
 ## What's NOT in Core (deferred)

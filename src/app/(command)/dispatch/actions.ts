@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
-import { searchAddress } from "@/lib/mapbox";
+import { searchAddress } from "@/lib/osm-geocode";
 import { askCaptainDispatch } from "@/lib/captain-client";
 import { notifyResponder } from "@/lib/notify-telegram";
 import type { Candidate, AssignmentReasoning, Incident } from "@/lib/dispatch-types";
