@@ -81,6 +81,15 @@ src/components/
 - Admin writes: `src/app/(admin)/admin-actions.ts` (auth-gated upsert with table allowlist)
 - Do NOT add writes to `queries.ts` — that file is read-only fetchers
 
+## Dispatch Core (Subproject #1 of Rescue Dispatch SaaS) — SHIPPED
+
+Plan: `docs/superpowers/plans/2026-05-27-rescue-dispatch-core.md`
+Spec: `docs/superpowers/specs/2026-05-27-rescue-dispatch-core-design.md`
+Migration: `supabase/migrations/20260530120000_rescue_dispatch_core.sql`
+Routes: `/dispatch/*` under `(command)` (owner-only on .net)
+Tenancy: per-tenant via `org_roles` + new `is_org_dispatcher(org_id)` helper. `is_staff()` bypass preserved.
+Agents: CAPTAIN refinement via `captain_dispatch` prompt (JSON output) in `~/AIXMOS-AGENTS/agents/prompts.js`. Fail-open at 1.5s.
+
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.
