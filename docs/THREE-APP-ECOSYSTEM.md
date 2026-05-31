@@ -70,4 +70,5 @@ Before changing deploy settings, confirm which root each of the three projects u
 ## Related
 
 - [`DEPLOY.md`](../DEPLOY.md) — env vars, DNS, routine deploy
+- [`FLASH-DRIVE-PRODUCT-LINE.md`](FLASH-DRIVE-PRODUCT-LINE.md) — **retail USB kits, print/ship, collect payment**
 - [`ONE-APP-CONSOLIDATION.md`](ONE-APP-CONSOLIDATION.md) — historical merge notes (superseded by this doc for Vercel topology)
