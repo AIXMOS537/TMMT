@@ -41,7 +41,7 @@ Before `--apply`: copy env vars and custom domains off `tmmt-c919` onto the corr
 
 1. `npm run build` locally (must pass).
 2. Commit and push to the production branch — Vercel builds automatically.
-3. Confirm in Vercel dashboard → project `tmmt-c919`.
+3. Confirm in Vercel dashboard → each app (`tmmt-ops`, `tmmt-command-center`, `aixmos-landing`).
 
 ## Required environment variables
 
