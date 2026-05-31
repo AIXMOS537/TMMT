@@ -21,7 +21,8 @@
     "smoke:prod": "bash scripts/smoke-prod.sh",
     "set-admin-role": "node scripts/set-admin-role.mjs",
     "sync:machine": "bash scripts/sync-machine.sh",
-    "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs"
+    "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs",
+    "smoke:dispatch": "bash scripts/smoke-dispatch.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
