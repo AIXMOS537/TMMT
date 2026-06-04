@@ -11,7 +11,7 @@
 | Item | Default | Notes |
 |---|---|---|
 | Product they sell | AIXMOS $97 membership | Not credit guidance directly — that's a back-end upsell handled by your team |
-| Commission per sale | **$50 / sale** (≈51%) | High enough to recruit, leaves you $47 for product + back-end |
+| Commission per sale | **$35 / sale** (≈36%) | Leaves you $62 per sale for product + back-end. Room to raise to $45-$50 later for proven top performers. |
 | Payment cadence | Monthly, 1st of the month | Last month's confirmed sales, less refunds |
 | Payment method | Stripe Connect (preferred) or PayPal | Avoids you cutting checks |
 | Recruit-a-recruit bonus | **None** | MLM = legal headache + bad reputation. Stay flat. |
@@ -19,20 +19,20 @@
 | Lead source | Rep brings their own audience | You do not supply leads. Game-changer for low input. |
 | Tracking | Unique referral link per rep | GHL or Rewardful or FirstPromoter |
 
-**Why $50 not $30:** subprime credit / car / money is a saturated niche for affiliates. To recruit good people you need above-average commission. $50 of $97 is generous and gets people to actually promote.
+**Why $35 as the starting rate:** balances margin protection (you keep $62 of every $97) with enough commission to recruit serious creators. Start here, watch which reps actually convert, then graduate the top 20% to a $45-$50 tier as a retention move. Easier to raise than to cut.
 
 ---
 
 ## 2. The pitch (use on landing page + recruiting DMs)
 
 **Headline:**
-> Get paid $50 every time someone gets their money + credit on track.
+> Get paid $35 every time someone gets their money + credit on track.
 
 **Subhead:**
 > AIXMOS pays you for every $97 membership you refer. We handle the coaching, the support, and the back-end. You just send people our way and get paid the 1st of every month.
 
 **Three bullets:**
-- **$50 per sale.** Paid monthly, direct deposit.
+- **$35 per sale.** Paid monthly, direct deposit.
 - **You don't sell, you share.** Your unique link does the work — leads watch our video and check out.
 - **Compliant.** We coach, we never promise. You're never on the hook for outcomes.
 
@@ -61,7 +61,7 @@ Email subject: **"You're in. Here's your AIXMOS affiliate kit."**
 Attach or link a single PDF: `AIXMOS_Affiliate_Starter_Kit.pdf` containing:
 
 1. **Your unique referral link** (auto-generated)
-2. **Your $50/sale commission terms** (one paragraph)
+2. **Your $35/sale commission terms** (one paragraph, mention tier-up to $45-$50 for top 20%)
 3. **What AIXMOS is** (the 30-second pitch — for them to internalize)
 4. **The banned words list** (Operations Brain §2 — must read)
 5. **5 copy-paste posts** (one each for TikTok caption, IG caption, FB post, DM template, email)
@@ -126,7 +126,7 @@ This is non-negotiable. One violation = warning. Two = removed from program. Thi
 | TMMT customers who finished rental successfully | Easy "before/after" testimonial angle |
 
 **Outreach DM to a creator (Justin uses):**
-> Hey [name], I run AIXMOS — we coach people on credit + money planning. Your audience is exactly who we serve. I'd love to bring you on as an affiliate — $50 per $97 sale, paid monthly. Want me to send the details?
+> Hey [name], I run AIXMOS — we coach people on credit + money planning. Your audience is exactly who we serve. I'd love to bring you on as an affiliate — $35 per $97 sale, paid monthly, with a tier-up to $45-$50 once you're proven. Want me to send the details?
 
 ---
 
@@ -165,7 +165,7 @@ This is non-negotiable. One violation = warning. Two = removed from program. Thi
 | Week 3 | Hand-recruit 5 affiliates (Justin's network + Bibbs/Sumaima/Areesha referrals) |
 | Week 4 | Launch the public application link on TikTok/IG. Goal: 20 applicants, approve top 10 |
 
-**End of month 1 target:** 10 active affiliates, 20+ tracked sales, $1,000 in commissions paid out.
+**End of month 1 target:** 10 active affiliates, 20+ tracked sales, ~$700 in commissions paid out.
 
 ---
 
