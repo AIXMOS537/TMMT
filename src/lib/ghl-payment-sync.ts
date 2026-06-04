@@ -1,16 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const REVENUE_TAGS: Record<string, { amount: number; label: string; method: string }> = {
-  "member-97": { amount: 97, label: "AIXMOS Membership ($97/mo)", method: "Stripe" },
+const REVENUE_TAGS: Record<string, { amount: number; label: string; method: string; product_code: string }> = {
+  "member-97": { amount: 97, label: "AIXMOS Membership ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
   "credit-guidance-active": {
     amount: 750,
     label: "Credit guidance program",
     method: "Stripe",
+    product_code: "credit_guidance",
   },
   "credit-consult-booked": {
     amount: 0,
     label: "Credit consult booked",
     method: "GHL",
+    product_code: "credit_consult",
   },
 };
 
@@ -88,11 +90,41 @@ export async function recordGhlPayment(
     (typeof body.id === "string" && body.id) ||
     "";
 
+  const productCode = tagMeta?.product_code ?? null;
+
+  const phoneRaw =
+    (typeof body.phone === "string" && body.phone) ||
+    (typeof body.contact_phone === "string" && body.contact_phone) ||
+    "";
+  const phoneDigits = phoneRaw.replace(/\D/g, "");
+
+  let incomingLeadId: string | null = null;
+  {
+    const { data: leadByEmail } = await supabase
+      .from("incoming_leads")
+      .select("id")
+      .ilike("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (leadByEmail?.[0]?.id) {
+      incomingLeadId = leadByEmail[0].id as string;
+    } else if (phoneDigits.length >= 7) {
+      const { data: leadByPhone } = await supabase
+        .from("incoming_leads")
+        .select("id")
+        .ilike("phone_text", `%${phoneDigits}%`)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (leadByPhone?.[0]?.id) incomingLeadId = leadByPhone[0].id as string;
+    }
+  }
+
   const notes = [
     `[GHL] ${event}`,
     product,
     tags.length ? `tags: ${tags.join(", ")}` : "",
     ghlId ? `ghl_contact: ${ghlId}` : "",
+    incomingLeadId ? `lead: ${incomingLeadId}` : "",
   ]
     .filter(Boolean)
     .join(" | ");
@@ -107,6 +139,8 @@ export async function recordGhlPayment(
       payment_status: amount > 0 ? "Paid" : "Pending",
       notes,
       payment_plan: revenueTag === "member-97" ? "Monthly $97" : product,
+      product_code: productCode,
+      incoming_lead_id: incomingLeadId,
     })
     .select("id")
     .single();
