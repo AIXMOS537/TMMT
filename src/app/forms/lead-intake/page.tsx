@@ -1,22 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { submitLeadIntake } from "@/app/forms/actions";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle } from "lucide-react";
 
 const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
 
+const ATTRIBUTION_FIELDS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+] as const;
+
+function inferSource(utmSource: string, referrer: string): string {
+  if (utmSource) return utmSource.toLowerCase();
+  const r = referrer.toLowerCase();
+  if (r.includes("tiktok")) return "tiktok";
+  if (r.includes("instagram")) return "ig";
+  if (r.includes("snapchat")) return "snap";
+  if (r.includes("facebook.com") || r.includes("fb.com") || r.includes("m.facebook")) return "meta";
+  if (r.includes("youtube")) return "youtube";
+  if (r.includes("google") || r.includes("bing") || r.includes("duckduckgo")) return "organic";
+  if (r) return "referral";
+  return "direct";
+}
+
 export default function LeadIntakeForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const attribution = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const attr: Record<string, string> = {};
+    for (const k of ATTRIBUTION_FIELDS) {
+      const v = params.get(k);
+      if (v) attr[k] = v;
+    }
+    attr.referrer_url = document.referrer || "";
+    attr.landing_url = window.location.href;
+    attr.source = inferSource(attr.utm_source ?? "", document.referrer);
+    attr.source_campaign = attr.utm_campaign ?? params.get("campaign") ?? "";
+    attr.source_medium = attr.utm_medium ?? "";
+    attribution.current = attr;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     const fd = new FormData(e.currentTarget);
+    for (const [k, v] of Object.entries(attribution.current)) {
+      if (v) fd.set(k, v);
+    }
     const result = await submitLeadIntake(fd);
     setLoading(false);
     if (!result.success) { setError(result.error); return; }

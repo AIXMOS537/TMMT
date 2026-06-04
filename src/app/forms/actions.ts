@@ -19,6 +19,19 @@ async function insertRow(table: string, record: Record<string, unknown>): Promis
 
 // ─── 1. Lead Intake ──────────────────────────────
 
+const attributionSchema = z.object({
+  source: z.string().max(60).optional(),
+  source_campaign: z.string().max(200).optional(),
+  source_medium: z.string().max(60).optional(),
+  referrer_url: z.string().max(2000).optional(),
+  landing_url: z.string().max(2000).optional(),
+  utm_source: z.string().max(200).optional(),
+  utm_medium: z.string().max(200).optional(),
+  utm_campaign: z.string().max(200).optional(),
+  utm_content: z.string().max(200).optional(),
+  utm_term: z.string().max(200).optional(),
+});
+
 const leadSchema = z.object({
   contact_name: z.string().min(1).max(200),
   phone: z.string().min(7).max(20),
@@ -26,7 +39,7 @@ const leadSchema = z.object({
   opportunity_name: z.string().max(500).optional(),
   priority_level: z.enum(["Urgent", "Moderate", "Requires Follow Up", ""]).optional(),
   notes: z.string().max(2000).optional(),
-});
+}).merge(attributionSchema);
 
 export async function submitLeadIntake(formData: FormData): Promise<FormResult> {
   const raw = Object.fromEntries(formData);
@@ -42,6 +55,16 @@ export async function submitLeadIntake(formData: FormData): Promise<FormResult> 
     priority_level: d.priority_level || null,
     notes: d.notes || null,
     status: "New Lead",
+    source: d.source || null,
+    source_campaign: d.source_campaign || null,
+    source_medium: d.source_medium || null,
+    referrer_url: d.referrer_url || null,
+    landing_url: d.landing_url || null,
+    utm_source: d.utm_source || null,
+    utm_medium: d.utm_medium || null,
+    utm_campaign: d.utm_campaign || null,
+    utm_content: d.utm_content || null,
+    utm_term: d.utm_term || null,
   });
 }
 
