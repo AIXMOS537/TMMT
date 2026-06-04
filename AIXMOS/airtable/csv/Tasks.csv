@@ -1,0 +1,6 @@
+Task Title,Task Type,Status,Priority,Due Date,Person Email,Asset Name,Assignee,Notes
+Create portal login for Example Operator,Onboarding,To do,Urgent,2026-05-16,operator@example.com,,Assistant,Add to portal USERS array after Muhammad confirms role
+Send welcome email,Onboarding,To do,High,2026-05-16,operator@example.com,,Assistant,Use Omni welcome prompt
+Schedule Day-1 Training Vault call,Onboarding,To do,Normal,2026-05-18,operator@example.com,,Assistant,15 min screen share
+Upload CHUMMO Call Script to NAS,Content,To do,High,2026-05-20,,CHUMMO Call Script,Assistant,Then update portal renderVault path
+Collect GHL checkout URLs from Muhammad,GHL/Links,Blocked,High,2026-05-17,,,Assistant,Waiting on Muhammad — see GHL & Links table

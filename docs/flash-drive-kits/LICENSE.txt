@@ -1,0 +1,22 @@
+TMMT / AIXMOS USB Kit License (Retail)
+
+Copyright (c) 2026 AIXMOS / TMMT Rentals. All rights reserved.
+
+GRANT: Purchaser receives a non-exclusive license to use the cloud software
+access described in the kit Quick Start, for the number of locations and seats
+paid for, while subscription fees are current.
+
+RESTRICTIONS:
+- Do not copy kit software to resell as your own product.
+- Do not reverse-engineer or extract API keys from hosted services.
+- Do not share logins outside your paid seat count.
+
+SUPPORT: Support is included per your SKU (see ORDER-FORM). Kit ID required.
+
+REFUNDS: Setup fee non-refundable after USB is shipped. Monthly may be cancelled
+with 30 days notice unless a contract specifies otherwise.
+
+COMPLIANCE: Credit-related services are "credit guidance" only; no guaranteed
+score outcomes. See COMPLIANCE-ONE-PAGER on Growth kits.
+
+Contact: _________________________  |  Kit ID: _________________________
