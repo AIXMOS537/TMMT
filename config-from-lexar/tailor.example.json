@@ -1,0 +1,57 @@
+{
+  "$comment": "Copy to tailor.json and customize. See docs/TAILORING.md.",
+  "brand": {
+    "name": "Acme OS",
+    "productName": "Acme Rentals",
+    "commandCenterLabel": "Acme Command Center",
+    "themeColor": "#1e3a5f",
+    "primaryPublicLineId": "rentals"
+  },
+  "home": {
+    "eyebrow": "Acme Command Center · public front door",
+    "headline": "Your fleet. One place to run it.",
+    "primaryCta": "Get started",
+    "otherBusinessesTitle": "Our services",
+    "otherBusinessesDescription": "Each line has its own intake form.",
+    "staffNote": "Staff: use the internal command center for cases and CRM sync."
+  },
+  "businessLines": {
+    "enabled": ["rentals", "express", "auto", "management"],
+    "disabled": [],
+    "overrides": {
+      "rentals": {
+        "name": "Acme Rentals",
+        "shortName": "Rentals",
+        "description": "Daily and monthly vehicle rentals.",
+        "intake": {
+          "title": "Acme Rentals",
+          "description": "Book, change, or get support for your rental.",
+          "subjectPlaceholder": "e.g. Extend rental through Friday",
+          "accent": "from-blue-500/15 via-blue-500/5 border-blue-200/70"
+        }
+      }
+    }
+  },
+  "portals": [
+    {
+      "title": "Client Portal",
+      "description": "Billing, documents, and support.",
+      "href": "/client/dashboard"
+    },
+    {
+      "title": "Team Portal",
+      "description": "Internal playbooks and training.",
+      "href": "/team/dashboard"
+    },
+    {
+      "title": "Admin",
+      "description": "Users and access.",
+      "href": "/admin/dashboard"
+    }
+  ],
+  "features": {
+    "showOtherBusinesses": true,
+    "showPortalsSection": true,
+    "maxFeaturedBusinessLines": 4
+  }
+}
