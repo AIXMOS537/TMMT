@@ -166,21 +166,18 @@ if vol="$(resolve_volume CYBORG "AIX-INVESTORS")"; then
   shopt -u nullglob
 fi
 
-cat >"${INBOX_ROOT}/README.txt" <<'README'
-TMMT flash pull inbox (office Mac)
+readme_body="TMMT flash pull inbox (office Mac)
 ==================================
-This folder is updated automatically when AIXMOS02, LEXAR, and/or CYBORG volumes are mounted.
+Updated automatically when AIXMOS02, LEXAR, and/or CYBORG are mounted.
 
 - current/  — latest snapshot from all mounted drives
-- _secrets/ — copies of .env.local from AIXMOS02 only; treat as sensitive
+- _secrets/ — .env.local from AIXMOS02 only; treat as sensitive
 
-Merge into canonical dev tree manually when ready:
-  diff -rq ~/dev/TMMT/tmmt-os current/AIXMOS02/TMMT_MANAGEMENT/tmmt-os | head
-
-WhatsApp / iMessage cannot run Terminal commands. To trigger a pull from your phone:
-  1) Tailscale on office Mac + phone, then SSH:  ssh you@office-mac 'launchctl kickstart -k gui/$(id -u)/com.aixmos.tmmt-flash-usb-pull'
-  2) Or use Screen Sharing / AnyDesk and double-click "Pull From Flash Drives.command"
-README
+Compare: diff -rq ~/dev/TMMT/tmmt-os ~/Documents/TMMT-Flash-Inbox/current/AIXMOS02/TMMT_MANAGEMENT/tmmt-os | head
+Telegram: ~/dev/TMMT/docs/AGENT_IMESSAGE_TELEGRAM_SETUP.md"
+if ! printf '%s\n' "$readme_body" >"${INBOX_ROOT}/README.txt" 2>/dev/null; then
+  log "WARNING: could not write ${INBOX_ROOT}/README.txt"
+fi
 
 write_state "$sig" "$now"
 log "=== pull complete -> $DEST ==="

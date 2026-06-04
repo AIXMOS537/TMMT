@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TMMT OS Dispatch System — How It Works</title>
+  <style>
+    @page { size: letter; margin: 0.75in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #1a1a1a;
+      max-width: 7.5in;
+      margin: 0 auto;
+      padding: 0.5in;
+    }
+    h1 { font-size: 22pt; margin: 0 0 6px; color: #111; }
+    h2 { font-size: 14pt; margin: 28px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #4f46e5; color: #312e81; }
+    h3 { font-size: 12pt; margin: 18px 0 8px; color: #374151; }
+    .subtitle { color: #6b7280; font-size: 11pt; margin-bottom: 24px; }
+    .hero-box {
+      background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin: 16px 0;
+    }
+    .hero-box strong { color: #4338ca; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+    th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f3f4f6; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .flow {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9.5pt;
+      line-height: 1.6;
+      white-space: pre;
+      margin: 12px 0;
+    }
+    .step { display: flex; gap: 12px; margin: 10px 0; }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: #4f46e5;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+    .step-body { flex: 1; }
+    .tag { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 9pt; margin: 2px 4px 2px 0; }
+    .warn { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 10pt; }
+    .ok { background: #ecfdf5; border-left: 4px solid #10b981; padding: 10px 14px; margin: 12px 0; font-size: 10pt; }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li { margin: 4px 0; }
+    .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 9pt; color: #6b7280; }
+    .page-break { page-break-before: always; }
+    code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 9pt; }
+  </style>
+</head>
+<body>
+
+<h1>TMMT OS Dispatch System</h1>
+<p class="subtitle">How jobs flow from staff intake → protocols → your GHL locations<br>
+May 2026 · TMMT × AIXMOS</p>
+
+<div class="hero-box">
+  <strong>One sentence:</strong> You or staff enter a dispatch job in TMMT OS → the system saves a ticket, runs protocols (routing, ClickUp, GHL tags, dispatch loads) → each configured GHL location receives a webhook → GHL workflows create contacts, deals, tags, and tasks.
+</div>
+
+<h2>1. The big picture (simple)</h2>
+<table>
+  <tr><th>Role</th><th>What it is</th></tr>
+  <tr><td><strong>TMMT OS</strong></td><td>Command center — front desk where jobs are entered and tracked</td></tr>
+  <tr><td><strong>Local vendor</strong></td><td>Nearby shop that outsources work to TMMT (“handle this pickup for us”)</td></tr>
+  <tr><td><strong>GHL location</strong></td><td>Each TMMT app/brand sub-account (Rentals, Moving, Vendor Connect, etc.)</td></tr>
+  <tr><td><strong>Inbound webhook</strong></td><td>The “doorbell” in GHL — TMMT rings it when a job is created</td></tr>
+  <tr><td><strong>Workflow</strong></td><td>What happens inside GHL after the doorbell rings (contact, deal, SMS, task)</td></tr>
+</table>
+
+<h2>2. End-to-end flow</h2>
+<div class="flow">YOU / STAFF
+    │
+    ▼
+/internal/dispatch/new  (or API POST /api/jobs/dispatch)
+    │
+    ▼
+TMMT OS — create case + protocol_runs
+    │
+    ├──► Routing engine (work type, ClickUp task, agent draft)
+    ├──► dispatch_loads row (pickup / dropoff)
+    ├──► GHL tags on main Rentals contact (if GHL connected)
+    ├──► Optional: assign TMMT network vendor (vendor_jobs)
+    │
+    ▼
+POST flat JSON to each GHL inbound webhook
+    (PARTNER_APP_WEBHOOKS_JSON)
+    │
+    ▼
+GHL workflow per location:
+    Contact → custom fields → Opportunity → tag → notify → task</div>
+
+<h2>3. What TMMT sends to GHL (webhook payload)</h2>
+<p>Flat keys match GHL custom field keys — map 1:1 in workflow:</p>
+<table>
+  <tr><th>GHL field key</th><th>Meaning</th></tr>
+  <tr><td><code>tmmt_job_ref</code></td><td>Ticket number (e.g. TMMT-ABC123)</td></tr>
+  <tr><td><code>tmmt_job_subject</code></td><td>Job title</td></tr>
+  <tr><td><code>tmmt_work_type</code></td><td>dispatch_pickup · dispatch_delivery · dispatch_full</td></tr>
+  <tr><td><code>tmmt_vendor_company</code></td><td>Local shop outsourcing to TMMT</td></tr>
+  <tr><td><code>tmmt_vendor_email</code></td><td>Shop contact email</td></tr>
+  <tr><td><code>tmmt_pickup</code> / <code>tmmt_dropoff</code></td><td>Route addresses</td></tr>
+  <tr><td><code>tmmt_offered_price</code></td><td>Price offered</td></tr>
+  <tr><td><code>tmmt_job_details</code></td><td>Full notes</td></tr>
+  <tr><td><code>tmmt_case_id</code></td><td>Internal case UUID</td></tr>
+</table>
+
+<h2>4. Protocol chain (automatic)</h2>
+<p>Every staff dispatch job runs these steps (logged in <code>protocol_runs</code>):</p>
+<ol>
+  <li><strong>Intake created</strong> — customer_intake_forms + cases row</li>
+  <li><strong>Routing</strong> — detect work type, optional ClickUp task</li>
+  <li><strong>Dispatch load</strong> — pickup/dropoff in dispatch_loads table</li>
+  <li><strong>Agent draft</strong> — TANK/STICKS checklist on case</li>
+  <li><strong>GHL notify</strong> — tags / stage sync on main account</li>
+  <li><strong>Vendor assignment</strong> — if TMMT vendor selected on form</li>
+  <li><strong>Partner delivery</strong> — POST to each configured GHL webhook</li>
+</ol>
+
+<div class="page-break"></div>
+
+<h2>5. Your four GHL locations</h2>
+<table>
+  <tr><th>#</th><th>Location ID</th><th>Default slug</th><th>Notes</th></tr>
+  <tr><td>1</td><td><code>Xcd8DZt5T4GWnBtBEC5V</code></td><td><span class="tag">tmmt_rentals</span></td><td>Main TMMT Rentals — GHL_LOCATION_ID</td></tr>
+  <tr><td>2</td><td><code>s8QGoe5XXzyaDtHPUtBR</code></td><td><span class="tag">vendor_connect</span></td><td>Confirm sub-account name in GHL</td></tr>
+  <tr><td>3</td><td><code>MzniJxhyYzUndJDjMkvm</code></td><td><span class="tag">moving</span></td><td>Confirm sub-account name in GHL</td></tr>
+  <tr><td>4</td><td><code>IUOThggAD347OwGX6qZZ</code></td><td><span class="tag">fleet_manager</span></td><td>Confirm sub-account name in GHL</td></tr>
+</table>
+<div class="warn"><strong>Important:</strong> Launchpad URLs are NOT webhook URLs. Each location needs an <strong>Inbound Webhook</strong> workflow URL (<code>leadconnectorhq.com/hooks/...</code>).</div>
+
+<h2>6. Auto-routing — who gets rung</h2>
+<p>TMMT attempts delivery to these slugs when a webhook is registered in <code>PARTNER_APP_WEBHOOKS_JSON</code>:</p>
+<table>
+  <tr><th>Job type</th><th>Hub (always)</th><th>Vertical locations</th></tr>
+  <tr><td>Pickup</td><td>vendor_connect, freight_logistics, fleet_manager</td><td>moving, tmmt_rentals, express, auto, wholesale-cars, detailing</td></tr>
+  <tr><td>Delivery</td><td>same hub</td><td>moving, tmmt_rentals, express, black, luxury, auto, detailing, wholesale-cars</td></tr>
+  <tr><td>Full move</td><td>same hub</td><td>moving, service_arbitrage, cleaning, tmmt_rentals, express, auto, wholesale-cars, tmmt_property</td></tr>
+</table>
+<p>Unconfigured slugs are skipped silently until you add their webhook URL.</p>
+
+<h2>7. Setup checklist (each GHL location)</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body"><strong>Custom fields (Contact)</strong> — 15 fields: tmmt_job_ref, tmmt_job_subject, tmmt_work_type, tmmt_vendor_company, tmmt_vendor_contact, tmmt_vendor_email, tmmt_vendor_phone, tmmt_pickup, tmmt_dropoff, tmmt_window_start, tmmt_window_end, tmmt_offered_price, tmmt_due_at, tmmt_job_details, tmmt_case_id</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body"><strong>Pipeline</strong> — “TMMT Dispatch Jobs” with stages: New → Assigned → In Progress → Complete → Closed</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body"><strong>Workflow: TMMT — Dispatch Job Received</strong><br>
+Trigger: Inbound Webhook (copy URL)<br>
+→ Find/Create contact by tmmt_vendor_email<br>
+→ Update contact custom fields from webhook<br>
+→ Create opportunity in New stage<br>
+→ Tag: tmmt-dispatch-job-new<br>
+→ Internal SMS/email + task</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body"><strong>Wire TMMT</strong> — add webhook URL to PARTNER_APP_WEBHOOKS_JSON in Vercel → redeploy</div></div>
+
+<div class="step"><div class="step-num">5</div><div class="step-body"><strong>Test</strong> — /internal/dispatch/new → verify GHL workflow fired</div></div>
+
+<h2>8. TMMT prerequisites (once)</h2>
+<ul>
+  <li>Run migration: <code>supabase/migrations/0032_job_dispatch_hub.sql</code></li>
+  <li>Env: <code>GHL_API_KEY</code>, <code>GHL_LOCATION_ID=Xcd8DZt5T4GWnBtBEC5V</code></li>
+  <li>Env: <code>PARTNER_APP_WEBHOOKS_JSON</code> with all hook URLs</li>
+  <li>Optional: <code>OPS_COMMAND_SECRET</code> for API / Codex test scripts</li>
+</ul>
+
+<h2>9. Codex / Claude Code automation</h2>
+<p>Paste <code>scripts/codex/PROMPT_GHL_DISPATCH.txt</code> into Codex. Helper scripts:</p>
+<table>
+  <tr><th>Command</th><th>Action</th></tr>
+  <tr><td><code>npm run ghl-dispatch:migrate</code></td><td>Apply DB migration</td></tr>
+  <tr><td><code>npm run ghl-dispatch:fields</code></td><td>Create GHL custom fields (all locations)</td></tr>
+  <tr><td><code>npm run ghl-dispatch:env:write</code></td><td>Build PARTNER_APP_WEBHOOKS_JSON from locations.json</td></tr>
+  <tr><td><code>npm run ghl-dispatch:test</code></td><td>Send test dispatch job</td></tr>
+</table>
+<div class="warn"><strong>Manual in GHL UI:</strong> Inbound webhook workflows + pipeline — Codex can use browser automation or you clone per location.</div>
+
+<div class="page-break"></div>
+
+<h2>10. Affiliate / third-party apps</h2>
+<p>If an “app” is only access via someone else’s affiliate link (you don’t control GHL):</p>
+<ul>
+  <li>Jobs stay in <strong>TMMT OS</strong> (cases + vendor portal)</li>
+  <li>Use <strong>Zapier/Make</strong> if the affiliate allows automation</li>
+  <li>Staff handoff via <code>/internal/dispatch/new</code> or ops command</li>
+</ul>
+<p>For locations <strong>you control</strong> (your 4 GHL sub-accounts), use inbound webhooks as described above.</p>
+
+<h2>11. Key TMMT routes & files</h2>
+<table>
+  <tr><th>Item</th><th>Path</th></tr>
+  <tr><td>Staff dispatch form</td><td>/internal/dispatch/new</td></tr>
+  <tr><td>Dispatch loads view</td><td>/internal/dispatch</td></tr>
+  <tr><td>API (automations)</td><td>POST /api/jobs/dispatch</td></tr>
+  <tr><td>Partner poll inbox</td><td>GET /api/jobs/inbox?app=vendor_connect</td></tr>
+  <tr><td>Setup guide</td><td>docs/GHL_DISPATCH_SETUP.md</td></tr>
+  <tr><td>Location map</td><td>docs/GHL_LOCATION_MAP.md</td></tr>
+  <tr><td>Codex runbook</td><td>scripts/codex/RUNBOOK_GHL_DISPATCH.md</td></tr>
+  <tr><td>Location config</td><td>scripts/ghl-dispatch/locations.json</td></tr>
+</table>
+
+<div class="ok"><strong>Success looks like:</strong> Staff submits job → case ref appears → GHL workflow runs in each configured location → contact fields populated → opportunity in “New” → team gets SMS/task → optional TMMT vendor accepts job in vendor portal.</div>
+
+<div class="footer">
+  TMMT OS · Dispatch Job Hub · Generated from TMMT × AIXMOS operating model<br>
+  Production: tmmt-ops.vercel.app · Docs in tmmt-os repository
+</div>
+
+</body>
+</html>

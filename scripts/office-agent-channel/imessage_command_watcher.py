@@ -1,49 +1,34 @@
 #!/usr/bin/env python3
 """
-Optional: poll local Messages database for inbound commands from allow-listed handles.
-Requires Full Disk Access for Terminal/python3 that runs this script.
-
-Prefix messages with IMESSAGE_CMD_PREFIX (default "TMMT ") e.g. "TMMT pull_flash"
-
-NOT officially supported by Apple — schema can change. Use Telegram for production.
+Poll Messages chat.db for TMMT commands from allow-listed handles; reply on iMessage.
 """
 from __future__ import annotations
 
 import os
 import sqlite3
-import subprocess
 import sys
 import time
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+CHANNEL = Path(__file__).resolve().parent
+sys.path.insert(0, str(CHANNEL))
+
+from command_router import dispatch_and_reply, load_dotenv, normalize_handle  # noqa: E402
+
 STATE_DIR = Path(os.path.expanduser("~/Library/Application Support/TMMT"))
 STATE_FILE = STATE_DIR / "imessage-watcher.rowid"
 CHAT_DB = Path(os.path.expanduser("~/Library/Messages/chat.db"))
 
 
-def load_dotenv() -> None:
-    p = Path(__file__).resolve().parent / ".env"
-    if not p.is_file():
-        return
-    for line in p.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, _, v = line.partition("=")
-        k, v = k.strip(), v.strip().strip('"').strip("'")
-        if k and k not in os.environ:
-            os.environ[k] = v
-
-
 def allowed_handles() -> set[str]:
     raw = os.environ.get("IMESSAGE_ALLOWED_HANDLES", "").strip()
-    return {x.strip() for x in raw.split(",") if x.strip()}
-
-
-def prefix() -> str:
-    p = os.environ.get("IMESSAGE_CMD_PREFIX", "TMMT").strip()
-    return p if p.endswith(" ") else p + " "
+    out = set()
+    for h in raw.split(","):
+        h = h.strip()
+        if h:
+            out.add(normalize_handle(h))
+            out.add(h)
+    return out
 
 
 def last_rowid() -> int:
@@ -58,27 +43,6 @@ def save_rowid(r: int) -> None:
     STATE_FILE.write_text(str(r), encoding="utf-8")
 
 
-def run_cmd(name: str) -> None:
-    if name == "pull_flash":
-        subprocess.run(
-            ["/bin/bash", "-lc", "TMMT_FORCE_FLASH_PULL=1 bash scripts/pull-from-flash-drives.sh"],
-            cwd=str(REPO_ROOT),
-            timeout=600,
-        )
-    elif name == "sync_flash":
-        subprocess.run(
-            ["/bin/bash", "-lc", "TMMT_FORCE_DOCK_SYNC=1 bash scripts/sync-all-flash-drives.sh"],
-            cwd=str(REPO_ROOT),
-            timeout=600,
-        )
-    elif name == "status":
-        subprocess.run(
-            ["/bin/bash", "-lc", "bash scripts/verify-office-services.sh"],
-            cwd=str(REPO_ROOT),
-            timeout=120,
-        )
-
-
 def main() -> None:
     load_dotenv()
     if os.environ.get("IMESSAGE_WATCHER_ENABLED", "").strip() != "1":
@@ -91,10 +55,9 @@ def main() -> None:
         sys.exit(1)
 
     if not CHAT_DB.is_file():
-        print(f"Missing {CHAT_DB} — is Messages set up?", file=sys.stderr)
+        print(f"Missing {CHAT_DB}", file=sys.stderr)
         sys.exit(1)
 
-    pref = prefix()
     last = last_rowid()
     uri = f"file:{CHAT_DB.as_posix()}?mode=ro"
 
@@ -106,11 +69,12 @@ def main() -> None:
             last = int(cur.fetchone()[0])
             conn.close()
             save_rowid(last)
-            print(f"imessage_command_watcher: init ROWID cursor at {last} (skip backlog)", file=sys.stderr)
+            print(f"imessage watcher: init at ROWID {last}", file=sys.stderr)
         except sqlite3.Error as e:
             print("sqlite init:", e, file=sys.stderr)
 
-    print(f"imessage_command_watcher: last ROWID {last}, prefix {pref!r}", file=sys.stderr)
+    pfx = os.environ.get("IMESSAGE_CMD_PREFIX", "TMMT").strip()
+    print(f"imessage watcher: watching {handles!r} prefix {pfx!r}", file=sys.stderr)
 
     while True:
         try:
@@ -121,11 +85,8 @@ def main() -> None:
                 SELECT m.ROWID, m.text, h.id
                 FROM message m
                 JOIN handle h ON m.handle_id = h.ROWID
-                WHERE m.is_from_me = 0
-                  AND m.text IS NOT NULL
-                  AND m.ROWID > ?
-                ORDER BY m.ROWID ASC
-                LIMIT 50
+                WHERE m.is_from_me = 0 AND m.text IS NOT NULL AND m.ROWID > ?
+                ORDER BY m.ROWID ASC LIMIT 20
                 """,
                 (last,),
             )
@@ -139,20 +100,19 @@ def main() -> None:
         new_last = last
         for rowid, text, hid in rows:
             new_last = max(new_last, int(rowid))
-            if hid not in handles:
+            if hid not in handles and normalize_handle(hid) not in handles:
                 continue
-            if not text or not text.strip().startswith(pref):
+            raw = text.strip()
+            p = os.environ.get("IMESSAGE_CMD_PREFIX", "TMMT").strip().upper()
+            if not raw.upper().startswith(p):
                 continue
-            body = text.strip()[len(pref) :].strip().split()
-            if not body:
-                continue
-            cmd = body[0].lower().rstrip(".")
-            if cmd in ("pull_flash", "sync_flash", "status"):
-                print(f"run {cmd} from {hid} ROWID={rowid}", file=sys.stderr)
-                try:
-                    run_cmd(cmd)
-                except Exception as e:
-                    print("run error:", e, file=sys.stderr)
+            cmd_text = raw
+            print(f"run: {cmd_text[:80]!r} from {hid}", file=sys.stderr)
+            try:
+                dispatch_and_reply(cmd_text, normalize_handle(hid) or hid)
+            except Exception as e:
+                print("dispatch error:", e, file=sys.stderr)
+
         if new_last != last:
             last = new_last
             save_rowid(last)

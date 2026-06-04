@@ -34,9 +34,13 @@ cat >"$PLIST_PATH" <<EOF
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>TMMT_REPO_ROOT</key>
     <string>${REPO_ROOT}</string>
+    <key>TMMT_SKIP_FLASH_TYPECHECK</key>
+    <string>1</string>
+    <key>TMMT_LAUNCHAGENT</key>
+    <string>1</string>
   </dict>
   <key>StartInterval</key>
-  <integer>120</integer>
+  <integer>300</integer>
   <key>RunAtLoad</key>
   <true/>
   <key>StandardOutPath</key>
