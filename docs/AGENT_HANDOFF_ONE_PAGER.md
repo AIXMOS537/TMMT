@@ -28,15 +28,21 @@
 
 ---
 
-## Telegram commands (allow-listed)
+## Telegram / iMessage commands (allow-listed)
+
+Same router for Telegram (`/…`) and iMessage inbound (`TMMT …`):
 
 | Command | Effect |
 |---------|--------|
-| `/help` | Lists commands |
-| `/pull_flash` | USB drives → `~/Documents/TMMT-Flash-Inbox/current/` |
-| `/sync_flash` | `~/dev` → mounted flash drives |
-| `/status` | Office services health check |
-| `/say <text>` | Sends one iMessage line to `IMESSAGE_BUDDY` (if set) |
+| `/help` or `TMMT help` | Lists commands |
+| `/pull_flash` or `TMMT pull_flash` | USB → flash inbox |
+| `/sync_flash` or `TMMT sync_flash` | `~/dev` → flash drives |
+| `/status` or `TMMT status` | Office services health check |
+| `/ops <text>` or `TMMT ops <text>` | TMMT OS natural-language ops (`:3000/api/ops/command`) |
+| `/brain <text>` or `TMMT brain <text>` | Quick BRAIN synthesis (team message in reply) |
+| `/say <text>` or `TMMT say <text>` | One iMessage line to `IMESSAGE_BUDDY` |
+
+**Cursor / Mac terminal:** `curl` to `/api/ops/command` with `OPS_COMMAND_SECRET`, or `python3 scripts/office-agent-channel/command_router.py "TMMT ops …"`. Full stack: `EXECUTION/COMMAND_ROUTER.md`.
 
 **Bot log:** `~/Library/Logs/tmmt-telegram-owner-bot.log`
 

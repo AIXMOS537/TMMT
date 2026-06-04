@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copy TMMT operator docs + scripts to a flash path (no secrets, no tmmt-os app tree).
 # Usage: bash scripts/sync-flash-operator-kit.sh /Volumes/AIXMOS02/TMMT\ MANAGEMENT
-set -euo pipefail
+set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${1:-}"
@@ -43,9 +43,15 @@ log "scripts → $DEST/scripts"
 mkdir -p "$DEST/scripts"
 rsync "${RSYNC[@]}" "$REPO_ROOT/scripts/" "$DEST/scripts/"
 
-# USB-friendly entry (same text on every drive root when called from sync-all)
+# USB-friendly entry — prefer TMMT MANAGEMENT folder (volume root often EPERM under LaunchAgent)
+agent_txt="${DEST}/AGENT_START_HERE.txt"
 if [[ -n "${FLASH_VOL_ROOT:-}" && -d "$FLASH_VOL_ROOT" ]]; then
-  cat >"${FLASH_VOL_ROOT}/AGENT_START_HERE.txt" <<EOF
+  agent_txt_root="${FLASH_VOL_ROOT}/AGENT_START_HERE.txt"
+else
+  agent_txt_root=""
+fi
+
+agent_body="$(cat <<EOF
 TMMT — agent + office Mac (read first)
 ======================================
 Updated: $(date '+%Y-%m-%d %H:%M:%S')
@@ -64,7 +70,14 @@ Updated: $(date '+%Y-%m-%d %H:%M:%S')
 
 Do not store bot tokens or .env files on this drive.
 EOF
-  log "Wrote ${FLASH_VOL_ROOT}/AGENT_START_HERE.txt"
+)"
+
+if printf '%s\n' "$agent_body" >"$agent_txt" 2>/dev/null; then
+  log "Wrote $agent_txt"
+elif [[ -n "$agent_txt_root" ]] && printf '%s\n' "$agent_body" >"$agent_txt_root" 2>/dev/null; then
+  log "Wrote $agent_txt_root"
+else
+  log "WARNING: could not write AGENT_START_HERE (grant Full Disk Access to /bin/bash — run open-full-disk-access-settings.sh)"
 fi
 
 log "Done operator-kit → $DEST"

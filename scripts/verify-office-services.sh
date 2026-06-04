@@ -18,10 +18,9 @@ fi
 echo ""
 if launchctl list 2>/dev/null | grep -q 'com.aixmos.tmmt.*126'; then
   echo "=== LaunchAgent EPERM hint ==="
-  echo "  Exit 126 / Operation not permitted: reinstall plists, then grant Full Disk Access"
-  echo "  to /bin/bash (System Settings → Privacy & Security → Full Disk Access), or run:"
-  echo "    bash ~/dev/TMMT/scripts/install-office-autopull.sh"
-  echo "    bash ~/dev/TMMT/scripts/install-office-dev-server.sh"
+  echo "  Exit -15 / 126 / Operation not permitted: grant Full Disk Access to /bin/bash + Terminal:"
+  echo "    bash ~/dev/TMMT/scripts/open-full-disk-access-settings.sh"
+  echo "    bash ~/dev/TMMT/scripts/usb-write-test.sh"
   echo "    bash ~/dev/TMMT/scripts/enable-office-services.sh"
   echo ""
 fi

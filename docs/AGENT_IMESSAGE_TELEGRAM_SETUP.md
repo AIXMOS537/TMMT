@@ -28,13 +28,25 @@ Telegram gives a real **Bot API**. Your agent uses Telegram (or you forward inst
 
 ### Commands (allow-listed)
 
+All Telegram and iMessage commands go through **`scripts/office-agent-channel/command_router.py`** (same verbs on both channels).
+
 | Command | What it does |
 |---------|----------------|
-| `/help` | Lists commands |
-| `/pull_flash` | USB → `~/Documents/TMMT-Flash-Inbox/current/` |
-| `/sync_flash` | `~/dev` → mounted flash drives |
-| `/status` | Runs `verify-office-services.sh` |
-| `/say <text>` | Sends an **iMessage** to `IMESSAGE_BUDDY` (see below) |
+| `/help` or `TMMT help` | Lists commands |
+| `/pull_flash` or `TMMT pull_flash` | USB → `~/Documents/TMMT-Flash-Inbox/current/` |
+| `/sync_flash` or `TMMT sync_flash` | `~/dev` → mounted flash drives |
+| `/status` or `TMMT status` | Runs `verify-office-services.sh` |
+| `/ops <text>` or `TMMT ops <text>` | Natural-language ops → `POST /api/ops/command` (TMMT OS on `:3000`) |
+| `/brain <text>` or `TMMT brain <text>` | Quick BRAIN plan + team message (`ops/files/brain-quick.js`) |
+| `/say <text>` or `TMMT say <text>` | Sends an **iMessage** to `IMESSAGE_BUDDY` (see below) |
+
+**CLI test (office Mac):**
+
+```bash
+cd ~/dev/TMMT/scripts/office-agent-channel
+python3 command_router.py "TMMT help"
+python3 command_router.py "TMMT ops what's pending"
+```
 
 **Log:** `~/Library/Logs/tmmt-telegram-owner-bot.log`
 
@@ -122,3 +134,5 @@ IMESSAGE_BUDDY="+1yourwork" bash ~/dev/TMMT/scripts/office-agent-channel/imessag
 ```
 
 Telegram: after the bot is running, send `/help` from an allow-listed account.
+
+**TMMT OS ops** (cases, GHL, assignments): dev server must be up (`bash scripts/enable-office-services.sh`). Secret is read from `tmmt-os/.env.local` → `OPS_COMMAND_SECRET`. Cursor / curl use the same endpoint — see `EXECUTION/COMMAND_ROUTER.md`.

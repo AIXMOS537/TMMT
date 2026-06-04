@@ -37,6 +37,7 @@ function rentalNav(isAdmin: boolean): InternalNavLink[] {
     { href: "/internal/dashboard", label: "Dashboard" },
     { href: "/internal/dealer", label: "LotOS (dealer)" },
     { href: "/internal/assistant", label: "Command" },
+    { href: "/internal/dispatch", label: "Dispatch" },
     { href: "/internal/cases", label: "Cases" },
     { href: "/internal/journey", label: "Journey" },
     { href: "/internal/operators", label: "Operators" },

@@ -6,11 +6,12 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLIST_LABEL="com.aixmos.tmmt-telegram-owner-bot"
 PLIST_PATH="${HOME}/Library/LaunchAgents/${PLIST_LABEL}.plist"
-BOT="${REPO_ROOT}/scripts/office-agent-channel/telegram_owner_bot.py"
+RUNNER="${REPO_ROOT}/scripts/office-agent-channel/run-telegram-owner-bot.sh"
 LOG_DIR="${HOME}/Library/Logs"
 
 chmod +x "${REPO_ROOT}/scripts/office-agent-channel/imessage_send.sh"
-chmod +x "$BOT"
+chmod +x "${REPO_ROOT}/scripts/office-agent-channel/telegram_owner_bot.py"
+chmod +x "$RUNNER"
 mkdir -p "$LOG_DIR"
 touch "${LOG_DIR}/tmmt-telegram-owner-bot.log"
 
@@ -23,8 +24,8 @@ cat >"$PLIST_PATH" <<EOF
   <string>${PLIST_LABEL}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/bin/python3</string>
-    <string>${BOT}</string>
+    <string>/bin/bash</string>
+    <string>${RUNNER}</string>
   </array>
   <key>WorkingDirectory</key>
   <string>${REPO_ROOT}</string>

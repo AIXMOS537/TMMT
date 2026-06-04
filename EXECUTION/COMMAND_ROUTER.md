@@ -137,3 +137,31 @@ CREDIT: draft a Slack update for the team about today's new leads
 Log expense TMMT $45 car wash today
 ```
 
+---
+
+## Office Mac — implemented today (local)
+
+On the powerhouse Mac, **Telegram**, **iMessage watcher**, and **CLI** share one router:
+
+| Path | Role |
+|------|------|
+| `scripts/office-agent-channel/command_router.py` | Parses `TMMT ops\|brain\|status\|pull_flash\|sync_flash\|say\|help` (and Telegram `/ops`, `/brain`, …) |
+| `tmmt-os` `POST /api/ops/command` | Natural-language ops (cases, GHL, assignments) — needs dev server `:3000` + `OPS_COMMAND_SECRET` in `tmmt-os/.env.local` |
+| `ops/files/brain-quick.js` | Non-interactive BRAIN for `TMMT brain …` |
+| `ops/files/brain.js` | Full interactive BRAIN + outbound team iMessages |
+
+**Examples:**
+
+```bash
+# CLI
+python3 ~/dev/TMMT/scripts/office-agent-channel/command_router.py "TMMT ops what's pending"
+
+# Same as Cursor / automations
+curl -sS -X POST http://127.0.0.1:3000/api/ops/command \
+  -H "Authorization: Bearer $OPS_COMMAND_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"assign maria@tmmt.com to case TMMT-ABC123"}'
+```
+
+Long-term: all channels still normalize to `POST /command-router` (n8n) per sections above; the Mac router is the **local MVP** until GHL/WhatsApp webhooks land.
+

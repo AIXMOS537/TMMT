@@ -2,13 +2,13 @@
 
 ## Today
 
-**Date:** Sunday, May 17, 2026
+**Date:** Wednesday, May 20, 2026
 
 ### Top 3 Priorities
 
-1. **Money** — Collect overdue payments (start with top 5 in [`TODAY_COLLECTIONS.md`](./TODAY_COLLECTIONS.md); 19 accounts flagged in brief)
-2. **Fleet** — Schedule/complete 4 overdue oil changes (Marlon, James Braden, Tyler Cox, Marvin Valentine)
-3. **Bookings** — Follow up **Leo Auray** (3 days, no response, form sent) + one active renter at risk
+1. 💰 Collect 17 overdue/unpaid customer payment(s)
+2. 🔧 Complete 4 overdue maintenance appointment(s)
+3. 📋 Assign owners to critical SOPs (Fleet, Finance, Customers)
 
 ### Active Tasks
 
@@ -61,4 +61,4 @@
 
 ---
 
-**Brief:** [`DAILY_BRIEF_2026-05-16.md`](./DAILY_BRIEF_2026-05-16.md) (Supabase live, regen 22:51) · **Collections:** [`TODAY_COLLECTIONS.md`](./TODAY_COLLECTIONS.md) · **Metrics:** [`../../docs/INVESTOR_METRICS_SNAPSHOT.md`](../../docs/INVESTOR_METRICS_SNAPSHOT.md) · **Vercel:** [`tmmt-os/docs/VERCEL_PRODUCTION_CHECKLIST.md`](../tmmt-os/docs/VERCEL_PRODUCTION_CHECKLIST.md)
+**Brief:** [`DAILY_BRIEF_2026-05-20.md`](./DAILY_BRIEF_2026-05-20.md) (Supabase live, 2026-05-20 08:21) · **Collections:** [`TODAY_COLLECTIONS.md`](./TODAY_COLLECTIONS.md)

@@ -1,0 +1,19 @@
+You are setting up TMMT OS dispatch job delivery to GoHighLevel (GHL) sub-accounts.
+
+REPO: tmmt-os at dev/AIX_Command_Center/TMMT MANAGEMENT/tmmt-os
+GOAL: Staff dispatch jobs at /internal/dispatch/new → TMMT POSTs flat JSON to each GHL inbound webhook → GHL workflow creates contact, deal, tag, task.
+
+Read and follow: scripts/codex/RUNBOOK_GHL_DISPATCH.md
+
+Execute Phases A→F in order. Use scripts/ghl-dispatch/*.mjs helpers.
+For Phase C use browser automation if available to create inbound webhook workflows in all 4 GHL locations listed in scripts/ghl-dispatch/locations.json, then fill webhook_url in that file.
+
+Known location IDs:
+- Xcd8DZt5T4GWnBtBEC5V = TMMT Rentals (tmmt_rentals)
+- s8QGoe5XXzyaDtHPUtBR = confirm name, default slug vendor_connect
+- MzniJxhyYzUndJDjMkvm = confirm name, default slug moving
+- IUOThggAD347OwGX6qZZ = confirm name, default slug fleet_manager
+
+Do not invent webhook URLs. Only use URLs from GHL Inbound Webhook triggers (leadconnectorhq.com/hooks/...).
+
+When done, output final PARTNER_APP_WEBHOOKS_JSON and test ref_code.
