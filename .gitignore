@@ -45,3 +45,19 @@ tmmt-os/src/types/database.ts
 
 # Supabase
 supabase/.temp/
+
+# --- Hardened env/secret exclusion (added 2026-06-04) ---
+# Ignore ALL .env variants anywhere, keep only *.example templates
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!.env.*.example
+!**/.env.example
+!**/.env.*.example
+
+# Generated customer lead drafts (PII) — keep out of version control
+OPERATIONS/VA_LEAD_DRAFTS/
+.DS_Store
+**/.DS_Store

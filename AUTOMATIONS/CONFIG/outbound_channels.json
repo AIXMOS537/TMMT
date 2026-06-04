@@ -1,0 +1,9 @@
+{
+  "comment": "Customer rental traffic: GHL first (WhatsApp connected in GHL). iMessage for personal/Apple contacts.",
+  "lead_default": "ghl",
+  "collections_default": "ghl",
+  "fallback_order": ["ghl", "whatsapp", "imessage"],
+  "ghl_message_type": "SMS",
+  "open_ghl_inbox_when_contact_missing": true,
+  "require_confirm": true
+}

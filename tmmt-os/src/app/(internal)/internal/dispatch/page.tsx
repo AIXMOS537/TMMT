@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/table";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,12 @@ export default async function DispatchPage() {
     <div className="space-y-6">
       <PageHeader
         title="Dispatch loads"
-        description="Loads created when routing detects dispatch work types (GHL or intake)."
+        description="Loads created when routing detects dispatch work types (GHL, intake, or staff dispatch)."
+        action={
+          <Link href="/internal/dispatch/new">
+            <Button size="sm">New dispatch job</Button>
+          </Link>
+        }
       />
       <div className="rounded-md border">
         <Table>

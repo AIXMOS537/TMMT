@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:types": "supabase gen types typescript --local > src/types/database.ts"
+    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "ghl-dispatch:migrate": "node scripts/ghl-dispatch/apply-dispatch-migration.mjs",
+    "ghl-dispatch:fields": "node scripts/ghl-dispatch/create-ghl-dispatch-fields.mjs",
+    "ghl-dispatch:env": "node scripts/ghl-dispatch/build-partner-webhooks-env.mjs",
+    "ghl-dispatch:env:write": "node scripts/ghl-dispatch/build-partner-webhooks-env.mjs --write-env-local",
+    "ghl-dispatch:test": "node scripts/ghl-dispatch/send-test-dispatch.mjs",
+    "ghl-dispatch:pdf": "python3 scripts/ghl-dispatch/generate-overview-pdf.py"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

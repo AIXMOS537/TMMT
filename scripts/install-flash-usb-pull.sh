@@ -35,7 +35,7 @@ cat >"$PLIST_PATH" <<EOF
     <string>${REPO_ROOT}</string>
   </dict>
   <key>StartInterval</key>
-  <integer>120</integer>
+  <integer>300</integer>
   <key>RunAtLoad</key>
   <true/>
   <key>StandardOutPath</key>

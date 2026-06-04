@@ -1,0 +1,63 @@
+{
+  "_comment": "Fill webhook_url after creating Inbound Webhook workflow in each GHL location. partner_app_slug must match TMMT job-dispatch routing.",
+  "locations": [
+    {
+      "name": "TMMT Rentals",
+      "location_id": "Xcd8DZt5T4GWnBtBEC5V",
+      "partner_app_slug": "tmmt_rentals",
+      "launchpad": "https://app.gohighlevel.com/v2/location/Xcd8DZt5T4GWnBtBEC5V/launchpad",
+      "webhook_url": "https://services.leadconnectorhq.com/hooks/Xcd8DZt5T4GWnBtBEC5V/webhook-trigger/b0ed5d82-b785-4e24-9aba-20e12bc4a626",
+      "primary": true,
+      "notes": "Main GHL_LOCATION_ID — already in .env"
+    },
+    {
+      "name": "TMMT Detailing",
+      "location_id": "s8QGoe5XXzyaDtHPUtBR",
+      "partner_app_slug": "vendor_connect",
+      "launchpad": "https://app.gohighlevel.com/v2/location/s8QGoe5XXzyaDtHPUtBR/launchpad",
+      "webhook_url": "https://services.leadconnectorhq.com/hooks/s8QGoe5XXzyaDtHPUtBR/webhook-trigger/5c8958d8-78af-4d56-9ba8-a0cd68092a8b",
+      "notes": "TMMT Detailing S... (Springfield, VA) — workflow created 2026-05-20"
+    },
+    {
+      "name": "TMMT Moving",
+      "location_id": "MzniJxhyYzUndJDjMkvm",
+      "partner_app_slug": "moving",
+      "launchpad": "https://app.gohighlevel.com/v2/location/MzniJxhyYzUndJDjMkvm/launchpad",
+      "webhook_url": "https://services.leadconnectorhq.com/hooks/MzniJxhyYzUndJDjMkvm/webhook-trigger/ce71106e-a8be-45e9-9e98-e7ebb646d7d1",
+      "notes": "TMMT Moving (Franconia, VA) — workflow created 2026-05-20"
+    },
+    {
+      "name": "TMMT Xpress",
+      "location_id": "IUOThggAD347OwGX6qZZ",
+      "partner_app_slug": "fleet_manager",
+      "launchpad": "https://app.gohighlevel.com/v2/location/IUOThggAD347OwGX6qZZ/launchpad",
+      "webhook_url": "https://services.leadconnectorhq.com/hooks/IUOThggAD347OwGX6qZZ/webhook-trigger/dab7fa97-b033-4341-97f6-9714de9e7d12",
+      "notes": "TMMT Xpress (Alexandria, VA) — workflow created 2026-05-20"
+    }
+  ],
+  "custom_fields": [
+    { "name": "TMMT Job Ref", "key": "tmmt_job_ref" },
+    { "name": "TMMT Job Subject", "key": "tmmt_job_subject" },
+    { "name": "TMMT Work Type", "key": "tmmt_work_type" },
+    { "name": "TMMT Vendor Company", "key": "tmmt_vendor_company" },
+    { "name": "TMMT Vendor Contact", "key": "tmmt_vendor_contact" },
+    { "name": "TMMT Vendor Email", "key": "tmmt_vendor_email" },
+    { "name": "TMMT Vendor Phone", "key": "tmmt_vendor_phone" },
+    { "name": "TMMT Pickup", "key": "tmmt_pickup" },
+    { "name": "TMMT Dropoff", "key": "tmmt_dropoff" },
+    { "name": "TMMT Window Start", "key": "tmmt_window_start" },
+    { "name": "TMMT Window End", "key": "tmmt_window_end" },
+    { "name": "TMMT Offered Price", "key": "tmmt_offered_price" },
+    { "name": "TMMT Due At", "key": "tmmt_due_at" },
+    { "name": "TMMT Job Details", "key": "tmmt_job_details" },
+    { "name": "TMMT Case ID", "key": "tmmt_case_id" }
+  ],
+  "pipeline": {
+    "name": "TMMT Dispatch Jobs",
+    "stages": ["New", "Assigned", "In Progress", "Complete", "Closed"]
+  },
+  "workflow": {
+    "name": "TMMT — Dispatch Job Received",
+    "alert_tag": "tmmt-dispatch-job-new"
+  }
+}
