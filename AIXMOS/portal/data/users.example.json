@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-05-16T00:00:00.000Z",
+  "source": "example",
+  "users": [
+    {
+      "email": "muhammad@aixmos.com",
+      "password": "CHANGE_ME",
+      "name": "Muhammad Taha",
+      "role": "admin"
+    },
+    {
+      "email": "operator@example.com",
+      "password": "CHANGE_ME",
+      "name": "Example Operator",
+      "role": "operator"
+    }
+  ]
+}
