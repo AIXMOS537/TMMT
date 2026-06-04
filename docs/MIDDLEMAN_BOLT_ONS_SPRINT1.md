@@ -73,34 +73,25 @@ On the affiliate link itself, use a UTM-tagged redirect (`/r/secured-card`) that
 **Payout target:** $500 – $2,000 per closed funding deal
 **Compliance:** safe — partner does the underwriting promise, AIXMOS positions as the coach who refers
 
-### Targets to outreach this week
+### Path: existing affiliate signup forms (no cold email needed)
 
-1. **Fund&Grow** — public affiliate program, pays per funded client
-2. **Seek Capital** — has a partner program + white-label tier for high-volume referrers
-3. **Credit Suite** — sells coaching/program licenses; viable for white-label under AIXMOS brand
+Both partners run open affiliate programs with self-serve signup. No outreach call required to start sending referrals.
 
-Send the same email to all three. Pick the one that responds fastest and offers the cleanest pay-per-funded structure.
+| Partner | Signup URL | What you need |
+|---|---|---|
+| **Fund&Grow** | https://funding.fundandgrow.com/affiliate-registration | AIXMOS EIN, W-9, ACH info |
+| **Credit Suite** | https://info.creditsuite.com/affiliate/ (Lendavo affiliate) and https://www.creditsuite.com/partner/ (full partner program — has paid tier) | AIXMOS EIN, W-9, ACH info |
 
-### Outreach email template
+**Seek Capital is out** — they're a broker themselves and don't run a public partner program. Skip them. If you want a third backup, look at **United Capital Source** or **National Funding** (both have visible affiliate programs).
 
-**Subject:** AIXMOS — active credit-guidance pipeline seeking funding partner
+### What to do (one sitting, ~20 min)
 
-> Hi [team],
->
-> I run AIXMOS — a credit-guidance and money-coaching membership ($97 entry, sister company to TMMT Rentals in Northern Virginia). We have a steady pipeline of clients who complete the guidance phase ready for business credit and funding, and we'd rather route 100% of that handoff to one partner than scatter it.
->
-> Two options I'd like to explore:
->
-> 1. **Affiliate / referral** — straight pay-per-funded-deal
-> 2. **White-label** — your offering presented under the AIXMOS brand, with you doing fulfillment
->
-> Either way I want a clean per-deal structure and one named partner contact.
->
-> 15 minutes this week? Tuesday or Thursday between 10–3 ET works on my side.
->
-> — [CEO name]
-> AIXMOS / All In One Management Solutions
-> allinonemanagementsolutions.com
+1. Sign up for Fund&Grow's affiliate program at the URL above using the **AIXMOS EIN** (not TMMT — Two-Hats rule).
+2. Sign up for Credit Suite's Lendavo affiliate (free) AND review their paid partner program (the paid one unlocks white-label, but only worth it once volume justifies the fee).
+3. Save both unique referral links in 1Password under "AIXMOS / affiliate links".
+4. Send the links to Justin so he can drop them in the warm `funding-prep` handoff conversation.
+
+**Compliance reminder:** the referral link does the work — Justin doesn't need to make claims about approval, funding amounts, or timelines. "Here's the partner we work with — they'll walk you through it" is the script.
 
 ### GHL workflow tweak (once partner is signed)
 
