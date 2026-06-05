@@ -22,7 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 CHANNEL = Path(__file__).resolve().parent
-REPO_ROOT = CHANNEL.parent
+_SCRIPTS = CHANNEL.parent
+REPO_ROOT = Path(os.environ.get("TMMT_REPO_ROOT", _SCRIPTS.parent)).expanduser()
 TMMT_OS = REPO_ROOT / "tmmt-os"
 OPS_FILES = REPO_ROOT.parent / "ops" / "files"
 if not OPS_FILES.is_dir():
@@ -115,9 +116,11 @@ def parse_command(text: str) -> tuple[str, str]:
 def run_bash(script: str, timeout: int = 600) -> tuple[int, str]:
     env = os.environ.copy()
     env.setdefault("TMMT_REPO_ROOT", str(REPO_ROOT))
+    repo = env["TMMT_REPO_ROOT"]
+    wrapped = f'cd "{repo}" && {script}'
     p = subprocess.run(
-        ["/bin/bash", "-lc", script],
-        cwd=str(REPO_ROOT),
+        ["/bin/bash", "-lc", wrapped],
+        cwd=repo,
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -229,17 +232,18 @@ def dispatch(
         return DispatchResult(True, help_text)
 
     if verb == "status":
-        code, out = run_bash("bash scripts/verify-office-services.sh", timeout=120)
+        verify = REPO_ROOT / "scripts" / "verify-office-services.sh"
+        code, out = run_bash(f'bash "{verify}"', timeout=120)
         return DispatchResult(code == 0, f"status exit {code}", detail=out)
 
     if verb == "pull_flash":
-        code, out = run_bash(
-            "TMMT_FORCE_FLASH_PULL=1 bash scripts/pull-from-flash-drives.sh"
-        )
+        pull = REPO_ROOT / "scripts" / "pull-from-flash-drives.sh"
+        code, out = run_bash(f'TMMT_FORCE_FLASH_PULL=1 bash "{pull}"')
         return DispatchResult(code == 0, f"pull_flash exit {code}", detail=out)
 
     if verb == "sync_flash":
-        code, out = run_bash("TMMT_FORCE_DOCK_SYNC=1 bash scripts/sync-all-flash-drives.sh")
+        sync = REPO_ROOT / "scripts" / "sync-all-flash-drives.sh"
+        code, out = run_bash(f'TMMT_FORCE_DOCK_SYNC=1 bash "{sync}"')
         return DispatchResult(code == 0, f"sync_flash exit {code}", detail=out)
 
     if verb == "ops":
