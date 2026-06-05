@@ -19,4 +19,8 @@ launchctl bootout "gui/$(id -u)/${LABEL}" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null || launchctl load "$PLIST" 2>/dev/null || true
 launchctl enable "gui/$(id -u)/${LABEL}" 2>/dev/null || true
 launchctl kickstart -k "gui/$(id -u)/${LABEL}" 2>/dev/null || true
-echo "iMessage command watcher enabled. Grant Full Disk Access to /usr/bin/python3. Log: ~/Library/Logs/tmmt-imessage-watcher.log"
+PY="${TMMT_PYTHON:-/Library/Frameworks/Python.framework/Versions/3.14/bin/python3}"
+echo "iMessage watcher enabled. Full Disk Access must include this exact binary:"
+echo "  ${PY}"
+echo "Then: launchctl kickstart -k gui/$(id -u)/${LABEL}"
+echo "Log: ~/Library/Logs/tmmt-imessage-watcher.log"

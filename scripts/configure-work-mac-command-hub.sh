@@ -105,8 +105,11 @@ set_env "IMESSAGE_REPLY_ENABLED" "1"
 set_env "TELEGRAM_REPLY_IMESSAGE" "1"
 
 chmod +x "${CHANNEL}"/*.sh "${CHANNEL}"/*.py 2>/dev/null || true
-bash "${REPO}/scripts/install-imessage-command-watcher.sh"
-bash "${REPO}/scripts/enable-imessage-command-watcher.sh" || true
+# LaunchAgent watcher needs python3 in Full Disk Access — use HTTP + Terminal fallback instead.
+launchctl bootout "gui/$(id -u)/com.aixmos.tmmt-imessage-command-watcher" 2>/dev/null || true
+bash "${REPO}/scripts/start-imessage-watcher-via-terminal.sh" 2>/dev/null || true
+bash "${REPO}/scripts/install-imessage-watcher-login.sh" 2>/dev/null || true
+bash "${REPO}/scripts/enable-remote-command-server.sh" 2>/dev/null || true
 
 # Office spine services (flash sync, TMMT OS dev server, git pull)
 bash "${REPO}/scripts/enable-office-autopull.sh" 2>/dev/null || log "WARN: office-autopull"

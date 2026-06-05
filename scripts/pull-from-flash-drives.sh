@@ -48,6 +48,10 @@ drives_signature() {
       sig+=("$(basename "$v")")
     fi
   done
+  if ((${#sig[@]} == 0)); then
+    echo ""
+    return
+  fi
   (IFS=,; echo "${sig[*]}")
 }
 

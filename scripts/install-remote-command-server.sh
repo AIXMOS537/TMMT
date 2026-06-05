@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
-# Optional: install LaunchAgent for iMessage DB watcher (off unless .env enables).
-
 set -euo pipefail
-
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PLIST_LABEL="com.aixmos.tmmt-imessage-command-watcher"
+PLIST_LABEL="com.aixmos.tmmt-remote-command-server"
 PLIST_PATH="${HOME}/Library/LaunchAgents/${PLIST_LABEL}.plist"
-WATCH="${REPO_ROOT}/scripts/office-agent-channel/imessage_command_watcher.py"
-RUNNER="${REPO_ROOT}/scripts/office-agent-channel/run-imessage-watcher.sh"
+SERVER="${REPO_ROOT}/scripts/office-agent-channel/remote_command_server.py"
 PYTHON="${TMMT_PYTHON:-/Library/Frameworks/Python.framework/Versions/3.14/bin/python3}"
-if [[ ! -x "$PYTHON" ]]; then
-  PYTHON="$(command -v python3)"
-fi
-LOG_DIR="${HOME}/Library/Logs"
+[[ -x "$PYTHON" ]] || PYTHON="$(command -v python3)"
+LOG="${HOME}/Library/Logs/tmmt-remote-command-server.log"
 
-chmod +x "$WATCH" "$RUNNER"
-mkdir -p "$LOG_DIR"
-touch "${LOG_DIR}/tmmt-imessage-watcher.log"
+chmod +x "$SERVER"
+mkdir -p "$(dirname "$LOG")"
+touch "$LOG"
 
 cat >"$PLIST_PATH" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,7 +22,7 @@ cat >"$PLIST_PATH" <<EOF
   <key>ProgramArguments</key>
   <array>
     <string>${PYTHON}</string>
-    <string>${WATCH}</string>
+    <string>${SERVER}</string>
   </array>
   <key>WorkingDirectory</key>
   <string>${REPO_ROOT}</string>
@@ -44,13 +38,10 @@ cat >"$PLIST_PATH" <<EOF
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>${LOG_DIR}/tmmt-imessage-watcher.log</string>
+  <string>${LOG}</string>
   <key>StandardErrorPath</key>
-  <string>${LOG_DIR}/tmmt-imessage-watcher.log</string>
+  <string>${LOG}</string>
 </dict>
 </plist>
 EOF
-
 echo "Installed ${PLIST_PATH}"
-echo "Set IMESSAGE_WATCHER_ENABLED=1 and IMESSAGE_ALLOWED_HANDLES in office-agent-channel/.env"
-echo "Enable: ${REPO_ROOT}/scripts/enable-imessage-command-watcher.sh"
