@@ -18,7 +18,7 @@ const Body = z.object({
 export async function POST(req: NextRequest) {
   const secret =
     process.env.GHL_OVERDUE_WEBHOOK_SECRET ?? process.env.GHL_WEBHOOK_SECRET;
-  if (secret && req.headers.get("x-ghl-secret") !== secret) {
+  if (!secret || req.headers.get("x-ghl-secret") !== secret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
