@@ -3,11 +3,33 @@ import { createClient } from "@supabase/supabase-js";
 import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
 import { isClickUpEnabled } from "@/lib/clickup/client";
 import { syncGhlEventToClickUp } from "@/lib/clickup/sync-case";
+import { dispatchGhlWebhook } from "@/lib/ghl/dispatch";
+import {
+  isAppointmentPayload,
+  isContactPayload,
+  isFormPayload,
+  isOpportunityStagePayload,
+} from "@/lib/ghl/payload";
 
 /**
- * GoHighLevel webhook → append AIXMOS/TMMT tags to customer service_notes.
- * Configure GHL workflow to POST JSON: { email, tags?, event?, contact_id? }
- * Header: x-ghl-webhook-secret must match GHL_WEBHOOK_SECRET
+ * GoHighLevel webhook entry point (merged).
+ *
+ * Two payload families share this endpoint:
+ *
+ * 1. CRM sync events (opportunity.stage_changed, contact.created/updated,
+ *    form.submitted, appointment.booked) → routed to the payload dispatcher
+ *    (`dispatchGhlWebhook`) which writes to crm_sync_records / ghl_contacts /
+ *    ghl_form_submissions / ghl_appointments + Airtable + auto-ops.
+ *
+ * 2. Tag / program payloads ({ email, tags?, event?, contact_id? }) → the
+ *    pre-existing affiliate/program behavior: program-application creation,
+ *    payment recording, ClickUp task sync, and service_notes / lead-notes
+ *    stamping. This logic is preserved verbatim below.
+ *
+ * Header: x-ghl-webhook-secret must match GHL_WEBHOOK_SECRET (existing GHL
+ * workflows). The dispatch sub-handlers additionally honor x-ghl-secret via
+ * their dedicated routes; this merged route gates on x-ghl-webhook-secret to
+ * keep existing workflows working.
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.GHL_WEBHOOK_SECRET;
@@ -25,6 +47,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // --- CRM sync events take priority: route recognized payloads to dispatch ---
+  const isCrmPayload =
+    isOpportunityStagePayload(body) ||
+    isContactPayload(body) ||
+    isFormPayload(body) ||
+    isAppointmentPayload(body);
+
+  if (isCrmPayload) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) {
+      return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+    }
+    const supabase = createClient(url, serviceKey);
+    const result = await dispatchGhlWebhook(supabase, body);
+    return NextResponse.json(result.body, { status: result.status });
+  }
+
+  // --- Existing affiliate / program / payment / ClickUp tag behavior ---
   const email =
     (typeof body.email === "string" && body.email) ||
     (typeof body.contact_email === "string" && body.contact_email) ||
