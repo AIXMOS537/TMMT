@@ -16,7 +16,7 @@ export async function upsertLeadForVerification(args: {
   customerPhone?: string;
   customFields?: Record<string, unknown>;
 }): Promise<{ recordId?: string; skipped: boolean; reason?: string }> {
-  const apiKey = process.env.AIRTABLE_API_KEY;
+  const apiKey = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_PAT;
   const baseId = process.env.AIRTABLE_BASE_ID;
   const table = process.env.AIRTABLE_LEADS_TABLE ?? "Leads";
 
@@ -82,7 +82,7 @@ export async function patchAirtableSyncFields(args: {
   table?: string;
   fields: Record<string, string | number | boolean | null>;
 }): Promise<{ ok: boolean; reason?: string }> {
-  const apiKey = process.env.AIRTABLE_API_KEY;
+  const apiKey = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_PAT;
   const baseId = process.env.AIRTABLE_BASE_ID;
   const table = args.table ?? process.env.AIRTABLE_LEADS_TABLE ?? "Leads";
   if (!apiKey || !baseId) return { ok: false, reason: "Airtable not configured" };
@@ -124,7 +124,7 @@ export async function fetchAirtableRecord(
   table: string,
   recordId: string
 ): Promise<Record<string, unknown> | null> {
-  const apiKey = process.env.AIRTABLE_API_KEY;
+  const apiKey = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_PAT;
   const baseId = process.env.AIRTABLE_BASE_ID;
   if (!apiKey || !baseId) return null;
 
