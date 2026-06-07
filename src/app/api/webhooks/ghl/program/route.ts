@@ -17,12 +17,10 @@ const PROGRAM_TAGS = new Set([
  * Triggers when tags include ready-for-aixmos (or event=aixmos.program.start).
  */
 export async function POST(request: NextRequest) {
+  // Fail closed: a missing secret must reject, never allow all.
   const secret = process.env.GHL_WEBHOOK_SECRET;
-  if (secret) {
-    const header = request.headers.get("x-ghl-webhook-secret");
-    if (header !== secret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret || request.headers.get("x-ghl-webhook-secret") !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: Record<string, unknown>;
