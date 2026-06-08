@@ -48,3 +48,7 @@ AIXMOS/portal/data/users.json
 
 # superpowers brainstorm session files
 .superpowers/
+
+# Personal Claude memory / overrides (not shared)
+.claude.local.md
+.claude/settings.local.json
