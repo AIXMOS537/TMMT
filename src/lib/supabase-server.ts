@@ -17,8 +17,14 @@ function getSupabaseEnv() {
 // For use in server actions, server components, and route handlers.
 // cookies() returns a Promise in Next.js 15+, so createSSRClient must be async.
 export async function createSSRClient() {
-  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+  // Read cookies() BEFORE validating env. During Next.js static prerendering,
+  // accessing cookies() triggers the dynamic-rendering bailout, so auth-gated
+  // pages (which always need per-request cookies) render dynamically instead of
+  // being prerendered at build time. This keeps the production build from
+  // requiring Supabase env vars just to collect/prerender these pages; env is
+  // still validated below on every real (runtime) request.
   const cookieStore = await cookies();
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
