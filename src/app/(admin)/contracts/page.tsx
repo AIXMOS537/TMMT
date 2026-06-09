@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getContracts } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -59,7 +59,7 @@ export default function ContractsPage() {
 
   return (
     <div>
-      <PageHeader title="Contracts" description={`${data.length} contracts`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Contract</Button>} />
+      <PageHeader title="Contracts" description={`${data.length} contracts`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="contracts" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Contract</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search contracts...">
         <select className={selectClass + " sm:w-48"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>

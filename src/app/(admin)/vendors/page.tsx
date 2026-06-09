@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getVendors } from "@/lib/queries";
-import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
 
@@ -45,7 +45,7 @@ export default function VendorsPage() {
 
   return (
     <div>
-      <PageHeader title="Vendors / Shops / Mechanics" description={`${data.length} vendors`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Vendor</Button>} />
+      <PageHeader title="Vendors / Shops / Mechanics" description={`${data.length} vendors`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="vendors" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Vendor</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search vendors..." />
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
