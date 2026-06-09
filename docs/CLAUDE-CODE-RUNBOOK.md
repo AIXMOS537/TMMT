@@ -214,7 +214,7 @@ See [`docs/SALES-CHANNELS.md`](SALES-CHANNELS.md) §5 and [`docs/GHL-WEBHOOK-SET
 **Action:** Custom webhook
 
 ```
-POST https://tmmt-command-center.vercel.app/api/webhooks/ghl
+POST https://tmmt-ops.vercel.app/api/webhooks/ghl
 Header: x-ghl-webhook-secret: <GHL_WEBHOOK_SECRET>
 Content-Type: application/json
 ```
@@ -248,7 +248,7 @@ GHL_TEST_BASE_URL=http://localhost:3000 npm run ghl:test-webhook program
 GHL_TEST_BASE_URL=http://localhost:3000 npm run ghl:test-webhook payment
 
 # Production webhook smoke
-GHL_TEST_BASE_URL=https://tmmt-command-center.vercel.app npm run ghl:test-webhook payment
+GHL_TEST_BASE_URL=https://tmmt-ops.vercel.app npm run ghl:test-webhook payment
 ```
 
 ### Decision gates
@@ -264,7 +264,7 @@ GHL_TEST_BASE_URL=https://tmmt-command-center.vercel.app npm run ghl:test-webhoo
 
 ```bash
 npm run ghl:check -- --test-webhook   # if dev server running
-curl -sS -X POST https://tmmt-command-center.vercel.app/api/webhooks/ghl \
+curl -sS -X POST https://tmmt-ops.vercel.app/api/webhooks/ghl \
   -H "Content-Type: application/json" \
   -H "x-ghl-webhook-secret: $GHL_WEBHOOK_SECRET" \
   -d '{"email":"test@example.com","event":"payment_received","amount":97,"tags":["member-97"]}'
@@ -409,7 +409,7 @@ If rescue-dispatch work is needed later, it is a **separate PR** after revenue p
 |---------|-----|
 | Kit landing (post-deploy) | `https://tmmt-command-center.vercel.app/kits` |
 | Staff login | `https://tmmt-command-center.vercel.app/login` |
-| GHL webhook | `https://tmmt-command-center.vercel.app/api/webhooks/ghl` |
+| GHL webhook | `https://tmmt-ops.vercel.app/api/webhooks/ghl` |
 | Vercel project | `tmmt-c919` → rename to `tmmt-command-center` |
 
 ---

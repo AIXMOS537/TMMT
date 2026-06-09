@@ -1,21 +1,29 @@
 #!/usr/bin/env node
 /**
- * Push GHL-related env vars from .env → Vercel project tmmt-c919.
+ * Push GHL-related env vars from .env → Vercel projects tmmt-ops + tmmt-command-center.
+ *
+ * Targets BOTH live Vercel apps in one run:
+ *   - tmmt-ops (canonical, hosts /kits, /forms, /build)
+ *   - tmmt-command-center (staff/owner login portal)
+ *
  * Usage:
  *   node scripts/ghl-sync-vercel-env.mjs              # production only
  *   node scripts/ghl-sync-vercel-env.mjs --all-envs   # production + preview + development
  *
  * Requires: vercel CLI logged in, values filled in .env (see .env.example).
+ *
+ * Side effect: temporarily relinks .vercel/project.json per project; relinks back
+ * to the canonical project (tmmt-ops) at the end so dev workflows stay correct.
  */
-import { readFileSync, existsSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { loadProjectEnv, root } from "./load-env.mjs";
 import { spawnSync } from "child_process";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const envPath = join(root, ".env");
 const scope = "aixmos537";
-const project = "tmmt-c919";
+
+// Projects to push env vars to. Order matters: canonical last so we leave the
+// repo linked to it at exit.
+const PROJECTS = ["tmmt-command-center", "tmmt-ops"];
+const CANONICAL_PROJECT = "tmmt-ops";
 
 const GHL_KEYS = [
   "GHL_WEBHOOK_SECRET",
@@ -30,6 +38,10 @@ const GHL_KEYS = [
   "NEXT_PUBLIC_GHL_CHECKOUT_97",
   "NEXT_PUBLIC_GHL_CHECKOUT_LLC",
   "NEXT_PUBLIC_GHL_CHECKOUT_3750",
+  "NEXT_PUBLIC_GHL_CHECKOUT_7500",
+  "NEXT_PUBLIC_GHL_CHECKOUT_15000",
+  "NEXT_PUBLIC_GHL_CHECKOUT_25000",
+  "NEXT_PUBLIC_GHL_CONSULT_CALL",
   "NEXT_PUBLIC_GHL_OPERATOR_APPLY",
   "NEXT_PUBLIC_GHL_CREDIT_GUIDANCE",
   "NEXT_PUBLIC_GHL_UPSELL_PIPELINE_URL",
@@ -38,25 +50,13 @@ const GHL_KEYS = [
 ];
 
 function loadDotEnv() {
-  if (!existsSync(envPath)) {
-    console.error("Missing .env — copy .env.example and fill GHL checkout URLs.");
+  if (!loadProjectEnv()) {
+    console.error("Missing .env or .env.local — copy .env.example and fill GHL checkout URLs.");
     process.exit(1);
   }
   const out = {};
-  for (const line of readFileSync(envPath, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const eq = t.indexOf("=");
-    if (eq === -1) continue;
-    const key = t.slice(0, eq).trim();
-    let val = t.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    out[key] = val;
+  for (const key of GHL_KEYS) {
+    if (process.env[key]) out[key] = process.env[key];
   }
   return out;
 }
@@ -64,6 +64,16 @@ function loadDotEnv() {
 function isPlaceholder(v) {
   if (!v) return true;
   return v.includes("YOUR_GHL") || v === "https://app.gohighlevel.com/";
+}
+
+function linkProject(project) {
+  console.log(`\n── linking → ${project} ──`);
+  const r = spawnSync(
+    "vercel",
+    ["link", "--project", project, "--scope", scope, "--yes"],
+    { cwd: root, stdio: "inherit" }
+  );
+  return r.status === 0;
 }
 
 const allEnvs = process.argv.includes("--all-envs");
@@ -76,39 +86,56 @@ if (toSync.length === 0) {
   process.exit(1);
 }
 
-console.log(`Syncing ${toSync.length} var(s) to ${scope}/${project} (${envs.join(", ")})…\n`);
+console.log(
+  `Syncing ${toSync.length} var(s) to ${PROJECTS.length} project(s) in ${scope} (${envs.join(", ")})…`
+);
 
 let failed = 0;
-for (const key of toSync) {
-  for (const env of envs) {
-    const args = [
-      "env",
-      "add",
-      key,
-      env,
-      "--value",
-      vars[key],
-      "--yes",
-      "--force",
-      "--scope",
-      scope,
-    ];
-    console.log(`→ ${key} (${env})`);
-    const r = spawnSync("vercel", args, {
-      cwd: root,
-      stdio: "inherit",
-      env: { ...process.env, VERCEL_PROJECT_ID: project },
-    });
-    if (r.status !== 0) {
-      console.error(`  failed (${r.status})`);
-      failed++;
+
+for (const project of PROJECTS) {
+  if (!linkProject(project)) {
+    console.error(`  link failed for ${project} — skipping its env push`);
+    failed++;
+    continue;
+  }
+
+  for (const key of toSync) {
+    for (const env of envs) {
+      const args = [
+        "env",
+        "add",
+        key,
+        env,
+        "--value",
+        vars[key],
+        "--yes",
+        "--force",
+        "--scope",
+        scope,
+      ];
+      console.log(`→ ${project} :: ${key} (${env})`);
+      const r = spawnSync("vercel", args, { cwd: root, stdio: "inherit" });
+      if (r.status !== 0) {
+        console.error(`  failed (${r.status})`);
+        failed++;
+      }
     }
   }
 }
 
+// Always relink to canonical at end so dev workflows (vercel dev / vercel --prod)
+// don't accidentally target the wrong project after this script ran.
+if (PROJECTS[PROJECTS.length - 1] !== CANONICAL_PROJECT) {
+  linkProject(CANONICAL_PROJECT);
+}
+
 if (failed > 0) {
-  console.error(`\n${failed} add(s) failed. Link project: vercel link --project ${project} --scope ${scope}`);
+  console.error(
+    `\n${failed} add(s) failed. Re-link manually: vercel link --project <name> --scope ${scope}`
+  );
   process.exit(1);
 }
 
-console.log("\nDone. Redeploy tmmt-c919 (dashboard or: vercel redeploy --prod).");
+console.log(
+  `\nDone. Redeploy ${PROJECTS.join(" + ")} (Vercel dashboard or: vercel redeploy --prod after relinking).`
+);
