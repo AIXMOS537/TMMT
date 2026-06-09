@@ -61,16 +61,6 @@ const REVENUE_TAGS: Record<string, RevenueTagMeta> = {
   },
 };
 
-type GhlPaymentPayload = {
-  email: string;
-  event: string;
-  tags: string[];
-  amount?: number;
-  payment_method?: string;
-  product?: string;
-  contact_id?: string;
-};
-
 // Stable transaction-level id for idempotency. Deliberately excludes generic
 // `id`/`contact_id` (same across a contact's repeat payments, e.g. monthly $97)
 // so legit recurring charges are never skipped — only true duplicates are.
