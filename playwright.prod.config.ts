@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 const baseURL =
-  process.env.SMOKE_BASE_URL ?? "https://tmmt-command-center.vercel.app";
+  process.env.SMOKE_BASE_URL ?? "https://tmmt-ops.vercel.app";
 
 export default defineConfig({
   testDir: "./e2e",

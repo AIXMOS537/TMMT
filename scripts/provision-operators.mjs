@@ -1,131 +1,299 @@
 #!/usr/bin/env node
 /**
- * Bulk-provision operator / dealer / partner logins in Supabase Auth.
- * Creates (or updates) users with the right `app_metadata.role` so middleware
- * scopes them to their portal. They get a hosted login — never the repo/secrets.
+ * Provision Supabase Auth users from a CSV (operators, partners, staff).
+ * Safe defaults: dry-run available, never deletes users, skips existing unless --update.
  *
- * Requires SUPABASE_SERVICE_ROLE_KEY + NEXT_PUBLIC_SUPABASE_URL in .env.
+ * CSV columns (header required):
+ *   email,role[,affiliate_code[,name]]
+ *
+ * Roles (app_metadata.role): operator | partner | admin | va | executive | vendor | investor
  *
  * Usage:
- *   # one at a time:
- *   node scripts/provision-operators.mjs --email sam@x.com --role operator
- *   node scripts/provision-operators.mjs --email dealer@x.com --role partner --password 'SetThis123!'
- *
- *   # bulk from CSV (header: email,role[,password]):
+ *   node scripts/provision-operators.mjs --file operators.csv --dry-run
  *   node scripts/provision-operators.mjs --file operators.csv
+ *   node scripts/provision-operators.mjs --file operators.csv --update   # reset password + metadata
  *
- * Roles: operator | vendor | partner | executive | admin (see src/lib/auth-roles.ts).
- * If no password is given, a strong one is generated and printed ONCE.
+ * Requires in .env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *
+ * Send each one-time password out-of-band (Signal, iMessage, in-person). Do not email in bulk.
  */
-import { createClient } from "@supabase/supabase-js"
-import { readFileSync, existsSync } from "fs"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
-import { randomBytes } from "crypto"
+import { createClient } from "@supabase/supabase-js";
+import { readFileSync, existsSync, writeFileSync } from "fs";
+import { basename, join } from "path";
+import { randomBytes } from "crypto";
+import { loadProjectEnv, root } from "./load-env.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const envPath = join(root, ".env")
+const ALLOWED_ROLES = new Set([
+  "operator",
+  "partner",
+  "admin",
+  "va",
+  "executive",
+  "executive_va",
+  "internal_team",
+  "vendor",
+  "investor",
+  "customer",
+]);
 
-const VALID_ROLES = new Set(["operator", "vendor", "partner", "executive", "admin", "investor", "executive_va", "internal_team", "va"])
-
-function loadDotEnv() {
-  if (!existsSync(envPath)) { console.error("✗ Missing .env at project root."); process.exit(1) }
-  for (const line of readFileSync(envPath, "utf8").split("\n")) {
-    const t = line.trim()
-    if (!t || t.startsWith("#")) continue
-    const eq = t.indexOf("=")
-    if (eq === -1) continue
-    const key = t.slice(0, eq).trim()
-    let val = t.slice(eq + 1).trim()
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1)
-    if (!(key in process.env) || process.env[key] === "") process.env[key] = val
-  }
-}
+const LOGIN_URL =
+  process.env.PROVISION_LOGIN_URL || "https://tmmt-command-center.vercel.app/login";
 
 function parseArgs() {
-  const a = process.argv.slice(2)
-  const out = { email: null, role: null, password: null, file: null }
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] === "--email") out.email = a[++i]
-    else if (a[i] === "--role") out.role = a[++i]
-    else if (a[i] === "--password") out.password = a[++i]
-    else if (a[i] === "--file") out.file = a[++i]
+  const argv = process.argv.slice(2);
+  const out = {
+    file: null,
+    email: null,
+    role: "operator",
+    affiliateCode: "",
+    name: "",
+    dryRun: false,
+    update: false,
+    output: null,
+  };
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--file" && argv[i + 1]) out.file = argv[++i];
+    else if (argv[i] === "--email" && argv[i + 1]) out.email = argv[++i];
+    else if (argv[i] === "--role" && argv[i + 1]) out.role = argv[++i];
+    else if (argv[i] === "--affiliate-code" && argv[i + 1]) out.affiliateCode = argv[++i];
+    else if (argv[i] === "--name" && argv[i + 1]) out.name = argv[++i];
+    else if (argv[i] === "--dry-run") out.dryRun = true;
+    else if (argv[i] === "--update") out.update = true;
+    else if (argv[i] === "--output" && argv[i + 1]) out.output = argv[++i];
+    else if (argv[i] === "--help" || argv[i] === "-h") {
+      console.log(`Usage:
+  node scripts/provision-operators.mjs --email sam@x.com --role operator
+  node scripts/provision-operators.mjs --file operators.csv [--dry-run] [--update]`);
+      process.exit(0);
+    }
   }
-  return out
+  if (!out.file && !out.email) {
+    console.error("Need --file operators.csv or --email user@x.com --role operator");
+    process.exit(1);
+  }
+  return out;
 }
 
-function strongPassword() {
-  // 16 url-safe chars + guaranteed symbol/number so it meets common policies.
-  return randomBytes(12).toString("base64").replace(/[+/=]/g, "").slice(0, 14) + "9!"
+function parseCsv(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() && !l.trim().startsWith("#"));
+  if (!lines.length) return [];
+  const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const emailIdx = header.indexOf("email");
+  const roleIdx = header.indexOf("role");
+  if (emailIdx === -1 || roleIdx === -1) {
+    throw new Error('CSV must include header columns: email,role (optional: affiliate_code, name)');
+  }
+  const affIdx = header.indexOf("affiliate_code");
+  const nameIdx = header.indexOf("name");
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map((c) => c.trim());
+    const email = cols[emailIdx]?.toLowerCase();
+    const role = cols[roleIdx]?.toLowerCase();
+    if (!email || !role) continue;
+    rows.push({
+      email,
+      role,
+      affiliate_code: affIdx >= 0 ? cols[affIdx] || "" : "",
+      name: nameIdx >= 0 ? cols[nameIdx] || "" : "",
+    });
+  }
+  return rows;
 }
 
-function rowsFromCsv(path) {
-  const lines = readFileSync(path, "utf8").split("\n").map((l) => l.trim()).filter(Boolean)
-  const header = lines.shift().split(",").map((h) => h.trim().toLowerCase())
-  const ei = header.indexOf("email"), ri = header.indexOf("role"), pi = header.indexOf("password")
-  if (ei === -1 || ri === -1) { console.error("✗ CSV needs at least 'email,role' columns."); process.exit(1) }
-  return lines.map((l) => {
-    const c = l.split(",").map((x) => x.trim())
-    return { email: c[ei], role: c[ri], password: pi >= 0 ? (c[pi] || null) : null }
-  })
+function genPassword() {
+  return randomBytes(12).toString("base64url") + "Aa1!";
 }
 
-async function findUserIdByEmail(admin, email) {
-  let page = 1
+function homeForRole(role) {
+  switch (role) {
+    case "admin":
+      return "/command";
+    case "operator":
+      return "/operator";
+    case "partner":
+    case "investor":
+      return "/investor";
+    case "vendor":
+      return "/vendor";
+    case "executive":
+    case "executive_va":
+      return "/executive";
+    default:
+      return "/";
+  }
+}
+
+async function findUserIdByEmail(adminClient, email) {
+  let page = 1;
+  const perPage = 200;
   for (;;) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
-    if (error) throw error
-    const u = data.users.find((x) => x.email?.toLowerCase() === email.toLowerCase())
-    if (u) return u.id
-    if (data.users.length < 200) return null
-    page += 1
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const u = data.users.find((x) => x.email?.toLowerCase() === email.toLowerCase());
+    if (u) return u;
+    if (data.users.length < perPage) return null;
+    page += 1;
   }
 }
 
-async function provision(admin, { email, role, password }) {
-  if (!email || !role) return { email, role, status: "skipped (missing email/role)" }
-  if (!VALID_ROLES.has(role)) return { email, role, status: `skipped (invalid role; use ${[...VALID_ROLES].join("/")})` }
-  const pass = password || strongPassword()
-  const existingId = await findUserIdByEmail(admin, email)
+if (!loadProjectEnv()) {
+  console.error("Missing .env or .env.local at project root.");
+  process.exit(1);
+}
+const args = parseArgs();
 
-  if (existingId) {
-    const upd = { app_metadata: { role } }
-    if (password) upd.password = password
-    const { error } = await admin.auth.admin.updateUserById(existingId, upd)
-    return { email, role, password: password ? pass : "(unchanged)", status: error ? `error: ${error.message}` : "updated role" }
-  }
-
-  const { error } = await admin.auth.admin.createUser({
-    email, password: pass, email_confirm: true, app_metadata: { role },
-  })
-  return { email, role, password: pass, status: error ? `error: ${error.message}` : "created" }
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !serviceKey) {
+  console.error("Need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  process.exit(1);
 }
 
-async function main() {
-  loadDotEnv()
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) { console.error("✗ Need NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in .env"); process.exit(1) }
-
-  const args = parseArgs()
-  const rows = args.file ? rowsFromCsv(args.file) : [{ email: args.email, role: args.role, password: args.password }]
-  if (!rows.length || (!args.file && !args.email)) {
-    console.error("Usage: --email x@y.com --role operator   |   --file operators.csv"); process.exit(1)
+let csvPath = null;
+if (args.file) {
+  csvPath = args.file.startsWith("/") ? args.file : join(process.cwd(), args.file);
+  if (!existsSync(csvPath)) {
+    console.error(`CSV not found: ${csvPath}`);
+    process.exit(1);
   }
-
-  const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
-
-  console.log(`\nProvisioning ${rows.length} account(s)…\n`)
-  const results = []
-  for (const r of rows) results.push(await provision(admin, r))
-
-  console.log("email".padEnd(34) + "role".padEnd(12) + "status".padEnd(18) + "password")
-  console.log("-".repeat(90))
-  for (const r of results) {
-    console.log((r.email || "").padEnd(34) + (r.role || "").padEnd(12) + (r.status || "").padEnd(18) + (r.password || ""))
-  }
-  console.log("\n⚠  Passwords are shown ONCE. Send each operator their login over a secure channel,")
-  console.log("   and have them change it on first sign-in (or use the /login/forgot reset flow).")
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+let rows;
+if (args.email) {
+  rows = [
+    {
+      email: args.email.trim().toLowerCase(),
+      role: args.role.trim().toLowerCase(),
+      affiliate_code: args.affiliateCode,
+      name: args.name,
+    },
+  ];
+} else {
+  try {
+    rows = parseCsv(readFileSync(csvPath, "utf8"));
+  } catch (e) {
+    console.error(e.message || e);
+    process.exit(1);
+  }
+}
+
+if (!rows.length) {
+  console.error("No data rows in CSV.");
+  process.exit(1);
+}
+
+for (const row of rows) {
+  if (!ALLOWED_ROLES.has(row.role)) {
+    console.error(`Invalid role "${row.role}" for ${row.email}. Allowed: ${[...ALLOWED_ROLES].join(", ")}`);
+    process.exit(1);
+  }
+}
+
+const supabase = createClient(url, serviceKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+
+console.log(`\n=== Provision operators (${args.file ? basename(csvPath) : args.email}) ===`);
+console.log(`Rows: ${rows.length} | dry-run: ${args.dryRun} | update-existing: ${args.update}\n`);
+
+const results = [];
+
+for (const row of rows) {
+  const appMetadata = { role: row.role };
+  if (row.affiliate_code) appMetadata.affiliate_code = row.affiliate_code;
+
+  if (args.dryRun) {
+    console.log(`DRY   ${row.email} (${row.role}) → ${homeForRole(row.role)}${row.affiliate_code ? ` affiliate=${row.affiliate_code}` : ""}`);
+    results.push({ ...row, status: "dry-run", portal: homeForRole(row.role) });
+    continue;
+  }
+
+  const existing = await findUserIdByEmail(supabase, row.email);
+  const password = genPassword();
+
+  if (existing && !args.update) {
+    console.log(`SKIP  ${row.email} (${row.role}) — already exists. Use --update to reset password/metadata.`);
+    results.push({ ...row, status: "skipped", user_id: existing.id, portal: homeForRole(row.role) });
+    continue;
+  }
+
+  if (existing) {
+    const { data, error } = await supabase.auth.admin.updateUserById(existing.id, {
+      password,
+      app_metadata: appMetadata,
+      user_metadata: row.name ? { full_name: row.name } : undefined,
+      email_confirm: true,
+    });
+    if (error) {
+      console.error(`FAIL  ${row.email}: ${error.message}`);
+      results.push({ ...row, status: "error", error: error.message });
+      continue;
+    }
+    console.log(`UPDATE ${row.email} (${row.role}) → ${homeForRole(row.role)}`);
+    results.push({
+      ...row,
+      status: "updated",
+      user_id: data.user.id,
+      password,
+      portal: homeForRole(row.role),
+    });
+  } else {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: row.email,
+      password,
+      email_confirm: true,
+      app_metadata: appMetadata,
+      user_metadata: row.name ? { full_name: row.name } : undefined,
+    });
+    if (error) {
+      console.error(`FAIL  ${row.email}: ${error.message}`);
+      results.push({ ...row, status: "error", error: error.message });
+      continue;
+    }
+    console.log(`CREATE ${row.email} (${row.role}) → ${homeForRole(row.role)}`);
+    results.push({
+      ...row,
+      status: "created",
+      user_id: data.user.id,
+      password,
+      portal: homeForRole(row.role),
+    });
+  }
+}
+
+const credRows = results.filter((r) => r.password);
+if (credRows.length) {
+  console.log("\n--- One-time passwords (send securely, then ask them to change) ---\n");
+  for (const r of credRows) {
+    console.log(`${r.email}`);
+    console.log(`  role:     ${r.role}`);
+    console.log(`  login:    ${LOGIN_URL}`);
+    console.log(`  portal:   ${r.portal}`);
+    console.log(`  password: ${r.password}`);
+    if (r.affiliate_code) console.log(`  affiliate code: ${r.affiliate_code}`);
+    console.log("");
+  }
+}
+
+if (results.some((r) => r.role === "partner")) {
+  console.log(
+    "NOTE: partner users also need partner_fleet_access rows. Run create-partner-test-user.mjs as a template or link fleet in Supabase."
+  );
+}
+
+if (args.output && !args.dryRun) {
+  const outPath = args.output.startsWith("/") ? args.output : join(process.cwd(), args.output);
+  const lines = [
+    "email,role,status,user_id,portal,affiliate_code",
+    ...results.map((r) =>
+      [r.email, r.role, r.status, r.user_id || "", r.portal || "", r.affiliate_code || ""].join(",")
+    ),
+  ];
+  writeFileSync(outPath, lines.join("\n") + "\n");
+  console.log(`Wrote summary (no passwords): ${outPath}`);
+}
+
+const failed = results.filter((r) => r.status === "error").length;
+process.exit(failed ? 1 : 0);
