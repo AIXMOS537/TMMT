@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { revenueSummary, revenueByProduct, isRecurring, paymentMonth, monthKey } from "./revenue";
+import { revenueSummary, revenueByProduct, revenueByMonth, isRecurring, paymentMonth, monthKey } from "./revenue";
 
 const NOW = new Date("2026-06-15T12:00:00Z");
 
@@ -49,6 +49,21 @@ describe("revenueSummary", () => {
   it("tracks outstanding (pending) and overdue separately", () => {
     expect(s.outstanding).toBe(7500);
     expect(s.overdue).toBe(250);
+  });
+});
+
+describe("revenueByMonth", () => {
+  const rows = revenueByMonth(payments, 3, NOW); // Apr, May, Jun 2026
+
+  it("returns a continuous series of the requested length, oldest first", () => {
+    expect(rows.map((r) => r.month)).toEqual(["2026-04", "2026-05", "2026-06"]);
+    expect(rows.map((r) => r.label)).toEqual(["Apr", "May", "Jun"]);
+  });
+
+  it("sums only paid revenue into the right month, zero-filling empties", () => {
+    expect(rows.find((r) => r.month === "2026-06")!.collected).toBe(97 + 7500);
+    expect(rows.find((r) => r.month === "2026-05")!.collected).toBe(500);
+    expect(rows.find((r) => r.month === "2026-04")!.collected).toBe(0);
   });
 });
 
