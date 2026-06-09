@@ -1,116 +1,138 @@
-# High-Ticket Builds — Go-Live Checklist
+# High-ticket go-live — payments & `/build`
 
-How to turn on money collection for the high-ticket SaaS / done-for-you build
-tiers ($3,750–$50,000) on the `/build` page.
+Turn on deposit checkouts for done-for-you builds. Until this is done, `/build` shows CTAs but money does not flow.
 
-**Mechanic:** deposit / reserve. The customer pays a **deposit** through a
-GHL-hosted checkout (Stripe under the hood); the **balance is invoiced** at
-kickoff. The top tier ($50,000) is consult-first ("Book a call").
-
-The page (`/build`) and catalog (`src/lib/high-ticket.ts`) already ship. It is
-**unlisted** (not linked in nav, `robots: noindex`) and every CTA falls back to
-the book-a-call link until you connect real checkout URLs — so nothing can
-charge money until you complete the steps below.
+**Prereq:** GHL account with Stripe connected. TMMT deployed on Vercel.
 
 ---
 
-## The tiers
+## 1. Create GHL products (Stripe)
 
-| Tier | Price | Deposit collected | CTA | Checkout env var |
-|---|---|---|---|---|
-| Base Infrastructure | from $3,750 | $3,750 | Reserve | `NEXT_PUBLIC_GHL_CHECKOUT_3750` |
-| Enterprise Systems | $7,500 | $3,750 (50%) | Reserve | `NEXT_PUBLIC_GHL_CHECKOUT_7500` |
-| Car Rental in a Box | $15,000 | $7,500 (50%) | Reserve | `NEXT_PUBLIC_GHL_CHECKOUT_15000` |
-| E-Commerce Ecosystem | $25,000 | $12,500 (50%) | Reserve | `NEXT_PUBLIC_GHL_CHECKOUT_25000` |
-| Full Ecosystem | $50,000 | — | Book a call | `NEXT_PUBLIC_GHL_CONSULT_CALL` |
+Create one **one-time payment** product per deposit tier in GHL → Payments → Products:
 
-Prices, deposits, copy, and bullets all live in `src/lib/high-ticket.ts` — edit
-there, in one place, and the page updates.
+| Tier | Full price | Deposit collected | GHL product name (suggested) |
+|------|------------|-------------------|------------------------------|
+| Base Infrastructure | $3,750 | $3,750 (full) | TMMT Build — Base deposit |
+| Enterprise Systems | $7,500 | $3,750 (50%) | TMMT Build — Enterprise deposit |
+| Car Rental in a Box | $15,000 | $7,500 (50%) | TMMT Build — CarBox deposit |
+| E-Commerce Ecosystem | $25,000 | $12,500 (50%) | TMMT Build — Ecom deposit |
+| Full Ecosystem | $50,000 | Consult-first | No checkout — book-a-call only |
+
+For each product: create a **checkout link** or funnel step URL. Copy the public checkout URL.
+
+Also create (if not already):
+
+| Product | Env var | Used on |
+|---------|---------|---------|
+| $97/mo membership | `NEXT_PUBLIC_GHL_CHECKOUT_97` | Funnel, `/forms/*` |
+| Operator high-ticket | `NEXT_PUBLIC_GHL_CHECKOUT_3750` | Legacy alias for Base tier |
+| Strategy call booking | `NEXT_PUBLIC_GHL_CONSULT_CALL` | `/build` top tier + fallback CTA |
+
+Kit SKUs (USB + online): see [`SALES-CHANNELS.md`](SALES-CHANNELS.md) and [`FLASH-DRIVE-PRODUCT-LINE.md`](FLASH-DRIVE-PRODUCT-LINE.md).
 
 ---
 
-## Steps to go live
+## 2. Set Vercel env vars
 
-### 1. Create the GHL checkout products (one per deposit tier)
-In GoHighLevel, create a payment/checkout page for each **deposit** amount
-above (4 deposit products + 1 booking calendar for the $50k consult). Set them
-to add a tag on successful payment — use the exact tags below so the payment is
-recorded automatically:
+In Vercel → Project → Settings → Environment Variables (Production + Preview):
 
-| Tier | GHL success tag (must match) |
-|---|---|
-| Base | `build-base-deposit` |
-| Enterprise | `build-enterprise-deposit` |
-| Car Rental in a Box | `build-carbox-deposit` |
-| E-Commerce | `build-ecom-deposit` |
-| Full Ecosystem (consult) | `build-ecosystem-consult` |
+```bash
+# Deposits — powers /build reserve buttons
+NEXT_PUBLIC_GHL_CHECKOUT_3750=https://...   # Base ($3,750)
+NEXT_PUBLIC_GHL_CHECKOUT_7500=https://...   # Enterprise deposit
+NEXT_PUBLIC_GHL_CHECKOUT_15000=https://...  # CarBox deposit
+NEXT_PUBLIC_GHL_CHECKOUT_25000=https://...  # Ecom deposit
 
-These tags are wired into `src/lib/ghl-payment-sync.ts` (`REVENUE_TAGS`), so a
-paid deposit auto-creates a `customer_payments` row visible on the admin
-**Payments** page. The webhook's actual charged amount takes precedence over the
-fallback figures in the table above.
+# Universal fallback when a tier URL is blank
+NEXT_PUBLIC_GHL_CONSULT_CALL=https://...
 
-### 2. Set the Vercel env vars
-On the marketing app (`aixmos-landing` / wherever `/build` is served), set:
+# Membership funnel
+NEXT_PUBLIC_GHL_CHECKOUT_97=https://...
 
-```
-NEXT_PUBLIC_GHL_CHECKOUT_3750=https://link.gohighlevel.com/...   # already existed
-NEXT_PUBLIC_GHL_CHECKOUT_7500=https://link.gohighlevel.com/...
-NEXT_PUBLIC_GHL_CHECKOUT_15000=https://link.gohighlevel.com/...
-NEXT_PUBLIC_GHL_CHECKOUT_25000=https://link.gohighlevel.com/...
-NEXT_PUBLIC_GHL_CONSULT_CALL=https://link.gohighlevel.com/widget/booking/...
-NEXT_PUBLIC_SUPPORT_PHONE=...        # optional, shown on the page
-NEXT_PUBLIC_SUPPORT_EMAIL=...        # optional
+# Webhook auth (server-only — never NEXT_PUBLIC_)
+GHL_WEBHOOK_SECRET=<long-random-string>
 ```
 
-Confirm `GHL_WEBHOOK_SECRET` is set on the app that receives the webhook
-(`POST /api/webhooks/ghl`) so payment events are accepted.
+Optional support line on `/build` and `/kits`:
 
-### 3. Confirm the webhook is connected
-In GHL, point the payment/checkout automation at
-`https://<your-app>/api/webhooks/ghl` with header
-`x-ghl-webhook-secret: <GHL_WEBHOOK_SECRET>`. (This endpoint already records
-the $97 membership and credit-guidance payments today.)
+```bash
+NEXT_PUBLIC_SUPPORT_PHONE=
+NEXT_PUBLIC_SUPPORT_EMAIL=
+```
 
-### 4. Test end to end (use a $1 test product or Stripe test mode)
-1. Open `/build`, click **Reserve your build** on a tier → lands on the GHL checkout.
-2. Complete a test payment.
-3. GHL fires the success tag → webhook → check the admin **Payments** page for a
-   new row (correct amount, `product_code` = `build_*`, status **Paid**).
-4. Verify the lead/customer linked correctly (the sync matches by email/phone).
+Pull locally after setting:
 
-### 5. Flip it live
-Once checkouts work and copy/prices are approved:
-- Add a link to `/build` from your public nav / funnel (it's intentionally
-  unlinked today).
-- To let search engines index it, remove `robots: { index: false }` from
-  `src/app/build/page.tsx` (note: middleware still sets a site-wide
-  `X-Robots-Tag: noindex` — adjust there if you want it indexed).
+```bash
+vercel env pull .env.local   # or copy into .env for local dev
+```
+
+Redeploy after env changes.
 
 ---
 
-## Built-in reliability (already shipped)
-- ✅ **Webhook idempotency** — `recordGhlPayment()` de-dupes on the transaction
-  id (`transaction_id`/`order_id`/`payment_id`/`charge_id`/`invoice_id`). A
-  retried or duplicate webhook won't create a second `customer_payments` row.
-  Recurring charges (e.g. monthly $97) are unaffected — generic `id`/`contact_id`
-  are intentionally not used for de-dup.
-- ✅ **Affiliate attribution** — if the payment carries an affiliate code
-  (explicit field, or an `aff-`/`ref-`/`via-<code>` tag) it's stamped on the
-  payment record (`aff: <code>` in notes) so high-ticket sales can be tied back
-  to the referrer. To pay commissions, pass the affiliate code on the GHL
-  checkout (e.g. Rewardful/FirstPromoter referral → tag). See
-  `docs/AFFILIATE_RECRUITMENT_KIT.md`.
-- ✅ **Balance tracking** — when a deposit with a known balance is recorded
-  (Enterprise/Car-Rental/E-Commerce), a second `Pending` `customer_payments`
-  row is created for the remainder so the admin Payments ledger shows full
-  contract value, not just the deposit. (Base is a scope-based down payment, so
-  no balance row.)
-- ✅ **Post-checkout page** — `/build/reserved` confirms the deposit and shows
-  next steps. **Set this as the GHL checkout's redirect / thank-you URL** for
-  each deposit product: `https://<your-app>/build/reserved`.
+## 3. Point GHL webhook at TMMT
 
-## Further hardening (optional, not required to collect money)
-- **Refund/chargeback status** column on `customer_payments`.
-- **Dedicated `affiliate_code` column** (currently stored in notes) once you
-  build affiliate payout reporting.
+**Endpoint:**
+
+```
+POST https://tmmt-ops.vercel.app/api/webhooks/ghl
+Header: x-ghl-webhook-secret: <GHL_WEBHOOK_SECRET>
+Content-Type: application/json
+```
+
+> **Why `tmmt-ops`, not `tmmt-command-center`:** the public webhook routes are deployed on the canonical `tmmt-ops` Vercel project. The `tmmt-command-center` deploy has staff-only middleware gating that returns `307 → /login` on POST. Verified 2026-06-09 with a live smoke test (`tmmt-ops` returned 405 to GET = correct POST-only route; `tmmt-command-center` returned 307).
+
+Wire in GHL workflows for:
+
+- **Tag added** — CRM sync (`ready-for-aixmos`, `member-97`, etc.)
+- **Payment received** — inserts `customer_payments`, fires revenue tags
+- **Program handoff** — tag `ready-for-aixmos` can forward to `/api/webhooks/ghl/program`
+
+Full payload examples: [`GHL-WEBHOOK-SETUP.md`](GHL-WEBHOOK-SETUP.md).
+
+Revenue tags for build deposits (must match [`src/lib/high-ticket.ts`](../src/lib/high-ticket.ts)):
+
+- `build-base-deposit`
+- `build-enterprise-deposit`
+- `build-carbox-deposit`
+- `build-ecom-deposit`
+
+Add corresponding tags in GHL when payment succeeds.
+
+---
+
+## 4. Verify before sharing `/build`
+
+```bash
+npm run ghl:check                    # P0 env audit
+npm run ghl:check -- --test-webhook  # optional local webhook POST
+npm run ghl:test-webhook payment     # payment payload smoke test
+```
+
+Manual checks:
+
+1. Open `/build` — each tier’s **Reserve** button goes to a real GHL checkout (not `#reserve-pending`).
+2. Complete a **test payment** in GHL sandbox/stripe test mode.
+3. Confirm webhook returns `{ ok: true }` and a row appears in `customer_payments`.
+4. When ready for SEO: remove `robots: { index: false }` from [`src/app/build/page.tsx`](../src/app/build/page.tsx) and link `/build` from nav.
+
+---
+
+## 5. Affiliate / operator attribution
+
+Operators push prospects to public forms — no login required:
+
+- Lead intake: `/forms/lead-intake`
+- Affiliates landing: `/forms/affiliates`
+
+Set each operator’s **affiliate code** at provision time (`app_metadata.affiliate_code`) and pass it on GHL checkout URLs as a custom field or UTM (`?affiliate=CODE`) so payouts credit the right person. Payout tracking: `/forms/affiliates` + GHL tags.
+
+---
+
+## Rollback (safe)
+
+- Unset checkout env vars → CTAs fall back to consult link (no dead buttons).
+- Disable GHL workflow webhook → payments stop syncing; forms still work.
+- `/build` stays noindex until you flip metadata.
+
+Do **not** share `/build` widely until step 4 passes.
