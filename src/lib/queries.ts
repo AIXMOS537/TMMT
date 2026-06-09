@@ -436,3 +436,19 @@ export async function getInvestorUpdates() {
   }
   return data ?? [];
 }
+
+/* ──────────── Time clock (timesheets) ──────────── */
+export async function getTimeClock() {
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+  const { data, error } = await supabase
+    .from("time_clock_entries")
+    .select("id, user_id, user_email, clock_in, clock_out")
+    .gte("clock_in", since.toISOString())
+    .order("clock_in", { ascending: false });
+  if (error) {
+    console.error("[time_clock]", error.message);
+    return [];
+  }
+  return data ?? [];
+}

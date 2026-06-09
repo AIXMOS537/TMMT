@@ -22,6 +22,9 @@ function isPublicPath(pathname: string) {
 function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (isPublicPath(pathname)) return true;
 
+  // Time clock is available to every signed-in employee, whatever their tier.
+  if (pathname === "/clock" || pathname.startsWith("/clock/")) return true;
+
   switch (tier) {
     case "owner":
       return true;
