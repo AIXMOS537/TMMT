@@ -145,8 +145,13 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 
 ### Vercel (deployment)
 
-- Dashboard project name: `tmmt-c919`
-- Project ID (CLI / linking): `prj_moZzMHYtwiZIS0TETOBOKODbp7eM`
+Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
+
+- `tmmt-ops` → TMMT Ops (TMMT OS proper) at https://tmmt-ops.vercel.app
+- `tmmt-command-center` → owner + leadership portfolio hub at https://tmmt-command-center.vercel.app
+- `aixmos-landing` → AIXMOS public funnel at https://aixmos-landing.vercel.app
+
+Legacy `tmmt-c919` and `tmmt` projects are retired (`tmmt-c919.vercel.app` returns HTTP 404 as of 2026-06-08). Run `scripts/retire-vercel-duplicates.sh --apply` to delete the empty project shells from the Vercel team once env-var + domain pre-flight in `docs/THREE-APP-ECOSYSTEM.md` is signed off. Local `.vercel/project.json` should point at `tmmt-ops` (`prj_g80HsnBcQ34tukCFCGPxcP5cmQF1`) — not the old `tmmt-c919` ID.
 
 ## Docs
 
