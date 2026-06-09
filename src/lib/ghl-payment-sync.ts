@@ -14,6 +14,38 @@ const REVENUE_TAGS: Record<string, { amount: number; label: string; method: stri
     method: "GHL",
     product_code: "credit_consult",
   },
+  // High-ticket build deposits (see src/lib/high-ticket.ts + /build). The
+  // webhook's explicit amount wins; these are the fallback deposit figures.
+  "build-base-deposit": {
+    amount: 3750,
+    label: "Base Infrastructure — deposit",
+    method: "Stripe",
+    product_code: "build_base",
+  },
+  "build-enterprise-deposit": {
+    amount: 3750,
+    label: "Enterprise Systems — deposit",
+    method: "Stripe",
+    product_code: "build_enterprise",
+  },
+  "build-carbox-deposit": {
+    amount: 7500,
+    label: "Car Rental in a Box — deposit",
+    method: "Stripe",
+    product_code: "build_carbox",
+  },
+  "build-ecom-deposit": {
+    amount: 12500,
+    label: "E-Commerce Ecosystem — deposit",
+    method: "Stripe",
+    product_code: "build_ecommerce",
+  },
+  "build-ecosystem-consult": {
+    amount: 0,
+    label: "Full Ecosystem — consult booked",
+    method: "GHL",
+    product_code: "build_ecosystem",
+  },
 };
 
 type GhlPaymentPayload = {
