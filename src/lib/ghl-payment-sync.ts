@@ -58,6 +58,36 @@ type GhlPaymentPayload = {
   contact_id?: string;
 };
 
+// Stable transaction-level id for idempotency. Deliberately excludes generic
+// `id`/`contact_id` (same across a contact's repeat payments, e.g. monthly $97)
+// so legit recurring charges are never skipped — only true duplicates are.
+export function extractPaymentRef(body: Record<string, unknown>): string | null {
+  for (const k of ["transaction_id", "order_id", "payment_id", "charge_id", "invoice_id"]) {
+    const v = body[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  }
+  return null;
+}
+
+// Affiliate/referral code from an explicit field or a `aff-`/`ref-`/`via-` tag.
+// Does NOT match `affiliate-applied`/`affiliate-approved` (program lifecycle tags).
+export function extractAffiliateRef(
+  body: Record<string, unknown>,
+  tags: string[]
+): string | null {
+  for (const k of ["affiliate", "affiliate_id", "affiliate_ref", "referral", "rewardful_referral"]) {
+    const v = body[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  const tag = tags.find((t) => /^(aff|ref|via)[-:]/i.test(t));
+  if (tag) {
+    const code = tag.replace(/^(aff|ref|via)[-:]/i, "").trim();
+    return code || null;
+  }
+  return null;
+}
+
 function parseAmount(body: Record<string, unknown>): number | undefined {
   if (typeof body.amount === "number" && Number.isFinite(body.amount)) return body.amount;
   if (typeof body.amount === "string" && body.amount.trim()) {
@@ -124,6 +154,22 @@ export async function recordGhlPayment(
 
   const productCode = tagMeta?.product_code ?? null;
 
+  // Idempotency: if this exact transaction was already recorded (webhook retry,
+  // duplicate delivery), don't insert a second row.
+  const paymentRef = extractPaymentRef(body);
+  if (paymentRef) {
+    const { data: existing } = await supabase
+      .from("customer_payments")
+      .select("id")
+      .ilike("notes", `%[ref:${paymentRef}]%`)
+      .limit(1);
+    if (existing?.[0]?.id) {
+      return { recorded: false, reason: "duplicate", id: existing[0].id as string };
+    }
+  }
+
+  const affiliateRef = extractAffiliateRef(body, tags);
+
   const phoneRaw =
     (typeof body.phone === "string" && body.phone) ||
     (typeof body.contact_phone === "string" && body.contact_phone) ||
@@ -157,6 +203,8 @@ export async function recordGhlPayment(
     tags.length ? `tags: ${tags.join(", ")}` : "",
     ghlId ? `ghl_contact: ${ghlId}` : "",
     incomingLeadId ? `lead: ${incomingLeadId}` : "",
+    affiliateRef ? `aff: ${affiliateRef}` : "",
+    paymentRef ? `[ref:${paymentRef}]` : "",
   ]
     .filter(Boolean)
     .join(" | ");

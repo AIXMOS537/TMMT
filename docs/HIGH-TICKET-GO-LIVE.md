@@ -89,11 +89,22 @@ Once checkouts work and copy/prices are approved:
 
 ---
 
-## After launch — recommended hardening (not required to collect money)
-- **Webhook idempotency**: de-dupe by GHL event/order id so a retried webhook
-  doesn't double-record a deposit.
+## Built-in reliability (already shipped)
+- ✅ **Webhook idempotency** — `recordGhlPayment()` de-dupes on the transaction
+  id (`transaction_id`/`order_id`/`payment_id`/`charge_id`/`invoice_id`). A
+  retried or duplicate webhook won't create a second `customer_payments` row.
+  Recurring charges (e.g. monthly $97) are unaffected — generic `id`/`contact_id`
+  are intentionally not used for de-dup.
+- ✅ **Affiliate attribution** — if the payment carries an affiliate code
+  (explicit field, or an `aff-`/`ref-`/`via-<code>` tag) it's stamped on the
+  payment record (`aff: <code>` in notes) so high-ticket sales can be tied back
+  to the referrer. To pay commissions, pass the affiliate code on the GHL
+  checkout (e.g. Rewardful/FirstPromoter referral → tag). See
+  `docs/AFFILIATE_RECRUITMENT_KIT.md`.
+
+## Further hardening (optional, not required to collect money)
 - **Balance tracking**: record the invoiced balance as a `Pending`
   `customer_payments` row at kickoff so the ledger shows full contract value.
-- **Refund/chargeback status** on `customer_payments`.
-- **Affiliate attribution**: tag deposits with the referring affiliate so
-  commissions track high-ticket sales (see `docs/AFFILIATE_RECRUITMENT_KIT.md`).
+- **Refund/chargeback status** column on `customer_payments`.
+- **Dedicated `affiliate_code` column** (currently stored in notes) once you
+  build affiliate payout reporting.
