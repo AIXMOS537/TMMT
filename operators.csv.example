@@ -1,0 +1,7 @@
+# Copy to operators.csv and fill in real emails. Then:
+#   npm run provision-operators -- --file operators.csv --dry-run
+#   npm run provision-operators -- --file operators.csv
+#
+email,role,affiliate_code,name
+sam@example.com,operator,SAM01,Sam Operator
+dealer@example.com,partner,,Dealer Partner

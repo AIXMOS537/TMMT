@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TMMT Ops Kit — Quick Start</title>
+  <style>
+    @media print { body { margin: 0.5in; } .no-print { display: none; } }
+    body { font-family: system-ui, sans-serif; max-width: 7.5in; margin: 1in auto; line-height: 1.45; color: #111; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .sub { color: #555; font-size: 0.95rem; margin-bottom: 1rem; }
+    ol { padding-left: 1.2rem; }
+    li { margin: 0.4rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .box { border: 2px solid #1440C4; padding: 12px; margin-top: 1rem; }
+    code { background: #f0f0f0; padding: 1px 4px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>TMMT Ops Kit</h1>
+  <p class="sub">SKU OPS-001 · Fleet &amp; rental operations for dealerships · ~15 minutes to live</p>
+
+  <div class="box">
+    <strong>Kit ID:</strong> _________________ &nbsp; <strong>Location:</strong> _________________
+  </div>
+
+  <h2>Start here</h2>
+  <ol>
+    <li>Plug in this USB.</li>
+    <li>Double-click <strong>START_HERE.command</strong> (Mac) or <strong>START_HERE.bat</strong> (Windows).</li>
+    <li>Follow the wizard — installs browser shortcuts only (no secrets on this drive).</li>
+    <li>Open <strong>TMMT Ops</strong> bookmark → sign in with credentials we email you.</li>
+    <li>Run the 30-second health check below.</li>
+  </ol>
+
+  <h2>Daily health check</h2>
+  <ol>
+    <li><code>https://tmmt-ops.vercel.app/login</code> — Sign in form loads?</li>
+    <li>Dashboard / fleet page loads after login?</li>
+    <li>Test lead form: <code>/forms/lead-intake</code> — opens for customers?</li>
+  </ol>
+
+  <h2>Where to go (staff)</h2>
+  <table>
+    <tr><th>Task</th><th>Path</th></tr>
+    <tr><td>Add customer</td><td>Customers → New</td></tr>
+    <tr><td>Add vehicle</td><td>Fleet → New</td></tr>
+    <tr><td>Log payment</td><td>Payments → New (name + $)</td></tr>
+    <tr><td>Open ticket</td><td>Tickets → New</td></tr>
+    <tr><td>Share lead form</td><td>tmmt-ops.vercel.app/forms/lead-intake</td></tr>
+  </table>
+
+  <h2>Support</h2>
+  <p>Email / WhatsApp: _________________________ · Include Kit ID and screenshot.</p>
+  <p class="no-print"><em>Print: File → Print → Save as PDF</em></p>
+</body>
+</html>
