@@ -64,7 +64,7 @@ Uses `SUPABASE_SERVICE_ROLE_KEY` from `.env`. Prints credentials once — delete
 
 ## Partner-safe fields
 
-Partners only receive columns returned by `get_partner_fleet()` (vehicle label, coarse status, color, percentage, portal notes timestamp). They do **not** see GPS/trackers when added elsewhere, contracts, insurance, payments, customers, plates, VIN, or dwell time calculations.
+Partners only receive columns returned by `get_partner_fleet()` (vehicle label, coarse status, color, percentage, portal notes timestamp, **license plate**, and **VIN**) — and only for **their own linked vehicles** (`partner_fleet_access`, scoped by `auth.uid()`). They do **not** see GPS/trackers when added elsewhere, contracts, insurance, payments, customers, or dwell time calculations.
 
 ## Verification checklist (manual)
 
