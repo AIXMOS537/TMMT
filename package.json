@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "check-env": "node scripts/check-env.mjs",
     "check-env:revenue": "node scripts/check-env.mjs --revenue",
     "ghl:check": "node scripts/ghl-activation-check.mjs",
@@ -53,6 +55,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.6"
   }
 }
