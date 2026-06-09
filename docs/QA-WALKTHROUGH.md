@@ -145,6 +145,28 @@ Login as **staff** (and again as **owner** for `/command`).
 | [ ] | `/cases` | Workflow cases; status chips; "Public intake" link → `/forms/customer-intake`; CSV export. |
 | [ ] | `/workflow-vendors` | Outside vendors; portal access UUID field. |
 
+### Form fields to verify (open each modal and confirm every field renders, accepts input, and saves)
+
+- **`/leads`** — Contact Name · Opportunity Name · Phone · Email · Status · Priority Level · Notes
+- **`/background-checks`** — Customer Name · Phone · Email · Own Insurance? · Eligibility Status · BG Check Status · Insurance Check Status · Earnings Verification · Date Verified · Verification Form Submitted? · Review Notes
+- **`/waitlist`** — Customer Name · Phone · Email · Vehicle Type · Make · Model · Year · Desired Weekly Payment · Status · Date Added · Notes
+- **`/appointments`** — Appointment Type · Date & Time · Vehicle Preference · Status · Staff · Location · Notes
+- **`/customers`** — Customer Name · Phone · Email · Status · Repo Status · Rental Start Date · Payment Amount · Payment Frequency · Payment Rating · Ticket Balance · License Plate · VIN · Service Notes
+- **`/payments`** — Customer · Phone · Amount · Payment Method · Payment Status · Last Payment Date · Next Due Date · Notes
+- **`/former-customers`** — Customer Name · Email · Phone · Vehicle Rented · License Plate · VIN · Start Date · End Date · Last Payment · Reason for Removal · Notes
+- **`/do-not-rent`** — Person/Entity Name · Email · Phone · Source of Restriction · Alert Category · Date Added · Reason for Restriction · Notes
+- **`/fleet`** — Vehicle Name · Partner Name · Year · Make · Model · Color · Status · Type · License Plate · VIN · Mileage · Lowest Price · Finance Status · Partner % · Partner portal notes (investors only) · Notes
+- **`/inspections`** — Inspection Name · Inspector Name · Date · Odometer Reading · Status · Inspection Type · Follow-up Needed? · Next Scheduled · Notes
+- **`/maintenance`** — Maintenance Type · Customer (if applicable) · Date & Time · Status · Assigned Staff · Service Provider/Location · Fee (No-Show/Late) · Notes
+- **`/insurance`** — Insured Vehicle · Insured Customer · Entity Type · Insurance Company · Policy # · Policy Type · Coverage Amount · Deductible · Start Date · End Date · Status · Renewal Reminder · Notes
+- **`/tickets`** — Customer · Citation # · Violation Type · Amount · Priority · Status · Date Created · Follow-up Date · If 'Others', specify type · Date Closed · Description / Issue Details · Internal Notes
+- **`/expenses`** — Vehicle Name · Expense Type · Amount · Vendor/Payee · Date · Status · Assignee · Description · Notes
+- **`/contracts`** — Customer · Status · Start Date · End Date · Base Price · Taxes & Fees · Insurance Fee · Total Amount · Contract Sent Date · Signed Date · Notes
+- **`/vendors`** — Vendor/Payee Name · Phone · Email · Point of Contact · Notes
+- **`/operation-costs`** — Tool/Software Name · Type · Cost · License Status · Description
+- **`/cases`** — Status · ClickUp task ID · ClickUp URL · Internal notes · Vendor · Job title · Instructions
+- **`/workflow-vendors`** — Business name · Service verticals · Agreement status · Notes · Contact name · Email · Phone · Supabase Auth user ID (UUID)
+
 ### Interfaces (read-style views)
 | ✅ | Route | Check |
 |---|---|---|
