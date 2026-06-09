@@ -11,6 +11,7 @@ function isPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/login/") ||
+    pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/webhooks/")
   );
 }

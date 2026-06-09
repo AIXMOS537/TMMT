@@ -14,6 +14,7 @@ import {
   StatusBadge,
   FilterBar,
   Button,
+  ExportButton,
   Modal,
   FormField,
   ErrorBanner,
@@ -203,12 +204,15 @@ export default function CasesPage() {
         title="Workflow cases"
         description={`${data.length} cases · intake → assignment → vendor → completion`}
         action={
-          <Link href="/forms/customer-intake" target="_blank">
-            <Button variant="secondary">
-              <ExternalLink size={16} />
-              Public intake
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="workflow-cases" />
+            <Link href="/forms/customer-intake" target="_blank">
+              <Button variant="secondary">
+                <ExternalLink size={16} />
+                Public intake
+              </Button>
+            </Link>
+          </div>
         }
       />
 

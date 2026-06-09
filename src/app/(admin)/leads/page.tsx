@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getLeads } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -74,7 +74,7 @@ export default function LeadsPage() {
       <PageHeader
         title="Incoming Leads"
         description={`${data.length} total leads`}
-        action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Lead</Button>}
+        action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="incoming-leads" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Lead</Button></div>}
       />
 
       {/* Pipeline Summary */}

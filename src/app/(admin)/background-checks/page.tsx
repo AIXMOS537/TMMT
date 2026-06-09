@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getBackgroundChecks } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -71,7 +71,7 @@ export default function BackgroundChecksPage() {
       <PageHeader
         title="Background Checks"
         description={`${data.length} total checks`}
-        action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Check</Button>}
+        action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="background-checks" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Check</Button></div>}
       />
 
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search by name, email, phone...">

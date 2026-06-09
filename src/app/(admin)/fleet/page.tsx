@@ -9,6 +9,7 @@ import {
   StatusBadge,
   FilterBar,
   Button,
+  ExportButton,
   Modal,
   FormField,
   ErrorBanner,
@@ -95,7 +96,7 @@ export default function FleetPage() {
       <PageHeader
         title="Fleet Vehicles"
         description={`${data.length} vehicles in fleet`}
-        action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Vehicle</Button>}
+        action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="fleet" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Vehicle</Button></div>}
       />
 
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search vehicles...">
