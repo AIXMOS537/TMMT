@@ -101,10 +101,16 @@ Once checkouts work and copy/prices are approved:
   to the referrer. To pay commissions, pass the affiliate code on the GHL
   checkout (e.g. Rewardful/FirstPromoter referral → tag). See
   `docs/AFFILIATE_RECRUITMENT_KIT.md`.
+- ✅ **Balance tracking** — when a deposit with a known balance is recorded
+  (Enterprise/Car-Rental/E-Commerce), a second `Pending` `customer_payments`
+  row is created for the remainder so the admin Payments ledger shows full
+  contract value, not just the deposit. (Base is a scope-based down payment, so
+  no balance row.)
+- ✅ **Post-checkout page** — `/build/reserved` confirms the deposit and shows
+  next steps. **Set this as the GHL checkout's redirect / thank-you URL** for
+  each deposit product: `https://<your-app>/build/reserved`.
 
 ## Further hardening (optional, not required to collect money)
-- **Balance tracking**: record the invoiced balance as a `Pending`
-  `customer_payments` row at kickoff so the ledger shows full contract value.
 - **Refund/chargeback status** column on `customer_payments`.
 - **Dedicated `affiliate_code` column** (currently stored in notes) once you
   build affiliate payout reporting.

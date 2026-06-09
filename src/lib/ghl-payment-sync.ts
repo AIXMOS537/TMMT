@@ -1,6 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const REVENUE_TAGS: Record<string, { amount: number; label: string; method: string; product_code: string }> = {
+type RevenueTagMeta = {
+  amount: number;
+  label: string;
+  method: string;
+  product_code: string;
+  /** Remaining contract balance invoiced at kickoff (recorded as a Pending row). */
+  balance?: number;
+};
+
+const REVENUE_TAGS: Record<string, RevenueTagMeta> = {
   "member-97": { amount: 97, label: "AIXMOS Membership ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
   "credit-guidance-active": {
     amount: 750,
@@ -16,6 +25,7 @@ const REVENUE_TAGS: Record<string, { amount: number; label: string; method: stri
   },
   // High-ticket build deposits (see src/lib/high-ticket.ts + /build). The
   // webhook's explicit amount wins; these are the fallback deposit figures.
+  // Base is a scope-based down payment — balance is unknown, so no Pending row.
   "build-base-deposit": {
     amount: 3750,
     label: "Base Infrastructure — deposit",
@@ -27,18 +37,21 @@ const REVENUE_TAGS: Record<string, { amount: number; label: string; method: stri
     label: "Enterprise Systems — deposit",
     method: "Stripe",
     product_code: "build_enterprise",
+    balance: 3750,
   },
   "build-carbox-deposit": {
     amount: 7500,
     label: "Car Rental in a Box — deposit",
     method: "Stripe",
     product_code: "build_carbox",
+    balance: 7500,
   },
   "build-ecom-deposit": {
     amount: 12500,
     label: "E-Commerce Ecosystem — deposit",
     method: "Stripe",
     product_code: "build_ecommerce",
+    balance: 12500,
   },
   "build-ecosystem-consult": {
     amount: 0,
@@ -106,6 +119,11 @@ function isPaymentEvent(event: string): boolean {
     e.includes("order") ||
     e === "checkout.completed"
   );
+}
+
+/** Remaining contract balance for a revenue tag (0 if none/unknown). */
+export function depositBalanceForTag(tag: string): number {
+  return REVENUE_TAGS[tag]?.balance ?? 0;
 }
 
 export function shouldRecordPayment(body: Record<string, unknown>, tags: string[]): boolean {
@@ -226,5 +244,24 @@ export async function recordGhlPayment(
     .single();
 
   if (error) return { recorded: false, reason: error.message };
-  return { recorded: true, id: data.id as string };
+  const paymentId = data.id as string;
+
+  // For high-ticket deposits, also log the remaining balance as a Pending row so
+  // the ledger shows full contract value, not just the deposit collected.
+  const balance = tagMeta?.balance ?? 0;
+  if (balance > 0) {
+    await supabase.from("customer_payments").insert({
+      customer: email,
+      payment_method: tagMeta?.method ?? paymentMethod,
+      amount: balance,
+      payment_status: "Pending",
+      amount_past_due: 0,
+      notes: `[GHL] balance due — ${product} | deposit_payment: ${paymentId}${paymentRef ? ` | [ref:${paymentRef}-balance]` : ""}`,
+      payment_plan: "Balance invoiced at kickoff",
+      product_code: productCode,
+      incoming_lead_id: incomingLeadId,
+    });
+  }
+
+  return { recorded: true, id: paymentId };
 }

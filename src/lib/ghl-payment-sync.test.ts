@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractPaymentRef, extractAffiliateRef, shouldRecordPayment } from "./ghl-payment-sync";
+import { extractPaymentRef, extractAffiliateRef, shouldRecordPayment, depositBalanceForTag } from "./ghl-payment-sync";
 
 describe("extractPaymentRef", () => {
   it("prefers transaction-level ids", () => {
@@ -52,5 +52,19 @@ describe("shouldRecordPayment", () => {
 
   it("skips non-payment events without a revenue tag", () => {
     expect(shouldRecordPayment({ event: "contact.created" }, ["some-tag"])).toBe(false);
+  });
+});
+
+describe("depositBalanceForTag", () => {
+  it("returns the invoiced balance for high-ticket deposit tags", () => {
+    expect(depositBalanceForTag("build-enterprise-deposit")).toBe(3750);
+    expect(depositBalanceForTag("build-carbox-deposit")).toBe(7500);
+    expect(depositBalanceForTag("build-ecom-deposit")).toBe(12500);
+  });
+
+  it("returns 0 for tags without a known balance (base down payment, membership, unknown)", () => {
+    expect(depositBalanceForTag("build-base-deposit")).toBe(0);
+    expect(depositBalanceForTag("member-97")).toBe(0);
+    expect(depositBalanceForTag("nope")).toBe(0);
   });
 });
