@@ -21,3 +21,11 @@ export function CardTitle({ children, className }: { children: React.ReactNode; 
 export function CardDescription({ children }: { children: React.ReactNode }) {
   return <p className="mt-1 text-sm text-slate-600">{children}</p>;
 }
+
+export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("mb-3", className)}>{children}</div>;
+}
+
+export function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn(className)}>{children}</div>;
+}
