@@ -9,6 +9,15 @@ export default function CreditLegalPage() {
       <h1>Credit Guidance</h1>
       <p><em>Last updated 2026-06-08. Canonical copy lives in <code>COMPLIANCE_DISCLAIMERS.md</code> §1.</em></p>
 
+      <aside className="not-prose my-6 p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+        <p className="text-sm text-blue-900 dark:text-blue-200 mb-2">
+          Ready to take action? Start your <strong>Funding Readiness Profile</strong> — educational only, no credit pull, no SSN, takes ~5 minutes.
+        </p>
+        <a href="/funding" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
+          Start the profile →
+        </a>
+      </aside>
+
       <h2>Not credit repair</h2>
       <p>
         TMMT and AIXMOS provide <strong>educational information</strong> about consumer credit, score factors, and lender criteria. We do <strong>not</strong> represent ourselves to be, and are not, a credit repair organization as defined under the Credit Repair Organizations Act (CROA, 15 U.S.C. § 1679a). We do not promise to remove, dispute, or alter accurate items on your credit report. We do not act as your agent in communications with credit bureaus, lenders, or collectors.

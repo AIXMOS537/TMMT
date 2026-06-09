@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-URL="${TARGET_URL:-https://tmmt-ops.vercel.app/forms/credit-funding-intake}"
+URL="${TARGET_URL:-https://tmmt-ops.vercel.app/funding}"
 TAG="SMOKE-TEST-$(date +%s)"
 
 echo "==> POST ${URL}"

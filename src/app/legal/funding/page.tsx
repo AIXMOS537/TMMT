@@ -9,6 +9,15 @@ export default function FundingLegalPage() {
       <h1>Funding Referrals</h1>
       <p><em>Last updated 2026-06-08. Canonical copy lives in <code>COMPLIANCE_DISCLAIMERS.md</code> §4.</em></p>
 
+      <aside className="not-prose my-6 p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+        <p className="text-sm text-blue-900 dark:text-blue-200 mb-2">
+          Before any introduction we ask you to share a short readiness profile — non-intrusive and educational, no application.
+        </p>
+        <a href="/funding" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
+          Start the profile →
+        </a>
+      </aside>
+
       <h2>We are not a lender</h2>
       <p>
         TMMT and AIXMOS are <strong>not</strong> a lender. We do not underwrite, fund, service, or collect on loans or credit products. We may introduce you to independent third-party lenders or funding sources.
