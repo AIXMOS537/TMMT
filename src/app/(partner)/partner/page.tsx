@@ -16,6 +16,8 @@ export type PartnerFleetRow = {
   partner_percentage: number | null;
   partner_portal_notes: string | null;
   last_updated_at: string | null;
+  license_plate: string | null;
+  vin_number: string | null;
 };
 
 export default async function PartnerPortalPage() {
@@ -115,6 +117,22 @@ export default async function PartnerPortalPage() {
                       .join(" ")}
                     {r.color ? ` · ${r.color}` : ""}
                   </p>
+                  {(r.license_plate?.trim() || r.vin_number?.trim()) && (
+                    <dl className="mt-2 grid grid-cols-1 gap-1 text-xs text-gray-600 dark:text-slate-400 sm:grid-cols-2 sm:gap-x-4">
+                      {r.license_plate?.trim() ? (
+                        <div className="flex gap-2">
+                          <dt className="shrink-0 font-medium text-gray-500 dark:text-slate-500">Plate</dt>
+                          <dd className="font-mono">{r.license_plate.trim()}</dd>
+                        </div>
+                      ) : null}
+                      {r.vin_number?.trim() ? (
+                        <div className="flex gap-2 sm:col-span-2">
+                          <dt className="shrink-0 font-medium text-gray-500 dark:text-slate-500">VIN</dt>
+                          <dd className="font-mono break-all">{r.vin_number.trim()}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  )}
                   {r.partner_percentage != null && (
                     <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                       Partner share: {Number(r.partner_percentage)}%
