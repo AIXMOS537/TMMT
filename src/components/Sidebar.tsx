@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   LayoutDashboard,
+  TrendingUp,
   Car,
   UserPlus,
   ShieldCheck,
@@ -38,6 +39,7 @@ const navGroups = [
     label: "Overview",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/revenue", label: "Revenue", icon: TrendingUp },
       { href: "/dispatch", label: "Dispatch", icon: Siren },
     ],
   },
