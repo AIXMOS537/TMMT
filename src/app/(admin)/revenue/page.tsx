@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getPayments } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatCard, ExportButton, ErrorBanner } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatCard, ExportButton, ErrorBanner, Card } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
-import { revenueSummary, revenueByProduct, type ProductRevenue } from "@/lib/revenue";
+import { revenueSummary, revenueByProduct, revenueByMonth, type ProductRevenue } from "@/lib/revenue";
 import { rollupAffiliates, type AffiliateRollup } from "@/lib/affiliates";
+import { RevenueTrendChart } from "@/components/RevenueTrendChart";
 import { DollarSign, Repeat, Hourglass, AlertTriangle } from "lucide-react";
 
 export default function RevenueDashboardPage() {
@@ -24,6 +25,7 @@ export default function RevenueDashboardPage() {
 
   const summary = useMemo(() => revenueSummary(payments), [payments]);
   const byProduct = useMemo(() => revenueByProduct(payments), [payments]);
+  const byMonth = useMemo(() => revenueByMonth(payments, 6), [payments]);
   const topAffiliates = useMemo(() => rollupAffiliates(payments).slice(0, 5), [payments]);
 
   const productColumns: Column<ProductRevenue>[] = [
@@ -55,6 +57,11 @@ export default function RevenueDashboardPage() {
             <StatCard label="Outstanding" value={formatCurrency(summary.outstanding)} icon={<Hourglass size={20} />} trend="invoiced, not yet collected" />
             <StatCard label="Overdue" value={formatCurrency(summary.overdue)} icon={<AlertTriangle size={20} />} trend="past due" />
           </div>
+
+          <Card className="p-5">
+            <h2 className="mb-4 font-semibold text-gray-900 dark:text-white">Collected — last 6 months</h2>
+            <RevenueTrendChart data={byMonth} />
+          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>

@@ -84,6 +84,34 @@ export function revenueSummary(payments: PaymentRow[], now: Date = new Date()): 
   return s;
 }
 
+export type MonthlyRevenue = { month: string; label: string; collected: number };
+
+/**
+ * Collected revenue per month for the last `monthsBack` months (continuous —
+ * months with no revenue come back as 0 so a trend chart has no gaps).
+ */
+export function revenueByMonth(
+  payments: PaymentRow[],
+  monthsBack = 6,
+  now: Date = new Date(),
+): MonthlyRevenue[] {
+  const series: MonthlyRevenue[] = [];
+  const index = new Map<string, MonthlyRevenue>();
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const entry = { month: monthKey(d), label: d.toLocaleString("en-US", { month: "short" }), collected: 0 };
+    series.push(entry);
+    index.set(entry.month, entry);
+  }
+  for (const row of payments) {
+    if (status(row) !== "paid") continue;
+    const m = paymentMonth(row);
+    const bucket = m ? index.get(m) : undefined;
+    if (bucket) bucket.collected += amountOf(row);
+  }
+  return series;
+}
+
 /** Collected revenue grouped by product, highest first. */
 export function revenueByProduct(payments: PaymentRow[]): ProductRevenue[] {
   const byProduct = new Map<string, ProductRevenue>();
