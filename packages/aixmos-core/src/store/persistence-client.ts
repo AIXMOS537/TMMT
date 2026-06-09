@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { AppState } from "../types";
 import { subscribeProgramApplication } from "../db/realtime";
 
-export function useCubePersistenceEnabled(): boolean {
+export function isCubePersistenceEnabled(): boolean {
   return process.env.NEXT_PUBLIC_CUBE_PERSISTENCE === "supabase";
 }
 
@@ -19,7 +19,7 @@ export function useCubePersistence(
   const skipNextSave = useRef(false);
 
   useEffect(() => {
-    if (!useCubePersistenceEnabled() || !applicationId) return;
+    if (!isCubePersistenceEnabled() || !applicationId) return;
 
     let cancelled = false;
     hydrated.current = false;
@@ -45,7 +45,7 @@ export function useCubePersistence(
   }, [applicationId, setState]);
 
   useEffect(() => {
-    if (!useCubePersistenceEnabled() || !applicationId) return;
+    if (!isCubePersistenceEnabled() || !applicationId) return;
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -59,7 +59,7 @@ export function useCubePersistence(
   }, [applicationId, setState]);
 
   useEffect(() => {
-    if (!useCubePersistenceEnabled() || !applicationId) return;
+    if (!isCubePersistenceEnabled() || !applicationId) return;
     if (!hydrated.current) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;

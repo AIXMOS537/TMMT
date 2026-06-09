@@ -101,7 +101,7 @@ export default function CommandDeskPage() {
     loadInbox();
   };
 
-  const useSuggestion = async (messageId: string) => {
+  const applySuggestion = async (messageId: string) => {
     setLoading(true);
     const result = await applyAiSuggestion(messageId);
     setLoading(false);
@@ -240,7 +240,7 @@ export default function CommandDeskPage() {
                       type="button"
                       variant="secondary"
                       className="mt-2"
-                      onClick={() => useSuggestion(String(m.id))}
+                      onClick={() => applySuggestion(String(m.id))}
                     >
                       Apply AI fix
                     </Button>
