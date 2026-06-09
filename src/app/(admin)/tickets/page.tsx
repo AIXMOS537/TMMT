@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getTickets } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -62,7 +62,7 @@ export default function TicketsPage() {
 
   return (
     <div>
-      <PageHeader title="Tickets" description={`${data.length} tickets`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Ticket</Button>} />
+      <PageHeader title="Tickets" description={`${data.length} tickets`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="tickets" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Ticket</Button></div>} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">

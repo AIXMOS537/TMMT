@@ -1,7 +1,7 @@
 # Maintenance Show/No-Show Toggle — Design Spec
 
 **Date:** 2026-03-26
-**Status:** Approved
+**Status:** Shipped (2026-06-09) — implemented with the auth-gated `adminUpsert()` server action + `ErrorBanner` instead of the direct client `supabase.update()` + `alert()` described below, to match current security-hardening conventions.
 
 ## Problem
 

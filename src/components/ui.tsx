@@ -1,7 +1,9 @@
 "use client";
 
 import { cn, statusColor } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { Download } from "lucide-react";
+import { downloadCsv } from "@/lib/csv";
 
 // ─── Badge ────────────────────────────────────────
 export function Badge({
@@ -26,6 +28,72 @@ export function Badge({
 export function StatusBadge({ status }: { status: string | null }) {
   if (!status) return <span className="text-gray-400 dark:text-gray-500 text-sm">—</span>;
   return <Badge className={statusColor(status)}>{status}</Badge>;
+}
+
+// Clickable status badge with an inline dropdown of options. Saves on select.
+export function StatusPill({
+  status,
+  options,
+  onChange,
+  disabled,
+}: {
+  status: string | null;
+  options: string[];
+  onChange: (newStatus: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={cn(
+          "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-opacity",
+          status ? statusColor(status) : "text-gray-400 dark:text-gray-500",
+          disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:opacity-80"
+        )}
+      >
+        {status || "—"}
+        <span aria-hidden="true" className="text-[0.6rem] opacity-70">▾</span>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute z-20 mt-1 min-w-[8rem] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg py-1"
+        >
+          {options.map((opt) => (
+            <li key={opt} role="option" aria-selected={opt === status}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setOpen(false); if (opt !== status) onChange(opt); }}
+                className={cn(
+                  "w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-slate-700",
+                  opt === status ? "font-semibold text-gray-900 dark:text-white" : "text-gray-700 dark:text-slate-300"
+                )}
+              >
+                {opt}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // ─── Card ─────────────────────────────────────────
@@ -109,6 +177,10 @@ export interface Column<T> {
   label: string;
   render?: (row: T) => ReactNode;
   className?: string;
+  /** Override the value used for CSV export (defaults to row[key]). */
+  csvValue?: (row: T) => string | number | boolean | null | undefined;
+  /** Exclude this column from CSV export (e.g. action/icon-only columns). */
+  noExport?: boolean;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -188,6 +260,36 @@ export function DataTable<T extends Record<string, unknown>>({
         </table>
       </div>
     </Card>
+  );
+}
+
+// ─── CSV Export ───────────────────────────────────
+// Exports the given rows using the table's columns (honoring csvValue /
+// noExport). Disabled when there's nothing to export.
+export function ExportButton<T extends Record<string, unknown>>({
+  data,
+  columns,
+  filename,
+  label = "Export CSV",
+}: {
+  data: T[];
+  columns: Column<T>[];
+  filename: string;
+  label?: string;
+}) {
+  const exportColumns = columns.filter((c) => !c.noExport);
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      disabled={data.length === 0}
+      onClick={() => downloadCsv(filename, data, exportColumns)}
+      title={data.length === 0 ? "Nothing to export" : `Export ${data.length} rows`}
+    >
+      <Download size={15} />
+      {label}
+    </Button>
   );
 }
 
