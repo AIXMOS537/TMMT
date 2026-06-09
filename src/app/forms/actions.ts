@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createSSRClient } from "@/lib/supabase-server";
+import { fanOut } from "@/lib/notify";
 
 // ─── Shared helpers ──────────────────────────────
 
@@ -308,4 +309,187 @@ export async function submitOnboardingInspection(formData: FormData): Promise<Fo
   }
 
   return insertRow("vehicle_onboarding_inspections", record);
+}
+
+// ─── 9. Credit & Funding Intake (Phase 9) ────────
+// Spec: CREDIT_FUNDING_OS.md
+// Educational-only. Never store hard credit scores, SSNs, or DOBs.
+
+const BANNED_TERMS = [
+  "guaranteed approval",
+  "guarantee approval",
+  "guaranteed funding",
+  "instant funding",
+  "credit repair",
+  "we will get you approved",
+  "we will raise your score",
+];
+
+function containsBannedTerm(...parts: Array<string | undefined | null>): boolean {
+  const haystack = parts.filter(Boolean).join(" ").toLowerCase();
+  return BANNED_TERMS.some((t) => haystack.includes(t));
+}
+
+const scoreField = z.preprocess(
+  (v) => (v === "" || v == null ? undefined : Number(v)),
+  z.number().int().min(0).max(10).optional()
+);
+
+const creditFundingSchema = z.object({
+  // Stage 1
+  first_name: z.string().max(120).optional(),
+  preferred_channel: z.enum(["sms", "email", "in_app", ""]).optional(),
+  goals_horizon: z.string().max(1000).optional(),
+  personal_vs_business_focus: z.enum(["personal", "business", "both", ""]).optional(),
+  top_friction: z.string().max(1000).optional(),
+  // Stage 2
+  entity_type: z.enum(["none", "sole_prop", "llc", "s_corp", "c_corp", "partnership", ""]).optional(),
+  years_in_business: z.string().max(4).optional(),
+  revenue_range: z.enum(["none", "<50k", "50k-250k", "250k-1m", ">1m", ""]).optional(),
+  team_size: z.enum(["just_me", "2-5", "6-20", "20+", ""]).optional(),
+  industry: z.string().max(200).optional(),
+  // Stage 3
+  funding_goal_type: z.enum(["growth", "equipment", "working_capital", "real_estate", "refinance", "other", ""]).optional(),
+  prior_funding_history: z.enum(["none", "applied_no_approval", "approved_completed", "currently_servicing", ""]).optional(),
+  time_horizon: z.enum(["immediate", "near", "planning", "exploring", ""]).optional(),
+  readiness_indicators: z.string().max(2000).optional(),
+  // Stage 4 (self-reported only — buckets, not numbers)
+  awareness_level: z.enum(["unaware", "vaguely_aware", "monitors_regularly", "actively_managing", ""]).optional(),
+  self_reported_score_range: z.enum(["<580", "580-619", "620-679", "680-739", "740+", "unknown", ""]).optional(),
+  existing_challenges: z.string().max(2000).optional(),
+  prior_education_or_program: z.enum(["none", "generic_app", "paid_program", "professional_advisor", ""]).optional(),
+  // Stage 5
+  banking_status: z.enum(["none", "personal_only", "separate_business_account", "multiple_business_accounts", ""]).optional(),
+  entity_standing: z.enum(["not_registered", "registered", "registered_and_in_good_standing", "unknown", ""]).optional(),
+  web_presence: z.enum(["none", "social_only", "landing_page", "full_site", ""]).optional(),
+  bookkeeping: z.enum(["none", "spreadsheets", "accounting_software", "bookkeeper", "cpa", ""]).optional(),
+  documentation: z.enum(["none", "partial", "organized_last_12mo", "organized_24mo+", ""]).optional(),
+  // Stage 6 — readiness scores
+  score_business_foundation: scoreField,
+  score_banking_readiness: scoreField,
+  score_financial_organization: scoreField,
+  score_credit_awareness: scoreField,
+  score_revenue_stability: scoreField,
+  score_funding_readiness: scoreField,
+  // Compliance + meta
+  ai_disclaimer_shown: z.string().optional(),
+  credit_guidance_disclaimer_linked: z.string().optional(),
+  stage_reached: z.string().max(1).optional(),
+  channel: z.string().max(40).optional(),
+  operator_handoff_requested: z.string().optional(),
+});
+
+function splitToJsonArray(s: string | undefined | null): string[] {
+  if (!s) return [];
+  return s
+    .split(/\r?\n|;|,/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
+function routingTierFor(total: number): "education" | "guidance" | "pre_referral" | "introduction" {
+  if (total >= 50) return "introduction";
+  if (total >= 35) return "pre_referral";
+  if (total >= 20) return "guidance";
+  return "education";
+}
+
+export async function submitCreditFundingIntake(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = creditFundingSchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+
+  // Compliance guardrail — block any free-text input containing banned terms before write.
+  if (containsBannedTerm(d.goals_horizon, d.top_friction, d.industry, d.readiness_indicators, d.existing_challenges)) {
+    console.warn("[credit_funding_sessions] banned-term submission blocked");
+    return { success: false, error: "We can't accept that wording. We're educational only — no approval or score guarantees. Please rephrase." };
+  }
+
+  const scoreParts = [
+    d.score_business_foundation ?? 0,
+    d.score_banking_readiness ?? 0,
+    d.score_financial_organization ?? 0,
+    d.score_credit_awareness ?? 0,
+    d.score_revenue_stability ?? 0,
+    d.score_funding_readiness ?? 0,
+  ];
+  const scoreTotal = scoreParts.reduce((a, b) => a + b, 0);
+  const startedAt = new Date().toISOString();
+  const handoffRequested =
+    d.operator_handoff_requested === "on" || d.operator_handoff_requested === "true";
+  const tier = routingTierFor(scoreTotal);
+
+  const result = await insertRow("credit_funding_sessions", {
+    first_name: d.first_name?.trim() || null,
+    preferred_channel: d.preferred_channel || null,
+    goals_horizon: d.goals_horizon || null,
+    personal_vs_business_focus: d.personal_vs_business_focus || null,
+    top_friction: d.top_friction || null,
+
+    entity_type: d.entity_type || null,
+    years_in_business: d.years_in_business ? Number(d.years_in_business) : null,
+    revenue_range: d.revenue_range || null,
+    team_size: d.team_size || null,
+    industry: d.industry?.trim() || null,
+
+    funding_goal_type: d.funding_goal_type || null,
+    prior_funding_history: d.prior_funding_history || null,
+    time_horizon: d.time_horizon || null,
+    readiness_indicators: splitToJsonArray(d.readiness_indicators),
+
+    awareness_level: d.awareness_level || null,
+    self_reported_score_range: d.self_reported_score_range || null,
+    existing_challenges: splitToJsonArray(d.existing_challenges),
+    prior_education_or_program: d.prior_education_or_program || null,
+
+    banking_status: d.banking_status || null,
+    entity_standing: d.entity_standing || null,
+    web_presence: d.web_presence || null,
+    bookkeeping: d.bookkeeping || null,
+    documentation: d.documentation || null,
+
+    score_business_foundation: d.score_business_foundation ?? 0,
+    score_banking_readiness: d.score_banking_readiness ?? 0,
+    score_financial_organization: d.score_financial_organization ?? 0,
+    score_credit_awareness: d.score_credit_awareness ?? 0,
+    score_revenue_stability: d.score_revenue_stability ?? 0,
+    score_funding_readiness: d.score_funding_readiness ?? 0,
+
+    recommended_actions: [],
+
+    ai_disclaimer_shown: d.ai_disclaimer_shown === "on" || d.ai_disclaimer_shown === "true",
+    credit_guidance_disclaimer_linked:
+      d.credit_guidance_disclaimer_linked === "on" || d.credit_guidance_disclaimer_linked === "true",
+    no_outcome_promised: true,
+    banned_terms_check_passed: true,
+
+    started_at: startedAt,
+    completed_at: startedAt,
+    stage_reached: d.stage_reached ? Number(d.stage_reached) : 6,
+    channel: d.channel || "web_form",
+    operator_handoff_requested: handoffRequested,
+    routing_tier: tier,
+  });
+
+  // Fan out a notification to Slack + iMessage when the user asks for human follow-up.
+  // Fire-and-forget on the wire; failures are logged but never block the form response.
+  if (result.success && handoffRequested) {
+    const name = d.first_name?.trim() || "Anonymous";
+    const industry = d.industry?.trim() ? ` · ${d.industry.trim()}` : "";
+    const goal = d.funding_goal_type ? ` · goal: ${d.funding_goal_type}` : "";
+    const horizon = d.time_horizon ? ` · ${d.time_horizon}` : "";
+    const text =
+      `Credit/Funding handoff requested\n` +
+      `${name}${industry}${goal}${horizon}\n` +
+      `Tier: ${tier} · Readiness: ${scoreTotal}/60\n` +
+      `Review: https://tmmt-ops.vercel.app/credit-funding`;
+    fanOut(text).catch((err) => {
+      console.warn("[credit_funding_sessions] fanOut error:", err);
+    });
+  }
+
+  return result;
 }
