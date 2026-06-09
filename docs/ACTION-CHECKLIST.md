@@ -41,7 +41,7 @@ item says **who** does it and **how you know it's done**.
   **Done when:** default is a real main branch.
 - [ ] **B2 — ⚖️ Decide which duplicate/stale repos to archive.** Candidates: `ai-command-center` vs `AIX-Command-Center` (two "command centers"), `aixmos-kit` (nearly empty), `PROJECTAIXMOS` (untouched since May 19).
   **Done when:** you've picked the keepers; archive the rest (Settings → Archive).
-- [ ] **B3 — 🤖 Delete merged feature branches** (all merged into master this session):
+- [ ] **B3 — 👤/🤖 Delete merged feature branches** (do in GitHub UI → Branches, or via Cursor with push access — the cloud sandbox's git is blocked from deleting remote branches). All merged into master this session:
   `claude/open-ended-work-nmv15i`, `claude/high-ticket-build-funnel`, `claude/affiliate-payout-reporting`, `claude/owner-revenue-dashboard`, `claude/cleanup-polish`, `claude/qa-walkthrough`.
   Also from **closed** PRs: `cursor/venture-command-center-routes` (#3), `cursor/tmmt-management-initial-setup` (#1).
   **Done when:** `git ls-remote --heads origin` no longer lists them.
