@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* shadcn-style semantic tokens used by aixmos-ui components (MissionBoard, etc.).
+   Mapped inline so the utilities resolve to the runtime CSS vars below, which
+   flip under class-based dark mode (html.dark). */
+@theme inline {
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+}
+
+:root {
+  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+}
+
+.dark {
+  --border: #334155;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+}
+
+body {
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }

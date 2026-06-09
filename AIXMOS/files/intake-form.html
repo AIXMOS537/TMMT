@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CHUMMO Intake — AIXMOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #1440C4; --blue-2: #2563EB; --blue-dim: rgba(20,64,196,0.07);
+      --navy: #0A1628; --white: #FFFFFF; --surface: #F4F7FF;
+      --border: rgba(10,37,102,0.10); --muted: rgba(10,22,40,0.50);
+      --red: #C0392B; --font-d: 'Bebas Neue', sans-serif; --font-b: 'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font-b); background: var(--white); color: var(--navy); line-height: 1.5; font-size: 14px; }
+    .wrap { padding: 20px; max-width: 560px; margin: 0 auto; }
+    .chummo { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.9rem; color: var(--muted); }
+    .chummo strong { color: var(--blue); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    .progress { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 16px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--blue); width: 20%; transition: width 0.3s; }
+    .step { display: none; } .step.active { display: block; }
+    h2 { font-family: var(--font-d); font-size: 1.5rem; letter-spacing: 0.04em; margin: 0 0 6px; font-weight: 400; }
+    .sub { color: var(--muted); margin: 0 0 16px; font-size: 0.85rem; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-family: var(--font-b); font-size: 0.9rem;
+    }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .check-item { display: flex; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; cursor: pointer; }
+    .check-item:has(input:checked) { border-color: var(--blue); background: var(--blue-dim); }
+    .err { color: var(--red); font-size: 0.75rem; display: none; }
+    .field.bad .err { display: block; }
+    .field.bad input, .field.bad select, .field.bad textarea { border-color: var(--red); }
+    .actions { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; }
+    .btn { min-height: 40px; padding: 0 16px; border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--white); }
+    .btn-primary { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .btn-primary:hover { background: var(--blue-2); }
+    .btn.hidden { visibility: hidden; }
+    .target { text-align: center; padding: 14px; background: var(--blue-dim); border-radius: 10px; margin-bottom: 14px; }
+    .target span { font-family: var(--font-d); font-size: 2rem; color: var(--blue); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="chummo"><strong>CHUMMO</strong><span id="msg">Hey — glad you're here. Tell me where you are.</span></div>
+    <div class="progress"><div class="progress-fill" id="prog"></div></div>
+
+    <form id="f" novalidate>
+      <div class="step active" data-s="1">
+        <h2>About you</h2>
+        <p class="sub">Your operator will call you by name.</p>
+        <div class="field" data-f="name"><label>Name</label><input name="name" required /><span class="err">Required</span></div>
+        <div class="field" data-f="email"><label>Email</label><input name="email" type="email" required /><span class="err">Valid email required</span></div>
+        <div class="field" data-f="phone"><label>Phone</label><input name="phone" type="tel" required /><span class="err">Required</span></div>
+      </div>
+      <div class="step" data-s="2">
+        <h2>Where you are</h2>
+        <p class="sub">No judgment — just context.</p>
+        <div class="field" data-f="stage"><label>Stage</label>
+          <select name="stage" required><option value="">Select</option><option value="idea">Just starting</option><option value="early">Early stage</option><option value="growing">Growing / bottlenecked</option><option value="established">Established / scaling</option></select><span class="err">Required</span>
+        </div>
+        <div class="field" data-f="bottleneck"><label>Biggest bottleneck</label><textarea name="bottleneck" required></textarea><span class="err">Required</span></div>
+      </div>
+      <div class="step" data-s="3">
+        <h2>Your $10K target</h2>
+        <div class="target"><span>$10K</span><p style="margin:4px 0 0;font-size:0.8rem;color:var(--muted)">90-day target · every client</p></div>
+        <div class="field" data-f="goal"><label>What does $10K/month mean for you?</label><textarea name="goal" required></textarea><span class="err">Required</span></div>
+        <div class="field" data-f="timeline"><label>Timeline</label>
+          <select name="timeline" required><option value="">Select</option><option value="hot">Ready now</option><option value="warm">Within 30 days</option><option value="cold">Exploring</option></select><span class="err">Required</span>
+        </div>
+      </div>
+      <div class="step" data-s="4">
+        <h2>What you need</h2>
+        <div class="field" data-f="needs">
+          <label class="check-item"><input type="checkbox" name="needs" value="membership" /> Membership $97/mo</label>
+          <label class="check-item"><input type="checkbox" name="needs" value="llc" /> LLC $397</label>
+          <label class="check-item"><input type="checkbox" name="needs" value="credit" /> Credit guidance</label>
+          <label class="check-item"><input type="checkbox" name="needs" value="base-3750" /> Base infrastructure $3,750</label>
+          <label class="check-item"><input type="checkbox" name="needs" value="enterprise" /> Enterprise $7,500+</label>
+          <span class="err">Select at least one</span>
+        </div>
+      </div>
+      <div class="step" data-s="5">
+        <h2>Anything else?</h2>
+        <div class="field"><label>Notes (optional)</label><textarea name="notes"></textarea></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn hidden" id="back">← Back</button>
+        <button type="button" class="btn btn-primary" id="next" style="margin-left:auto">Continue →</button>
+        <button type="submit" class="btn btn-primary" id="go" style="margin-left:auto;display:none">Submit →</button>
+      </div>
+    </form>
+  </div>
+  <script src="/ghl-config.js"></script>
+  <script>
+    const MSGS = ["Hey — glad you're here. Tell me where you are.", "What's actually going on right now?", "$10K/month is the target. What does it mean for you?", "Pick what fits — your operator helps prioritize.", "Last step. Anything else before we call?"];
+    let s = 1;
+    const form = document.getElementById("f");
+    const back = document.getElementById("back"), next = document.getElementById("next"), go = document.getElementById("go");
+
+    function ui() {
+      form.querySelectorAll(".step").forEach(el => el.classList.toggle("active", +el.dataset.s === s));
+      document.getElementById("msg").textContent = MSGS[s - 1];
+      document.getElementById("prog").style.width = (s / 5 * 100) + "%";
+      back.classList.toggle("hidden", s === 1);
+      next.style.display = s === 5 ? "none" : "inline-block";
+      go.style.display = s === 5 ? "inline-block" : "none";
+    }
+
+    function val(step) {
+      form.querySelectorAll(".field").forEach(f => f.classList.remove("bad"));
+      let ok = true;
+      const req = (name) => {
+        const el = form.querySelector(`[data-f="${name}"]`);
+        const v = form[name];
+        if (!v || (v.type === "checkbox" ? false : !String(v.value || "").trim())) { el && el.classList.add("bad"); ok = false; }
+        if (name === "email" && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.value)) { el.classList.add("bad"); ok = false; }
+      };
+      if (step === 1) { req("name"); req("email"); req("phone"); }
+      if (step === 2) { req("stage"); req("bottleneck"); }
+      if (step === 3) { req("goal"); req("timeline"); }
+      if (step === 4 && !form.querySelectorAll('[name="needs"]:checked').length) { form.querySelector('[data-f="needs"]').classList.add("bad"); ok = false; }
+      return ok;
+    }
+
+    next.onclick = () => { if (val(s) && s < 5) { s++; ui(); } };
+    back.onclick = () => { if (s > 1) { s--; ui(); } };
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!val(5)) return;
+      const needs = [...form.querySelectorAll('[name="needs"]:checked')].map(c => c.value);
+      const payload = { name: form.name.value.trim(), email: form.email.value.trim(), phone: form.phone.value.trim(), stage: form.stage.value, bottleneck: form.bottleneck.value.trim(), goal: form.goal.value.trim(), timeline: form.timeline.value, needs, notes: (form.notes.value || "").trim(), source: "intake-embed", submitted_at: new Date().toISOString() };
+      const url = window.AIXMOS_GHL && window.AIXMOS_GHL.webhookUrl;
+      go.disabled = true; go.textContent = "Sending…";
+      try {
+        if (!url || url.startsWith("YOUR_GHL_")) {
+          if (window.parent !== window) window.parent.postMessage({ type: "aixmos-intake", payload }, "*");
+          else { sessionStorage.setItem("aixmos_intake", JSON.stringify(payload)); window.top.location.href = "/thankyou.html"; }
+          return;
+        }
+        const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (!r.ok) throw 0;
+        window.top.location.href = "/thankyou.html";
+      } catch { go.disabled = false; go.textContent = "Submit →"; alert("Submit failed — try again."); }
+    };
+    ui();
+  </script>
+</body>
+</html>
