@@ -22,6 +22,22 @@ const nextConfig: NextConfig = {
       { source: "/application/:path*", destination: "/learn/application/:path*" },
     ];
   },
+  async redirects() {
+    return [
+      // Phase 9 short aliases for marketing surfaces (email, SMS, bio links).
+      // Permanent (308) so browsers cache; UTM defaults can be overridden by callers passing their own.
+      {
+        source: "/funding",
+        destination: "/forms/credit-funding-intake?utm_source=shortlink&utm_medium=direct&utm_campaign=funding_alias",
+        permanent: true,
+      },
+      {
+        source: "/credit",
+        destination: "/forms/credit-funding-intake?utm_source=shortlink&utm_medium=direct&utm_campaign=credit_alias",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
