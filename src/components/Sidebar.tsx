@@ -26,7 +26,6 @@ import {
   Ban,
   ClipboardCheck,
   Siren,
-  TrendingUp,
   ChevronDown,
   Menu,
   X,
@@ -97,6 +96,13 @@ const navGroups = [
       { href: "/contracts", label: "Contracts", icon: FileText },
       { href: "/vendors", label: "Vendors / Shops", icon: Store },
       { href: "/operation-costs", label: "Software & Tools", icon: UserCog },
+    ],
+  },
+  {
+    label: "Team",
+    items: [
+      { href: "/timesheets", label: "Timesheets", icon: Clock },
+      { href: "/clock", label: "Time Clock", icon: Clock },
     ],
   },
 ];
