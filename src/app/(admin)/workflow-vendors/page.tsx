@@ -15,6 +15,7 @@ import {
   Column,
   FilterBar,
   Button,
+  ExportButton,
   Modal,
   FormField,
   ErrorBanner,
@@ -134,14 +135,17 @@ export default function WorkflowVendorsPage() {
         title="Outside vendors"
         description="Vendors with portal access — link auth_user_id to their Supabase login"
         action={
-          <Button onClick={() => {
-            setEditing(null);
-            setSelectedVerticals([]);
-            setModalOpen(true);
-          }}>
-            <Plus size={16} />
-            Add vendor
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="workflow-vendors" />
+            <Button onClick={() => {
+              setEditing(null);
+              setSelectedVerticals([]);
+              setModalOpen(true);
+            }}>
+              <Plus size={16} />
+              Add vendor
+            </Button>
+          </div>
         }
       />
       <p className="text-sm text-gray-500 dark:text-slate-400 mb-4 -mt-2">

@@ -25,7 +25,7 @@ TMMT Rentals is a **production-grade vehicle rental management system** built wi
 | Auth | Supabase Auth + `@supabase/ssr` v0.9.0, `supabase-js` v2.97.0 | Email + password, middleware-protected |
 | Icons | lucide-react | |
 | Monitoring | @sentry/nextjs | Inactive until `NEXT_PUBLIC_SENTRY_DSN` set |
-| Testing | @playwright/test (dev) | E2E smoke tests in `e2e/` |
+| Testing | vitest + @playwright/test (dev) | Vitest unit tests (`src/lib/**/*.test.ts`); Playwright E2E smoke tests in `e2e/` |
 | Validation | zod | Server action input validation |
 | Utilities | date-fns, clsx, tailwind-merge | |
 
@@ -98,12 +98,12 @@ Agents: CAPTAIN refinement via `captain_dispatch` prompt (JSON output) in `~/AIX
 4. ~~**Rate limiting**~~ — **DONE**: In-memory rate limiter (5 req/hr per IP) in middleware for `/forms` POST.
 5. ~~**Security headers**~~ — **DONE**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy in `next.config.ts`.
 6. ~~**Error monitoring**~~ — **DONE**: Sentry SDK installed and configured. Set `NEXT_PUBLIC_SENTRY_DSN` in `.env` to activate.
-7. **Maintenance show/no-show toggle** — spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); **not started**
-8. **Password reset flow** — no forgot password; admins reset via Supabase dashboard
+7. ~~**Maintenance show/no-show toggle**~~ — **DONE**: inline `StatusPill` in the maintenance table (`src/components/ui.tsx`) saves status immediately via auth-gated `adminUpsert()`; No-Show/Late auto-set `NO_SHOW_FEE`. Reconciled the approved spec (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`) with current hardening (server action + ErrorBanner, not direct client write + alert()).
+8. ~~**Password reset flow**~~ — **DONE**: self-service via Supabase Auth (PKCE). `/login/forgot` → `/api/auth/callback` (code exchange) → `/login/reset`. Enumeration-safe, relative-redirect guarded. "Forgot password?" link on login; `/api/auth/` is a public path in middleware.
 9. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
 10. **Email notifications** — no transactional email yet
-11. **Reporting / analytics** — no export or aggregate views
-12. **Testing infrastructure** — Playwright installed with smoke tests (`e2e/`); no unit test framework yet
+11. **Reporting / analytics** — **PARTIAL**: CSV export on all 19 admin DataTable pages (`ExportButton` + `src/lib/csv.ts`, exports the filtered view). Aggregate/analytics views still TODO.
+12. ~~**Testing infrastructure**~~ — **DONE (unit)**: Vitest installed (`vitest.config.ts`, `npm test`) with first suites for utils, csv, auth-roles, and the mission builder (`src/lib/**/*.test.ts`). Playwright E2E smoke tests still in `e2e/`. Component/DOM tests (jsdom) not yet added.
 
 ## Admin Page Pattern
 
@@ -128,6 +128,7 @@ npm run dev      # dev server on http://localhost:3000 (Turbopack — default in
 npm run build    # production build — primary CI gate
 npm run start    # serve production build locally
 npm run lint     # ESLint
+npm test         # Vitest unit tests (run once); npm run test:watch for watch mode
 npm run test:e2e # Playwright E2E smoke tests (requires dev server or uses webServer config)
 
 # Airtable → Supabase one-time sync

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getExpenses } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -60,7 +60,7 @@ export default function ExpensesPage() {
 
   return (
     <div>
-      <PageHeader title="Expenses" description={`${data.length} expenses · Total: ${formatCurrency(totalAmount)}`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Expense</Button>} />
+      <PageHeader title="Expenses" description={`${data.length} expenses · Total: ${formatCurrency(totalAmount)}`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="expenses" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Expense</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search expenses...">
         <select className={selectClass + " sm:w-48"} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
           <option value="">All Types</option>

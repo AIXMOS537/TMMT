@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getInsurance } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -66,7 +66,7 @@ export default function InsurancePage() {
 
   return (
     <div>
-      <PageHeader title="Insurance" description={`${data.length} policies`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Policy</Button>} />
+      <PageHeader title="Insurance" description={`${data.length} policies`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="insurance" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Policy</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search insurance...">
         <select className={selectClass + " sm:w-48"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>
