@@ -6,24 +6,32 @@ This is ~5 minutes of GHL UI work.
 
 ---
 
-## Canonical URL to use everywhere
+## Canonical URLs
 
-```
-https://tmmt-ops.vercel.app/forms/credit-funding-intake?utm_source=ghl&utm_medium=email&utm_campaign=post_97_confirmation
-```
+Two short aliases ship with Phase 9 — both 308-redirect to the long form URL with a baseline UTM:
 
-Variations by surface:
-
-| Surface | Add `utm_medium=` | Add `utm_campaign=` |
+| Short URL | Default UTM | Use for |
 | --- | --- | --- |
-| Confirmation email | `email` | `post_97_confirmation` |
-| Confirmation SMS | `sms` | `post_97_confirmation` |
-| GHL "thank you" page | `web` | `post_97_thankyou` |
-| TikTok bio link | `social` | `tiktok_bio` |
-| Instagram bio link | `social` | `ig_bio` |
-| AIXMOS landing footer | `web` | `aixmos_landing` |
+| `https://tmmt-ops.vercel.app/funding` | `utm_campaign=funding_alias` | General-purpose share — emails, SMS, bio links |
+| `https://tmmt-ops.vercel.app/credit` | `utm_campaign=credit_alias` | When "credit" is the more natural word in the copy |
 
-These UTM tags flow into the `credit_funding_sessions.channel` column (currently set to `web_form` — update the public form's hidden input later if you want auto-capture; for now they at least appear in your standard URL analytics).
+For surface-specific attribution, append your own UTM params — they override the baseline:
+
+```
+https://tmmt-ops.vercel.app/funding?utm_source=ghl&utm_medium=email&utm_campaign=post_97_confirmation
+```
+
+Suggested matrix:
+
+| Surface | `utm_source` | `utm_medium` | `utm_campaign` |
+| --- | --- | --- | --- |
+| Confirmation email | `ghl` | `email` | `post_97_confirmation` |
+| Confirmation SMS | `ghl` | `sms` | `post_97_confirmation` |
+| TikTok bio link | `tiktok` | `social` | `tiktok_bio` |
+| Instagram bio link | `ig` | `social` | `ig_bio` |
+| AIXMOS landing footer | `aixmos` | `web` | `aixmos_landing` |
+
+(UTMs land in the page URL and standard analytics tools. The `credit_funding_sessions.channel` column currently logs `web_form` — wire UTMs into the form's hidden input later if you want them in the database too.)
 
 ---
 
@@ -39,7 +47,7 @@ These UTM tags flow into the `credit_funding_sessions.channel` column (currently
 >
 > It's a short, educational walkthrough — no credit pull, no application, no SSN. We just learn where you stand and send you the right next steps for your situation.
 >
-> 👉 **[Start your readiness profile →](https://tmmt-ops.vercel.app/forms/credit-funding-intake?utm_source=ghl&utm_medium=email&utm_campaign=post_97_confirmation)**
+> 👉 **[Start your readiness profile →](https://tmmt-ops.vercel.app/funding?utm_source=ghl&utm_medium=email&utm_campaign=post_97_confirmation)**
 >
 > The faster we know where you are, the faster we can prep you to qualify for what's next.
 >
@@ -54,7 +62,7 @@ These UTM tags flow into the `credit_funding_sessions.channel` column (currently
 
 ## SMS copy — post-$97 confirmation
 
-> {{contact.first_name}}, you're in — welcome to TMMT. While we set things up on our side, take 5 min to build your **Funding Readiness Profile** so we know exactly how to prep you next: https://tmmt-ops.vercel.app/forms/credit-funding-intake?utm_source=ghl&utm_medium=sms&utm_campaign=post_97_confirmation — Reply STOP to opt out.
+> {{contact.first_name}}, you're in — welcome to TMMT. While we set things up on our side, take 5 min to build your **Funding Readiness Profile** so we know exactly how to prep you next: https://tmmt-ops.vercel.app/funding?utm_source=ghl&utm_medium=sms — Reply STOP to opt out.
 
 160-character envelope; UTM-tagged short link if you want to shorten via your GHL link shortener.
 
