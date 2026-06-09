@@ -72,8 +72,8 @@ Run `npm run ghl:check` locally after updating env vars.
 ## Post-deploy verification
 
 ```bash
-npm run smoke:prod   # hits tmmt-command-center.vercel.app by default
-SMOKE_BASE_URL=https://tmmt-command-center.vercel.app bash scripts/smoke-prod.sh
+npm run smoke:prod   # hits tmmt-ops.vercel.app by default (public pitch pages)
+SMOKE_BASE_URL=https://tmmt-ops.vercel.app bash scripts/smoke-prod.sh
 npm run test:e2e:prod
 curl -sI https://tmmtrentals.net/login | grep -i x-robots-tag   # after DNS cutover
 npm run ghl:test-webhook payment   # against production URL via GHL_TEST_BASE_URL

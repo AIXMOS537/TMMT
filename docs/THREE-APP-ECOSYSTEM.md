@@ -48,11 +48,11 @@ These are **extra** Vercel projects hooked to the same repo — they cause five 
 ## Per-app smoke tests
 
 ```bash
-# TMMT Ops
-curl -sS -o /dev/null -w "ops login: %{http_code}\n" https://tmmt-ops.vercel.app/login
+# TMMT Ops (public pitch + forms + webhooks)
+SMOKE_BASE_URL=https://tmmt-ops.vercel.app bash scripts/smoke-prod.sh
 
-# Command Center (operator canonical URL)
-SMOKE_BASE_URL=https://tmmt-command-center.vercel.app bash scripts/smoke-prod.sh
+# Command Center (staff login only — /kits and /build redirect to login here)
+curl -sS -o /dev/null -w "cc login: %{http_code}\n" https://tmmt-command-center.vercel.app/login
 
 # AIXMOS landing
 curl -sS -o /dev/null -w "aixmos: %{http_code}\n" https://aixmos-landing.vercel.app/

@@ -19,6 +19,19 @@ function isPublicPath(pathname: string) {
   );
 }
 
+/** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
+function isPitchPublicPath(pathname: string) {
+  return (
+    pathname === "/robots.txt" ||
+    pathname === "/kits" ||
+    pathname === "/build" ||
+    pathname.startsWith("/build/") ||
+    pathname.startsWith("/forms") ||
+    pathname.startsWith("/legal") ||
+    pathname.startsWith("/api/webhooks/")
+  );
+}
+
 function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (isPublicPath(pathname)) return true;
 
@@ -49,9 +62,6 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({ request });
-  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-
   const withRobotsHeader = (res: NextResponse): NextResponse => {
     res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     return res;
@@ -73,6 +83,13 @@ export async function middleware(request: NextRequest) {
       );
     }
   }
+
+  if (isPitchPublicPath(pathname)) {
+    return withRobotsHeader(NextResponse.next({ request }));
+  }
+
+  const response = NextResponse.next({ request });
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 
   const supabase = createMiddlewareClient(request, response);
   const {

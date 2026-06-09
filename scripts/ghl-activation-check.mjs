@@ -3,30 +3,14 @@
  * Revenue pipeline readiness — GHL env + webhook smoke test.
  * Usage: node scripts/ghl-activation-check.mjs [--test-webhook]
  */
-import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { loadProjectEnv } from "./load-env.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const envPath = join(root, ".env");
 
 function loadDotEnv() {
-  if (!existsSync(envPath)) return;
-  for (const line of readFileSync(envPath, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const eq = t.indexOf("=");
-    if (eq === -1) continue;
-    const key = t.slice(0, eq).trim();
-    let val = t.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
-    }
-    if (!(key in process.env) || process.env[key] === "") process.env[key] = val;
-  }
+  loadProjectEnv();
 }
 
 loadDotEnv();
