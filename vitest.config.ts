@@ -6,8 +6,11 @@ import { fileURLToPath } from "node:url";
 // add jsdom + @testing-library later. Playwright E2E lives separately in e2e/.
 export default defineConfig({
   test: {
+    // Default to node; component tests opt into jsdom via a per-file
+    // `// @vitest-environment jsdom` docblock (see *.test.tsx).
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {
     alias: {
