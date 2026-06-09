@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getMaintenance } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, StatusPill, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -12,6 +12,9 @@ type Maint = Record<string, unknown>;
 const typeOptions = ["Routine", "Repair", "Emissions", "Inspection", "Other"];
 const statusOptions = ["Scheduled", "Completed", "No-Show", "Late", "Cancelled"];
 
+// Fee auto-assessed when an appointment is marked No-Show or Late. Code constant for now.
+const NO_SHOW_FEE = 50; // dollars — change as needed
+
 export default function MaintenancePage() {
   const [data, setData] = useState<Maint[]>([]);
   const [search, setSearch] = useState("");
@@ -20,6 +23,7 @@ export default function MaintenancePage() {
   const [editing, setEditing] = useState<Maint | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [statusSavingId, setStatusSavingId] = useState<unknown>(null);
 
   const load = () => { setLoading(true); setError(null); getMaintenance().then((d) => { setData(d as Maint[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -31,12 +35,25 @@ export default function MaintenancePage() {
     { key: "maintenance_type", label: "Type", render: (r) => <StatusBadge status={r.maintenance_type as string} /> },
     { key: "active_customer_if_applicable", label: "Customer" },
     { key: "appointment_date_time", label: "Date/Time", render: (r) => <span className="text-sm">{formatDateTime(r.appointment_date_time as string)}</span> },
-    { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status as string} /> },
+    { key: "status", label: "Status", render: (r) => <StatusPill status={r.status as string} options={statusOptions} disabled={statusSavingId === r.id} onChange={(s) => handleStatusChange(r, s)} /> },
     { key: "assigned_staff", label: "Staff" },
     { key: "service_provider_location", label: "Provider/Location" },
     { key: "fee_assessed_if_no_show_late", label: "Fee", render: (r) => formatCurrency(r.fee_assessed_if_no_show_late as number) },
     { key: "was_customer_notified_of_fee", label: "Notified?", render: (r) => r.was_customer_notified_of_fee ? "✓" : "—" },
   ];
+
+  // Inline status change from the table StatusPill — saves immediately without the modal.
+  const handleStatusChange = async (row: Maint, newStatus: string) => {
+    if (!row.id) return;
+    setError(null);
+    setStatusSavingId(row.id);
+    const record: Record<string, unknown> = { id: row.id, status: newStatus };
+    if (newStatus === "No-Show" || newStatus === "Late") record.fee_assessed_if_no_show_late = NO_SHOW_FEE;
+    const result = await adminUpsert("maintenance_appointments", record);
+    setStatusSavingId(null);
+    if (!result.success) { setError(result.error); return; }
+    load();
+  };
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,6 +74,7 @@ export default function MaintenancePage() {
     <div>
       <PageHeader title="Maintenance Appointments" description={`${data.length} appointments`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Appointment</Button>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search maintenance..." />
+      {!modalOpen && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />
       )}
