@@ -101,6 +101,7 @@ const navGroups = [
   {
     label: "Team",
     items: [
+      { href: "/scorecard", label: "Scorecard", icon: TrendingUp },
       { href: "/timesheets", label: "Timesheets", icon: Clock },
       { href: "/clock", label: "Time Clock", icon: Clock },
     ],
