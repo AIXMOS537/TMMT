@@ -31,7 +31,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { signOut } from "@/app/(admin)/actions";
 
 const navGroups = [
@@ -110,7 +110,22 @@ const navGroups = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // "Less is more": open lean. Every group except Overview starts collapsed;
+  // the group containing the current page is always shown so you keep context.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    navGroups.forEach((g) => { if (g.label !== "Overview") init[g.label] = true; });
+    return init;
+  });
+
+  const activeGroup = useMemo(
+    () =>
+      navGroups.find((g) =>
+        g.items.some((i) => (i.href === "/" ? pathname === "/" : pathname.startsWith(i.href)))
+      )?.label,
+    [pathname]
+  );
 
   const toggle = (label: string) =>
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -151,24 +166,23 @@ export default function Sidebar() {
         </div>
 
         <nav className="p-3 space-y-1">
-          {navGroups.map((group) => (
+          {navGroups.map((group) => {
+            const shown = group.label === activeGroup || !collapsed[group.label];
+            return (
             <div key={group.label}>
               <button
                 onClick={() => toggle(group.label)}
-                aria-expanded={!collapsed[group.label]}
+                aria-expanded={shown}
                 className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider hover:text-gray-600 dark:hover:text-slate-300"
               >
                 {group.label}
                 <ChevronDown
                   size={14}
-                  className={cn(
-                    "transition-transform",
-                    collapsed[group.label] && "-rotate-90"
-                  )}
+                  className={cn("transition-transform", !shown && "-rotate-90")}
                 />
               </button>
 
-              {!collapsed[group.label] && (
+              {shown && (
                 <div className="space-y-0.5 mb-2">
                   {group.items.map((item) => {
                     const isActive =
@@ -195,7 +209,8 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-gray-200 dark:border-slate-700 mt-auto">
