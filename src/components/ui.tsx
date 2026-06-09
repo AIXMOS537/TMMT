@@ -2,6 +2,8 @@
 
 import { cn, statusColor } from "@/lib/utils";
 import { ReactNode, useEffect, useRef, useState } from "react";
+import { Download } from "lucide-react";
+import { downloadCsv } from "@/lib/csv";
 
 // ─── Badge ────────────────────────────────────────
 export function Badge({
@@ -175,6 +177,10 @@ export interface Column<T> {
   label: string;
   render?: (row: T) => ReactNode;
   className?: string;
+  /** Override the value used for CSV export (defaults to row[key]). */
+  csvValue?: (row: T) => string | number | boolean | null | undefined;
+  /** Exclude this column from CSV export (e.g. action/icon-only columns). */
+  noExport?: boolean;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -254,6 +260,36 @@ export function DataTable<T extends Record<string, unknown>>({
         </table>
       </div>
     </Card>
+  );
+}
+
+// ─── CSV Export ───────────────────────────────────
+// Exports the given rows using the table's columns (honoring csvValue /
+// noExport). Disabled when there's nothing to export.
+export function ExportButton<T extends Record<string, unknown>>({
+  data,
+  columns,
+  filename,
+  label = "Export CSV",
+}: {
+  data: T[];
+  columns: Column<T>[];
+  filename: string;
+  label?: string;
+}) {
+  const exportColumns = columns.filter((c) => !c.noExport);
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      disabled={data.length === 0}
+      onClick={() => downloadCsv(filename, data, exportColumns)}
+      title={data.length === 0 ? "Nothing to export" : `Export ${data.length} rows`}
+    >
+      <Download size={15} />
+      {label}
+    </Button>
   );
 }
 
