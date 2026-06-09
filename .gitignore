@@ -52,3 +52,10 @@ AIXMOS/portal/data/users.json
 # Personal Claude memory / overrides (not shared)
 .claude.local.md
 .claude/settings.local.json
+
+# Business docs (canonical in ~/Documents/Business/)
+OPERATIONS_BRAIN.md
+OPERATIONS_BRAIN.pdf
+SKILLS_BRIEF.md
+BrainKit/
+deploy_brainkit_to_usb.sh
