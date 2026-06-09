@@ -11,7 +11,7 @@ import {
 import { createAuditEntry } from "../audit-log";
 import { loadCubeState, saveCubeState, subscribeCubeSync } from "../cube/sync";
 import { refreshApplicationScores, createInitialState } from "../mock-data";
-import { useCubePersistence, useCubePersistenceEnabled } from "./persistence-client";
+import { useCubePersistence, isCubePersistenceEnabled } from "./persistence-client";
 import type {
   AppState,
   Application,
@@ -49,7 +49,7 @@ export function CubeProvider({
 }) {
   const seed = initial ?? createInitialState(defaultRole);
   const [state, setState] = useState<AppState>(seed);
-  const supabaseMode = useCubePersistenceEnabled();
+  const supabaseMode = isCubePersistenceEnabled();
 
   useEffect(() => {
     if (supabaseMode && applicationId) return;

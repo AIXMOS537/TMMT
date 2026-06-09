@@ -17,5 +17,5 @@ export {
 export { subscribeProgramApplication } from "./db/realtime";
 export {
   useCubePersistence,
-  useCubePersistenceEnabled,
+  isCubePersistenceEnabled,
 } from "./store/persistence-client";
