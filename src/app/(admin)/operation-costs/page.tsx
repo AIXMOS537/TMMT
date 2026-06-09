@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getOperationCosts } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -52,7 +52,7 @@ export default function OperationCostsPage() {
 
   return (
     <div>
-      <PageHeader title="Software & Tools" description={`${data.length} tools · Monthly: ${formatCurrency(totalCost)}`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Tool</Button>} />
+      <PageHeader title="Software & Tools" description={`${data.length} tools · Monthly: ${formatCurrency(totalCost)}`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="operation-costs" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Tool</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search tools..." />
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getDashboardData } from "@/lib/queries";
 import { Card, StatCard, StatusBadge } from "@/components/ui";
+import { MissionBoard } from "@/components/mission/mission-board";
+import { buildOwnerMissionData } from "@/lib/mission/build";
 import { formatDate } from "@/lib/utils";
 import {
   Car,
@@ -24,6 +26,8 @@ export default function DashboardPage() {
   useEffect(() => {
     getDashboardData().then(setData).catch(() => setLoadError(true));
   }, []);
+
+  const mission = useMemo(() => (data ? buildOwnerMissionData(data) : null), [data]);
 
   if (loadError) {
     return (
@@ -47,6 +51,8 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">TMMT Rentals overview</p>
       </div>
+
+      {mission && <MissionBoard data={mission} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Fleet Vehicles" value={data.fleet.total} icon={<Car size={20} />} trend={`${data.fleet.available} available · ${data.fleet.rented} rented`} />

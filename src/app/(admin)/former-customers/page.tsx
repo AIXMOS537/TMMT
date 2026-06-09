@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getFormerCustomers } from "@/lib/queries";
-import { PageHeader, DataTable, Column, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -54,7 +54,7 @@ export default function FormerCustomersPage() {
 
   return (
     <div>
-      <PageHeader title="Former Customers" description={`${data.length} former customers`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Record</Button>} />
+      <PageHeader title="Former Customers" description={`${data.length} former customers`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="former-customers" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Record</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search former customers..." />
       {loading ? <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div> : (
         <DataTable columns={columns} data={filtered} onRowClick={(r) => { setEditing(r); setModalOpen(true); }} />

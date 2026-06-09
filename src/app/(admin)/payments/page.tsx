@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getPayments } from "@/lib/queries";
-import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
+import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
@@ -70,7 +70,7 @@ export default function PaymentsPage() {
 
   return (
     <div>
-      <PageHeader title="Customer Payments" description={`${data.length} payment records`} action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Record Payment</Button>} />
+      <PageHeader title="Customer Payments" description={`${data.length} payment records`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="customer-payments" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Record Payment</Button></div>} />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
