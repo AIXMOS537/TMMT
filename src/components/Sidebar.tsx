@@ -19,6 +19,7 @@ import {
   Wrench,
   FileText,
   DollarSign,
+  Handshake,
   Store,
   UserCog,
   Ban,
@@ -70,6 +71,7 @@ const navGroups = [
     items: [
       { href: "/customers", label: "Active Customers", icon: Users },
       { href: "/payments", label: "Payments", icon: CreditCard },
+      { href: "/affiliates", label: "Affiliate Payouts", icon: Handshake },
       { href: "/former-customers", label: "Former Customers", icon: Users },
       { href: "/do-not-rent", label: "Do Not Rent", icon: Ban },
     ],
