@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { learnPath, useCube } from "@aixmos/core";
 import { ProgramWorkflowBanner } from "@/components/program/WorkflowBanner";
 import { Button, Card } from "@/components/ui";
