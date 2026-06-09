@@ -26,6 +26,7 @@ import {
   Ban,
   ClipboardCheck,
   Siren,
+  TrendingUp,
   ChevronDown,
   Menu,
   X,
@@ -64,6 +65,7 @@ const navGroups = [
     items: [
       { href: "/leads", label: "Incoming Leads", icon: UserPlus },
       { href: "/background-checks", label: "Background Checks", icon: ShieldCheck },
+      { href: "/credit-funding", label: "Credit & Funding", icon: TrendingUp },
       { href: "/waitlist", label: "Waitlist", icon: Clock },
       { href: "/appointments", label: "Appointments", icon: CalendarCheck },
     ],

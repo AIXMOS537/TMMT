@@ -103,6 +103,7 @@ export const getDoNotRent = () => fetchTable("do_not_rent_list", "*", "date_adde
 export const getFormerCustomers = () => fetchTable("former_customers", "*", "created_at");
 export const getMaintenance = () => fetchTable("maintenance_appointments", "*", "appointment_date_time");
 export const getHandovers = () => fetchTable("vehicle_handover", "*", "handover_date");
+export const getCreditFundingSessions = () => fetchTable("credit_funding_sessions", "*", "created_at");
 
 /* ──────────── Single record ──────────── */
 export async function getRecord(table: string, id: string) {
