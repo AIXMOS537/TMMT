@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Brain,
   Briefcase,
@@ -77,7 +76,6 @@ export function CubeShell({
   onReset?: () => void;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const faces = facesForRole(role);
   const progress = status ? workflowProgress(status) : 0;
 

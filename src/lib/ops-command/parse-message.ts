@@ -13,11 +13,6 @@ export function normalizeOpsMessage(message: string): string {
     .replace(/\s+/g, " ");
 }
 
-function firstEmail(text: string): string | undefined {
-  const m = text.match(EMAIL);
-  return m?.[0]?.toLowerCase();
-}
-
 function allEmails(text: string): string[] {
   return [...text.matchAll(EMAIL)].map((m) => m[0].toLowerCase());
 }
