@@ -59,3 +59,6 @@ OPERATIONS_BRAIN.pdf
 SKILLS_BRIEF.md
 BrainKit/
 deploy_brainkit_to_usb.sh
+
+# Phase 9 notify secrets (local only)
+scripts/phase9-notify/.env.notify
