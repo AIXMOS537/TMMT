@@ -89,8 +89,8 @@ Moe Legacy is the first exclusive-partnership deploy of the full AIXMOS / TMMT s
 
 | Component | Location | Responsibility | Owner |
 |---|---|---|---|
-| AIXMOS Partner.app | Moe's Mac, sealed | Tauri webview shell → `partner.tmmt-ops.com` with HW-signed tenant JWT in Authorization header | ceo.moe |
-| AIXMOS Brain.app | Moe's Mac, sealed | PyInstaller-bundled agents; loads prompts from `lic.tmmt.tools` on session start, caches encrypted in `cache.db` with 24h TTL | ceo.moe |
+| AIXMOS Partner.app | Moe's Mac, sealed | Tauri webview shell → `partner.tmmt-ops.com` with HW-signed tenant JWT. Surfaces include: admin/intake (TMMT-Ops), Mission Control dashboards, Credit-Funding intake, AND `/inbox` lead pipeline (new leads from his ads/funnel, status: new → contacted → qualified → booked → closed) | ceo.moe |
+| AIXMOS Brain.app | Moe's Mac, sealed | PyInstaller-bundled agents; loads prompts from `lic.tmmt.tools` on session start, caches encrypted in `cache.db` with 24h TTL. **Agent roster includes a "Sales Qualifier" slot** (SMS-first conversational agent for inbound leads) populated per [[../../../memory/project_moe_legacy_partner_deploy]] Spec B sub-spec B3 once defined. Spec A reserves the slot; spec B fills it | ceo.moe |
 | Partner web app | Vercel `partner.tmmt-ops.com` | Multi-tenant TMMT-Ops / Mission Control / Credit-Funding intake; middleware enforces tenant JWT on every request | ceo.moe |
 | License server | Vercel `lic.tmmt.tools` | Issues HW-pinned JWTs at install (`/v1/provision`), heartbeats (`/v1/heartbeat`), enforces revoke decisions | ceo.moe |
 | Audit ingest | Vercel `log.tmmt.tools` | NDJSON append-only endpoint; writes to Supabase `audit_events` table | ceo.moe |
@@ -146,7 +146,7 @@ Moe Legacy is the first exclusive-partnership deploy of the full AIXMOS / TMMT s
 | **Soft kill** | Flip `licenses.active=false` row in Supabase | Next heartbeat returns 410 → apps refuse to start, Vercel middleware 401s every request | ≤ 24h (next heartbeat) | Yes — flip back to true |
 | **Hard kill** | Set `licenses.kill_command='wipe'` | Heartbeat returns wipe directive → launchd job removes `~/.config/tmmt`, `~/Library/.../aixmos-partner/`, Keychain entries, runs `tailscale logout`. Server-side: rotate tenant JWT signing secret, revoke Tailscale node key, invalidate Supabase RLS by mass-rotating tenant-scoped service role | ≤ 24h | No — requires a new flash drive |
 | **Heartbeat miss** | No heartbeat call for 72h | Auto-disable license (same effect as soft kill) | 72h | Yes if Moe reconnects |
-| **Audit always-on** | N/A — always | Every install/login/agent-call/data-export/credit-funding-session lands in Supabase `audit_events`. Mac UUID, tenant ID, IP, action, timestamp | Live | N/A — paper trail for legal |
+| **Audit always-on** | N/A — always | Every install/login/agent-call/data-export/credit-funding-session **AND lead-pipeline action (lead-received, sms-sent, call-booked, payment-collected)** lands in Supabase `audit_events`. Mac UUID, tenant ID, IP, action, timestamp | Live | N/A — paper trail for legal |
 
 ### Why all four (not just one)
 
@@ -251,13 +251,58 @@ The script:
 
 Time per partner after v1: ~10 minutes of scripted work + Apple notarization wait (~5 min).
 
-## 16. Open Questions
+## 16. Open Questions — RESOLVED 2026-06-09
 
-1. **Legal review of partner agreement + DPA.** Reuse Michael Bibbs $30K deal template ([project_michael_bibbs_30k_deal.md](../../../memory/project_michael_bibbs_30k_deal.md))? Or fresh draft? Both flagged attorney items still apply.
-2. **License JWT signing key location.** Currently planned for `~/.config/tmmt/license-signing.key` (mode 600) on ceo.moe's M5. Should this move to a hosted KMS (e.g. Supabase Vault) for survivability if M5 is lost/stolen?
-3. **Heartbeat endpoint scaling.** v1 carries one partner. At 10 partners with 24h heartbeat, fine. At 100, may need rate limiting + queue. Out of scope for v1.
-4. **What does Moe think his Mac is doing?** UX of the clickwrap matters — needs to be clear about heartbeat + audit so he's not surprised later. Draft consent language in legal review.
-5. **Recovery path if Moe's Mac dies and we rebuild.** New flash drive + new HW pin? Or a documented "rebuild" workflow where ceo.moe issues a one-time recovery token? v1: new flash drive.
+1. **Legal review of partner agreement + DPA.** RESOLVED: Fresh draft (not Bibbs template). Three documents: Master Partner Agreement + DPA + AUP. ceo.moe drafts v0; ⚠️ **attorney review explicitly DEFERRED to 30 days post-Moe-signing per user decision.** Kill-switch carries the contingency until attorney review lands. **HARD REQUIREMENT: attorney engagement must be on calendar before Moe signs.** Each document opens with: *"This is a v0 partnership instrument pending attorney review on or before [signing date + 30 days]. Either party may request revision upon attorney redline."*
+2. **License JWT signing key location.** RESOLVED: Supabase Vault (primary) + encrypted CYBORG backup (secondary) per [[../../../memory/project_keys_vault]]. NOT on M5 disk. Survives M5 loss/theft.
+3. **Heartbeat endpoint scaling.** RESOLVED: Punt to partner #20. Vercel Pro handles up to ~100 partners without thinking.
+4. **Clickwrap UX / consent language.** RESOLVED: Radical transparency. Show Moe the exact fields shipped in heartbeat + audit. Explicit *"does NOT record screen / client data / other apps"* statement. Checkbox + auto-emailed timestamped PDF copy. Draft language in §16-A below.
+5. **Recovery if Moe's Mac dies.** RESOLVED for v1: 7-step new-flash-drive workflow. Verify identity (last 4 of contract phone + pre-agreed challenge phrase) → revoke old license → reissue → ship → he installs → audit log records both Mac UUIDs. Self-serve portal deferred to partner #25+.
+
+### 16-A. Clickwrap consent language (v0 draft, attorney review pending)
+
+> *"This application reports the following to AIXMOS every 24 hours:*
+> *• Your Mac's hardware ID (so the license cannot be copied to another machine)*
+> *• Application version and running status*
+> *• Action counts (logins, intake forms submitted) — NOT contents*
+> *• An audit log of YOUR actions inside the apps, shipped hourly*
+>
+> *The app does NOT record your screen, your other applications, your files, your clients' data inside GHL or ClickUp, or your conversations.*
+>
+> *Your client information stays in your GHL and ClickUp where it already lives. AIXMOS retains the right to remotely disable this license if the partnership agreement is breached. Disabling the license stops the apps from running but does not delete or transmit your client data.*
+>
+> *☐ I understand and agree."*
+
+### 16-B. Pre-launch checklist (must be true before Moe's flash drive ships)
+
+- [ ] Attorney engagement scheduled (must be calendared even if review happens post-signing)
+- [ ] Supabase Vault holds license signing key; CYBORG holds encrypted backup
+- [ ] Test plan §14 (all 10 items) passes on `tenant=test-partner`
+- [ ] v0 of all three legal docs reviewed by ceo.moe and committed to `~/Documents/Business/legal/`
+- [ ] Clickwrap consent language matches §16-A verbatim
+- [ ] Recovery challenge phrase agreed with Moe out-of-band
+- [ ] Vercel projects + DNS for `partner.tmmt-ops.com`, `lic.tmmt.tools`, `log.tmmt.tools` provisioned
+
+## 17. Relationship to Spec B (Always-On Revenue Engine)
+
+This spec (A) = **partner infrastructure** (security, license, install, tenant scoping).
+
+Spec B (to be brainstormed next) = **always-on revenue engine** — ads → leads → SMS/voice qualification → booked calls → Stripe close → monitoring.
+
+Spec A provides reserved surfaces for B:
+- `AIXMOS Partner.app` → `/inbox` route for lead pipeline (§6)
+- `AIXMOS Brain.app` → "Sales Qualifier" agent slot (§6)
+- Audit events extend to lead-pipeline actions (§10)
+- Tenant scoping (`tenant_id='moe-legacy'`) lets Moe run his own ads against his own Pixel/Stripe without polluting shared-client data
+
+Spec B sub-decomposition (candidate):
+- **B1**: Ad delivery + Pixel/CAPI + creative pipeline
+- **B2**: Landing pages + funnel + UTM convention
+- **B3**: AI Sales Agent — SMS + voice + booking (fills the Brain.app slot reserved here)
+- **B4**: Stripe + payment links + dunning fix (clears [[../../../memory/project_ghl_203_dunning_misfire]] scar)
+- **B5**: Monitoring + alerts + unblocking Mission Control ([[../../../memory/project_mission_control_blocked]])
+
+Spec A is independently shippable; Spec B can build in parallel once A's implementation plan is locked.
 
 ## 17. Memory References
 
