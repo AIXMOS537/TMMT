@@ -1,0 +1,51 @@
+{
+  "$comment": "TMMT OS = platform. TMMT Management = command-center / back-office brand. Restart dev server after edits.",
+  "brand": {
+    "name": "TMMT OS",
+    "managementBrand": "TMMT Management",
+    "productName": "TMMT Rentals",
+    "commandCenterLabel": "TMMT Management Command Center",
+    "themeColor": "#f4f6f9",
+    "primaryPublicLineId": "rentals"
+  },
+  "home": {
+    "eyebrow": "TMMT OS · TMMT Management Command Center",
+    "headline": "The TMMT operating system. Every business line, one command center.",
+    "primaryCta": "Book or request help",
+    "staffNote": "TMMT Management: operations, cases, GHL sync, and AI assign live in the command center. TMMT OS is the platform; Management is how you run it."
+  },
+  "businessLines": {
+    "enabled": null,
+    "disabled": [],
+    "overrides": {
+      "management": {
+        "name": "TMMT Management",
+        "shortName": "Management",
+        "tagline": "Command center & back office",
+        "description": "Appointments, contracts, fleet, payments, and internal ops — powered by TMMT OS."
+      }
+    }
+  },
+  "portals": [
+    {
+      "title": "Client Portal",
+      "description": "Your Rental, Billing, Maintenance, and Documents — powered by TMMT OS.",
+      "href": "/client/dashboard"
+    },
+    {
+      "title": "Team Portal",
+      "description": "SOPs, scripts, and training — TMMT Management workspace.",
+      "href": "/team/dashboard"
+    },
+    {
+      "title": "TMMT Management Admin",
+      "description": "Users, packages, revenue, and access — leadership on TMMT OS.",
+      "href": "/admin/dashboard"
+    }
+  ],
+  "features": {
+    "showOtherBusinesses": false,
+    "showPortalsSection": true,
+    "maxFeaturedBusinessLines": 6
+  }
+}
