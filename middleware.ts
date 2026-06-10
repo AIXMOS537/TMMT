@@ -10,6 +10,7 @@ function isPublicPath(pathname: string) {
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
@@ -25,6 +26,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
