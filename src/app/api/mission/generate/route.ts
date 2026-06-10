@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { sendOwnerMissionToTelegram } from "@/lib/mission/send";
+import { sendOwnerMissionToTelegram, sendMissionToTeam } from "@/lib/mission/send";
 
 export const dynamic = "force-dynamic";
+
+type Audience = "owner" | "team";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET ?? process.env.OPS_COMMAND_SECRET;
@@ -13,18 +15,30 @@ function authorized(req: Request): boolean {
   return false;
 }
 
-async function readNotifyFlag(req: Request, fallback: boolean): Promise<boolean> {
+type Params = { notify: boolean; audience: Audience };
+
+async function readParams(req: Request, defaultNotify: boolean): Promise<Params> {
   const { searchParams } = new URL(req.url);
-  const fromQuery = searchParams.get("notify");
-  if (fromQuery !== null) return fromQuery === "true" || fromQuery === "1";
-  if (req.method !== "POST") return fallback;
-  try {
-    const body = (await req.json()) as { notify?: boolean } | null;
-    if (body && typeof body.notify === "boolean") return body.notify;
-  } catch {
-    // empty/invalid body — fall through
+  const fromQueryNotify = searchParams.get("notify");
+  const fromQueryAudience = searchParams.get("audience");
+
+  let notify = defaultNotify;
+  let audience: Audience = "owner";
+
+  if (fromQueryNotify !== null) notify = fromQueryNotify === "true" || fromQueryNotify === "1";
+  if (fromQueryAudience === "team" || fromQueryAudience === "owner") audience = fromQueryAudience;
+
+  if (req.method === "POST") {
+    try {
+      const body = (await req.json()) as { notify?: boolean; audience?: string } | null;
+      if (body && typeof body.notify === "boolean") notify = body.notify;
+      if (body && (body.audience === "team" || body.audience === "owner")) audience = body.audience;
+    } catch {
+      // empty/invalid body — fall through to defaults
+    }
   }
-  return fallback;
+
+  return { notify, audience };
 }
 
 async function handle(req: Request, defaultNotify: boolean) {
@@ -32,10 +46,16 @@ async function handle(req: Request, defaultNotify: boolean) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const notify = await readNotifyFlag(req, defaultNotify);
+    const { notify, audience } = await readParams(req, defaultNotify);
     const greetingName = process.env.MISSION_GREETING_NAME ?? "Owner";
+
+    if (audience === "team") {
+      const result = await sendMissionToTeam({ notify, greetingName });
+      return NextResponse.json({ ok: true, audience, ...result });
+    }
+
     const result = await sendOwnerMissionToTelegram({ notify, greetingName });
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: true, audience, ...result });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : "generate failed" },
@@ -44,7 +64,7 @@ async function handle(req: Request, defaultNotify: boolean) {
   }
 }
 
-// GET is for Vercel cron (cron always issues GET). Defaults notify=true.
+// GET is for crons (Vercel or external). Defaults notify=true.
 export async function GET(req: Request) {
   return handle(req, true);
 }
