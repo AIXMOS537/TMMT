@@ -139,6 +139,29 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     }
   })
 
+  // 5b. BAT-outlier audit. A jailbroken LLM coerced into returning all-max
+  // confidence (B+A+T ≈ 3, confidence ≈ 1) is the signature pattern for
+  // bypassing the QUALIFIED threshold. We don't block — legitimate hot
+  // leads can hit this — but we audit so a sustained pattern is
+  // diagnosable. Threshold is the 95th-percentile combo.
+  if (
+    llmResult &&
+    nextState === 'QUALIFIED' &&
+    llmResult.parsed.assessment.B + llmResult.parsed.assessment.A + llmResult.parsed.assessment.T >= 2.85 &&
+    llmResult.parsed.assessment.confidence >= 0.95
+  ) {
+    await emitAudit({
+      organizationId: args.org.id,
+      action: 'agent.bat_outlier',
+      payload: {
+        assessment: llmResult.parsed.assessment,
+        next_action: llmResult.parsed.next_action,
+        model: llmResult.model,
+        inbound_preview: args.inboundBody.slice(0, 200),
+      }
+    })
+  }
+
   // 6. Quiet hours guard for outbound
   const quiet = isQuietHours(args.phone)
 
