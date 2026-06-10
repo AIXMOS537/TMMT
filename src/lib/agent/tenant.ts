@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { createServiceSupabase } from './supabase-server'
 
 export interface OrgContext {
@@ -15,46 +16,122 @@ export interface OrgContext {
   twilioInboundNumber: string | null
 }
 
-export class OrgNotFoundError extends Error {
-  constructor(public lookup: string) { super(`No organization for ${lookup}`); this.name = 'OrgNotFoundError' }
+/**
+ * Subset of OrgContext that is safe to expose to unauthenticated callers
+ * (e.g. landing-page lead webhook). Excludes credentials, handoff webhooks,
+ * connected-account IDs, and any field that leaks operational topology.
+ */
+export interface PublicOrgContext {
+  id: string
+  name: string
+  partnerAppSlug: string | null
+  agentName: string
+  tenantBrand: string
 }
 
-const COLUMNS = 'id, name, partner_app_slug, agent_name, agent_persona_overlay, handoff_slack_webhook, handoff_imessage_target, cal_com_event_link, stripe_connect_account_id, llm_daily_cap_usd, twilio_inbound_number'
+export class OrgNotFoundError extends Error {
+  constructor(public lookup: string) {
+    super(`No organization for ${lookup}`)
+    this.name = 'OrgNotFoundError'
+  }
+}
 
-function rowToCtx(row: any): OrgContext {
+export class OrgRowShapeError extends Error {
+  constructor(public lookup: string, public zodIssues: string) {
+    super(`Org row failed schema validation for ${lookup}: ${zodIssues}`)
+    this.name = 'OrgRowShapeError'
+  }
+}
+
+const COLUMNS_FULL =
+  'id, name, partner_app_slug, agent_name, agent_persona_overlay, handoff_slack_webhook, handoff_imessage_target, cal_com_event_link, stripe_connect_account_id, llm_daily_cap_usd, twilio_inbound_number'
+
+const COLUMNS_PUBLIC = 'id, name, partner_app_slug, agent_name'
+
+const OrgRowSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  partner_app_slug: z.string().nullable(),
+  agent_name: z.string().nullable(),
+  agent_persona_overlay: z.record(z.string(), z.unknown()).nullable(),
+  handoff_slack_webhook: z.string().nullable(),
+  handoff_imessage_target: z.string().nullable(),
+  cal_com_event_link: z.string().nullable(),
+  stripe_connect_account_id: z.string().nullable(),
+  llm_daily_cap_usd: z.union([z.number(), z.string()]).nullable(),
+  twilio_inbound_number: z.string().nullable(),
+})
+
+const PublicOrgRowSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  partner_app_slug: z.string().nullable(),
+  agent_name: z.string().nullable(),
+})
+
+function rowToCtx(row: unknown, lookup: string): OrgContext {
+  const parsed = OrgRowSchema.safeParse(row)
+  if (!parsed.success) throw new OrgRowShapeError(lookup, parsed.error.message)
+  const r = parsed.data
   return {
-    id: row.id,
-    name: row.name,
-    partnerAppSlug: row.partner_app_slug,
-    agentName: row.agent_name ?? 'Riley',
-    tenantBrand: row.name,
-    agentPersonaOverlay: row.agent_persona_overlay ?? {},
-    handoffSlackWebhook: row.handoff_slack_webhook,
-    handoffImessageTarget: row.handoff_imessage_target,
-    calComEventLink: row.cal_com_event_link,
-    stripeConnectAccountId: row.stripe_connect_account_id,
-    llmDailyCapUsd: Number(row.llm_daily_cap_usd ?? 50),
-    twilioInboundNumber: row.twilio_inbound_number,
+    id: r.id,
+    name: r.name,
+    partnerAppSlug: r.partner_app_slug,
+    agentName: r.agent_name ?? 'Riley',
+    tenantBrand: r.name,
+    agentPersonaOverlay: (r.agent_persona_overlay ?? {}) as Record<string, unknown>,
+    handoffSlackWebhook: r.handoff_slack_webhook,
+    handoffImessageTarget: r.handoff_imessage_target,
+    calComEventLink: r.cal_com_event_link,
+    stripeConnectAccountId: r.stripe_connect_account_id,
+    llmDailyCapUsd: Number(r.llm_daily_cap_usd ?? 50),
+    twilioInboundNumber: r.twilio_inbound_number,
+  }
+}
+
+function rowToPublicCtx(row: unknown, lookup: string): PublicOrgContext {
+  const parsed = PublicOrgRowSchema.safeParse(row)
+  if (!parsed.success) throw new OrgRowShapeError(lookup, parsed.error.message)
+  const r = parsed.data
+  return {
+    id: r.id,
+    name: r.name,
+    partnerAppSlug: r.partner_app_slug,
+    agentName: r.agent_name ?? 'Riley',
+    tenantBrand: r.name,
   }
 }
 
 export async function resolveOrgByTwilioNumber(number: string): Promise<OrgContext> {
   const db = createServiceSupabase()
-  const { data } = await db.from('organizations').select(COLUMNS).eq('twilio_inbound_number', number).single()
+  const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('twilio_inbound_number', number).single()
   if (!data) throw new OrgNotFoundError(`twilio:${number}`)
-  return rowToCtx(data)
+  return rowToCtx(data, `twilio:${number}`)
 }
 
 export async function resolveOrgById(id: string): Promise<OrgContext> {
   const db = createServiceSupabase()
-  const { data } = await db.from('organizations').select(COLUMNS).eq('id', id).single()
+  const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('id', id).single()
   if (!data) throw new OrgNotFoundError(`id:${id}`)
-  return rowToCtx(data)
+  return rowToCtx(data, `id:${id}`)
 }
 
 export async function resolveOrgBySlug(slug: string): Promise<OrgContext> {
   const db = createServiceSupabase()
-  const { data } = await db.from('organizations').select(COLUMNS).eq('partner_app_slug', slug).single()
+  const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('partner_app_slug', slug).single()
   if (!data) throw new OrgNotFoundError(`slug:${slug}`)
-  return rowToCtx(data)
+  return rowToCtx(data, `slug:${slug}`)
+}
+
+/**
+ * Public-safe variant for unauthenticated callers (landing page lead webhook).
+ * Returns ONLY id + display-safe metadata — no credentials, no webhooks, no
+ * connected-account IDs. Use this instead of resolveOrgBySlug from any route
+ * that does not gate the caller with a tenant-bound credential.
+ */
+export async function resolveOrgBySlugPublic(slug: string): Promise<PublicOrgContext> {
+  const db = createServiceSupabase()
+  const { data } = await db.from('organizations').select(COLUMNS_PUBLIC).eq('partner_app_slug', slug).single()
+  if (!data) throw new OrgNotFoundError(`slug:${slug}`)
+  return rowToPublicCtx(data, `slug:${slug}`)
 }
