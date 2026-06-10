@@ -4,6 +4,7 @@
  * Returns TwiML so Twilio can speak the agent's reply back.
  */
 import { NextResponse } from 'next/server'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { resolveOrgByTwilioNumber, OrgNotFoundError } from '@/lib/agent/tenant'
 import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
@@ -20,11 +21,49 @@ function xmlResp(body: string, status = 200): NextResponse {
   return new NextResponse(body, { status, headers: { 'content-type': 'text/xml' } })
 }
 
+/**
+ * Twilio webhook signature verification per https://www.twilio.com/docs/usage/webhooks/webhooks-security
+ * Fails closed: missing token or signature → reject. Silent-drop on mismatch (return empty TwiML 200)
+ * so Twilio does not retry-flood the endpoint and the response leaks no info about why it dropped.
+ */
+function verifyTwilioSignature(req: Request, params: Record<string, string>): boolean {
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  const signature = req.headers.get('x-twilio-signature')
+  if (!authToken || !signature) return false
+
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+  if (!host) return false
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https'
+  const path = new URL(req.url).pathname
+  const url = `${proto}://${host}${path}`
+
+  let toSign = url
+  for (const k of Object.keys(params).sort()) toSign += k + params[k]
+
+  const expected = createHmac('sha1', authToken).update(toSign).digest('base64')
+  if (signature.length !== expected.length) return false
+  try {
+    return timingSafeEqual(Buffer.from(signature, 'utf8'), Buffer.from(expected, 'utf8'))
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: Request): Promise<NextResponse> {
   const form = await req.formData()
-  const from = String(form.get('From') ?? '')
-  const to = String(form.get('To') ?? '')
-  const body = String(form.get('Body') ?? '')
+  const flat: Record<string, string> = {}
+  for (const [k, v] of form.entries()) {
+    if (typeof v === 'string') flat[k] = v
+  }
+
+  if (!verifyTwilioSignature(req, flat)) {
+    console.warn('[agent/sms/inbound] rejected: signature mismatch or missing TWILIO_AUTH_TOKEN')
+    return xmlResp(twiml(''))
+  }
+
+  const from = flat.From ?? ''
+  const to = flat.To ?? ''
+  const body = flat.Body ?? ''
   if (!from || !to || !body) return xmlResp(twiml(''))
 
   let org
