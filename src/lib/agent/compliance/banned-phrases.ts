@@ -4,7 +4,7 @@ const CORE_BANNED: RegExp[] = [
   /(fix|repair|boost)\s+your\s+credit/i,
   /\bI(?:'| a)?m\s+(?:a\s+)?(real|actual)\s+(person|human)\b/i,         // no deception
   /\bnot\s+a\s+(bot|robot|AI)\b/i,
-  /100%\s+approval/i,
+  /\b100\s*%?\s*approval/i,                                            // catches "100 % approval" and "100 approval"
   /\bno\s+credit\s+check\b/i,
 ]
 
@@ -28,7 +28,13 @@ function normalizeForBannedCheck(body: string): string {
   return body
     // strip zero-width / format chars
     .replace(/[​-‏‪-‮⁠﻿]/g, '')
-    // collapse common separators inserted between letters to evade regex
+    // collapse runs of 4+ single-letters separated by single separators into a
+    // single word: "g-u-a-r-a-n-t-e-e-d" → "guaranteed", "c r e d i t" → "credit".
+    // Word boundaries (\b) prevent the run from greedily eating the first letter
+    // of the next word — otherwise "g-u-a-r-a-n-t-e-e-d approval" would collapse
+    // to "guaranteedapproval" instead of "guaranteed approval" and miss the match.
+    .replace(/\b(?:[a-zA-Z][\s\-_.,;:!?·•∙*~|/\\]){3,}[a-zA-Z]\b/g, (run) => run.replace(/[\s\-_.,;:!?·•∙*~|/\\]+/g, ''))
+    // collapse remaining separator runs between non-letter sequences into a single space
     .replace(/[\s\-_.,;:!?·•∙*~|/\\]+/g, ' ')
     // collapse multiple spaces
     .replace(/\s{2,}/g, ' ')
