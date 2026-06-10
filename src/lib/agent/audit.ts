@@ -18,14 +18,29 @@ export interface AuditEvent {
 export async function emitAudit(evt: AuditEvent): Promise<void> {
   try {
     const db = createServiceSupabase()
-    await db.from('audit_events').insert({
+    const { error } = await db.from('audit_events').insert({
       organization_id: evt.organizationId,
       hardware_uuid: evt.hardwareUuid ?? null,
       ip: evt.ip ?? null,
       action: evt.action,
       payload: evt.payload ?? {},
     })
-  } catch {
-    // best-effort — never throw from audit path
+    // supabase-js returns insert errors via the .error field, not by throwing.
+    // The prior code swallowed both throws and quiet errors — meaning a
+    // misconfigured RLS or schema drift would drop every audit on the floor
+    // with zero signal. Surface these so Vercel Functions logs catch them.
+    if (error) {
+      console.error(
+        '[audit] insert returned error',
+        { action: evt.action, organizationId: evt.organizationId, message: error.message },
+      )
+    }
+  } catch (err) {
+    // Network / unexpected throw. Still best-effort (we never want audit
+    // to break the request path), but loud so it's diagnosable.
+    console.error(
+      '[audit] insert threw',
+      { action: evt.action, organizationId: evt.organizationId, err: err instanceof Error ? err.message : String(err) },
+    )
   }
 }
