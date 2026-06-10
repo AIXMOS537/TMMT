@@ -3,7 +3,7 @@
  * Composes: guard → opt-out → quiet-hours → LLM (with regen) → CFPB disclaimers → FSM → audit.
  * See spec at docs/superpowers/specs/2026-06-09-spec-b3-ai-sales-agent-design.md
  */
-import { guardOrganization } from './guard'
+import { guardOrganization, assertLlmCapNotExceeded } from './guard'
 import type { OrgContext } from './tenant'
 import { type AgentState, step } from './state-machine'
 import { callAgent, pickModel } from './llm-router'
@@ -38,6 +38,7 @@ const SAFE_FALLBACK = 'Thanks for reaching out — could you tell me more about 
 
 export async function processInbound(args: ProcessInboundArgs): Promise<ProcessInboundResult> {
   await guardOrganization(args.org.id)
+  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
 
   // 1. Opt-out short-circuit
   if (isOptOutMessage(args.inboundBody)) {
