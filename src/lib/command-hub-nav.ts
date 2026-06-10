@@ -14,6 +14,7 @@ import {
   Users,
   TrendingUp,
   ExternalLink,
+  Handshake,
 } from "lucide-react";
 
 export type CommandHubLink = {
@@ -94,6 +95,18 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         description: "Marketing landing (membership, apply)",
         icon: ExternalLink,
         external: true,
+      },
+    ],
+  },
+  {
+    title: "Federation",
+    links: [
+      {
+        href: "/command/handoffs",
+        label: "Entity handoffs",
+        description: "Cross-entity client handoffs (TMMT · AIXMOS · MOE) with consent status",
+        icon: Handshake,
+        badge: "Federation",
       },
     ],
   },
