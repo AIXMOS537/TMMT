@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getPayments } from "@/lib/queries";
 import { PageHeader, DataTable, Column, FilterBar, ExportButton, StatCard, ErrorBanner } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
-import { rollupAffiliates, COMMISSION_PER_SALE, type AffiliateRollup } from "@/lib/affiliates";
+import { rollupAffiliates, COMMISSION_RATE, type AffiliateRollup } from "@/lib/affiliates";
 
 export default function AffiliatePayoutsPage() {
   const [payments, setPayments] = useState<Record<string, unknown>[]>([]);
@@ -58,7 +58,7 @@ export default function AffiliatePayoutsPage() {
     <div>
       <PageHeader
         title="Affiliate Payouts"
-        description={`Commission accrues at ${formatCurrency(COMMISSION_PER_SALE)} per collected sale · attributed from payment records`}
+        description={`Commission accrues at ${Math.round(COMMISSION_RATE * 100)}% of each collected sale (Exhibit A v1.0 base rate) · attributed from payment records`}
         action={<ExportButton data={filtered} columns={columns} filename="affiliate-payouts" />}
       />
 
