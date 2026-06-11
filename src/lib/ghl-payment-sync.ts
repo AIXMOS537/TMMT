@@ -10,7 +10,7 @@ type RevenueTagMeta = {
 };
 
 const REVENUE_TAGS: Record<string, RevenueTagMeta> = {
-  "member-97": { amount: 97, label: "AIXMOS Membership ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
+  "member-97": { amount: 97, label: "TMMT Academy ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
   "credit-guidance-active": {
     amount: 750,
     label: "Credit guidance program",
