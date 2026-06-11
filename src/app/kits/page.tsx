@@ -32,13 +32,13 @@ const kits = [
   },
   {
     id: "growth",
-    name: "AIXMOS Growth Kit",
+    name: "TMMT Academy",
     audience: "Members & operator recruits",
     setup: "$97",
     monthly: "/mo membership",
     bullets: [
-      "Credit guidance path",
-      "Business systems & coaching",
+      "Run-your-fleet playbook + AIXMOS agents",
+      "Credit + funding path via Moe Legacy",
       "Operator apply funnel",
     ],
     buyOnline: kitCheckout.growth,
