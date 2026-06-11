@@ -5,10 +5,11 @@
  * Emits lead_received audit event; downstream realtime subscriber triggers first outbound SMS.
  */
 import { NextResponse } from 'next/server'
-import { resolveOrgBySlug, OrgNotFoundError } from '@/lib/agent/tenant'
+import { resolveOrgBySlugPublic, OrgNotFoundError } from '@/lib/agent/tenant'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
+import { isRateLimited } from '@/lib/rate-limit'
 
 const SKU_PRICE_CENTS: Record<string, number> = {
   'lead-magnet': 0,
@@ -45,8 +46,16 @@ export async function POST(req: Request): Promise<NextResponse> {
   const slug = url.searchParams.get('org') ?? ''
   if (!slug) return NextResponse.json({ error: 'org query param required' }, { status: 400 })
 
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() || 'unknown'
+  if (isRateLimited(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 })) {
+    return NextResponse.json({ error: 'too many requests' }, { status: 429 })
+  }
+  if (isRateLimited(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 })) {
+    return NextResponse.json({ error: 'too many requests' }, { status: 429 })
+  }
+
   let org
-  try { org = await resolveOrgBySlug(slug) }
+  try { org = await resolveOrgBySlugPublic(slug) }
   catch (e) {
     if (e instanceof OrgNotFoundError) return NextResponse.json({ error: 'org not found' }, { status: 404 })
     throw e
