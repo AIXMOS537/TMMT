@@ -7,8 +7,8 @@ const APPLY_URL = process.env.NEXT_PUBLIC_AFFILIATE_APPLY_URL || "https://tally.
 const bullets = [
   {
     icon: Coins,
-    title: "$35 per sale, paid monthly",
-    body: "Direct deposit on the 1st. Proven top affiliates tier up to $45–$50.",
+    title: "30% recurring, paid monthly",
+    body: "About $29/mo per active member, every month they stay. Volume tiers up to 40%.",
   },
   {
     icon: Link2,
@@ -31,11 +31,12 @@ export default function AffiliateLanding() {
             AIXMOS Affiliate Program
           </p>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-            Get paid $35 every time someone gets their money + credit on track.
+            Get paid every month for every member you bring.
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
-            AIXMOS pays you $35 for every $97 membership you refer. We coach, we support, we deliver
-            the plan. You share the link and get paid the 1st of every month.
+            AIXMOS pays you 30% recurring — about $29 every month — for every active $97 Academy
+            member you refer, with volume tiers up to 40%. We coach, we support, we deliver the
+            plan. You share the link and get paid monthly, for as long as they stay.
           </p>
         </header>
 
