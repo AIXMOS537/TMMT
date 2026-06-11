@@ -8,7 +8,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { resolveOrgByTwilioNumber, OrgNotFoundError } from '@/lib/agent/tenant'
 import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
-import { LicenseDisabledError, OperationalKillError } from '@/lib/agent/guard'
+import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
 
 function twiml(body: string): string {
@@ -144,7 +144,12 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     return xmlResp(twiml(result.outboundBody ?? ''))
   } catch (e) {
-    if (e instanceof LicenseDisabledError || e instanceof OperationalKillError) {
+    if (
+      e instanceof LicenseDisabledError ||
+      e instanceof OperationalKillError ||
+      e instanceof LlmCapExceededError
+    ) {
+      if (e instanceof LlmCapExceededError) console.warn('[agent/sms/inbound] llm cap exceeded:', e.message)
       return xmlResp(twiml(''))
     }
     console.error('[agent/sms/inbound] error', e)

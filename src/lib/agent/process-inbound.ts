@@ -3,7 +3,7 @@
  * Composes: guard → opt-out → quiet-hours → LLM (with regen) → CFPB disclaimers → FSM → audit.
  * See spec at docs/superpowers/specs/2026-06-09-spec-b3-ai-sales-agent-design.md
  */
-import { guardOrganization } from './guard'
+import { guardOrganization, assertLlmCapNotExceeded } from './guard'
 import type { OrgContext } from './tenant'
 import { type AgentState, step } from './state-machine'
 import { callAgent, pickModel } from './llm-router'
@@ -38,6 +38,7 @@ const SAFE_FALLBACK = 'Thanks for reaching out — could you tell me more about 
 
 export async function processInbound(args: ProcessInboundArgs): Promise<ProcessInboundResult> {
   await guardOrganization(args.org.id)
+  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
 
   // 1. Opt-out short-circuit
   if (isOptOutMessage(args.inboundBody)) {
@@ -137,6 +138,29 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
       output_tokens: llmResult?.outputTokens,
     }
   })
+
+  // 5b. BAT-outlier audit. A jailbroken LLM coerced into returning all-max
+  // confidence (B+A+T ≈ 3, confidence ≈ 1) is the signature pattern for
+  // bypassing the QUALIFIED threshold. We don't block — legitimate hot
+  // leads can hit this — but we audit so a sustained pattern is
+  // diagnosable. Threshold is the 95th-percentile combo.
+  if (
+    llmResult &&
+    nextState === 'QUALIFIED' &&
+    llmResult.parsed.assessment.B + llmResult.parsed.assessment.A + llmResult.parsed.assessment.T >= 2.85 &&
+    llmResult.parsed.assessment.confidence >= 0.95
+  ) {
+    await emitAudit({
+      organizationId: args.org.id,
+      action: 'agent.bat_outlier',
+      payload: {
+        assessment: llmResult.parsed.assessment,
+        next_action: llmResult.parsed.next_action,
+        model: llmResult.model,
+        inbound_preview: args.inboundBody.slice(0, 200),
+      }
+    })
+  }
 
   // 6. Quiet hours guard for outbound
   const quiet = isQuietHours(args.phone)
