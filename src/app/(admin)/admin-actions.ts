@@ -30,6 +30,51 @@ const ADMIN_TABLES = new Set([
   "vendor_jobs",
 ]);
 
+// Universally-rejected keys: prototype pollution + auto-managed columns.
+// Per-table column allowlists are tracked as a follow-up; this is the
+// table-agnostic floor that closes the worst attacks (proto pollution,
+// timestamp tampering, soft-delete-flag flipping) without enumerating
+// every column on every table.
+const FORBIDDEN_KEYS = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+  "is_deleted",
+]);
+
+const MAX_KEYS = 100;
+const MAX_PAYLOAD_BYTES = 1_000_000;
+
+function sanitizeRecord(
+  record: Record<string, unknown>,
+): { ok: true; clean: Record<string, unknown>; stripped: string[] } | { ok: false; reason: string } {
+  const keys = Object.keys(record);
+  if (keys.length > MAX_KEYS) return { ok: false, reason: `too many fields (${keys.length} > ${MAX_KEYS})` };
+
+  const stripped: string[] = [];
+  const clean: Record<string, unknown> = {};
+  for (const k of keys) {
+    if (FORBIDDEN_KEYS.has(k) || k.startsWith("__")) {
+      stripped.push(k);
+      continue;
+    }
+    clean[k] = record[k];
+  }
+
+  try {
+    if (JSON.stringify(clean).length > MAX_PAYLOAD_BYTES) {
+      return { ok: false, reason: "payload too large" };
+    }
+  } catch {
+    return { ok: false, reason: "payload not serializable" };
+  }
+
+  return { ok: true, clean, stripped };
+}
+
 export async function adminUpsert(
   table: string,
   record: Record<string, unknown>
@@ -50,7 +95,16 @@ export async function adminUpsert(
     return { success: false, error: "Not authorized." };
   }
 
-  const { error } = await supabase.from(table).upsert(record);
+  const sanitized = sanitizeRecord(record);
+  if (!sanitized.ok) {
+    console.warn(`[${table}] upsert rejected: ${sanitized.reason}`);
+    return { success: false, error: "Invalid record." };
+  }
+  if (sanitized.stripped.length > 0) {
+    console.warn(`[${table}] upsert stripped forbidden keys: ${sanitized.stripped.join(", ")}`);
+  }
+
+  const { error } = await supabase.from(table).upsert(sanitized.clean);
   if (error) {
     console.error(`[${table}] upsert failed:`, error.message);
     return { success: false, error: "Failed to save. Please try again." };
