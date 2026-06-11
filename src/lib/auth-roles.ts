@@ -51,9 +51,23 @@ export function isOperatorUser(user: User | null): boolean {
   return getAppRole(user) === "operator";
 }
 
+/**
+ * Roles that grant admin-write access (used by `adminUpsert` and the admin
+ * route group). Explicit allowlist — deliberately does NOT fall back to
+ * "staff" tier, because the staff tier is the default for users with NO
+ * role token (newly-signed-up accounts, partners whose role wasn't
+ * provisioned), and a missing role must NEVER mean admin write.
+ */
+const ADMIN_TIER_ROLES = new Set<string>([
+  "admin",
+  "internal_team",
+  "va",
+  "executive_va",
+  "executive",
+]);
+
 export function isStaffUser(user: User | null): boolean {
-  const tier = getTierForUser(user);
-  return tier === "staff" || tier === "owner";
+  return ADMIN_TIER_ROLES.has(getAppRole(user));
 }
 
 export function isInvestorUser(user: User | null): boolean {
