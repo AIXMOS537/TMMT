@@ -1,0 +1,54 @@
+name: mission-daily
+
+# Free Vercel-Pro-cron replacement: hits /api/mission/generate once a day
+# so the owner + every teammate with a telegram_chat_id receives their
+# daily Mission Control summary on Telegram.
+#
+# Setup (one-time):
+#   1. gh secret set CRON_SECRET --body "$CRON_SECRET" --repo AIXMOS537/TMMT
+#      (use the same value that's set in Vercel for tmmt-ops)
+#   2. Optional: gh secret set MISSION_API_BASE --body "https://tmmt-ops.vercel.app"
+#      Defaults to https://tmmt-ops.vercel.app if not set.
+#
+# Triggers:
+#   - schedule: daily at 13:00 UTC (8 AM EST / 9 AM EDT)
+#   - workflow_dispatch: manual fire-now button in the Actions tab
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      audience:
+        description: "owner (just owner chat) or team (every profile with a chat_id)"
+        required: true
+        default: team
+        type: choice
+        options: [owner, team]
+      notify:
+        description: "Actually send to Telegram? false = dry-run preview only"
+        required: true
+        default: "true"
+
+jobs:
+  push-mission:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/mission/generate
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          MISSION_API_BASE: ${{ secrets.MISSION_API_BASE || 'https://tmmt-ops.vercel.app' }}
+          AUDIENCE: ${{ github.event.inputs.audience || 'team' }}
+          NOTIFY: ${{ github.event.inputs.notify || 'true' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET repo secret is not set"
+            exit 1
+          fi
+          echo "Calling $MISSION_API_BASE/api/mission/generate (audience=$AUDIENCE notify=$NOTIFY)"
+          response=$(curl -sS --fail-with-body -X POST \
+            "$MISSION_API_BASE/api/mission/generate" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"audience\":\"$AUDIENCE\",\"notify\":$NOTIFY}")
+          echo "$response"
