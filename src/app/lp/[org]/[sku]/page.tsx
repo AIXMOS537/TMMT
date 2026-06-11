@@ -27,7 +27,7 @@ const COPY: Record<string, SkuCopy> = {
   },
   'intro-97': {
     headline: 'Credit + Funding Audit — $97',
-    subhead: 'Real human eyes on your report + a 30-minute call with an advisor.',
+    subhead: 'Real human eyes on your report + a 30-minute call with a Moe Legacy advisor.',
     bullets: [
       'Personalized review of your full credit file',
       '30-minute strategy call (recorded for you)',
@@ -37,28 +37,28 @@ const COPY: Record<string, SkuCopy> = {
     proof: 'Average client adds 47 points in 90 days. Results vary.',
   },
   'training': {
-    headline: 'Operator Training Cohort',
-    subhead: 'Become a TMMT-certified credit + funding operator.',
+    headline: 'TMMT Academy — Operator Cohort',
+    subhead: 'Run your own fleet on our brain. Become a TMMT-certified operator.',
     bullets: [
       'Live 6-week cohort with weekly office hours',
-      'All scripts, templates, and the OPERATIONS_BRAIN reference doc',
+      'The AIXMOS agent playbook a real rental company runs on — scripts, templates, OPERATIONS_BRAIN',
       'Lifetime alumni Slack + ongoing playbook updates',
     ],
     cta: 'Apply for the next cohort',
   },
   'rental-in-a-box': {
     headline: 'Rental-in-a-Box',
-    subhead: 'Pre-built rental property operating system, ready in 7 days.',
+    subhead: 'Pre-built car-rental business operating system, ready in 7 days.',
     bullets: [
-      'Full property mgmt SOPs + automation',
-      'Tenant intake, screening, and turnover workflow',
-      'Connected to the TMMT credit + funding engine',
+      'Full fleet management SOPs + automation',
+      'Renter intake, screening, and turnover workflow',
+      'Credit + funding lane connected via Moe Legacy',
     ],
     cta: 'See if I qualify',
   },
   'flagship': {
     headline: 'Full Empire Build',
-    subhead: 'White-glove buildout of your entire credit + funding + operator empire.',
+    subhead: 'White-glove buildout of your entire AI-run business — agents, funnels, and operators.',
     bullets: [
       'Dedicated buildout team for 60 days',
       'Custom branding, white-label license',
@@ -69,9 +69,9 @@ const COPY: Record<string, SkuCopy> = {
 }
 
 const ORG_BRAND: Record<string, { name: string; tagline: string }> = {
-  aixmos:        { name: 'AIXMOS',          tagline: 'AI-powered credit + funding for operators' },
-  moe_legacy:    { name: 'Moe Legacy',      tagline: 'Building generational wealth, one funded operator at a time' },
-  tmmt_property: { name: 'TMMT',            tagline: 'Your credit + funding operating system' },
+  aixmos:        { name: 'AIXMOS',          tagline: 'The AI engine — agents that answer, follow up, and close 24/7' },
+  moe_legacy:    { name: 'Moe Legacy',      tagline: 'The go-to for getting funding-ready and funded' },
+  tmmt_property: { name: 'TMMT',            tagline: 'The car rental agency that teaches you to run your own fleet' },
 }
 
 export const dynamic = 'force-dynamic'

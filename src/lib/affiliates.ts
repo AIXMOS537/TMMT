@@ -2,13 +2,15 @@
  * Affiliate payout reporting — rolls up the `aff: <code>` attribution that
  * ghl-payment-sync stamps onto customer_payments into per-affiliate totals.
  *
- * Commission policy is intentionally centralized here. Default is the documented
- * program ($35 per collected/paid sale); change COMMISSION_PER_SALE or
- * commissionForPayment() to adjust. Commission accrues only on PAID rows — never
- * on pending balances — so you never owe a payout on money you haven't collected.
+ * Commission policy is intentionally centralized here. The documented program
+ * (Operator Agreement Exhibit A v1.0) pays a percentage of each collected sale;
+ * change COMMISSION_RATE or commissionForPayment() to adjust. Commission accrues
+ * only on PAID rows — never on pending balances — so you never owe a payout on
+ * money you haven't collected. Volume-tier upgrades (35–40%) are applied at
+ * payout review, not here — this engine reports the base accrual.
  */
 
-export const COMMISSION_PER_SALE = 35; // dollars per collected sale (documented program)
+export const COMMISSION_RATE = 0.3; // share of each collected sale (Exhibit A v1.0 base rate)
 
 export type PaymentRow = Record<string, unknown>;
 
@@ -38,7 +40,7 @@ function amountOf(row: PaymentRow): number {
 
 /** Commission earned on a single payment row (0 unless it's a paid sale). */
 export function commissionForPayment(row: PaymentRow): number {
-  return isPaid(row) ? COMMISSION_PER_SALE : 0;
+  return isPaid(row) ? Math.round(amountOf(row) * COMMISSION_RATE * 100) / 100 : 0;
 }
 
 /**

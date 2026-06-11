@@ -3,7 +3,7 @@ import {
   parseAffiliateCode,
   commissionForPayment,
   rollupAffiliates,
-  COMMISSION_PER_SALE,
+  COMMISSION_RATE,
 } from "./affiliates";
 
 describe("parseAffiliateCode", () => {
@@ -24,10 +24,11 @@ describe("parseAffiliateCode", () => {
 });
 
 describe("commissionForPayment", () => {
-  it("pays only on collected (Paid) sales", () => {
-    expect(commissionForPayment({ payment_status: "Paid" })).toBe(COMMISSION_PER_SALE);
-    expect(commissionForPayment({ payment_status: "Pending" })).toBe(0);
-    expect(commissionForPayment({ payment_status: "Overdue" })).toBe(0);
+  it("pays the base rate only on collected (Paid) sales", () => {
+    expect(commissionForPayment({ payment_status: "Paid", amount: 97 })).toBeCloseTo(97 * COMMISSION_RATE);
+    expect(commissionForPayment({ payment_status: "Paid" })).toBe(0); // no amount, nothing collected
+    expect(commissionForPayment({ payment_status: "Pending", amount: 97 })).toBe(0);
+    expect(commissionForPayment({ payment_status: "Overdue", amount: 97 })).toBe(0);
   });
 });
 
@@ -48,7 +49,7 @@ describe("rollupAffiliates", () => {
     expect(jane.paidSales).toBe(2);
     expect(jane.pendingSales).toBe(1);
     expect(jane.grossCollected).toBe(194); // only the two paid rows
-    expect(jane.commission).toBe(2 * COMMISSION_PER_SALE);
+    expect(jane.commission).toBeCloseTo(194 * COMMISSION_RATE);
   });
 
   it("ignores rows without an affiliate code", () => {
@@ -59,7 +60,7 @@ describe("rollupAffiliates", () => {
 
   it("sorts by commission owed, highest first", () => {
     const rows = rollupAffiliates(payments);
-    expect(rows[0].code).toBe("jane99"); // 2 paid > bob's 1 paid
+    expect(rows[0].code).toBe("bob"); // bob's $250 sale out-earns jane's two $97s at a flat rate
   });
 
   it("returns an empty array when nothing is attributed", () => {
