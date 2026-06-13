@@ -118,6 +118,19 @@ board DONE).
 
 npm aliases: `npm run swarm:join` · `swarm:doctor` · `swarm:mesh` · `swarm:status` · `sync:machine`.
 
+### Phone alerts (SOS → your phone)
+
+So `tmmt help` actually buzzes you, point it at Slack and/or Telegram once:
+
+```bash
+bash scripts/tmmt notify        # owner: paste a Slack webhook and/or Telegram token (one time)
+bash scripts/tmmt notify-test   # confirm your phone buzzes
+```
+
+It stores them in `scripts/phase9-notify/.env.notify` (git-ignored, mode 600 —
+never committed). If nothing's configured, an SOS still lands on the mesh board;
+you just won't get the push.
+
 ## Toggles (env vars)
 
 | Var | Effect |
