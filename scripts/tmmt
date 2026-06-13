@@ -22,5 +22,7 @@ case "$v" in
   mesh|devices) exec bash "$ROOT/scripts/swarm.sh" mesh;;
   sync)   exec bash "$ROOT/scripts/sync-machine.sh";;
   fix|doctor) exec bash "$ROOT/scripts/swarm-doctor.sh";;
-  *) printf 'tmmt words: up | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix\n';;
+  notify) exec bash "$ROOT/scripts/mesh/link.sh" notify-setup;;
+  notify-test|ping) exec bash "$ROOT/scripts/mesh/link.sh" notify-test;;
+  *) printf 'tmmt words: up | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
