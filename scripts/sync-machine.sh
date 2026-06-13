@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Keep two laptops in sync. Safe to run any time, on any branch.
+# Keep every machine on your mesh in sync (carry Mac, Surface, …).
+# Safe to run any time, on any branch.
 #
 # Usage:
 #   bash scripts/sync-machine.sh            # sync the CURRENT branch (stash → rebase → push)
@@ -8,7 +9,7 @@
 #   bash scripts/sync-machine.sh master      # fast-forward master only
 #
 # It NEVER force-pushes and NEVER merges; on conflict it stops cleanly and tells
-# you what to do. Run it at the start and end of every work block on each laptop.
+# you what to do. Run it at the start and end of every work block on each machine.
 
 set -euo pipefail
 source "$(dirname "$0")/lib/swarm-common.sh"
