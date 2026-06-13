@@ -103,11 +103,29 @@ cmd_status() {
   cmd_who
 }
 
+# One-time: set up where SOS pings go (Slack / Telegram). Owner runs this.
+cmd_notify_setup() {
+  local wi="$SWARM_ROOT/scripts/phase9-notify/wire-it.sh"
+  if [[ -x "$wi" ]]; then
+    info "let's wire your phone alerts (Slack webhook and/or Telegram). Press Enter to skip a field."
+    bash "$wi"
+  else
+    warn "missing $wi — create $NOTIFY_ENV from the template and add SLACK_WEBHOOK_URL / TELEGRAM_*."
+  fi
+}
+
+# Confirm the phone actually buzzes.
+cmd_notify_test() {
+  ping_owner "✅ TMMT test ping from $(swarm_machine) at $(date -u +%H:%MZ) — if you see this on your phone, SOS alerts work."
+}
+
 case "${1:-status}" in
   serve)   shift; cmd_serve ;;
   request) shift; cmd_request "$@" ;;
   who)     cmd_who ;;
   assist)  shift; cmd_assist "$@" ;;
   status)  cmd_status ;;
-  *) die "usage: link.sh [serve | request \"reason\" | who | assist <machine> [user] | status]" ;;
+  notify-setup|setup) cmd_notify_setup ;;
+  notify-test|test)   cmd_notify_test ;;
+  *) die "usage: link.sh [serve | request \"reason\" | who | assist <machine> [user] | status | notify-setup | notify-test]" ;;
 esac
