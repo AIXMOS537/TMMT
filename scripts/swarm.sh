@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
-# TMMT agentic swarm — run many Claude Code agents in parallel, across two
-# laptops, without colliding. Git is the coordination layer.
+# TMMT agentic swarm — run many Claude Code agents in parallel across your MESH
+# of machines (carry Mac, a Surface, any number), without colliding. Git is the
+# only coordination layer, so any machine that can reach GitHub can join.
 #
 #   Each task  -> its own git worktree + branch  (agents never touch the same files)
-#   Shared board -> remote branch "swarm-coord"  (two laptops claim tasks atomically)
-#   Each agent -> a tmux window running `claude` with a scoped prompt
+#   Shared board -> remote branch "swarm-coord"  (every machine claims tasks atomically)
+#   Each agent -> a tmux window (mac/linux/wsl) or Windows Terminal tab (Surface)
 #
-# QUICK START (per laptop, one-time):
-#   bash scripts/swarm.sh init carry-mac      # name THIS laptop (work-mac on the other)
+# QUICK START (per machine, one-time — give each a UNIQUE name):
+#   bash scripts/swarm.sh init carry-mac      # on the Surface:  ... init surface
 #
 # DAILY:
-#   bash scripts/swarm.sh add "Wire Sentry DSN + verify errors flow"   # add work (either laptop)
+#   bash scripts/swarm.sh add "Wire Sentry DSN + verify errors flow"   # add work (any machine)
 #   bash scripts/swarm.sh add "Build email notifications (Gap #10)"
-#   bash scripts/swarm.sh up 3               # claim 3 tasks for THIS laptop + launch 3 agents
+#   bash scripts/swarm.sh up 3               # claim 3 tasks for THIS machine + launch 3 agents
 #   tmux attach -t swarm                      # watch/steer them (Ctrl-b n / p to switch)
-#   bash scripts/swarm.sh status             # see the whole board, both laptops
+#   bash scripts/swarm.sh status             # see the whole board, every machine
 #   bash scripts/swarm.sh done 4             # agent finished task #4 (also auto-run by the agent)
 #   bash scripts/swarm.sh clean              # remove finished worktrees
 #
 # ENV TOGGLES:
-#   SWARM_MACHINE=name     override this laptop's name
+#   SWARM_MACHINE=name     override this machine's name
 #   SWARM_YOLO=1           launch agents with --dangerously-skip-permissions (autonomous; use with care)
-#   SWARM_LAUNCH=print     don't use tmux; just print the launch commands
-#   SWARM_INSTALL=1        run `npm install` per worktree instead of symlinking node_modules
+#   SWARM_LAUNCH=print|tmux|wt   force a launcher (default: auto-detect)
+#   SWARM_INSTALL=1        npm install per worktree instead of symlinking node_modules (Windows-safe)
 
 set -euo pipefail
 source "$(dirname "$0")/lib/swarm-common.sh"
@@ -143,20 +144,35 @@ launch_agent() {
   local cc="claude"
   [[ "${SWARM_YOLO:-0}" == "1" ]] && cc="claude --dangerously-skip-permissions"
   local run="cd $(printf '%q' "$wt") && $cc \"\$(cat .swarm-task.txt)\""
+  local mode="${SWARM_LAUNCH:-auto}"
 
-  if [[ "${SWARM_LAUNCH:-tmux}" == "print" ]] || ! command -v tmux >/dev/null 2>&1; then
-    [[ "${SWARM_LAUNCH:-tmux}" != "print" ]] && warn "tmux not found — printing launch command:"
-    say "${BOLD}# task #$id${RST}"
-    say "$run"
+  _print_launch() { say "${BOLD}# task #$id${RST}"; say "$run"; }
+
+  # Explicit print mode, or no terminal multiplexer available.
+  if [[ "$mode" == "print" ]]; then _print_launch; return; fi
+
+  # macOS / Linux / WSL → tmux (best experience: one window per agent).
+  if [[ "$mode" == "auto" || "$mode" == "tmux" ]] && command -v tmux >/dev/null 2>&1; then
+    if ! tmux has-session -t swarm 2>/dev/null; then
+      tmux new-session -d -s swarm -n "t$id" -c "$wt"
+    else
+      tmux new-window -t swarm -n "t$id" -c "$wt"
+    fi
+    tmux send-keys -t "swarm:t$id" "$run" C-m
+    ok "launched #$id → tmux window ${BOLD}swarm:t$id${RST}  (tmux attach -t swarm)"
     return
   fi
-  if ! tmux has-session -t swarm 2>/dev/null; then
-    tmux new-session -d -s swarm -n "t$id" -c "$wt"
-  else
-    tmux new-window -t swarm -n "t$id" -c "$wt"
+
+  # Windows (Surface, Git Bash) → Windows Terminal tab if present.
+  if [[ "$mode" == "auto" || "$mode" == "wt" ]] && command -v wt.exe >/dev/null 2>&1; then
+    if wt.exe -w swarm new-tab --title "t$id" bash -lc "$run" >/dev/null 2>&1; then
+      ok "launched #$id → Windows Terminal tab ${BOLD}t$id${RST}"
+      return
+    fi
   fi
-  tmux send-keys -t "swarm:t$id" "$run" C-m
-  ok "launched #$id → tmux window ${BOLD}swarm:t$id${RST}"
+
+  warn "no tmux / Windows Terminal here — paste this in a new terminal:"
+  _print_launch
 }
 
 start_one() {
@@ -177,12 +193,25 @@ start_one() {
     git worktree add -q -b "$branch" "$wt" origin/master 2>/dev/null \
       || git worktree add -q "$wt" "$branch"
   fi
-  # Agents need secrets + deps to build. .env is git-ignored, so link it in.
-  [[ -f "$SWARM_ROOT/.env" && ! -e "$wt/.env" ]] && ln -s "$SWARM_ROOT/.env" "$wt/.env"
-  if [[ "${SWARM_INSTALL:-0}" == "1" ]]; then
-    ( cd "$wt" && npm install --no-audit --no-fund )
-  else
-    [[ -d "$SWARM_ROOT/node_modules" && ! -e "$wt/node_modules" ]] && ln -s "$SWARM_ROOT/node_modules" "$wt/node_modules"
+  # Agents need secrets + deps to build. Symlinks are ideal (instant, no extra
+  # disk), but Windows/Git-Bash often can't make them without Developer Mode —
+  # so fall back to a copy (.env) or a per-worktree install (node_modules).
+  # Best effort — provisioning must NEVER stop an agent from launching; if deps
+  # don't land here, the agent can run `npm install` itself.
+  if [[ -f "$SWARM_ROOT/.env" && ! -e "$wt/.env" ]]; then
+    ln -s "$SWARM_ROOT/.env" "$wt/.env" 2>/dev/null \
+      || cp "$SWARM_ROOT/.env" "$wt/.env" 2>/dev/null \
+      || warn "couldn't provide .env to $wt"
+  fi
+  if [[ ! -e "$wt/node_modules" ]]; then
+    if [[ "${SWARM_INSTALL:-0}" == "1" ]]; then
+      ( cd "$wt" && npm install --no-audit --no-fund ) || warn "npm install failed in $wt — run it there manually"
+    elif [[ -d "$SWARM_ROOT/node_modules" ]] && ln -s "$SWARM_ROOT/node_modules" "$wt/node_modules" 2>/dev/null; then
+      : # symlinked the shared node_modules
+    else
+      info "symlink unavailable here (Windows?) — installing deps in this worktree once…"
+      ( cd "$wt" && npm install --no-audit --no-fund ) || warn "npm install failed in $wt — run it there manually"
+    fi
   fi
 
   SET_ID="$id" SET_STATUS="DOING" board_edit _mut_setstatus || true
@@ -195,7 +224,8 @@ cmd_init() {
   mkdir -p "$SWARM_ROOT/.swarm"
   if [[ -n "${1:-}" ]]; then printf '%s\n' "$1" > "$SWARM_ROOT/.swarm/machine"; fi
   ensure_coord
-  ok "this laptop is '${BOLD}$(swarm_machine)${RST}'. Board ready on origin/$COORD_BRANCH."
+  ok "this machine is '${BOLD}$(swarm_machine)${RST}' (os: $(swarm_os)). Board ready on origin/$COORD_BRANCH."
+  say "Give every machine on your mesh a UNIQUE name (carry-mac, surface, …)."
   say "Next: bash scripts/swarm.sh add \"your first task\"   then   bash scripts/swarm.sh up 2"
 }
 
@@ -226,8 +256,11 @@ cmd_up() {  # claim N then launch them all (the swarm)
   local id
   for id in $ids; do start_one "$id"; done
   say ""
-  command -v tmux >/dev/null 2>&1 && [[ "${SWARM_LAUNCH:-tmux}" != "print" ]] \
-    && say "Attach to the swarm:  ${BOLD}tmux attach -t swarm${RST}   (Ctrl-b n/p to switch agents)"
+  if [[ "${SWARM_LAUNCH:-auto}" != "print" ]] && command -v tmux >/dev/null 2>&1; then
+    say "Watch the swarm:  ${BOLD}tmux attach -t swarm${RST}   (Ctrl-b n/p to switch agents)"
+  elif [[ "$(swarm_os)" == "windows" ]]; then
+    say "Each agent opened in its own Windows Terminal tab. If not, re-run with SWARM_LAUNCH=print."
+  fi
 }
 
 cmd_start() { [[ -n "${1:-}" ]] || die "usage: swarm.sh start <id>"; start_one "$1"; }
