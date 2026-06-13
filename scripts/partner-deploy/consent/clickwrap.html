@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AIXMOS Partner — Consent</title>
+<style>
+  body { font: 16px/1.5 -apple-system, system-ui, sans-serif; max-width: 640px; margin: 4em auto; color: #222; padding: 0 1em; }
+  h1 { font-size: 1.3em; }
+  .clause { background: #f7f7f7; padding: 1em 1.25em; border-left: 4px solid #444; margin: 1.5em 0; }
+  .bold { font-weight: 600; }
+  .neg { color: #b00; font-weight: 600; }
+  input[type="text"] { font: inherit; padding: 0.4em 0.6em; width: 8em; }
+  button { font: inherit; padding: 0.6em 1.2em; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .row { margin: 1em 0; }
+  ul { padding-left: 1.4em; }
+  small { color: #666; }
+</style>
+</head>
+<body>
+
+<h1>AIXMOS Partner — Install Consent</h1>
+
+<p>Before this install proceeds, read carefully and confirm your acceptance.</p>
+
+<div class="clause">
+  <p>This application reports the following to AIXMOS every 24 hours:</p>
+  <ul>
+    <li>Your Mac's hardware ID (so the license cannot be copied to another machine)</li>
+    <li>Application version and running status</li>
+    <li>Action counts (logins, intake forms submitted) — <span class="bold">NOT contents</span></li>
+    <li>An audit log of YOUR actions inside the apps, shipped hourly</li>
+  </ul>
+
+  <p>The app <span class="neg">does NOT</span> record your screen, your other applications, your files, your clients' data inside GHL or ClickUp, or your conversations.</p>
+
+  <p>Your client information stays in your GHL and ClickUp where it already lives. AIXMOS retains the right to remotely disable this license if the partnership agreement is breached. Disabling the license stops the apps from running but does not delete or transmit your client data.</p>
+</div>
+
+<p><span class="bold">This is a v0 partnership instrument.</span> Either party may propose amendments at any time. Any amendment requires both parties' signatures to take effect.</p>
+
+<div class="row">
+  <label>
+    <input type="checkbox" id="agree-check"> I understand and agree.
+  </label>
+</div>
+
+<div class="row">
+  Type <span class="bold">I AGREE</span> below to proceed:
+  <input type="text" id="agree-text" autocomplete="off" placeholder="">
+</div>
+
+<div class="row">
+  <button id="proceed" disabled>Install</button>
+  <button id="decline">Decline &amp; Quit</button>
+</div>
+
+<p><small>By clicking Install you also accept the Master Partner Agreement and DPA included on this USB drive (see <code>legal/</code>).</small></p>
+
+<script>
+  const cb = document.getElementById('agree-check');
+  const tx = document.getElementById('agree-text');
+  const ok = document.getElementById('proceed');
+  function refresh() {
+    ok.disabled = !(cb.checked && tx.value.trim() === 'I AGREE');
+  }
+  cb.addEventListener('change', refresh);
+  tx.addEventListener('input',  refresh);
+  ok.addEventListener('click', () => {
+    // The launching script reads window.title/exit-status; we just exit-0 the host.
+    document.title = 'CONSENT_ACCEPTED';
+    window.close();
+  });
+  document.getElementById('decline').addEventListener('click', () => {
+    document.title = 'CONSENT_DECLINED';
+    window.close();
+  });
+</script>
+
+</body>
+</html>
