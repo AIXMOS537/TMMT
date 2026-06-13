@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
@@ -93,10 +94,19 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 
-  const supabase = createMiddlewareClient(request, response);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Auth gate. If Supabase is unreachable or misconfigured (e.g. a preview
+  // deploy missing env vars), FAIL CLOSED: treat the request as signed-out so
+  // protected routes redirect to /login and public routes still render — never
+  // a 500, and never accidentally granting access.
+  let user: User | null = null;
+  try {
+    const supabase = createMiddlewareClient(request, response);
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch (err) {
+    console.error("middleware: Supabase auth check failed; treating as signed-out", err);
+  }
 
   if (!user && !isPublicPath(pathname)) {
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));

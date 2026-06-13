@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Pre-push backstop: refuse to push if any secret file is tracked in the repo,
+# and (if gitleaks is present) scan the commits being pushed.
+set -euo pipefail
+red() { printf '\e[31m%s\e[0m\n' "$*" >&2; }
+
+# 1) No tracked env/key files anywhere in the index (catches an earlier mistake).
+tracked_secrets="$(git ls-files | grep -Ei '(^|/)\.env(\.|$)|\.pem$|\.p12$|\.pfx$|(^|/)id_(rsa|ed25519|dsa)$' | grep -v '\.example$' || true)"
+if [[ -n "$tracked_secrets" ]]; then
+  red "BLOCKED push: secret file(s) are tracked in git:"
+  printf '   %s\n' $tracked_secrets >&2
+  red "Remove from history: git rm --cached <file>  (and rotate the secret)."
+  exit 1
+fi
+
+# 2) gitleaks over the full history (fast on small repos; skipped if absent).
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks detect --no-banner --redact 2>/dev/null || { red "BLOCKED push by gitleaks (secret in history)."; exit 1; }
+fi
+exit 0

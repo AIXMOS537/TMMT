@@ -27,6 +27,11 @@
     "smoke:prod": "bash scripts/smoke-prod.sh",
     "set-admin-role": "node scripts/set-admin-role.mjs",
     "sync:machine": "bash scripts/sync-machine.sh",
+    "swarm": "bash scripts/swarm.sh",
+    "swarm:status": "bash scripts/swarm.sh status",
+    "swarm:join": "bash scripts/swarm-join.sh",
+    "swarm:doctor": "bash scripts/swarm-doctor.sh",
+    "swarm:mesh": "bash scripts/swarm.sh mesh",
     "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs",
     "smoke:dispatch": "bash scripts/smoke-dispatch.sh"
   },
