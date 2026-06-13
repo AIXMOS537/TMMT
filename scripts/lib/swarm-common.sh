@@ -33,7 +33,19 @@ ok()   { printf '%s\n' "${GRN}✓${RST} $*"; }
 warn() { printf '%s\n' "${YLW}!${RST} $*" >&2; }
 die()  { printf '%s\n' "${RED}✗${RST} $*" >&2; exit 1; }
 
-# Stable per-laptop identity: $SWARM_MACHINE > .swarm/machine file > hostname.
+# Which OS are we on? The mesh is mixed: macOS (carry Mac), Linux/WSL, or
+# Windows (a Surface running Git Bash). Behavior (launcher, symlinks) adapts.
+swarm_os() {
+  case "$(uname -s 2>/dev/null)" in
+    Darwin) echo macos ;;
+    Linux)  if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then echo wsl; else echo linux; fi ;;
+    MINGW*|MSYS*|CYGWIN*) echo windows ;;
+    *) echo unknown ;;
+  esac
+}
+
+# Stable per-machine identity: $SWARM_MACHINE > .swarm/machine file > hostname.
+# Every machine on the mesh MUST have a unique name (branches are swarm/<name>/<id>).
 swarm_machine() {
   if [[ -n "${SWARM_MACHINE:-}" ]]; then printf '%s' "$SWARM_MACHINE"; return; fi
   local f="$SWARM_ROOT/.swarm/machine"
