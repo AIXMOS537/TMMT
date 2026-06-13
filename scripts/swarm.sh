@@ -66,14 +66,17 @@ _mut_setstatus() {
 # Register / refresh this device in the mesh roster (mesh.tsv, beside board.tsv).
 _mut_register() {
   local mf; mf="$(dirname "$1")/mesh.tsv"
-  [[ -f "$mf" ]] || printf '# machine\tos\tlast_seen\n' > "$mf"
+  [[ -f "$mf" ]] || printf '# machine\tos\trole\ttailscale\tstatus\tlast_seen\n' > "$mf"
   local now; now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   local tmp="$mf.tmp"
-  awk -F'\t' -v OFS='\t' -v n="$REG_NAME" -v o="$REG_OS" -v t="$now" '
+  # Empty REG_* values preserve the existing field (a heartbeat won't wipe data).
+  awk -F'\t' -v OFS='\t' \
+      -v n="$REG_NAME" -v o="${REG_OS:-}" -v r="${REG_ROLE:-}" \
+      -v ts="${REG_TS:-}" -v st="${REG_STATUS:-online}" -v t="$now" '
     /^#/{print; next}
-    $1==n{print n,o,t; found=1; next}
+    $1==n{ print n, (o==""?$2:o), (r==""?$3:r), (ts==""?$4:ts), (st==""?$5:st), t; found=1; next }
     {print}
-    END{if(!found) print n,o,t}' "$mf" > "$tmp"
+    END{ if(!found) print n,o,r,ts,st,t }' "$mf" > "$tmp"
   mv "$tmp" "$mf"
 }
 
@@ -249,7 +252,7 @@ cmd_init() {
   mkdir -p "$SWARM_ROOT/.swarm"
   if [[ -n "${1:-}" ]]; then printf '%s\n' "$1" > "$SWARM_ROOT/.swarm/machine"; fi
   ensure_coord
-  REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" board_edit _mut_register
+  REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" REG_TS="$(tailscale_self)" board_edit _mut_register
   ok "this machine is '${BOLD}$(swarm_machine)${RST}' (os: $(swarm_os)). Registered on the mesh."
   say "Give every machine on your mesh a UNIQUE name (carry-mac, work-mac, surface, …)."
   say "Next: bash scripts/swarm.sh add \"your first task\"   then   bash scripts/swarm.sh up 2"
@@ -319,12 +322,32 @@ cmd_status() {
   git worktree list | grep -F "$WORKTREE_BASE" | sed 's/^/   /' || say "   (none active)"
 }
 
+# Heartbeat: announce this machine is alive (and optionally its role/status).
+#   beat [role] [status]   role: owner|operator|agent ; status: online|assisting|…
+cmd_beat() {
+  REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" \
+  REG_ROLE="${1:-}" REG_STATUS="${2:-online}" REG_TS="$(tailscale_self)" \
+    board_edit _mut_register
+}
+
 cmd_mesh() {
   git fetch -q origin "$COORD_BRANCH" 2>/dev/null || true
   local m; m="$(git show "origin/$COORD_BRANCH:mesh.tsv" 2>/dev/null || true)"
   [[ -n "$m" ]] || { info "no devices registered yet — run: bash scripts/swarm-join.sh"; return; }
-  printf '%s%-16s %-9s %s%s\n' "$BOLD" "MACHINE" "OS" "LAST SEEN (UTC)" "$RST"
-  printf '%s\n' "$m" | awk -F'\t' 'NR==1{next}{printf "%-16s %-9s %s\n",$1,$2,$3}'
+  local now; now="$(date -u +%s)"
+  printf '%s   %-14s %-9s %-7s %-15s %-10s %s%s\n' "$BOLD" "MACHINE" "ROLE" "OS" "TAILSCALE" "STATUS" "SEEN" "$RST"
+  # Normalize empty TSV fields to "-" in awk FIRST: bash `read` with IFS=tab
+  # collapses consecutive tabs (tab is whitespace), which would drop empty
+  # columns and shift everything left.
+  printf '%s\n' "$m" | awk -F'\t' -v OFS='\t' '{for(i=1;i<=6;i++) if($i=="")$i="-"; print}' \
+  | while IFS=$'\t' read -r machine os role ts status seen; do
+    [[ "$machine" == \#* ]] && continue
+    local dot="·" age="?" e
+    e="$(iso_epoch "$seen")"
+    if [[ -n "$e" ]]; then local d=$((now - e)); age="$(fmt_age "$d")"; (( d < 300 )) && dot="${GRN}●${RST}"; fi
+    printf ' %b %-14s %-9s %-7s %-15s %-10s %s\n' "$dot" "$machine" "$role" "$os" "$ts" "$status" "$age"
+  done
+  say "${DIM}● = seen in the last 5 min (online)${RST}"
 }
 
 cmd_clean() {
@@ -355,6 +378,7 @@ case "${1:-help}" in
   list|board) cmd_list;;
   status) cmd_status;;
   mesh|devices) cmd_mesh;;
+  beat)   shift; cmd_beat "$@";;
   clean)  cmd_clean;;
   help|--help|-h) usage;;
   *) die "unknown command '$1' — run: bash scripts/swarm.sh help";;

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# tmmt — one simple word does the thing. Run from the repo folder:
+#   bash scripts/tmmt up        turn on + go live on the mesh
+#   bash scripts/tmmt who       who's online right now
+#   bash scripts/tmmt help "engine won't start"   send an SOS to the owner
+#   bash scripts/tmmt go 2      start 2 agents working
+#   bash scripts/tmmt serve     let the owner reach this laptop
+#   bash scripts/tmmt assist field-mac   (owner) jump onto a laptop
+#   bash scripts/tmmt mesh      list every device
+#   bash scripts/tmmt sync      pull/push the latest
+#   bash scripts/tmmt fix       health + security check
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+v="${1:-?}"; shift || true
+case "$v" in
+  up)     exec bash "$ROOT/scripts/tmmt-up.command" "$@";;
+  who)    exec bash "$ROOT/scripts/mesh/link.sh" who;;
+  help|sos) exec bash "$ROOT/scripts/mesh/link.sh" request "$@";;
+  go)     exec bash "$ROOT/scripts/swarm.sh" up "${1:-2}";;
+  serve)  exec bash "$ROOT/scripts/mesh/link.sh" serve;;
+  assist) exec bash "$ROOT/scripts/mesh/link.sh" assist "$@";;
+  mesh|devices) exec bash "$ROOT/scripts/swarm.sh" mesh;;
+  sync)   exec bash "$ROOT/scripts/sync-machine.sh";;
+  fix|doctor) exec bash "$ROOT/scripts/swarm-doctor.sh";;
+  *) printf 'tmmt words: up | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix\n';;
+esac
