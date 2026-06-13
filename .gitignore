@@ -62,3 +62,7 @@ deploy_brainkit_to_usb.sh
 
 # Phase 9 notify secrets (local only)
 scripts/phase9-notify/.env.notify
+
+# Swarm: per-laptop identity + per-worktree agent prompt (local only)
+.swarm/
+.swarm-task.txt
