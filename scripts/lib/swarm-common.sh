@@ -71,3 +71,24 @@ board_read() {
 }
 
 worktree_path() { printf '%s/%s' "$WORKTREE_BASE" "$1"; }
+
+# This machine's Tailscale IPv4 (for owner↔operator remote assist). Empty if
+# Tailscale isn't installed/up. We use the IP (reliable) rather than DNS name.
+tailscale_self() {
+  command -v tailscale >/dev/null 2>&1 || return 0
+  tailscale ip -4 2>/dev/null | head -1
+}
+
+# Parse an ISO-8601 UTC timestamp to epoch seconds (GNU date or BSD/macOS date).
+iso_epoch() {
+  date -u -d "$1" +%s 2>/dev/null || date -u -j -f '%Y-%m-%dT%H:%M:%SZ' "$1" +%s 2>/dev/null
+}
+
+# Humanize a seconds delta: 45s / 12m / 3h / 2d.
+fmt_age() {
+  local d="$1"
+  if   (( d < 90 ));     then echo "${d}s"
+  elif (( d < 5400 ));   then echo "$((d/60))m"
+  elif (( d < 172800 )); then echo "$((d/3600))h"
+  else echo "$((d/86400))d"; fi
+}
