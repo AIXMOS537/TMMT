@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Secret guard — blocks committing secrets or env files. Shared via
+# `git config core.hooksPath scripts/hooks` (installed by scripts/swarm-join.sh).
+# Defense in depth: filename rules + content patterns + gitleaks (if present).
+set -euo pipefail
+
+red()  { printf '\e[31m%s\e[0m\n' "$*" >&2; }
+yel()  { printf '\e[33m%s\e[0m\n' "$*" >&2; }
+
+staged="$(git diff --cached --name-only --diff-filter=ACM || true)"
+fail=0
+
+# 1) Never commit env / key / cert files (allow only *.example).
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  case "$f" in
+    *.example) : ;;
+    .env|.env.*|*/.env|*/.env.*) red "BLOCKED: '$f' is a secrets file — never commit it."; fail=1 ;;
+    *.pem|*.p12|*.pfx|*.key|*/id_rsa|*/id_ed25519|*/id_dsa|*.keystore)
+      red "BLOCKED: '$f' looks like a private key/cert."; fail=1 ;;
+    *.local.txt|*CREDENTIALS*|*credentials*) red "BLOCKED: '$f' looks like a credentials file."; fail=1 ;;
+  esac
+done <<< "$staged"
+
+# 2) Scan added lines for high-signal secret patterns (low false-positive set).
+if [[ -n "$staged" ]]; then
+  patterns='SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=|GHL_WEBHOOK_SECRET[[:space:]]*=|AIRTABLE_PAT[[:space:]]*=|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|xox[baprs]-[0-9A-Za-z-]{10,}|sk_live_[0-9A-Za-z]{16,}|sk-ant-[0-9A-Za-z_-]{20,}|ghp_[0-9A-Za-z]{36}'
+  if git diff --cached -U0 --no-color | grep -E '^\+' | grep -Eq "$patterns"; then
+    red "BLOCKED: a staged change contains what looks like a real secret."
+    yel "Review it. If it is genuinely a placeholder, this is a false positive —"
+    yel "move real values to .env (git-ignored), then re-commit."
+    fail=1
+  fi
+fi
+
+# 3) gitleaks (deep scan) if installed.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --no-banner 2>/dev/null || { red "BLOCKED by gitleaks (staged secret)."; fail=1; }
+fi
+
+[[ $fail -eq 0 ]] || {
+  red "Commit aborted by the secret guard. (Emergency override: git commit --no-verify — discouraged.)"
+  exit 1
+}
+exit 0
