@@ -33,41 +33,50 @@ or your Tailscale mesh alike).
 The naming is per-machine, so the mesh scales to as many computers as you want —
 just give each a unique name.
 
-## One-time setup (per machine)
+## One-time setup — ONE command per device
 
-### macOS (carry Mac) / Linux / WSL
+Any new device joins the mesh and "learns what the mesh knows" with a single
+command. It's idempotent and non-destructive — safe to re-run.
+
 ```bash
-# Prereqs: git, tmux, and the `claude` CLI on PATH
-#   macOS:  brew install tmux
+git clone https://github.com/AIXMOS537/TMMT.git ~/Projects/TMMT   # first time only
 cd ~/Projects/TMMT
-git pull origin master
-bash scripts/swarm.sh init carry-mac        # UNIQUE name per machine
+bash scripts/swarm-join.sh                 # interactive — asks for a unique name + git email
+#   or non-interactive:
+bash scripts/swarm-join.sh --name carry-mac --email you@personal.example
 ```
 
-### Windows (Surface)
-Two good options:
+`swarm-join` does everything:
+1. checks tooling for your OS and tells you what to install
+2. sets this device's **unique mesh name** (`.swarm/machine`, git-ignored)
+3. sets a **per-repo git commit identity** — important because your machines are
+   on **different accounts** (see below); this keeps the audit trail honest
+4. installs the **secret-guard git hooks**
+5. makes sure `.env` is present (pulls from the key flashdrive on a Mac)
+6. installs dependencies
+7. **registers the device on the mesh** and runs the security doctor
 
-- **Best: WSL** (Ubuntu) — then follow the Linux steps above (`sudo apt install tmux`,
-  install the `claude` CLI inside WSL). You get the full tmux experience.
-- **Native Git Bash** — install **Git for Windows** (gives Git Bash) and
-  **Windows Terminal** from the Store. Then:
-  ```bash
-  cd ~/Projects/TMMT          # in Git Bash
-  git pull origin master
-  bash scripts/swarm.sh init surface
-  ```
-  No tmux on native Git Bash, so the swarm opens each agent in its own **Windows
-  Terminal tab** automatically. If Windows Terminal isn't found, it prints the
-  command to paste. Symlinks may be blocked on Windows, so the swarm **copies
-  `.env` and runs `npm install` per worktree** instead — the first launch on a
-  Surface is slower, then it's fast.
+### Per-OS notes
 
-`init` records the name in `.swarm/machine` (git-ignored) and creates the board
-on `origin/swarm-coord` the first time any machine runs it.
+| OS | Notes |
+|---|---|
+| **macOS** (carry Mac / work Mac) | `brew install tmux` for the best swarm view. `.env` comes off the key flashdrive (`scripts/bootstrap-carry-mac.sh`). |
+| **Linux / WSL** | `sudo apt install tmux`. Full tmux experience. Best choice for a Surface. |
+| **Windows native** (Surface, Git Bash) | Install **Git for Windows** + **Windows Terminal**. No tmux, so agents open in WT tabs. Symlinks are usually blocked, so the swarm copies `.env` and runs `npm install` per worktree (first launch slower, then fast). |
+
+> **Different accounts per machine (by design).** carry-mac and work-mac are on
+> separate accounts for privacy/isolation. Two requirements:
+> 1. **Each account must have push access** to `AIXMOS537/TMMT` (so it can write
+>    the shared board + its `swarm/<machine>/*` branches). `swarm-doctor` checks
+>    you can reach origin.
+> 2. **Set a distinct git identity per repo** (swarm-join does this) so commits
+>    are attributable to the right account. Nothing is shared between accounts
+>    except the repo itself — secrets never travel through git.
 
 > **Secrets:** the swarm provides each worktree your `.env` (symlink on Mac/Linux,
 > copy on Windows) so agents can build. Keep `.env` current — it rides the **key
-> flashdrive** (`CONTINUE-ON-CARRY-MAC.md`). `.env` and worktrees are never committed.
+> flashdrive** (`CONTINUE-ON-CARRY-MAC.md`). `.env` and worktrees are never committed,
+> and the pre-commit/pre-push hooks block them even if you try.
 
 ## Daily flow (same on every machine)
 
@@ -91,7 +100,10 @@ board DONE).
 
 | Command | What it does |
 |---|---|
-| `swarm.sh init <name>` | Name THIS machine; create the shared board |
+| `swarm-join.sh` | **Onboard this device** (tooling, identity, hooks, deps, register, audit) |
+| `swarm-doctor.sh` | Security + readiness audit (PASS/WARN/FAIL). `--quick` skips deep scan |
+| `swarm.sh mesh` | List every device on the mesh (name, OS, last seen) |
+| `swarm.sh init <name>` | Name THIS machine; create board; register on the mesh |
 | `swarm.sh add "<task>"` | Add a task to the shared backlog (any machine) |
 | `swarm.sh list` | Show the board (every machine) |
 | `swarm.sh claim [n]` | Atomically claim up to n TODO tasks for this machine |
@@ -104,6 +116,8 @@ board DONE).
 | `sync-machine.sh status` | Show ahead/behind, worktrees, board (no changes) |
 | `sync-machine.sh master` | Fast-forward `master` only |
 
+npm aliases: `npm run swarm:join` · `swarm:doctor` · `swarm:mesh` · `swarm:status` · `sync:machine`.
+
 ## Toggles (env vars)
 
 | Var | Effect |
@@ -113,6 +127,36 @@ board DONE).
 | `SWARM_LAUNCH=print\|tmux\|wt` | Force a launcher (default: auto-detect tmux → Windows Terminal → print) |
 | `SWARM_INSTALL=1` | `npm install` per worktree instead of symlinking `node_modules` (forced automatically on Windows) |
 | `SWARM_WORKTREE_BASE=/path` | Where worktrees live (default `../TMMT-swarm`) |
+
+## Security model (defense in depth)
+
+This is a production system with customer PII, contracts, and money flow, run
+across machines on **separate accounts**. The threat we design against: a secret
+or customer data leaking into git, or an agent quietly weakening a control.
+
+**Layered controls:**
+
+1. **Secrets never enter git.** `.env*` is git-ignored; the **pre-commit hook**
+   blocks env files, private keys, and high-signal secret patterns (Supabase
+   service-role key, GHL webhook secret, Airtable PAT, Stripe/Slack/Anthropic/
+   GitHub tokens, AWS keys). The **pre-push hook** refuses to push if any secret
+   file is tracked, and runs `gitleaks` over history when installed.
+2. **Secrets travel only on the key flashdrive** — never through the repo, never
+   between accounts. Owner-only; operators get zero-secret kits.
+3. **Per-account attribution.** Each machine sets its own git identity, so every
+   commit is traceable to the right account.
+4. **Least privilege for agents.** Each agent is scoped to one branch in one
+   worktree, is forbidden from weakening RLS / auth / zod validation / rate
+   limiting / CSP / webhook signatures, and must STOP for any owner-only account
+   action instead of inventing secrets.
+5. **Nothing auto-merges.** Finished work lands as a branch + PR you review.
+6. **Continuous audit.** `swarm-doctor` re-checks all of the above on demand.
+
+**Owner-side (GitHub UI — do once per account/repo, from `ACTION-CHECKLIST.md` §A):**
+branch protection on `master`, **2FA on every account**, **Secret Scanning +
+Push Protection** ON. Install `gitleaks` on each machine for deep scanning
+(`brew install gitleaks`). If a key drive is ever lost, rotate the Supabase
+service-role key + `GHL_WEBHOOK_SECRET` and re-make the drive.
 
 ## Rules that keep it safe
 

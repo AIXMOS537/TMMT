@@ -63,6 +63,20 @@ _mut_setstatus() {
   mv "$tmp" "$f"
 }
 
+# Register / refresh this device in the mesh roster (mesh.tsv, beside board.tsv).
+_mut_register() {
+  local mf; mf="$(dirname "$1")/mesh.tsv"
+  [[ -f "$mf" ]] || printf '# machine\tos\tlast_seen\n' > "$mf"
+  local now; now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  local tmp="$mf.tmp"
+  awk -F'\t' -v OFS='\t' -v n="$REG_NAME" -v o="$REG_OS" -v t="$now" '
+    /^#/{print; next}
+    $1==n{print n,o,t; found=1; next}
+    {print}
+    END{if(!found) print n,o,t}' "$mf" > "$tmp"
+  mv "$tmp" "$mf"
+}
+
 # Create the coordination branch + empty board if it doesn't exist yet.
 ensure_coord() {
   if git ls-remote --exit-code --heads origin "$COORD_BRANCH" >/dev/null 2>&1; then return; fi
@@ -102,9 +116,9 @@ board_edit() {
     (
       cd "$tmp"
       "$mutate" "$tmp/$BOARD_FILE"
-      git diff --quiet -- "$BOARD_FILE" && exit 0
-      git add "$BOARD_FILE"
-      git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: update board"
+      git add -A
+      git diff --cached --quiet && exit 0
+      git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: update coordination state"
       git push -q origin "HEAD:$COORD_BRANCH"
     ) || rc=$?
     git worktree remove --force "$tmp" 2>/dev/null || rm -rf "$tmp"
@@ -133,8 +147,19 @@ Rules:
 - Before pushing, these must pass: npm run build && npm test && npm run lint
 - Push with: git push -u origin swarm/$me/$id
 - When done and pushed, run:  bash scripts/swarm.sh done $id
-- If the task needs an owner-only account action (GHL / Vercel / Supabase / DNS),
-  STOP and report exactly what you need — do not guess secrets.
+
+SECURITY (non-negotiable — this is a production system with customer PII + money):
+- NEVER print, log, echo, or commit secrets. .env must never appear in a diff,
+  commit, or chat. The pre-commit hook will block it; do not bypass with --no-verify.
+- NEVER weaken security controls. Do not disable or loosen: Supabase RLS, the
+  auth/middleware gates, zod validation, the rate limiter, CSP/security headers,
+  or webhook signature checks. If the task seems to require it, STOP and ask.
+- Treat all customer data (leads, contracts, payments, PII) as confidential —
+  never paste it into commits, logs, or test fixtures.
+- Do not add new third-party network calls, dependencies, or telemetry without
+  calling it out explicitly in your report.
+- For any owner-only account action (GHL / Vercel / Supabase / DNS / Twilio /
+  Stripe), STOP and report exactly what you need — never guess or invent secrets.
 EOF
 }
 
@@ -224,8 +249,9 @@ cmd_init() {
   mkdir -p "$SWARM_ROOT/.swarm"
   if [[ -n "${1:-}" ]]; then printf '%s\n' "$1" > "$SWARM_ROOT/.swarm/machine"; fi
   ensure_coord
-  ok "this machine is '${BOLD}$(swarm_machine)${RST}' (os: $(swarm_os)). Board ready on origin/$COORD_BRANCH."
-  say "Give every machine on your mesh a UNIQUE name (carry-mac, surface, …)."
+  REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" board_edit _mut_register
+  ok "this machine is '${BOLD}$(swarm_machine)${RST}' (os: $(swarm_os)). Registered on the mesh."
+  say "Give every machine on your mesh a UNIQUE name (carry-mac, work-mac, surface, …)."
   say "Next: bash scripts/swarm.sh add \"your first task\"   then   bash scripts/swarm.sh up 2"
 }
 
@@ -289,8 +315,16 @@ cmd_list() {
 cmd_status() {
   cmd_list
   say ""
-  info "worktrees on this laptop ($(swarm_machine)):"
+  info "worktrees on this machine ($(swarm_machine)):"
   git worktree list | grep -F "$WORKTREE_BASE" | sed 's/^/   /' || say "   (none active)"
+}
+
+cmd_mesh() {
+  git fetch -q origin "$COORD_BRANCH" 2>/dev/null || true
+  local m; m="$(git show "origin/$COORD_BRANCH:mesh.tsv" 2>/dev/null || true)"
+  [[ -n "$m" ]] || { info "no devices registered yet — run: bash scripts/swarm-join.sh"; return; }
+  printf '%s%-16s %-9s %s%s\n' "$BOLD" "MACHINE" "OS" "LAST SEEN (UTC)" "$RST"
+  printf '%s\n' "$m" | awk -F'\t' 'NR==1{next}{printf "%-16s %-9s %s\n",$1,$2,$3}'
 }
 
 cmd_clean() {
@@ -320,6 +354,7 @@ case "${1:-help}" in
   done)   shift; cmd_done "${1:-}";;
   list|board) cmd_list;;
   status) cmd_status;;
+  mesh|devices) cmd_mesh;;
   clean)  cmd_clean;;
   help|--help|-h) usage;;
   *) die "unknown command '$1' — run: bash scripts/swarm.sh help";;
