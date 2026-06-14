@@ -228,6 +228,20 @@ for emoji,word,desc,acc in rows:
 text(d, (PWp/2, PHp-120), "Need help? Just type  tmmt help", font(REG, 40), (148,163,184), "mm")
 ph.save(os.path.join(OUT, "TMMT-PHONE.png"))
 
+# ---- Standalone "NEW MAC" card ----------------------------------------------
+mp = new_page(); header_bar(mp, "NEW MAC? START HERE", "One file. One command. Everything installs itself.", SLATE)
+y = 280
+step_card(mp, y, 1, "\U0001F4BE", "Save the setup file", ["Save setup-mac.command to the Mac.","(Downloads is fine.)"], BLUE); y+=240
+step_card(mp, y, 2, "⌨️", "Open the black window", ["cmd+space → type Terminal → Enter."], BLUE); y+=240
+step_card(mp, y, 3, "▶️", "Run one line", ["bash ~/Downloads/setup-mac.command","Click INSTALL on any Apple popup."], GREEN); y+=240
+step_card(mp, y, 4, "\U0001F511", "Plug in the KEY drive", ["When it asks, plug in your key flashdrive.","That's the only place your secrets live."], AMBER); y+=240
+step_card(mp, y, 5, "✅", "You're set up", ["It installs git, Node, tmux, Tailscale, Claude —","everything. Then:  bash scripts/tmmt up"], GREEN); y+=240
+d = ImageDraw.Draw(mp)
+rounded(d, [MX, y+10, PW-MX, y+150], 24, fill=(239,246,255))
+text(d, (PW/2, y+50), "Stuck? Re-run it — it's safe. Then send me:  tmmt fix", font(REG, 30), BLUE, "mm")
+footer(mp, "new-mac", "setup")
+mp.save(os.path.join(OUT, "TMMT-NEW-MAC.png"))
+
 print("Wrote:", pdf_path)
 print("Pages:", ", ".join(f"page{i}.png" for i in range(1, len(pages)+1)))
 print("Phone:", os.path.join(OUT, "TMMT-PHONE.png"))
