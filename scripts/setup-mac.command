@@ -58,9 +58,13 @@ step "Claude CLI"
 if command -v claude >/dev/null 2>&1; then ok "claude CLI"
 else
   say "Installing the Claude CLI…"
-  npm install -g @anthropic-ai/claude-code >/dev/null 2>&1 \
-    && ok "claude CLI installed" \
-    || warn "Install Claude Code manually (see Claude Code docs), then re-run. Continuing setup."
+  # Preferred on macOS: Homebrew cask (we already have brew); fall back to the
+  # official native installer (auto-updating).
+  brew install --cask claude-code >/dev/null 2>&1 \
+    || curl -fsSL https://claude.ai/install.sh | bash \
+    || warn "Install Claude Code manually: https://code.claude.com/docs/en/quickstart"
+  command -v claude >/dev/null 2>&1 && ok "claude CLI installed" \
+    || warn "claude not on PATH yet — open a new Terminal after setup, or see the docs link above."
 fi
 
 # 4) GitHub sign-in (needed to clone the private repo)
