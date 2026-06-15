@@ -85,7 +85,7 @@ if [[ -f "$SWARM_ROOT/.env" ]]; then
   [[ "$(swarm_os)" != "windows" ]] && chmod 600 "$SWARM_ROOT/.env" 2>/dev/null || true
   ok ".env present"
 elif [[ -x "$SWARM_ROOT/scripts/bootstrap-carry-mac.sh" && "$(swarm_os)" == "macos" ]]; then
-  warn ".env missing — attempting key-flashdrive bootstrap…"
+  warn ".env missing — attempting key-flashdrive bootstrap..."
   bash "$SWARM_ROOT/scripts/bootstrap-carry-mac.sh" || warn "bootstrap didn't complete — plug in the key drive and re-run, or copy .env manually"
 else
   warn ".env missing — restore it from your key flashdrive (owner only). Agents can't build without it."
@@ -93,7 +93,7 @@ fi
 
 # 6) deps ----------------------------------------------------------------------
 if [[ -f package-lock.json ]]; then
-  info "installing dependencies (npm ci)…"
+  info "installing dependencies (npm ci)..."
   npm ci --no-audit --no-fund || npm install --no-audit --no-fund || warn "dependency install failed — run 'npm install' manually"
 else
   npm install --no-audit --no-fund || warn "dependency install failed — run 'npm install' manually"
@@ -101,7 +101,7 @@ fi
 ok "dependencies installed"
 
 # 7) register + audit ----------------------------------------------------------
-info "registering '$NAME' on the mesh…"
+info "registering '$NAME' on the mesh..."
 SWARM_MACHINE="$NAME" bash "$SWARM_ROOT/scripts/swarm.sh" init "$NAME" || warn "could not register on the mesh (check git write access for THIS account)"
 say ""
 bash "$SWARM_ROOT/scripts/swarm-doctor.sh" --quick || true
