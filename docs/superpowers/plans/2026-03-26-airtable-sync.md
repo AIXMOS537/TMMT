@@ -29,10 +29,13 @@
 Open `.env` and add this line (replace the token with your actual PAT):
 
 ```
-AIRTABLE_PAT=REDACTED-AIRTABLE-PAT
+AIRTABLE_PAT=REDACTED-AIRTABLE-PAT-airtable-personal-access-token
 ```
 
-> **Security note:** Rotate this token at airtable.com/account after the sync — it was shared in plain text. Generate a new PAT and update `.env`.
+> **Security note:** Never paste a real PAT here. Keep it only in `.env`
+> (git-ignored) or pull it from Vercel. A real token was previously committed
+> in this file and has been redacted — **revoke it** at airtable.com/create/tokens
+> and issue a fresh one.
 
 - [ ] **Step 2: Verify .env is gitignored**
 
