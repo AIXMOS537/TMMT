@@ -1,5 +1,12 @@
 # Continue on the Carry Mac
 
+> ⚠️ **SUPERSEDED (2026-06-15).** The key-flashdrive flow below is **retired** —
+> the drive is lost. Secrets now come from **Vercel**: `vercel env pull .env
+> --environment=production`. For onboarding any machine use
+> `scripts/setup-mac.command` and see `docs/MESH-SWARM.md`. If the drive is
+> unaccounted for, rotate keys per `docs/security/SUPABASE-ADVISORS-2026-06-15.md`.
+> The rest of this doc is kept for historical reference.
+
 Everything is committed and pushed to **`master`**. This is how to pick up on the
 carry MacBook and keep going — using the **flashdrive as your key**.
 
