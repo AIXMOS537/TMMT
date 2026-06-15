@@ -47,11 +47,11 @@ cp "$ENV_SRC" "$ROOT/.env"
 echo "✓  .env installed into the repo"
 
 # 4. Install dependencies -------------------------------------------------------
-echo "→  npm install …"
+echo "→  npm install ..."
 ( cd "$ROOT" && npm install )
 
 # 5. Validate the env -----------------------------------------------------------
-echo "→  validating env (npm run check-env) …"
+echo "→  validating env (npm run check-env) ..."
 ( cd "$ROOT" && npm run check-env ) || echo "⚠  check-env reported issues — review your .env"
 
 cat <<'DONE'
