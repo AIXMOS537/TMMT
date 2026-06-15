@@ -25,10 +25,10 @@ say "${BOLD}=== TMMT UP — $(swarm_machine) as '$ROLE' on $(swarm_os) ===${RST}
 
 # 1) Onboard if this machine isn't on the mesh yet (idempotent).
 if [[ ! -f "$ROOT/.swarm/machine" ]]; then
-  info "first run — onboarding this device…"
+  info "first run — onboarding this device..."
   bash "$ROOT/scripts/swarm-join.sh" || warn "join had warnings — review above"
 else
-  ok "already onboarded as '$(swarm_machine)'. Syncing…"
+  ok "already onboarded as '$(swarm_machine)'. Syncing..."
   bash "$ROOT/scripts/sync-machine.sh" >/dev/null 2>&1 || true
 fi
 
@@ -47,5 +47,5 @@ say "Owner sees you with:   bash scripts/mesh/link.sh who"
 say "If you need help:       bash scripts/mesh/link.sh request \"what's wrong\""
 say "Run the swarm:          bash scripts/swarm.sh up 2"
 say ""
-info "starting presence (Ctrl-C to go offline)…"
+info "starting presence (Ctrl-C to go offline)..."
 exec bash "$ROOT/scripts/mesh/presence.sh" loop 120 "$ROLE"

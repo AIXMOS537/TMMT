@@ -83,7 +83,7 @@ _mut_register() {
 # Create the coordination branch + empty board if it doesn't exist yet.
 ensure_coord() {
   if git ls-remote --exit-code --heads origin "$COORD_BRANCH" >/dev/null 2>&1; then return; fi
-  info "creating coordination branch '$COORD_BRANCH'…"
+  info "creating coordination branch '$COORD_BRANCH'..."
   mkdir -p "$WORKTREE_BASE"
   local tmp="$WORKTREE_BASE/.coord-init-$$"
   rm -rf "$tmp"; git worktree prune
@@ -237,7 +237,7 @@ start_one() {
     elif [[ -d "$SWARM_ROOT/node_modules" ]] && ln -s "$SWARM_ROOT/node_modules" "$wt/node_modules" 2>/dev/null; then
       : # symlinked the shared node_modules
     else
-      info "symlink unavailable here (Windows?) — installing deps in this worktree once…"
+      info "symlink unavailable here (Windows?) — installing deps in this worktree once..."
       ( cd "$wt" && npm install --no-audit --no-fund ) || warn "npm install failed in $wt — run it there manually"
     fi
   fi
@@ -254,7 +254,7 @@ cmd_init() {
   ensure_coord
   REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" REG_TS="$(tailscale_self)" board_edit _mut_register
   ok "this machine is '${BOLD}$(swarm_machine)${RST}' (os: $(swarm_os)). Registered on the mesh."
-  say "Give every machine on your mesh a UNIQUE name (carry-mac, work-mac, surface, …)."
+  say "Give every machine on your mesh a UNIQUE name (carry-mac, work-mac, surface, ...)."
   say "Next: bash scripts/swarm.sh add \"your first task\"   then   bash scripts/swarm.sh up 2"
 }
 
@@ -310,7 +310,7 @@ cmd_done() {
 
 cmd_list() {
   local b; b="$(board_read)"
-  [[ -n "$b" ]] || { info "no board yet — add a task: bash scripts/swarm.sh add \"…\""; return; }
+  [[ -n "$b" ]] || { info "no board yet — add a task: bash scripts/swarm.sh add \"...\""; return; }
   printf '%s%-4s %-8s %-12s %s%s\n' "$BOLD" "ID" "STATUS" "MACHINE" "TASK" "$RST"
   printf '%s\n' "$b" | awk -F'\t' 'NR==1{next}{printf "#%-3s %-8s %-12s %s\n",$1,$2,$3,$5}'
 }
@@ -323,7 +323,7 @@ cmd_status() {
 }
 
 # Heartbeat: announce this machine is alive (and optionally its role/status).
-#   beat [role] [status]   role: owner|operator|agent ; status: online|assisting|…
+#   beat [role] [status]   role: owner|operator|agent ; status: online|assisting|...
 cmd_beat() {
   REG_NAME="$(swarm_machine)" REG_OS="$(swarm_os)" \
   REG_ROLE="${1:-}" REG_STATUS="${2:-online}" REG_TS="$(tailscale_self)" \
