@@ -87,14 +87,23 @@ else
 fi
 cd "$DEST"
 
-# 6) Secrets (.env rides the KEY flashdrive — never git)
+# 6) Secrets (.env) — pulled from Vercel, the source of truth. No flashdrive needed.
 step "Secrets (.env)"
-if [[ -f .env ]]; then chmod 600 .env 2>/dev/null || true; ok ".env present"
-elif [[ -x scripts/bootstrap-carry-mac.sh ]]; then
-  warn "Plug in the KEY flashdrive. Trying to load .env from it…"
-  bash scripts/bootstrap-carry-mac.sh || warn "couldn't auto-find the key drive — copy secrets/.env from the drive into $DEST/.env"
+if [[ -f .env ]]; then
+  chmod 600 .env 2>/dev/null || true; ok ".env already present"
 else
-  warn "copy .env from your key flashdrive into $DEST/.env (owner only)"
+  say "No .env yet — pulling it securely from Vercel (no flashdrive needed)…"
+  command -v vercel >/dev/null 2>&1 || { say "Installing the Vercel CLI…"; npm install -g vercel >/dev/null 2>&1 || warn "couldn't install vercel CLI"; }
+  if command -v vercel >/dev/null 2>&1; then
+    vercel login || warn "Vercel login skipped"
+    vercel link --yes >/dev/null 2>&1 || vercel link || warn "Vercel link skipped (pick the tmmt-ops project)"
+    if vercel env pull .env --environment=production --yes >/dev/null 2>&1 || vercel env pull .env >/dev/null 2>&1; then
+      chmod 600 .env 2>/dev/null || true; ok ".env pulled from Vercel"
+    else
+      warn "couldn't auto-pull — run later:  vercel env pull .env --environment=production"
+    fi
+  fi
+  [[ -f .env ]] || warn "No .env — that's OK: build, tests, and the swarm all work without it. Pull it anytime with: vercel env pull .env"
 fi
 
 # 7) Dependencies
