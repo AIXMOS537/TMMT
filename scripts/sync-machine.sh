@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keep every machine on your mesh in sync (carry Mac, Surface, …).
+# Keep every machine on your mesh in sync (carry Mac, Surface, ...).
 # Safe to run any time, on any branch.
 #
 # Usage:
@@ -45,23 +45,23 @@ sync_current() {
 
   local stashed=0
   if [[ -n "$(git status --porcelain)" ]]; then
-    info "stashing local changes…"
+    info "stashing local changes..."
     git stash push -u -q -m "sync-machine auto $(date +%s)"
     stashed=1
   fi
 
-  info "fetching…"
+  info "fetching..."
   git fetch -q origin
 
   if git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
-    info "rebasing ${cur} onto its upstream…"
+    info "rebasing ${cur} onto its upstream..."
     if ! git rebase -q '@{u}'; then
       git rebase --abort || true
       [[ $stashed -eq 1 ]] && git stash pop -q 2>/dev/null || true
       die "rebase hit a conflict vs upstream — resolve manually, then re-run."
     fi
   else
-    info "no upstream; rebasing onto origin/master…"
+    info "no upstream; rebasing onto origin/master..."
     if ! git rebase -q origin/master; then
       git rebase --abort || true
       [[ $stashed -eq 1 ]] && git stash pop -q 2>/dev/null || true
@@ -69,11 +69,11 @@ sync_current() {
     fi
   fi
 
-  info "pushing ${cur}…"
+  info "pushing ${cur}..."
   git_push_retry -u origin "$cur" || warn "push failed (offline?) — your commits are safe locally."
 
   if [[ $stashed -eq 1 ]]; then
-    info "restoring your stashed changes…"
+    info "restoring your stashed changes..."
     git stash pop -q || warn "stash pop conflicted — see 'git stash list' and resolve."
   fi
   ok "synced ${cur}"

@@ -57,7 +57,7 @@ mesh_field() {  # mesh_field <machine> <col#: role=3 tailscale=4 status=5>
 cmd_serve() {
   local me; me="$(swarm_machine)"
   if have_ts; then
-    info "bringing Tailscale up with SSH enabled (you may be asked to authenticate)…"
+    info "bringing Tailscale up with SSH enabled (you may be asked to authenticate)..."
     tailscale up --ssh 2>/dev/null || warn "couldn't run 'tailscale up --ssh' — open the Tailscale app and enable SSH, or run it with sudo"
     ok "Tailscale: $(tailscale_self || echo 'not connected')"
   else
@@ -90,7 +90,7 @@ cmd_assist() {
   have_ts || warn "Tailscale CLI not found locally; trying plain ssh to $ip (must be on the tailnet)"
   # Audit: announce the assist on the mesh before connecting.
   bash "$SWARM_ROOT/scripts/swarm.sh" beat "$(swarm_machine_role)" "assisting:$machine" >/dev/null 2>&1 || true
-  info "connecting to ${user}@${ip} (Tailscale SSH; ACLs apply)…"
+  info "connecting to ${user}@${ip} (Tailscale SSH; ACLs apply)..."
   say "${DIM}On connect you'll land in their shell — cd ~/Projects/TMMT to co-drive.${RST}"
   ssh -o StrictHostKeyChecking=accept-new "${user}@${ip}" -t 'cd ~/Projects/TMMT 2>/dev/null; exec $SHELL -l'
   bash "$SWARM_ROOT/scripts/swarm.sh" beat "$(swarm_machine_role)" online >/dev/null 2>&1 || true
