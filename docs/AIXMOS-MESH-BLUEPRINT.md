@@ -76,6 +76,9 @@ operators stay fenced to their lane (see `scripts/partner-deploy/tailscale-acl.j
 - Define each agent's job, tools, and guardrails (proposed, to confirm):
   AIXMOS = the operations/network brain that runs the TMMT operatives; HAILMARY
   = the owner's personal "big-play / break-glass" agent. **Not assumed final.**
+- **HAILMARY's constitution is now ratified in `docs/HAILMARY-CHARTER.md`** —
+  owner-only (Muhammad Taha), local-first, never-sold, with guardrails. AIXMOS's
+  equivalent charter is the next doc when its role is confirmed.
 
 ## Security posture (non-negotiable)
 
@@ -92,4 +95,5 @@ operators stay fenced to their lane (see `scripts/partner-deploy/tailscale-acl.j
 2. **Agent split:** confirm what AIXMOS vs HAILMARY each do.
 3. **Bridge direction:** share BRAINIAC into the assistant's tailnet, or the assistant into the ops tailnet?
 
-_Companion: `docs/MESH-SWARM.md` (the mesh/swarm system), `CLAUDE.md` (project memory)._
+_Companion: `docs/HAILMARY-CHARTER.md` (the agent's constitution),
+`docs/MESH-SWARM.md` (the mesh/swarm system), `CLAUDE.md` (project memory)._
