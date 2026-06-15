@@ -24,5 +24,7 @@ case "$v" in
   fix|doctor) exec bash "$ROOT/scripts/swarm-doctor.sh";;
   notify) exec bash "$ROOT/scripts/mesh/link.sh" notify-setup;;
   notify-test|ping) exec bash "$ROOT/scripts/mesh/link.sh" notify-test;;
-  *) printf 'tmmt words: up | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
+  always) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" install "${1:-owner}" "${2:-180}";;
+  always-off) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall;;
+  *) printf 'tmmt words: up | always [role] | always-off | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
