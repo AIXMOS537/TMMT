@@ -131,6 +131,14 @@ npm run lint     # ESLint
 npm test         # Vitest unit tests (run once); npm run test:watch for watch mode
 npm run test:e2e # Playwright E2E smoke tests (requires dev server or uses webServer config)
 
+# Mesh / multi-machine ops (see docs/MESH-SWARM.md)
+bash scripts/setup-mac.command   # fresh-Mac one-shot installer (tools, repo, .env via Vercel, join, audit)
+bash scripts/swarm-join.sh       # onboard THIS machine to the mesh (unique name, per-account git id, hooks)
+bash scripts/tmmt up|who|help|go|sync|fix|notify   # simple owner verbs
+bash scripts/tmmt fix            # = swarm-doctor: readiness + security audit (PASS/WARN/FAIL)
+npm run swarm -- up 2            # claim 2 tasks + launch 2 parallel Claude agents (git worktrees)
+npm run sync:machine             # safe N-machine sync (stash → rebase → push)
+
 # Airtable → Supabase one-time sync
 node scripts/sync-airtable.mjs           # live run
 node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
@@ -143,6 +151,15 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - Optional: `NEXT_PUBLIC_SENTRY_DSN` — Sentry error monitoring (inactive when empty)
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
 - Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
+- **Secret transport (2026-06-15): Vercel is the source of truth.** Pull `.env`
+  on any machine with `vercel env pull .env --environment=production`. The old
+  **key flashdrive is deprecated/lost** — `scripts/bootstrap-carry-mac.sh` and
+  `CONTINUE-ON-CARRY-MAC.md` describe the retired flow. Note: `npm run build`,
+  `test`, `lint`, and the agent swarm all run **without** `.env` (env is read
+  lazily at request time) — `.env` is only needed to run the live app.
+- **If the flashdrive is unaccounted for: rotate** `SUPABASE_SERVICE_ROLE_KEY`
+  (Supabase → API Keys) + `GHL_WEBHOOK_SECRET` (GHL), update Vercel, redeploy,
+  re-pull. Runbook in `docs/security/SUPABASE-ADVISORS-2026-06-15.md`.
 
 ### Vercel (deployment)
 
@@ -154,8 +171,41 @@ Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM
 
 Legacy `tmmt-c919` and `tmmt` projects are retired (`tmmt-c919.vercel.app` returns HTTP 404 as of 2026-06-08). Run `scripts/retire-vercel-duplicates.sh --apply` to delete the empty project shells from the Vercel team once env-var + domain pre-flight in `docs/THREE-APP-ECOSYSTEM.md` is signed off. Local `.vercel/project.json` should point at `tmmt-ops` (`prj_g80HsnBcQ34tukCFCGPxcP5cmQF1`) — not the old `tmmt-c919` ID.
 
+## Mesh Operations Layer (multi-machine + agent swarm) — SHIPPED 2026-06-15
+
+A git-coordinated layer so the owner runs the business from any machine (carry
+Mac, work Mac, a Surface — each on its own account) and a swarm of Claude agents
+works in parallel. **Git is the only coordination layer** (no server). Full guide:
+`docs/MESH-SWARM.md`.
+
+- **Swarm:** `scripts/swarm.sh` — shared task board on a remote-only `swarm-coord`
+  branch with **atomic claims**; each task runs in its own **git worktree** on
+  `swarm/<machine>/<id>`; agents launch in tmux (mac/linux/wsl) or a Windows
+  Terminal tab (Surface). `scripts/lib/swarm-common.sh` holds shared helpers.
+- **Sync:** `scripts/sync-machine.sh` (npm `sync:machine`) — stash → rebase →
+  push; never force-push, never merge; fails clean on conflict.
+- **Mesh presence + remote assist:** `scripts/mesh/presence.sh` (heartbeat + live
+  roster) and `scripts/mesh/link.sh` (operator `serve`/`request`, owner
+  `who`/`assist` over **Tailscale SSH**, SOS via Slack/Telegram `.env.notify`).
+- **Onboarding/security:** `scripts/swarm-join.sh` (idempotent per-device onboard,
+  per-account git identity), `scripts/swarm-doctor.sh` (readiness+security audit),
+  `scripts/hooks/{pre-commit,pre-push}` (secret guard via `core.hooksPath`,
+  installed by swarm-join — blocks `.env`/keys/service-role/GHL/Stripe/etc.),
+  `scripts/setup-mac.command` (fresh-Mac one-shot installer).
+- **Simple UX:** `scripts/tmmt` (one-word verbs), `TMMT-MENU.command` (double-click
+  → press a number), `docs/cheatsheets/*` (picture PDF + phone wallpaper +
+  new-Mac card, regenerate with `scripts/make-cheatsheet.py`).
+- **Machine identity:** `.swarm/machine` (gitignored); each machine MUST have a
+  unique name. Branches `swarm/<machine>/*` prevent cross-machine collision.
+- **Auth resilience:** `middleware.ts` **fails closed** — if Supabase is
+  unreachable/misconfigured (e.g. a preview deploy without env), it treats the
+  request as signed-out (redirect to /login) instead of a 500. Never fails open.
+
 ## Docs
 
+- `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
+- `docs/MESH-SWARM.md` — the mesh/swarm system: setup, daily flow, security model
+- `docs/security/SUPABASE-ADVISORS-2026-06-15.md` — security audit + key-rotation runbook
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
