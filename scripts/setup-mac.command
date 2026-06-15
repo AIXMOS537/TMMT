@@ -24,7 +24,7 @@ step "TMMT fresh-Mac setup"
 
 # 0) Xcode Command Line Tools (gives you git + compilers)
 if ! xcode-select -p >/dev/null 2>&1; then
-  warn "Installing Xcode Command Line Tools…"
+  warn "Installing Xcode Command Line Tools..."
   warn "→ Click INSTALL in the popup, wait for it to finish, then run me again."
   xcode-select --install >/dev/null 2>&1 || true
   exit 0
@@ -33,7 +33,7 @@ ok "Xcode Command Line Tools"
 
 # 1) Homebrew (the Mac app installer)
 if ! command -v brew >/dev/null 2>&1; then
-  say "Installing Homebrew (you may be asked for your Mac password)…"
+  say "Installing Homebrew (you may be asked for your Mac password)..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || warn "Homebrew install hit an error"
 fi
 # Make sure brew is on PATH this session (Apple Silicon + Intel)
@@ -45,11 +45,11 @@ command -v brew >/dev/null 2>&1 && ok "Homebrew" || { warn "Homebrew not on PATH
 step "Core tools"
 for pkg in git node tmux gh; do
   if command -v "$pkg" >/dev/null 2>&1; then ok "$pkg"
-  else say "Installing $pkg…"; brew install "$pkg" || warn "couldn't install $pkg"; fi
+  else say "Installing $pkg..."; brew install "$pkg" || warn "couldn't install $pkg"; fi
 done
 # Tailscale (for remote-assist). CLI via brew; the menu-bar app also works.
 if command -v tailscale >/dev/null 2>&1; then ok "tailscale"
-else say "Installing Tailscale…"; brew install tailscale 2>/dev/null || brew install --cask tailscale 2>/dev/null || warn "install Tailscale from https://tailscale.com/download/mac"; fi
+else say "Installing Tailscale..."; brew install tailscale 2>/dev/null || brew install --cask tailscale 2>/dev/null || warn "install Tailscale from https://tailscale.com/download/mac"; fi
 # gitleaks (deep secret scanning — optional but recommended)
 command -v gitleaks >/dev/null 2>&1 && ok "gitleaks" || { brew install gitleaks 2>/dev/null && ok "gitleaks" || warn "gitleaks optional — skipped"; }
 
@@ -57,7 +57,7 @@ command -v gitleaks >/dev/null 2>&1 && ok "gitleaks" || { brew install gitleaks 
 step "Claude CLI"
 if command -v claude >/dev/null 2>&1; then ok "claude CLI"
 else
-  say "Installing the Claude CLI…"
+  say "Installing the Claude CLI..."
   # Preferred on macOS: Homebrew cask (we already have brew); fall back to the
   # official native installer (auto-updating).
   brew install --cask claude-code >/dev/null 2>&1 \
@@ -72,7 +72,7 @@ step "GitHub access"
 if git ls-remote "$REPO_URL" >/dev/null 2>&1; then
   ok "GitHub access works"
 else
-  say "Sign in to GitHub (a browser/device-code prompt will appear)…"
+  say "Sign in to GitHub (a browser/device-code prompt will appear)..."
   gh auth login || warn "run 'gh auth login' then re-run me"
   gh auth setup-git >/dev/null 2>&1 || true
 fi
@@ -92,8 +92,8 @@ step "Secrets (.env)"
 if [[ -f .env ]]; then
   chmod 600 .env 2>/dev/null || true; ok ".env already present"
 else
-  say "No .env yet — pulling it securely from Vercel (no flashdrive needed)…"
-  command -v vercel >/dev/null 2>&1 || { say "Installing the Vercel CLI…"; npm install -g vercel >/dev/null 2>&1 || warn "couldn't install vercel CLI"; }
+  say "No .env yet — pulling it securely from Vercel (no flashdrive needed)..."
+  command -v vercel >/dev/null 2>&1 || { say "Installing the Vercel CLI..."; npm install -g vercel >/dev/null 2>&1 || warn "couldn't install vercel CLI"; }
   if command -v vercel >/dev/null 2>&1; then
     vercel login || warn "Vercel login skipped"
     vercel link --yes >/dev/null 2>&1 || vercel link || warn "Vercel link skipped (pick the tmmt-ops project)"
