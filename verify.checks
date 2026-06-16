@@ -5,6 +5,7 @@
 # Add tests/integration lines as they stabilize.
 types|npx tsc --noEmit
 lint|npm run lint
+compliance|node scripts/compliance-check.mjs content/consumer-facing
 # build|npm run build        # uncomment for the full gate (slower)
 # test|npm run test          # when unit tests exist
 # smoke|bash scripts/smoke-prod.sh   # integration, needs a target
