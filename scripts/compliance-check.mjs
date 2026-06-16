@@ -8,9 +8,9 @@
 //   node scripts/compliance-check.mjs --product credit_repair path/to/file
 //
 // Exit 0 = clean. Exit 1 = prohibited claim(s) found (do NOT send). Exit 2 = usage.
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, join, extname } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cfgPath = resolve(here, "../config/credit-compliance.json");
@@ -18,50 +18,70 @@ let cfg;
 try { cfg = JSON.parse(readFileSync(cfgPath, "utf8")); }
 catch (e) { console.error(`✗ cannot read ${cfgPath}: ${e.message}`); process.exit(2); }
 
-// args: optional --product <key>, then a file path (or stdin)
+// args: optional --product <key>, then a file/dir path (or stdin)
 const args = process.argv.slice(2);
-let product = "all", file = null;
+let product = "all", target = null;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--product") product = args[++i];
-  else file = args[i];
+  else target = args[i];
 }
 
-function readInput() {
-  if (file) return readFileSync(file, "utf8");
-  try { return readFileSync(0, "utf8"); } catch { return ""; }
-}
-const text = readInput();
-if (!text.trim()) { console.error("✗ no input (give a file path or pipe text)"); process.exit(2); }
-
-const lower = text.toLowerCase();
-const violations = [];
-for (const p of cfg.prohibited_claims.patterns) {
-  const re = new RegExp(p, "ig");
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    violations.push({ pattern: p, match: m[0].trim() });
-    if (m.index === re.lastIndex) re.lastIndex++;
+const SCAN_EXT = new Set([".txt", ".md", ".html", ".htm", ".mdx"]);
+function walk(dir, acc) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) walk(p, acc);
+    else if (SCAN_EXT.has(extname(e.name))) acc.push(p);
   }
+  return acc;
+}
+// build list of {name, text} units to check
+function units() {
+  if (!target) {
+    let t = "";
+    try { t = readFileSync(0, "utf8"); } catch { /* no stdin */ }
+    if (!t.trim()) { console.error("✗ no input (give a file/dir path or pipe text)"); process.exit(2); }
+    return [{ name: "<stdin>", text: t }];
+  }
+  const st = statSync(target);
+  const files = st.isDirectory() ? walk(target, []) : [target];
+  return files.map((f) => ({ name: f, text: readFileSync(f, "utf8") }));
 }
 
-// required disclosures (general + product-specific)
-const want = [...cfg.required_disclosures.general];
 const map = { credit_repair: "credit_repair_CROA", funding: "funding" };
-if (product === "all") want.push(...cfg.required_disclosures.credit_repair_CROA, ...cfg.required_disclosures.funding);
-else if (map[product]) want.push(...cfg.required_disclosures[map[product]]);
-const missing = want.filter((d) => !lower.includes(d.toLowerCase().slice(0, 24)));
-
+let totalViol = 0, totalMissing = 0;
 console.log("== compliance-check ==");
-if (violations.length) {
-  console.log(`\n\x1b[31m✗ ${violations.length} PROHIBITED claim(s) — DO NOT SEND:\x1b[0m`);
-  for (const v of violations) console.log(`  • "${v.match}"   (rule: ${v.pattern})`);
-} else {
-  console.log("\x1b[32m✓ no prohibited claims\x1b[0m");
-}
-if (missing.length) {
-  console.log(`\n\x1b[33m! missing ${missing.length} required disclosure(s) (add to output or wrapping contract/UI):\x1b[0m`);
-  for (const d of missing) console.log(`  • ${d}`);
-}
-console.log("\n\x1b[2mNot legal advice. Counsel must review before sale (config.pre_sale_gate).\x1b[0m");
+for (const u of units()) {
+  const lower = u.text.toLowerCase();
+  const violations = [];
+  for (const p of cfg.prohibited_claims.patterns) {
+    const re = new RegExp(p, "ig"); let m;
+    while ((m = re.exec(u.text)) !== null) {
+      violations.push({ pattern: p, match: m[0].trim() });
+      if (m.index === re.lastIndex) re.lastIndex++;
+    }
+  }
+  const want = [...cfg.required_disclosures.general];
+  if (product === "all") want.push(...cfg.required_disclosures.credit_repair_CROA, ...cfg.required_disclosures.funding);
+  else if (map[product]) want.push(...cfg.required_disclosures[map[product]]);
+  const missing = want.filter((d) => !lower.includes(d.toLowerCase().slice(0, 24)));
 
-process.exit(violations.length ? 1 : 0);
+  if (violations.length || missing.length) {
+    console.log(`\n${u.name}`);
+    if (violations.length) {
+      console.log(`  \x1b[31m✗ ${violations.length} PROHIBITED claim(s) — DO NOT SEND:\x1b[0m`);
+      for (const v of violations) console.log(`    • "${v.match}"   (rule: ${v.pattern})`);
+    }
+    if (missing.length) {
+      console.log(`  \x1b[33m! missing ${missing.length} required disclosure(s):\x1b[0m`);
+      for (const d of missing) console.log(`    • ${d}`);
+    }
+  }
+  totalViol += violations.length; totalMissing += missing.length;
+}
+
+if (!totalViol) console.log("\x1b[32m✓ no prohibited claims\x1b[0m");
+console.log(`\n${totalViol} prohibited, ${totalMissing} missing-disclosure warning(s).`);
+console.log("\x1b[2mNot legal advice. Counsel must review before sale (config.pre_sale_gate).\x1b[0m");
+process.exit(totalViol ? 1 : 0);
