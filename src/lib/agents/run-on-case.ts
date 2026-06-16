@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import type { AgentDraft, AgentProfile, DetectionResult } from "@/lib/routing/types";
+import { generate } from "@/lib/ai/router";
+import { HAILMARY_OPERATIVE_SYSTEM } from "@/lib/ai/persona";
 
 export type RunAgentContext = {
   caseId: string;
@@ -59,10 +61,28 @@ export async function runAgentOnCase(ctx: RunAgentContext): Promise<AgentDraft> 
   let draft: AgentDraft =
     profile === "tank" ? buildTankDraft(ctx) : buildSticksDraft(ctx);
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey?.trim()) {
-    draft = { ...draft, generated_at: new Date().toISOString() };
+  // Operative-grade plan via the local-first router (Ollama → cloud → none).
+  // Fail-open: if no model is reachable, the template draft still stands.
+  try {
+    const prompt = [
+      `Work type: ${ctx.detection.workType} (priority ${ctx.detection.priority})`,
+      ctx.customerName ? `Customer: ${ctx.customerName}` : null,
+      ctx.subject ? `Subject: ${ctx.subject}` : null,
+      ctx.pipelineName ? `Pipeline: ${ctx.pipelineName}` : null,
+      ctx.stage ? `Stage: ${ctx.stage}` : null,
+      "",
+      "Produce the operative plan to resolve this case: primary path + at least one fallback.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const res = await generate({ system: HAILMARY_OPERATIVE_SYSTEM, prompt, maxTokens: 700 });
+    if (res.backend !== "none" && res.text.trim()) {
+      draft = { ...draft, operative_plan: res.text.trim(), plan_backend: res.backend };
+    }
+  } catch {
+    /* fail-open: keep the template draft */
   }
+  draft = { ...draft, generated_at: new Date().toISOString() };
 
   const supabase = createServiceRoleClient();
   await supabase.from("cases").update({ agent_draft: draft }).eq("id", ctx.caseId);

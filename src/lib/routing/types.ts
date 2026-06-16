@@ -51,4 +51,7 @@ export type AgentDraft = {
   task_description?: string;
   sla_note?: string;
   checklist?: string[];
+  /** Operative-grade plan (PROJECTX-HAILMARY), local-first via the AI router. */
+  operative_plan?: string;
+  plan_backend?: string;
 };
