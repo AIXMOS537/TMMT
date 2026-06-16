@@ -13,6 +13,9 @@ source "$(dirname "$0")/../lib/swarm-common.sh"
 R="$SWARM_ROOT"
 
 up() {
+  if [ -f "$R/.swarm/DARK" ]; then
+    say "⛔ DARK — base will not boot. Lift with the boss word: bash scripts/godark lift"; return 1
+  fi
   say "${BOLD}— UNISON: bringing the home base online —${RST}"
   # 1. HAILMARY: boot + self-audit + absorb + (macOS) always-on presence.
   info "1/3  HAILMARY booyah"
