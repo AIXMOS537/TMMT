@@ -1,0 +1,90 @@
+{
+  "_meta": {
+    "purpose": "Compliance-by-design guardrails for the AI credit-repair + funding GUIDANCE product. Education/guidance only — not legal/financial advice, not a lender/credit-repair-org unless properly registered.",
+    "not_legal_advice": true,
+    "review_required_by_counsel_before_sale": true,
+    "version": "2026-06-16"
+  },
+
+  "prohibited_claims": {
+    "_note": "The AI must NEVER produce these. CROA/FTC bar false or guaranteed-result claims; some patterns are outright illegal.",
+    "patterns": [
+      "guarantee(d)?\\s+(to\\s+)?(remov|delet|eras|fix|boost|raise|increase)",
+      "100%\\s+(guarantee|success|approval|removal)",
+      "remov(e|ing)\\s+(accurate|valid|true)\\s+(negative|information|items)",
+      "delet(e|ing)\\s+(accurate|valid|true)",
+      "(erase|wipe)\\s+(bad\\s+credit|your\\s+debt)",
+      "raise\\s+your\\s+score\\s+by\\s+\\d+\\s+points",
+      "\\bCPN\\b",
+      "credit\\s+privacy\\s+number",
+      "new\\s+credit\\s+(identity|file|profile)",
+      "secondary\\s+credit\\s+number",
+      "stop\\s+paying\\s+your\\s+(debts|bills|creditors)",
+      "dispute\\s+everything",
+      "guaranteed\\s+(funding|approval|loan)",
+      "no\\s+risk\\s+guaranteed\\s+return"
+    ]
+  },
+
+  "required_disclosures": {
+    "_note": "At least these must appear in any consumer-facing credit/funding output or be present in the wrapping UI/contract.",
+    "general": [
+      "This is educational guidance, not legal or financial advice.",
+      "Results vary and no specific outcome is guaranteed."
+    ],
+    "credit_repair_CROA": [
+      "You have the right to dispute inaccurate information in your own credit report for free.",
+      "You may cancel this contract within 3 business days at no charge.",
+      "We do not charge for credit-repair services before they are performed."
+    ],
+    "funding": [
+      "We are not a lender or loan broker unless separately licensed in your state.",
+      "This is not an offer of securities or investment, and not a guarantee of funding."
+    ]
+  },
+
+  "fee_rules": {
+    "_note": "CROA + FTC Telemarketing Sales Rule: NO advance fees for credit repair.",
+    "no_advance_fees_for_credit_repair": true,
+    "charge_only_after_services_performed": true,
+    "written_contract_required": true,
+    "cancellation_window_business_days": 3
+  },
+
+  "conduct_rules": {
+    "ai_may": [
+      "Educate on how credit scoring, reports, and funding readiness work.",
+      "Help a user identify and dispute INACCURATE/unverifiable items themselves.",
+      "Build budgets, readiness checklists, and document organization.",
+      "Explain options and general eligibility in plain language."
+    ],
+    "ai_must_not": [
+      "Promise or imply guaranteed deletions, scores, or funding.",
+      "Advise removing accurate, current, verifiable information.",
+      "Create or suggest CPNs / synthetic identities / new credit files.",
+      "File or draft knowingly false or frivolous disputes.",
+      "Give legal advice or draft binding legal documents.",
+      "Tell a consumer to stop paying lawful debts.",
+      "Collect advance fees for credit-repair work not yet performed."
+    ]
+  },
+
+  "registration_flags": {
+    "_note": "Many states require Credit Services Organization registration + a surety bond. Confirm per state with counsel before selling there.",
+    "state_CSO_registration_likely_required": true,
+    "surety_bond_likely_required": true,
+    "confirm_states_before_sale": true
+  },
+
+  "pre_sale_gate": {
+    "_note": "Hard prerequisites before charging anyone. Owner backstop — cannot be automated away.",
+    "checklist": [
+      "Counsel-reviewed CROA-compliant contract + disclosures",
+      "Fee structure with NO advance fees for credit repair",
+      "State CSO registration + surety bond where required",
+      "Funding side: lender/broker licensing reviewed; no securities offering without compliance",
+      "Privacy/data handling for consumer PII (GLBA/FCRA) reviewed",
+      "Banned-claims guardrail (this file) enforced on all consumer-facing output"
+    ]
+  }
+}
