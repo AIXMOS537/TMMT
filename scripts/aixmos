@@ -18,6 +18,12 @@ type info >/dev/null 2>&1 || info() { printf '  › %s\n' "$*"; }
 type say  >/dev/null 2>&1 || say()  { printf '%s\n' "$*"; }
 BOLD="${BOLD:-}"; RST="${RST:-}"
 
+# DARK kill-switch: AIXMOS won't act while blacked out (sleep/status ok).
+if [ -f "$ROOT/.swarm/DARK" ]; then
+  case "${1:-}" in sleep|dormant|off|status|state) : ;;
+    *) echo "⛔ DARK — AIXMOS is dormant. Lift with the boss word: bash scripts/godark lift"; exit 1;; esac
+fi
+
 CLIENTS="$ROOT/.hailmary/clients"
 STATE="$ROOT/.hailmary/aixmos.state"
 

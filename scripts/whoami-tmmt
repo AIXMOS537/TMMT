@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# whoami-tmmt — one glance: who is this device, what role, did it pass the gate,
+# is it dark, is it on the mesh.   bash scripts/whoami-tmmt  (or: whoami)
+#   add 'mesh' to also show the whole roster.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then
+  source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null || true
+fi
+set +e   # never let a missing optional tool (e.g. tailscale) abort the readout
+type swarm_machine >/dev/null 2>&1 || swarm_machine(){ hostname -s 2>/dev/null||echo device; }
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; R=; C=; W=; D=; BD=; X=; fi
+
+ROLE="${SWARM_ROLE:-}"; [ -z "$ROLE" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"; [ -z "$ROLE" ] && ROLE="(unset)"
+SEAL="(none)"; [ -f "$ROOT/auth/OWNER.seal" ] && SEAL="set"
+DARK="${G}clear${X}"; [ -f "$ROOT/.swarm/DARK" ] && DARK="${R}${BD}DARK${X}"
+TS="$(tailscale status 2>/dev/null | awk 'NR==1{print $1" "$2}')"; [ -z "$TS" ] && TS="(tailscale not up)"
+
+if [ "$ROLE" = "owner" ]; then RC="$G"; badge="🟢 OWNER"; else RC="$Y"; badge="🟡 ${ROLE^^}"; fi
+
+printf '\n  %s%s  this device%s\n' "$C$BD" "" "$X"
+printf '  ────────────────────────────\n'
+printf '   machine : %s%s%s\n' "$W" "$(swarm_machine)" "$X"
+printf '   role    : %s%s%s%s\n' "$RC" "$BD" "$badge" "$X"
+printf '   gate    : owner seal %s\n' "$SEAL"
+printf '   status  : %s\n' "$DARK"
+printf '   mesh    : %s\n\n' "$TS"
+
+if [ "$ROLE" != "owner" ]; then
+  printf '  %sthis device is fenced — owner agents are locked.%s\n\n' "$D" "$X"
+fi
+
+if [ "${1:-}" = "mesh" ]; then
+  printf '  %swhole mesh:%s\n' "$BD" "$X"
+  bash "$ROOT/scripts/swarm.sh" mesh 2>/dev/null | sed 's/^/   /' || printf '   (mesh roster unavailable)\n'
+fi
