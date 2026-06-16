@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Standalone output → self-host on Brainiac via Docker/Coolify (no cloud caps).
+  output: "standalone",
   transpilePackages: ["@aixmos/core"],
   experimental: {
     serverActions: {

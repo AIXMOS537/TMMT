@@ -10,6 +10,7 @@ import {
   isFormPayload,
   isOpportunityStagePayload,
 } from "@/lib/ghl/payload";
+import { logMemoryEvent } from "@/lib/memory";
 
 /**
  * GoHighLevel webhook entry point (merged).
@@ -44,6 +45,16 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  // Memory Fabric visibility — never blocks the GHL path (logMemoryEvent never throws).
+  await logMemoryEvent({
+    action: "ghl_webhook",
+    source: "system",
+    actorKind: "system",
+    actorLabel: "GHL (campaigns/ads/leads)",
+    summary: "Inbound GHL webhook",
+    details: { keys: Object.keys(body).slice(0, 12) },
+  });
 
   // --- CRM sync events take priority: route recognized payloads to dispatch ---
   const isCrmPayload =

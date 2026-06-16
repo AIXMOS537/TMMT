@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+.vercel
+e2e
+*.log
+.env*
