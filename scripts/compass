@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# compass — HAILMARY's heart. Protects the user first, guards mental well-being,
+# and points gently toward God, one step at a time. Local, owner-first, never
+# preachy, never a replacement for real people. See docs/HAILMARY-CHARTER.md §VI.
+#
+#   bash scripts/compass            one gentle step, right now
+#   bash scripts/compass set        choose your tradition / tone (one time)
+#   bash scripts/compass help       if today is heavy — real support
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CONF="$ROOT/.hailmary/compass.conf"
+mkdir -p "$(dirname "$CONF")"
+
+if [[ -t 1 ]]; then
+  G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; M=$'\e[35m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'
+else G=; Y=; C=; M=; W=; D=; BD=; X=; fi
+
+TRADITION="universal"
+[[ -f "$CONF" ]] && source "$CONF" 2>/dev/null || true
+
+frame() { printf '\n%s   ☾ ✦  C O M P A S S%s\n%s   protect your peace · one step toward God%s\n\n' "$C$BD" "$X" "$D" "$X"; }
+
+# A small rotating set of steps. Grounding for the body + mind, then a turn of
+# the heart toward God. Gentle, doable in a minute, never a command.
+step() {
+  local steps=(
+    "Breathe. In for 4, hold 4, out for 6 — three times. Your body is allowed to rest."
+    "Name one thing you're grateful for right now. Say it out loud. Gratitude is the first step home."
+    "Drink some water. Unclench your jaw. Drop your shoulders. You are carried, not alone."
+    "Pause and remember God for 30 seconds — however that feels true to you today."
+    "Text one person you love just to say you're thinking of them. Connection guards the heart."
+    "Step outside or to a window. Look up. The sky has held every worry before yours."
+    "Forgive yourself one thing today. Mercy starts on the inside."
+    "Do the very next small right thing — just one. The path is walked one step, not all at once."
+    "Put the phone down for 10 minutes. Let your mind be quiet enough to hear what matters."
+    "Whatever weighs on you: name it, then hand it up in prayer. You weren't built to carry it solo."
+  )
+  local faith_extra=""
+  case "$TRADITION" in
+    islam)    faith_extra="A breath of dhikr — 'SubhanAllah, Alhamdulillah, Allahu Akbar.' Return to Him gently." ;;
+    christian)faith_extra="A quiet line — 'Be still, and know that I am God.' Rest there a moment." ;;
+    jewish)   faith_extra="A breath of gratitude — 'Modeh ani' — thankful for another day given." ;;
+    *)        faith_extra="A breath toward the One who made you — in whatever words are true for you." ;;
+  esac
+  steps+=("$faith_extra")
+  local i=$(( ($(date +%j) + $(date +%H)) % ${#steps[@]} ))
+  printf '%s   Your step today:%s\n\n   %s%s%s\n\n' "$Y$BD" "$X" "$W" "${steps[$i]}" "$X"
+}
+
+care_note() {
+  printf '%s   If the weight is real and heavy, you don'\''t have to hold it alone.%s\n' "$D" "$X"
+  printf '%s   Reach a person you trust — or, if you'\''re in crisis, your local emergency\n   number or a crisis line right now. HAILMARY is a companion, not a doctor.%s\n\n' "$D" "$X"
+}
+
+case "${1:-now}" in
+  now|step|"")
+    frame; step
+    printf '%s   You are protected here. Come back anytime — type: compass%s\n' "$D" "$X"
+    care_note ;;
+  set|setup)
+    frame
+    printf '   Choose a tone for the faith step:\n'
+    printf '     1) universal (default)   2) islam   3) christian   4) jewish\n   > '
+    IFS= read -r pick || true
+    case "$pick" in 2) t=islam;; 3) t=christian;; 4) t=jewish;; *) t=universal;; esac
+    printf 'TRADITION=%s\n' "$t" > "$CONF"
+    printf '\n%s   ✓ set to: %s — saved locally only.%s\n\n' "$G" "$t" "$X" ;;
+  help|heavy|sos)
+    frame; care_note
+    printf '   And one breath, right now, with me: in… and slowly out. You matter.\n\n' ;;
+  *) printf 'compass words: (none) | set | help\n' ;;
+esac
