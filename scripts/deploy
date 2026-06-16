@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# deploy — provision THIS device in one shot, for any role. Mac or Linux (or
+# Windows Git Bash). Sets the role, onboards to the mesh (identity + secret-guard
+# hooks), installs the one-word commands, and (Mac) drops Desktop icons.
+#
+#   bash scripts/deploy owner       # full kit — the Owner's machines
+#   bash scripts/deploy operator    # fenced, least-privilege — operator laptops
+#   bash scripts/deploy             # asks once, then remembers
+#
+# Phones (iPhone/Android) don't run this — see docs/MOBILE.md (they become a
+# secure window into a deployed machine over Tailscale).
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then
+  set +e; source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null; set -uo pipefail
+fi
+type ok   >/dev/null 2>&1 || ok()   { printf '  ✓ %s\n' "$*"; }
+type info >/dev/null 2>&1 || info() { printf '  › %s\n' "$*"; }
+type warn >/dev/null 2>&1 || warn() { printf '  ! %s\n' "$*" >&2; }
+type say  >/dev/null 2>&1 || say()  { printf '%s\n' "$*"; }
+
+ROLE="${1:-}"
+if [ -z "$ROLE" ]; then
+  if [ -f "$ROOT/.swarm/role" ]; then ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
+  else
+    printf '  Who is this device for?  [1] owner   [2] operator\n  > '
+    IFS= read -r p || true; [ "$p" = "1" ] && ROLE=owner || ROLE=operator
+  fi
+fi
+[ "$ROLE" = "owner" ] || ROLE=operator   # anything not 'owner' is fenced
+
+say
+say "  ┌──────────────────────────────────────────────┐"
+say "  │   DEPLOY · role: $ROLE"
+say "  └──────────────────────────────────────────────┘"
+
+# 1. Persist the role (gitignored, per-device).
+mkdir -p "$ROOT/.swarm"; printf '%s' "$ROLE" > "$ROOT/.swarm/role"
+ok "role set: $ROLE"
+
+# 2. Onboard to the mesh (unique identity + secret-guard hooks), if available.
+if [ -x "$ROOT/scripts/swarm-join.sh" ]; then
+  info "onboarding to the mesh (identity + secret-guard)…"
+  SWARM_ROLE="$ROLE" bash "$ROOT/scripts/swarm-join.sh" >/dev/null 2>&1 \
+    && ok "mesh onboarding done" || warn "swarm-join had warnings (continuing)"
+else
+  git config core.hooksPath scripts/hooks 2>/dev/null || true
+fi
+
+# 3. Install the one-word commands + boot (go is role-aware via .swarm/role).
+info "installing one-word commands…"
+SWARM_ROLE="$ROLE" bash "$ROOT/scripts/go"
+
+# 4. Mac: Desktop icons (owner gets all; operator gets the safe few).
+if [ "$(uname -s)" = "Darwin" ] && [ -x "$ROOT/scripts/install-desktop.sh" ]; then
+  ROLE="$ROLE" bash "$ROOT/scripts/install-desktop.sh" >/dev/null 2>&1 \
+    && ok "Desktop icons placed" || true
+fi
+
+say
+ok "DEPLOYED. Open a new terminal and type:  menu"
+[ "$ROLE" = "owner" ] && say "   (owner) full kit: unison · booyah · onboard · compass" \
+                       || say "   (operator) your kit: work · sync · who · sos · compass"
+say "   phone? follow docs/MOBILE.md to put it in your pocket."
