@@ -71,7 +71,7 @@ case "$cmd" in
     [ $# -gt 0 ] || die "usage: hailmary do \"<task>\""
     task="$*"
     ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$task"),\"limit\":12}")"
-    sysmsg="You are HAILMARY, the owner's local agent. Using the recalled brain context, produce a short, concrete numbered action plan for the task. Rules: never contact the personal line (+15713519690); reach the owner on the work cell (+15713265611) only in working hours."
+    sysmsg="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Method: (1) define the TRUE objective, (2) use the recalled brain context + question assumptions, (3) inventory resources and what can be repurposed (rubber-band-in-a-stripped-screw ingenuity), (4) give 3 angles incl. one unconventional, prefer cheap/reversible first, (5) calibrate force & name each failure mode + a bail tripwire, (6) hold two truths: it CAN fail AND it MUST get done, keep a fallback tree. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell (+15713265611) in working hours; protect client data; flag risky/irreversible moves first. Output a short numbered plan with a primary path and at least one fallback."
     plan=""; backend=""
     # 1) LOCAL FIRST — Ollama on Brainiac (free, unlimited). No token cost.
     ourl="${OLLAMA_URL:-http://localhost:11434}"; omodel="${OLLAMA_MODEL:-qwen2.5:14b}"
