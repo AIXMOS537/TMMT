@@ -6,6 +6,7 @@
 types|npx tsc --noEmit
 lint|npm run lint
 compliance|node scripts/compliance-check.mjs content/consumer-facing
+secrets|bash scripts/secret-scan.sh
 # build|npm run build        # uncomment for the full gate (slower)
 # test|npm run test          # when unit tests exist
 # smoke|bash scripts/smoke-prod.sh   # integration, needs a target
