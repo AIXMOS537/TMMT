@@ -58,6 +58,14 @@ Fatherbox watches and supports it.
 
 ## 3. The offer stack (the business engine)
 
+> **Canonical pricing + delivery terms now live in `docs/OFFER-STACK.md`.** Summary:
+> founders (Ayyan Khan, Muhammad Umar/MoeLegacy) deferred until $50K collected via
+> hourly/salary/commission; then **$15K** (TMMT vertical), **$25K** (MoeLegacy/AIXMOS
+> credit+funding), **$35K** (both), **$50K** (full horizontal+vertical). **50%
+> deposit = go** → triggers backend dev+research discovery. Watchtower runs the
+> army via each client's always-on "antenna"; Muhammad Taha = Head Master / lead
+> backend, remotes in (Tailscale + consented RustDesk).
+
 **The headline product — the Operator Full-Stack (DFY):**
 - **~$50,000 / operator · only 10 sought.** Scarcity is real: this is hands-on.
 - Includes: full-stack setup on an always-on node, **done-for-you build + 1 year
