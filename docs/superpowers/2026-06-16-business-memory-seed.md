@@ -93,8 +93,9 @@ only allowed to **teach others after they have learned everything to completion*
   certification flow — operators unlock teaching only at 100% curriculum
   completion.
 
-> Note: owner said "16tb" — interpreted as **16 GB** (RAM tier) to sit between
-> the 8 GB and 32 GB tiers. Flag for confirmation if storage (TB) was meant.
+> **Confirmed 2026-06-16:** the mid laptop tier is **16 GB RAM** (not 16 TB).
+> The ~25–30 TB figure refers to **home NAS storage** behind the brain (§5), not
+> a laptop. Laptops (8/16/32 GB) are operator *endpoints*; the brain is separate.
 
 ---
 
@@ -121,6 +122,58 @@ if volume makes $0.01/segment a real cost.
 — the Quo workspace is **out of prepaid credits**. Top up to restore automation.
 
 ---
+
+## 5. The "Brain" — Brainiac PC + home NAS
+
+| field | value |
+|---|---|
+| **entity** | Infrastructure (the Brain) |
+| **kind** | infrastructure / standing-truth |
+| **visibility** | org |
+| **confidence** | 1.0 (owner-stated) |
+| **source** | owner, 2026-06-16 |
+
+**Fact:** The **"brain"** is a custom-built, always-on **gaming PC ("Brainiac")**
+the owner built to house the entire AIXMOS / memory stack. Bulk storage is a
+**home NAS with ~25–30 TB**, plus whatever sits on the Brainiac PC itself. The
+laptop tiers (8/16/32 GB, §3) are **operator endpoints**, distinct from the
+brain. The brain + NAS live on the home network and are reached over **Tailscale
+(the mesh)**.
+
+## 6. Cross-mesh access requirement
+
+| field | value |
+|---|---|
+| **entity** | Memory Fabric / mesh access |
+| **kind** | requirement |
+| **visibility** | org |
+| **confidence** | 1.0 (owner-stated) |
+| **source** | owner, 2026-06-16 |
+
+**Fact:** The mesh, the brain, the memory, and **anything relevant being noted,
+saved, understood, or learned** must be **pullable from any and all computers**
+that (a) connect to **Tailscale / the mesh / the brain**, or (b) run the
+**AIXMOS agent**. Design lives in `docs/MEMORY-MESH-ACCESS.md`. Mechanism:
+structured memory in Supabase (cloud, reachable anywhere with the token); bulk/
+private data on the NAS exposed **only** over Tailscale; every node reaches the
+shared brain through the Memory Fabric API (`/api/memory`, Bearer
+`MEMORY_API_TOKEN`) and/or the MCP bridge registered in each node's AIXMOS agent.
+
+## 7. Identity — HAILMARY = the owner, exclusively
+
+| field | value |
+|---|---|
+| **entity** | Identity: HAILMARY |
+| **kind** | identity / naming rule |
+| **visibility** | org |
+| **confidence** | 1.0 (owner-stated) |
+| **source** | owner, 2026-06-16 |
+
+**Fact:** As of **2026-06-16**, the name **HAILMARY refers strictly and
+exclusively to the owner** (Muhammad Taha, `tmmtautodetail@gmail.com`). It is
+**not** a label for the AI / engineer persona or any agent. In the Memory
+Fabric, events/decisions attributed to "Hailmary" map to actor_kind `owner`.
+Agents must not adopt or sign as "Hailmary."
 
 ## Open questions for the owner (recorded, not blocking)
 
