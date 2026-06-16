@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getOpsMessages } from "@/lib/queries";
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, GraduationCap, ArrowRight } from "lucide-react";
 
 export default function OperatorFeedPage() {
   const [messages, setMessages] = useState<Record<string, unknown>[]>([]);
@@ -27,6 +28,23 @@ export default function OperatorFeedPage() {
         <CheckCircle size={14} />
         Fact-checked against company requirements
       </div>
+
+      <Link href="/operator/training">
+        <Card className="p-4 flex items-center gap-3 hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
+          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+            <GraduationCap size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 dark:text-white">
+              Operator Academy
+            </p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Work through your modules, get certified, unlock your full toolkit.
+            </p>
+          </div>
+          <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+        </Card>
+      </Link>
 
       {loading ? (
         <div className="flex justify-center py-12">
