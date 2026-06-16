@@ -70,7 +70,7 @@ The principle that makes it "across the board": **you cannot observe humans dire
   - **Gmail / Outlook** → sent/received threads tied to customers
   - **Quo** → calls + SMS (the John Lopez channel)
   - **Calendar** → meetings, appointments
-  - **Airtable** → legacy records still in use
+  - **Airtable** → **permanent, first-class source — NOT legacy.** Airtable is deliberately retained because of the AI-agent automations/triggers wired into its tables and fields, which process and enter data at very high speed. The fabric *ingests from* Airtable; it never aims to retire it. (This supersedes the older "Airtable was replaced" framing in `STATUS.md` / `CLAUDE.md`.)
 - **Outside parties** (customers, vendors, a lawyer texting in) appear as events with an *unauthenticated actor* — which today's `activity_logs` cannot represent. The fabric fixes this with a polymorphic actor (below).
 
 Every captured event is tagged with **actor + role + entity + outcome** so it can later be filtered and attributed.
