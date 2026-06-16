@@ -33,8 +33,13 @@ ${BD}   THE LEAGUE${X}
 
 ${B}${BD}   THE LADDER (locked)${X}
    ${W}🚗 Rental ${D}→${X} ${W}💳 Membership ${D}→${X} ${W}📈 Credit Guidance ${D}→${X} ${W}🏗️ Builds/Kits ${D}→${X} ${W}🤝 Affiliate${X}
+EOF
 
-${D}   deep checks:  fix (security) · whoami (this device) · mesh (every device)
+bash "$ROOT/scripts/health.sh" --compact 2>/dev/null
+
+cat <<EOF
+
+${D}   deep checks:  fix (security) · whoami (this device) · mesh (every device) · health
    full map:  docs/WATCHTOWER-ROSTER.md${X}
 
 EOF
