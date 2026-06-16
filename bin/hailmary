@@ -71,24 +71,44 @@ case "$cmd" in
     [ $# -gt 0 ] || die "usage: hailmary do \"<task>\""
     task="$*"
     ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$task"),\"limit\":12}")"
-    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-      model="${HAILMARY_MODEL:-claude-sonnet-4-6}"
-      sysmsg="You are HAILMARY, the owner's local agent. Using the recalled brain context, produce a short, concrete numbered action plan for the task. Rules: never contact the personal line (+15713519690); reach the owner on the work cell (+15713265611) only in working hours."
-      body="$(python3 - "$model" "$sysmsg" "$task" "$ctx" <<'PY'
+    sysmsg="You are HAILMARY, the owner's local agent. Using the recalled brain context, produce a short, concrete numbered action plan for the task. Rules: never contact the personal line (+15713519690); reach the owner on the work cell (+15713265611) only in working hours."
+    plan=""; backend=""
+    # 1) LOCAL FIRST — Ollama on Brainiac (free, unlimited). No token cost.
+    ourl="${OLLAMA_URL:-http://localhost:11434}"; omodel="${OLLAMA_MODEL:-qwen2.5:14b}"
+    obody="$(python3 - "$omodel" "$sysmsg" "$task" "$ctx" <<'PY'
 import json,sys
-model,sysmsg,task,ctx=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
-print(json.dumps({"model":model,"max_tokens":1024,"system":sysmsg,
-  "messages":[{"role":"user","content":f"TASK: {task}\n\nBRAIN CONTEXT (JSON):\n{ctx}"}]}))
+m,s,t,c=sys.argv[1:5]
+print(json.dumps({"model":m,"stream":False,"messages":[{"role":"system","content":s},{"role":"user","content":f"TASK: {t}\n\nBRAIN CONTEXT (JSON):\n{c}"}]}))
 PY
 )"
-      resp="$(curl -fsS https://api.anthropic.com/v1/messages \
-        -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" \
-        -H "content-type: application/json" -d "$body")"
-      plan="$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("".join(b.get("text","") for b in d.get("content",[])))')"
+    oresp="$(curl -fsS "$ourl/api/chat" -H "content-type: application/json" -d "$obody" 2>/dev/null || true)"
+    if [ -n "$oresp" ]; then
+      plan="$(printf '%s' "$oresp" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("message",{}).get("content",""))
+except Exception: print("")' 2>/dev/null)"
+      [ -n "$plan" ] && backend="ollama (local)"
+    fi
+    # 2) FALLBACK — Claude, only if local unavailable and a key is set.
+    if [ -z "$plan" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+      model="${HAILMARY_MODEL:-claude-sonnet-4-6}"
+      abody="$(python3 - "$model" "$sysmsg" "$task" "$ctx" <<'PY'
+import json,sys
+m,s,t,c=sys.argv[1:5]
+print(json.dumps({"model":m,"max_tokens":1024,"system":s,"messages":[{"role":"user","content":f"TASK: {t}\n\nBRAIN CONTEXT (JSON):\n{c}"}]}))
+PY
+)"
+      aresp="$(curl -fsS https://api.anthropic.com/v1/messages -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" -d "$abody" 2>/dev/null || true)"
+      plan="$(printf '%s' "$aresp" | python3 -c 'import json,sys
+try: print("".join(b.get("text","") for b in json.load(sys.stdin).get("content",[])))
+except Exception: print("")' 2>/dev/null)"
+      [ -n "$plan" ] && backend="claude (fallback)"
+    fi
+    if [ -n "$plan" ]; then
+      echo "— plan via $backend —"
       printf '%s\n' "$plan"
-      api "{\"op\":\"remember\",\"action\":\"task_plan\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Plan for: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE"),\"plan\":$(jstr "$plan")}}" >/dev/null
+      api "{\"op\":\"remember\",\"action\":\"task_plan\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Plan for: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE"),\"backend\":$(jstr "$backend"),\"plan\":$(jstr "$plan")}}" >/dev/null
     else
-      echo "(no ANTHROPIC_API_KEY — showing recalled context; set the key for full planning)"
+      echo "(no local model and no ANTHROPIC_API_KEY — recalled context only)"
       printf '%s\n' "$ctx" | pretty
       api "{\"op\":\"remember\",\"action\":\"task_requested\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Task requested: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" >/dev/null
     fi

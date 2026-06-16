@@ -66,6 +66,11 @@ MEMORY_API_URL="${BRAIN_URL:-${MEMORY_API_URL:-}}"
 MEMORY_API_TOKEN="${TOKEN:-${MEMORY_API_TOKEN:-}}"
 HAILMARY_NODE="${NODE}"
 HAILMARY_ROLE="${ROLE}"
+# Local-first AI (free, unlimited). Point at the Brainiac Ollama over Tailscale.
+# 'hailmary do' uses this first and only falls back to Claude if it's unreachable.
+OLLAMA_URL="${OLLAMA_URL:-http://brainiac:11434}"
+OLLAMA_MODEL="${OLLAMA_MODEL:-qwen2.5:14b}"
+# ANTHROPIC_API_KEY="<optional fallback>"
 EOF
 chmod 600 "$CONFIG"
 say "Wrote $CONFIG (node=$NODE role=$ROLE)"
