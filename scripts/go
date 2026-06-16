@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
-# go — ONE command to update + boot the whole base, from anywhere on any Mac/Linux
-# (or Windows Git Bash). Finds the TMMT repo if it exists, clones it if it
-# doesn't, pulls the latest, and brings everything online in unison.
-#
-#   bash scripts/go            # if you already have the repo
-#   curl/paste one-liner       # see GO.md — works even with no repo yet
-#
-# Override defaults with env vars if ever needed:
-#   TMMT_BRANCH=...  TMMT_REPO=https://github.com/<owner>/TMMT.git  bash scripts/go
+# go — the ONE command. Updates everything and boots the whole base in unison.
+# Self-sufficient: finds the repo, learns its own remote, self-heals, and installs
+# a permanent `unison` shortcut so next time you just type one word.
 set -uo pipefail
 BRANCH="${TMMT_BRANCH:-claude/organize-chats-sessions-7t7zjy}"
-REPO="${TMMT_REPO:-https://github.com/AIXMOS537/TMMT.git}"
 
 locate() {
-  # Already inside the repo? Use its root.
-  if git rev-parse --show-toplevel >/dev/null 2>&1; then
-    git rev-parse --show-toplevel; return
-  fi
+  git rev-parse --show-toplevel 2>/dev/null && return
   local d
   for d in "$HOME/Projects/TMMT" "$HOME/projects/TMMT" "$HOME/TMMT" \
            "$HOME/Documents/TMMT" "$HOME/Desktop/TMMT"; do
@@ -29,17 +19,31 @@ locate() {
 R="$(locate)"
 if [ -z "${R:-}" ]; then
   R="$HOME/TMMT"
-  echo "› No TMMT repo found — cloning into $R"
-  git clone "$REPO" "$R" || { echo "✗ clone failed — check network / repo URL ($REPO)"; exit 1; }
+  echo "› cloning into $R"
+  git clone "${TMMT_REPO:-https://github.com/AIXMOS537/TMMT.git}" "$R" \
+    || { echo "✗ clone failed — set TMMT_REPO to your repo URL and re-run"; exit 1; }
 fi
-
-cd "$R" || { echo "✗ could not enter $R"; exit 1; }
+cd "$R" || exit 1
 echo "› repo: $R"
 
-# Don't let local edits block the update.
-git stash push -u -m "auto-stash by go $(date -u +%FT%TZ)" >/dev/null 2>&1 || true
+# Update (never blocked by local edits, never fatal when offline).
+git stash push -u -m "auto $(date -u +%FT%TZ)" >/dev/null 2>&1 || true
 git fetch origin "$BRANCH" >/dev/null 2>&1 || git fetch origin >/dev/null 2>&1 || true
 git checkout "$BRANCH" >/dev/null 2>&1 || true
-git pull origin "$BRANCH" || echo "! pull skipped (offline?) — booting with what's on disk"
+git pull origin "$BRANCH" >/dev/null 2>&1 || echo "! offline — booting on-disk code"
+
+# Self-heal: make tools runnable + install the secret-guard hooks.
+chmod +x "$R"/scripts/go "$R"/scripts/tmmt "$R"/scripts/hailmary \
+         "$R"/scripts/mesh/*.sh "$R"/TMMT-GO.command 2>/dev/null || true
+git config core.hooksPath scripts/hooks 2>/dev/null || true
+
+# Install a permanent one-word shortcut so you never type a path again.
+for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+  [ -e "$rc" ] || touch "$rc"
+  grep -q 'alias unison=' "$rc" 2>/dev/null || {
+    printf '\n# TMMT one-word base\nalias unison="bash %s/scripts/go"\nalias base="bash %s/scripts/go"\n' "$R" "$R" >> "$rc"
+  }
+done
+echo "› shortcut ready: type 'unison' anytime (new terminal)"
 
 exec bash "$R/scripts/tmmt" unison
