@@ -199,6 +199,8 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 
 ### Vercel (deployment)
 
+**Local-first / CLI deploys (owner preference):** deploy via the terminal, NOT git auto-deploy. Git push triggered a deploy on every push across the projects and burned the free 100/day limit. `vercel.json` `ignoreCommand` → `scripts/vercel-ignore-build.sh` now git-deploys **only the production branch** (`master`/`main`); other branches skip. Deploy on demand with `bin/ship` (preview) / `bin/ship prod` (`vercel build` + `vercel deploy --prebuilt`). See `docs/LOCAL-FIRST-WORKFLOW.md`. Owner builds projects/sites/apps/contracts/docs locally and ships via CLI.
+
 Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
 
 - `tmmt-ops` → TMMT Ops (TMMT OS proper) at https://tmmt-ops.vercel.app
