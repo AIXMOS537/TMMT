@@ -26,6 +26,11 @@ fi
 cd "$R" || exit 1
 echo "› repo: $R"
 
+# DARK kill-switch: nothing boots while blacked out.
+if [ -f "$R/.swarm/DARK" ]; then
+  echo "⛔ DARK — boot blocked. Lift with the boss word: bash scripts/godark lift"; exit 1
+fi
+
 # Update (never blocked by local edits, never fatal when offline).
 git stash push -u -m "auto $(date -u +%FT%TZ)" >/dev/null 2>&1 || true
 git fetch origin "$BRANCH" >/dev/null 2>&1 || git fetch origin >/dev/null 2>&1 || true
@@ -50,6 +55,9 @@ install_words() {
     echo "# TMMT_WORDS (auto-managed by scripts/go — one word does the thing)"
     echo "alias menu='bash \"$R/scripts/menu\"'        # TMMT_WORDS"
     echo "alias compass='bash \"$R/scripts/compass\"'          # TMMT_WORDS"
+    echo "alias whoami='bash \"$R/scripts/whoami-tmmt\"'       # TMMT_WORDS"
+    echo "alias dark='bash \"$R/scripts/godark\"'              # TMMT_WORDS"
+    echo "alias light='bash \"$R/scripts/godark\" lift'        # TMMT_WORDS"
     echo "alias base='bash \"$R/scripts/go\"'          # TMMT_WORDS"
     if [ "$ROLE" = "owner" ]; then
       echo "alias unison='bash \"$R/scripts/go\"'        # TMMT_WORDS"
