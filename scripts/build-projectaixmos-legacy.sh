@@ -52,21 +52,37 @@ OUT="${OUT:-$(dirname "$REPO_ROOT")/projectaixmos-legacy}"
 command -v git >/dev/null 2>&1 || die "git not found."
 [ -d "$REPO_ROOT/.git" ] || die "Not a git repo: $REPO_ROOT"
 
-# Paths to strip from the handoff (self-host backend, mesh, owner secrets/tooling).
+# Paths to strip from the handoff (self-host backend, mesh, local-AI brain, owner tooling).
+# Legacy edition has NO backend brain — so the mesh/local-AI/node tooling goes too.
 EXCLUDE=(
-  "AIXMOS/docker"                       # NAS Docker/nginx — the brain box
-  "AIXMOS/portal"                       # served from NAS volumes
-  "AIXMOS/files"                        # served from NAS volumes
+  "AIXMOS"                              # entire self-host app/portal/docker + owner master docs
   "scripts/setup-mac-imessage-bridge.sh"
   "docs/MAC-IMESSAGE-BRIDGE.md"
   "scripts/sync-airtable.mjs"           # owner's Airtable migration + PAT tooling
   "scripts/retire-vercel-duplicates.sh" # owner Vercel cleanup, not handoff
-  ".claude.local.md"                    # owner personal/operational memory (gitignored)
-  ".claude/settings.local.json"         # owner local settings
+  # --- no backend brain: strip mesh + local-AI + node-provisioning tooling ---
+  "scripts/setup-node.sh"
+  "scripts/setup-node.ps1"
+  "scripts/mesh-handoff.sh"
+  "infra/litellm.config.example.yaml"
+  "infra/tailscale-acl.jsonc"
+  "litellm.config.yaml"
+  "docs/LOCAL-FIRST-AI-STACK.md"
+  "docs/MESH-COORDINATION.md"
+  "docs/DEVICE-SYNC-PRIVATELLM.md"
+  "docs/IT-SUPPORT-TEAM-PLAYBOOK.md"
+  "docs/AIXMOS-SYSTEM-INDEX.md"
+  "docs/AIXMOS-PLATFORM-BLUEPRINT.md"
+  "docs/PROJECTAIXMOS-LEGACY-SPLIT.md"  # owner's internal split spec — not for them
+  "docs/FLASH-DEPLOY-RUNBOOK.md"        # owner cleanup runbook
+  "docs/THREE-APP-ECOSYSTEM.md"         # owner's multi-app topology
+  # --- owner secrets/memory ---
+  ".claude.local.md"
+  ".claude/settings.local.json"
 )
 
-# References that must NOT survive in the handed-off code (managed-cloud only).
-SEVER_PATTERNS='/share/AIXMOS|UGREEN|docker compose|docker-compose|NAS-IP|\bmesh\b|brainiac'
+# References that must NOT survive in the handed-off code (managed-cloud, no brain).
+SEVER_PATTERNS='/share/AIXMOS|UGREEN|docker compose|docker-compose|NAS-IP|\bmesh\b|brainiac|LITELLM_BASE|:11434'
 
 bold "== ProjectAixmos — Legacy build =="
 echo "Source repo : $REPO_ROOT"
@@ -105,7 +121,28 @@ if [ -n "$HITS" ]; then
   echo "$HITS"
   die "Resolve each to a managed service (Supabase/GHL) or remove it, then re-run."
 fi
-ok "No self-host/mesh references in src/ or packages/"
+ok "No self-host/mesh/brain references in src/ or packages/"
+
+# 3b. Stamp the Legacy edition (car rentals, no backend brain).
+bold "3b/6  Stamping Legacy edition..."
+printf 'legacy\n' > "$OUT/AIXMOS-EDITION"
+if [ -f "$OUT/.env.legacy.example" ]; then
+  cp "$OUT/.env.legacy.example" "$OUT/.env.example.legacy" 2>/dev/null || true
+  ok "edition=legacy stamped; env template: .env.legacy.example"
+else
+  # fall back: write a minimal managed-cloud env template
+  cat > "$OUT/.env.legacy.example" <<'ENVV'
+NEXT_PUBLIC_AIXMOS_EDITION=legacy
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+AIXMOS_BRAIN_URL=
+AIXMOS_LICENSE_KEY=
+ENVV
+  ok "edition=legacy stamped; wrote .env.legacy.example"
+fi
+[ -f "$OUT/docs/LEGACY-DEPLOY-MOE.md" ] && ok "deploy guide present: docs/LEGACY-DEPLOY-MOE.md" \
+  || warn "docs/LEGACY-DEPLOY-MOE.md not in snapshot (commit it to the source repo)"
 
 # 4. Optional: prove it builds standalone.
 if [ "$DO_BUILD" = true ]; then
@@ -130,19 +167,23 @@ else
 fi
 
 # 6. The cloud provisioning this script intentionally does NOT do.
-bold "6/6  Manual cloud handoff (needs THEIR auth + ownership):"
+bold "6/6  Deploy for moe legacy (car rentals) — needs THEIR auth + ownership:"
 cat <<'NEXT'
-  These require interactive login and must be owned by mod legacy — not scripted:
+  Full step-by-step: docs/LEGACY-DEPLOY-MOE.md (ships in the bundle).
 
-  a) Supabase  : new project → run supabase/migrations/* → confirm RLS on.
-  b) GoHighLevel: new sub-account/location → re-tag pipeline (docs/GHL-PIPELINE-SETUP.md).
-  c) Vercel    : new projects under THEIR team → set env from THEIR Supabase/GHL only.
-  d) Hand off  : transfer the new repo + Vercel + Supabase + GHL ownership.
+  a) cp .env.legacy.example .env   → fill THEIR keys (edition already = legacy).
+  b) Supabase  : their project → run supabase/migrations/* → confirm RLS on.
+  c) GoHighLevel: their sub-account → rental pipeline + payments (docs/GHL-PIPELINE-SETUP.md).
+  d) Vercel    : import under THEIR team → set env from .env → deploy.
+  e) Launch    : load fleet, intake forms live, test booking + checkout (§4 of guide).
 
-  Acceptance (docs/PROJECTAIXMOS-LEGACY-SPLIT.md §5):
-    [ ] builds clean   [ ] zero NAS/mesh refs   [ ] runs with your brain PC offline
-    [ ] they hold all their own keys   [ ] agents/VAs can operate it solo
+  Backend brain is OFF (AIXMOS_BRAIN_URL blank) — AI features show "Upgrade to
+  enable" until they license it. Everything car-rental works without it.
+
+  Acceptance:
+    [ ] builds clean   [ ] zero NAS/mesh/brain refs   [ ] runs with your brain offline
+    [ ] they hold all their own keys   [ ] AI surface shows upgrade-prompt (brain off)
 NEXT
 echo ""
-ok "ProjectAixmos — Legacy assembled at: $OUT"
+ok "ProjectAixmos — Legacy (car rentals, edition=legacy) assembled at: $OUT"
 bold "Done."
