@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# aixmos — the super-operative. A guided popup that walks a client from raw need
+# down to the ground foundation (the 10-step ladder), saves a profile, then goes
+# dormant until summoned. Owner-only, local-first. See docs/AIXMOS-SUPER-OPERATIVE.md
+#
+#   bash scripts/aixmos onboard     run the 10-step setup ladder (the popup)
+#   bash scripts/aixmos roster      show the cast of subagents
+#   bash scripts/aixmos wake        bring AIXMOS forward
+#   bash scripts/aixmos sleep       dormant (memory kept)
+#   bash scripts/aixmos status      what it knows
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then
+  set +e; source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null; set -uo pipefail
+fi
+type ok   >/dev/null 2>&1 || ok()   { printf '  ✓ %s\n' "$*"; }
+type info >/dev/null 2>&1 || info() { printf '  › %s\n' "$*"; }
+type say  >/dev/null 2>&1 || say()  { printf '%s\n' "$*"; }
+BOLD="${BOLD:-}"; RST="${RST:-}"
+
+CLIENTS="$ROOT/.hailmary/clients"
+STATE="$ROOT/.hailmary/aixmos.state"
+
+banner() {
+  cat <<'EOF'
+
+   ╔══════════════════════════════════════════════════════════╗
+   ║   A I X M O S   —   super-operative online                ║
+   ║   one operative · many hands · owner-only · local         ║
+   ╚══════════════════════════════════════════════════════════╝
+EOF
+}
+
+roster() {
+  banner
+  say "  The cast that powers AIXMOS:"
+  say "    CAPTAIN  — dispatch & planning (the quarterback)"
+  say "    MOOSE    — build muscle (stands systems up)"
+  say "    CHUMMO   — local private LLM (offline; client data stays on-device)"
+  say "    SCOUT    — recon (researches the client + stack)"
+  say "    CLOSER   — sales & offer framing (the right rung + price)"
+  say "    SCRIBE   — memory (git + Obsidian vault)"
+  say "    WARDEN   — security & guardrails (least-privilege, compliance words)"
+  say
+  say "  Tool-mesh: Claude (architect) · Cursor (pair) · Codex (muscle) · Ollama/CHUMMO (private)"
+  say "  Verticals (LOCKED): Rental → Membership → Credit Guidance → Builds/Kits → Affiliate"
+}
+
+ask() { local q="$1" var="$2" ans; printf '  %s%s%s\n  > ' "$BOLD" "$q" "$RST"; IFS= read -r ans || true; printf -v "$var" '%s' "$ans"; }
+
+onboard() {
+  banner
+  say "  I'll walk you down to the foundation in 10 steps. Press Enter to skip any."
+  say "  ${BOLD}(Sensitive answers stay LOCAL — nothing leaves this machine.)${RST}"
+  say
+  local NAME WANT NEED RUNG STACK GAP OFFER FOUND BUILD
+  ask "1/10  Client / business name?" NAME
+  ask "2/10  In their words — what do they WANT? (the brain dump)" WANT
+  ask "3/10  What's the real NEED underneath it? (the foundation problem)" NEED
+  ask "4/10  Which rung do they enter at? [rental | membership | guidance | kit | build]" RUNG
+  ask "5/10  What's already in their STACK? (tools/data/accounts they have)" STACK
+  ask "6/10  The GAP — what's missing to reach the next rung?" GAP
+  ask "7/10  The OFFER — which rung + rough price are we selling?" OFFER
+  ask "8/10  FOUNDATION — what accounts/data/access must be laid first?" FOUND
+  ask "9/10  BUILD — what does HAILMARY/MOOSE stand up for them?" BUILD
+  say  "  10/10 HANDOFF — teach the one-word commands, then I go dormant."
+  say
+
+  local slug; slug="$(printf '%s' "${NAME:-client}" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+  [ -z "$slug" ] && slug="client-$(date +%s)"
+  local dir="$CLIENTS/$slug"; mkdir -p "$dir"
+  local f="$dir/profile.md"
+  {
+    echo "# Client foundation — ${NAME:-unnamed}"
+    echo "_decoded $(date -u +%FT%TZ) · LOCAL ONLY · scope: owner_"
+    echo
+    echo "| Layer | Answer |"
+    echo "|---|---|"
+    echo "| 1 Want | ${WANT:-—} |"
+    echo "| 2 Need (foundation) | ${NEED:-—} |"
+    echo "| 3 Rung / vertical | ${RUNG:-—} |"
+    echo "| 4 Existing stack | ${STACK:-—} |"
+    echo "| 5 Gap | ${GAP:-—} |"
+    echo "| 6 Offer | ${OFFER:-—} |"
+    echo "| 7 Foundation to lay | ${FOUND:-—} |"
+    echo "| 8 Build | ${BUILD:-—} |"
+    echo
+    echo "## Next moves"
+    echo "- [ ] WARDEN: provision least-privilege access for the foundation above"
+    echo "- [ ] MOOSE/HAILMARY: stand up the build"
+    echo "- [ ] CLOSER: confirm the offer + price"
+    echo "- [ ] SCRIBE: this profile is the record (sync to vault via HAILMARY_VAULT)"
+  } > "$f"
+  echo "online $(date -u +%FT%TZ) onboarded:$slug" > "$STATE"
+  say
+  ok "Foundation decoded → ${f#"$ROOT"/}"
+  ok "AIXMOS now going DORMANT. Summon anytime:  bash scripts/aixmos wake"
+  say "  Build it:  bash scripts/hailmary hit 2     (HAILMARY/MOOSE stand it up)"
+}
+
+case "${1:-onboard}" in
+  onboard|setup|start) onboard;;
+  roster|cast|who)     roster;;
+  wake|on)             banner; echo "online $(date -u +%FT%TZ)" > "$STATE"; ok "AIXMOS awake. Run: bash scripts/aixmos onboard";;
+  sleep|dormant|off)   echo "dormant $(date -u +%FT%TZ)" > "$STATE"; ok "AIXMOS dormant — memory kept. Summon: bash scripts/aixmos wake";;
+  status|state)        banner; [ -f "$STATE" ] && ok "state: $(cat "$STATE")" || say "  state: dormant";
+                       [ -d "$CLIENTS" ] && ok "client foundations: $(find "$CLIENTS" -name profile.md 2>/dev/null | wc -l | tr -d ' ')";;
+  *) say "aixmos words: onboard | roster | wake | sleep | status";;
+esac
