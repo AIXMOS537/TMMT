@@ -67,18 +67,30 @@ operators stay fenced to their lane (see `scripts/partner-deploy/tailscale-acl.j
   enable **Tailscale SSH**, and tighten ACLs to the Obsidian/SSH port only.
 - Verify: from the M1, `tailscale ping brainiac` and an SSH/rsync handshake.
 
-### Phase 3 — Obsidian memory sync (build next, after the "memory flow" decision)
-- A small `scripts/mesh/memory-sync.sh` on the M1 that writes/rsyncs Markdown
-  into BRAINIAC's Obsidian vault over Tailscale, on a timer (LaunchAgent).
-- Decision needed: push-only (M1 → vault) vs two-way; and the vault path.
+### Phase 3 — Obsidian memory sync (BUILT this session)
+- `scripts/mesh/memory-sync.sh` — **push-only** (M1 → vault, decided): rsyncs
+  HAILMARY's absorbed memory snapshots into BRAINIAC's Obsidian vault over
+  Tailscale. `once | loop [secs] | install [secs] | uninstall | status`; the
+  `install` verb lays down a macOS LaunchAgent (`com.tmmt.memory-sync`).
+- **Owner step:** set `HAILMARY_VAULT` to the rsync target (a Tailscale SSH
+  `host:path`, e.g. `brainiac:/Users/brainiac/Obsidian/HAILMARY`) and run
+  `bash scripts/mesh/memory-sync.sh install`. Memory files carry no secrets
+  (scrubbed at capture by `scripts/hailmary`).
 
-### Phase 4 — AIXMOS / HAILMARY agent roles (confirm with owner)
-- Define each agent's job, tools, and guardrails (proposed, to confirm):
-  AIXMOS = the operations/network brain that runs the TMMT operatives; HAILMARY
-  = the owner's personal "big-play / break-glass" agent. **Not assumed final.**
-- **HAILMARY's constitution is now ratified in `docs/HAILMARY-CHARTER.md`** —
-  owner-only (Muhammad Taha), local-first, never-sold, with guardrails. AIXMOS's
-  equivalent charter is the next doc when its role is confirmed.
+### Phase 4 — AIXMOS / HAILMARY agent roles (RATIFIED this session)
+- Both constitutions are now in the repo:
+  - **`docs/HAILMARY-CHARTER.md`** — the Owner's personal big-play agent.
+    Activation word: **`booyah`** (`scripts/hailmary`).
+  - **`docs/AIXMOS-CHARTER.md`** — the operations/network brain that runs the
+    swarm + TMMT operatives.
+- Both: owner-only (Muhammad Taha), local-first, never-sold, shared guardrails,
+  shared memory of record (git + Obsidian vault). AIXMOS runs the network;
+  HAILMARY serves the Owner; they move in unison.
+
+### Phase 5 — Unison (BUILT this session)
+- `scripts/mesh/unison.sh` — the single switch that boots the whole home base as
+  one: HAILMARY `booyah` → memory loop → always-on mesh presence. `up | status |
+  down`. Wired into the launcher: **`bash scripts/tmmt unison`**.
 
 ## Security posture (non-negotiable)
 
@@ -89,11 +101,16 @@ operators stay fenced to their lane (see `scripts/partner-deploy/tailscale-acl.j
   (the pre-commit/pre-push guard already enforces this).
 - Personal identifiers (phones, iCloud logins) stay off git — local only.
 
-## Open decisions (to finalize Phases 3–4)
+## Decisions — resolved
 
-1. **Memory flow:** push-only (M1 → Obsidian) or two-way sync? Vault path on BRAINIAC?
-2. **Agent split:** confirm what AIXMOS vs HAILMARY each do.
-3. **Bridge direction:** share BRAINIAC into the assistant's tailnet, or the assistant into the ops tailnet?
+1. **Memory flow:** ✅ **push-only** (M1 → Obsidian). Vault path is set per-host
+   via `HAILMARY_VAULT` (a Tailscale SSH `host:path`), kept off git.
+2. **Agent split:** ✅ ratified — `docs/HAILMARY-CHARTER.md` (Owner's agent) +
+   `docs/AIXMOS-CHARTER.md` (network brain).
+3. **Bridge direction:** ⏳ owner tap — recommended: **share BRAINIAC into the
+   assistant's tailnet** (assistant reaches only BRAINIAC's Obsidian/SSH port),
+   least-privilege per the security posture above.
 
-_Companion: `docs/HAILMARY-CHARTER.md` (the agent's constitution),
-`docs/MESH-SWARM.md` (the mesh/swarm system), `CLAUDE.md` (project memory)._
+_Companions: `docs/HAILMARY-CHARTER.md` + `docs/AIXMOS-CHARTER.md` (the agents'
+constitutions), `docs/MESH-SWARM.md` (the mesh/swarm system), `CLAUDE.md`
+(project memory)._
