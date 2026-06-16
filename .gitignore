@@ -66,3 +66,6 @@ scripts/phase9-notify/.env.notify
 # Swarm: per-laptop identity + per-worktree agent prompt (local only)
 .swarm/
 .swarm-task.txt
+
+# HAILMARY: local runtime state + absorbed memory snapshots (owner-local only)
+.hailmary/
