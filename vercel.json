@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "swarm-coord": false
+    }
+  },
   "rewrites": [
     { "source": "/learn", "destination": "/learn/onboarding" },
     { "source": "/work", "destination": "/work/program" }
