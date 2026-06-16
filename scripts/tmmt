@@ -12,6 +12,13 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 v="${1:-?}"; shift || true
+# DARK kill-switch: while blacked out, only safe words run (compass/whoami/seal/dark).
+if [ -f "$ROOT/.swarm/DARK" ]; then
+  case "$v" in
+    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu) : ;;
+    *) printf '⛔ DARK — everything is stopped. Lift with the boss word: bash scripts/godark lift\n'; exit 1;;
+  esac
+fi
 case "$v" in
   up)     exec bash "$ROOT/scripts/tmmt-up.command" "$@";;
   who)    exec bash "$ROOT/scripts/mesh/link.sh" who;;
@@ -35,6 +42,9 @@ case "$v" in
   desktop|icons) exec bash "$ROOT/scripts/install-desktop.sh";;
   deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
+  whoami|me) exec bash "$ROOT/scripts/whoami-tmmt" "${1:-}";;
+  dark|godark) exec bash "$ROOT/scripts/godark" "${1:-on}";;
+  light|lift) exec bash "$ROOT/scripts/godark" lift;;
   memory|mem) exec bash "$ROOT/scripts/mesh/memory-sync.sh" "${1:-once}" "${@:2}";;
   *) printf 'tmmt words: up | unison [up|status|down] | booyah | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
