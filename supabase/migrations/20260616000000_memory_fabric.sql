@@ -92,6 +92,17 @@ CREATE INDEX IF NOT EXISTS memory_facts_embedding_idx
 --    Service role bypasses RLS, so ingestors and external-party writes work
 --    without an explicit anon policy.
 -- ---------------------------------------------------------------------------
+
+-- is_owner(): owner = profiles.role 'admin' (consistent with is_staff() and
+-- auth-roles.ts isOwnerUser). Created here because some environments predate it.
+CREATE OR REPLACE FUNCTION public.is_owner ()
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT coalesce((
+    SELECT role = 'admin' FROM public.profiles WHERE id = auth.uid ()
+  ), false) OR coalesce(public.app_auth_role () = 'admin', false);
+$function$;
 ALTER TABLE public.memory_entities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memory_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memory_facts ENABLE ROW LEVEL SECURITY;
@@ -134,32 +145,65 @@ CREATE TRIGGER trg_memory_entities_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.touch_memory_entity_updated_at ();
 
 -- ---------------------------------------------------------------------------
--- 6. Bridge: backfill existing activity_logs into memory_events
---    Maps actor role from profiles; preserves original timestamps; idempotent.
+-- 6. Bridge: backfill existing audit trails into memory_events
+--    Both backfills are GUARDED — they run only if the source table exists, so
+--    this migration applies cleanly across environments with differing history.
+--    Idempotent via dedupe_key.
 -- ---------------------------------------------------------------------------
-INSERT INTO public.memory_events
-  (org_id, actor_kind, actor_id, actor_label, source, action, summary, details, occurred_at, created_at, dedupe_key)
-SELECT
-  p.organization_id,
-  CASE
-    WHEN p.role = 'owner' THEN 'owner'
-    WHEN p.role IN ('staff', 'operator', 'executive_va', 'team') THEN 'operator'
-    WHEN al.actor_id IS NULL THEN 'system'
-    ELSE 'operator'
-  END                                   AS actor_kind,
-  al.actor_id,
-  COALESCE(p.full_name, p.email)        AS actor_label,
-  'app'                                 AS source,
-  al.action,
-  left(coalesce(al.action, 'activity'), 200) AS summary,
-  coalesce(al.details, '{}'::jsonb)
-    || jsonb_build_object('case_id', al.case_id) AS details,
-  al.created_at                         AS occurred_at,
-  al.created_at                         AS created_at,
-  'activity_logs:' || al.id::text       AS dedupe_key
-FROM public.activity_logs al
-LEFT JOIN public.profiles p ON p.id = al.actor_id
-ON CONFLICT (dedupe_key) DO NOTHING;
+
+-- 6a. activity_logs (present in environments where the workflow-engine migration
+--     has been applied; mapped via profiles.role).
+DO $$
+BEGIN
+  IF to_regclass('public.activity_logs') IS NOT NULL THEN
+    INSERT INTO public.memory_events
+      (org_id, actor_kind, actor_id, actor_label, source, action, summary, details, occurred_at, created_at, dedupe_key)
+    SELECT
+      p.organization_id,
+      CASE
+        WHEN p.role = 'admin' THEN 'owner'
+        WHEN p.role IN ('internal_team', 'operator', 'executive_va', 'team', 'staff') THEN 'operator'
+        WHEN al.actor_id IS NULL THEN 'system'
+        ELSE 'operator'
+      END,
+      al.actor_id,
+      COALESCE(p.full_name, p.email),
+      'app',
+      al.action,
+      left(coalesce(al.action, 'activity'), 200),
+      coalesce(al.details, '{}'::jsonb) || jsonb_build_object('case_id', al.case_id),
+      al.created_at,
+      al.created_at,
+      'activity_logs:' || al.id::text
+    FROM public.activity_logs al
+    LEFT JOIN public.profiles p ON p.id = al.actor_id
+    ON CONFLICT (dedupe_key) DO NOTHING;
+  END IF;
+END $$;
+
+-- 6b. audit_events (general-purpose append-only audit; system-attributed).
+DO $$
+BEGIN
+  IF to_regclass('public.audit_events') IS NOT NULL THEN
+    INSERT INTO public.memory_events
+      (org_id, actor_kind, actor_id, actor_label, source, action, summary, details, occurred_at, created_at, dedupe_key)
+    SELECT
+      ae.organization_id,
+      'system',
+      NULL,
+      'audit',
+      'system',
+      coalesce(ae.action, 'audit_event'),
+      left(coalesce(ae.action, 'audit_event'), 200),
+      coalesce(ae.payload, '{}'::jsonb)
+        || jsonb_build_object('hardware_uuid', ae.hardware_uuid, 'ip', ae.ip::text),
+      ae.ts,
+      ae.ts,
+      'audit_events:' || ae.id::text
+    FROM public.audit_events ae
+    ON CONFLICT (dedupe_key) DO NOTHING;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- 7. Documentation comments
@@ -169,4 +213,3 @@ COMMENT ON TABLE public.memory_events   IS 'Memory Fabric: append-only, polymorp
 COMMENT ON TABLE public.memory_facts    IS 'Memory Fabric: distilled, temporal knowledge. Supersede via valid_to; never destructive-delete.';
 COMMENT ON COLUMN public.memory_events.actor_kind IS 'ai_agent | operator | team | owner | external | system — enables capturing non-auth actors.';
 COMMENT ON COLUMN public.memory_events.dedupe_key IS 'Idempotency key for re-ingestion, e.g. quo:msg:<id>, clickup:<id>:<ts>.';
-</content>

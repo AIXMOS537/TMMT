@@ -90,6 +90,21 @@ Routes: `/dispatch/*` under `(command)` (owner-only on .net)
 Tenancy: per-tenant via `org_roles` + new `is_org_dispatcher(org_id)` helper. `is_staff()` bypass preserved.
 Agents: CAPTAIN refinement via `captain_dispatch` prompt (JSON output) in `~/AIXMOS-AGENTS/agents/prompts.js`. Fail-open at 1.5s.
 
+## Memory Fabric (org-wide shared memory) — Phase 0–2 SHIPPED
+
+Spec: `docs/superpowers/specs/2026-06-16-memory-fabric-design.md`
+Plan: `docs/superpowers/plans/2026-06-16-memory-fabric.md`
+Migration: `supabase/migrations/20260616000000_memory_fabric.sql` (pgvector + `memory_entities`, `memory_events`, `memory_facts`; RLS via `is_staff()`/`is_owner()`; backfill from `activity_logs`).
+
+A single store that captures **every actor** — AI agents, operators, team, owners, and outside parties — and lets any agent recall it. `memory_events` uses a polymorphic actor (`ai_agent|operator|team|owner|external|system`), unlike the narrow `activity_logs`.
+
+- **Capture:** `logMemoryEvent()` / `logMemoryEventForUser()` in `src/lib/memory.ts` (service-role, never blocks the primary write). Wired into `admin-actions.ts` (upserts) and `forms/actions.ts` (public submissions, actor = external).
+- **Recall:** `recallMemory()` in `src/lib/memory.ts`; HTTP entry `POST /api/memory` (Bearer `MEMORY_API_TOKEN`), ops `remember` / `recall`. Optional MCP bridge: `scripts/memory-mcp-server.mjs`.
+- **Discipline for agents:** `recall()` relevant context BEFORE acting; `remember()` what you did AFTER. This is what makes memory persist across sessions.
+- **Vendor-neutral:** the `remember/recall` interface is stable; ranking is recency+keyword now, pgvector semantic in Phase 4 — callers don't change.
+- **Airtable is a permanent, first-class source** (its in-table agent automations) — NOT to be retired. This supersedes the "Airtable replaced" framing below.
+- New env: `MEMORY_API_TOKEN` (gates `/api/memory`).
+
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.

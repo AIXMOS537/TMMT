@@ -3,6 +3,7 @@
 import { createSSRClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import { isStaffUser } from "@/lib/auth-roles";
+import { logMemoryEventForUser } from "@/lib/memory";
 
 type SaveResult = { success: true } | { success: false; error: string };
 
@@ -55,5 +56,14 @@ export async function adminUpsert(
     console.error(`[${table}] upsert failed:`, error.message);
     return { success: false, error: "Failed to save. Please try again." };
   }
+
+  // Memory Fabric capture (Phase 1) — never blocks the primary write.
+  await logMemoryEventForUser(user, {
+    action: `upsert:${table}`,
+    source: "app",
+    summary: `Admin upsert on ${table}`,
+    details: { table, record_id: record.id ?? null },
+  });
+
   return { success: true };
 }

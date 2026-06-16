@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createSSRClient } from "@/lib/supabase-server";
+import { logMemoryEvent } from "@/lib/memory";
 
 // ─── Shared helpers ──────────────────────────────
 
@@ -14,6 +15,20 @@ async function insertRow(table: string, record: Record<string, unknown>): Promis
     console.error(`[${table}] insert failed:`, error.message);
     return { success: false, error: "Submission failed. Please try again." };
   }
+
+  // Memory Fabric capture (Phase 1) — public submitters are external actors.
+  await logMemoryEvent({
+    action: `form_submit:${table}`,
+    source: "app",
+    actorKind: "external",
+    actorLabel:
+      (typeof record.contact_name === "string" && record.contact_name) ||
+      (typeof record.full_name === "string" && record.full_name) ||
+      "Public form submitter",
+    summary: `Public form submission to ${table}`,
+    details: { table },
+  });
+
   return { success: true };
 }
 

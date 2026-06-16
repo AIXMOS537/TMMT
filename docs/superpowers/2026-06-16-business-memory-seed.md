@@ -98,6 +98,30 @@ only allowed to **teach others after they have learned everything to completion*
 
 ---
 
+## 4. Quo is the rebrand of OpenPhone — keep it
+
+| field | value |
+|---|---|
+| **entity** | Quo (business phone / SMS platform) |
+| **kind** | tooling decision / standing-truth |
+| **visibility** | org |
+| **confidence** | 0.95 (well-corroborated secondary sources; quo.com/pricing blocked to scraping) |
+| **source** | research pass, 2026-06-16 — see `docs/QUO-EVALUATION.md` |
+
+**Fact:** **Quo = OpenPhone, rebranded** ("Quo, formerly OpenPhone", AI assistant
+"Sona"). It is a mature shared team-phone platform with SMS + calls + AI
+transcripts + REST API **and MCP** — the automation the owner depends on is a
+strength, not a risk. **Decision: keep Quo.** The only cheaper paths each cost
+something (Twilio DIY = build your own inbox; Sakari/TextMagic = no calling;
+Google Voice/Grasshopper = no automation API). Possible future optimization:
+offload *bulk* automated SMS to Twilio while keeping Quo as the front end — only
+if volume makes $0.01/segment a real cost.
+
+**Operational note (not a Quo flaw):** the John Lopez texts failed with HTTP 402
+— the Quo workspace is **out of prepaid credits**. Top up to restore automation.
+
+---
+
 ## Open questions for the owner (recorded, not blocking)
 
 1. What features/scope define each of the three offer tiers ($3,750 / $7,500 / $15,000)?
