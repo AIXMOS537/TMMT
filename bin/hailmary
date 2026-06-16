@@ -15,6 +15,7 @@
 # Usage:
 #   hailmary recall "<query>"        # ask the brain what it knows
 #   hailmary remember "<text>"       # save a note to the brain (all nodes see it)
+#   hailmary do "<task>"             # recall context, plan the task, remember the plan
 #   hailmary note <node> "<text>"    # leave a note addressed to another device
 #   hailmary inbox                   # notes addressed to THIS node
 #   hailmary status                  # is the brain reachable?
@@ -65,6 +66,32 @@ case "$cmd" in
   remember)
     [ $# -gt 0 ] || die "usage: hailmary remember \"<text>\""
     api "{\"op\":\"remember\",\"action\":\"note\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "$*"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" | pretty
+    ;;
+  do)
+    [ $# -gt 0 ] || die "usage: hailmary do \"<task>\""
+    task="$*"
+    ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$task"),\"limit\":12}")"
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+      model="${HAILMARY_MODEL:-claude-sonnet-4-6}"
+      sysmsg="You are HAILMARY, the owner's local agent. Using the recalled brain context, produce a short, concrete numbered action plan for the task. Rules: never contact the personal line (+15713519690); reach the owner on the work cell (+15713265611) only in working hours."
+      body="$(python3 - "$model" "$sysmsg" "$task" "$ctx" <<'PY'
+import json,sys
+model,sysmsg,task,ctx=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]
+print(json.dumps({"model":model,"max_tokens":1024,"system":sysmsg,
+  "messages":[{"role":"user","content":f"TASK: {task}\n\nBRAIN CONTEXT (JSON):\n{ctx}"}]}))
+PY
+)"
+      resp="$(curl -fsS https://api.anthropic.com/v1/messages \
+        -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" \
+        -H "content-type: application/json" -d "$body")"
+      plan="$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("".join(b.get("text","") for b in d.get("content",[])))')"
+      printf '%s\n' "$plan"
+      api "{\"op\":\"remember\",\"action\":\"task_plan\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Plan for: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE"),\"plan\":$(jstr "$plan")}}" >/dev/null
+    else
+      echo "(no ANTHROPIC_API_KEY — showing recalled context; set the key for full planning)"
+      printf '%s\n' "$ctx" | pretty
+      api "{\"op\":\"remember\",\"action\":\"task_requested\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Task requested: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" >/dev/null
+    fi
     ;;
   note)
     target="${1:-}"; shift || true
