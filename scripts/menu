@@ -42,6 +42,10 @@ ${Y}${BD}  🛡️  PROTECT  ${X}
    ${Y}${BD}light${X}       ${D}—${X} 🔓 restore — your word only
    ${Y}${BD}fix${X}         ${D}—${X} 🔒 security + health check    ${Y}${BD}seal${X} ${D}—${X} 🔑 owner gate
 
+${BGM}${W}${BD}  🛰️  NETWORK  (Project X) ${X}
+   ${M}${BD}fatherbox${X}   ${D}—${X} 🎛️  the control plane — see + run the whole network
+   ${M}${BD}motherbox${X}   ${D}—${X} 📦 flash-deploy a new device/operator into the network
+
 ${D}  more:  wake (HAILMARY only) · hailmary (status) · mesh · deploy · hit 2 (build)${X}
 EOF
 else
