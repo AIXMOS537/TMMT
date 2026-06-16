@@ -127,6 +127,17 @@ Gate backend access behind the **full $50k installation** (paid + setup + compre
 
 True source secrecy is a **deployment posture** (ship no source / server-side host / sealed encrypted appliance / hardware-bind), NOT the DB lock — see the doc. Supercomputer ships locked until activation. New env: `BACKEND_LOCK_ENABLED`.
 
+## Communication Channel Topology — SHIPPED
+
+Doc: `docs/CHANNEL-TOPOLOGY.md`
+Migration: `supabase/migrations/20260616400000_comm_channels.sql` (`comm_channels` registry + seeded 4 channels).
+
+Each number has one job + a policy: **GHL** = campaigns/ads/leads; **Quo** (+15714508727) = customer support + internal vendor contact; **work cell** (+15713265611, `escalation_only`) = owner's working-hours line bridged to Mac M1 (top-tier assistant); **personal** (+15713519690, `do_not_contact`) = gets nothing.
+
+- Policy lib `src/lib/channels.ts`: `isDoNotContact()` (call before ANY outbound — protects the personal line), `getEscalationChannel()`, `isWithinWorkingHours()`.
+- `escalateToOwner()` (`src/lib/escalate.ts`): work-cell escalation, working-hours aware, transport via Tailscale-exposed Mac iMessage bridge (`IMESSAGE_BRIDGE_URL`) else queued in the brain; **never** contacts a `do_not_contact` number. Wired into `routeWork` no-candidate path.
+- New env: `IMESSAGE_BRIDGE_URL`, `IMESSAGE_BRIDGE_TOKEN`.
+
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.

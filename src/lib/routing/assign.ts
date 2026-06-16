@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { logMemoryEvent } from "@/lib/memory";
 import { notifyTelegram } from "@/lib/notify";
+import { escalateToOwner } from "@/lib/escalate";
 
 /**
  * Work Routing — Phase 3d: evaluate / plan / assign across the FULL pool.
@@ -71,6 +72,11 @@ export async function routeWork(
         details: { caseId },
         dedupeKey: `route:${caseId}:none`,
       });
+      // Unassigned urgent work escalates to the owner's work cell (working-hours
+      // aware; never touches the personal line).
+      await escalateToOwner(
+        `Support case ${caseId} has no eligible candidate — needs your attention.`
+      );
       return { ok: true, assigned: false, caseId, reason: "no eligible candidate" };
     }
 
