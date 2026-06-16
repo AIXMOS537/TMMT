@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# fatherbox — the control plane (run from BRAINIAC 7). One screen to see the
+# network and reach every lever: watchtower, mesh roster, operator provisioning,
+# licenses, and the kill switches. Owner-only. See docs/PROJECT-X-HAILMARY.md.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null || true; fi
+set +e
+if [[ -t 1 ]]; then C=$'\e[36m'; G=$'\e[32m'; Y=$'\e[33m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else C=; G=; Y=; D=; BD=; X=; fi
+
+# owner-only gate (soft): warn if this device isn't owner.
+ROLE="${SWARM_ROLE:-}"; [ -z "$ROLE" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
+[ "$ROLE" = "owner" ] || printf '  %s! this device is not owner — Fatherbox is owner-only (read-only view).%s\n' "$Y" "$X"
+
+printf '\n%s%s  🛰️  F A T H E R B O X  — control plane (BRAINIAC 7)%s\n\n' "$C" "$BD" "$X"
+
+# 1. The watch (systems + verticals).
+bash "$ROOT/scripts/watchtower" 2>/dev/null | sed -n '5,40p'
+
+# 2. The levers.
+cat <<EOF
+
+${BD}  LEVERS (owner)${X}
+   ${C}new operator${X}   bash scripts/partner-deploy/issue-license.sh   ${D}then:${X} bash scripts/motherbox operator
+   ${C}health check${X}   bash scripts/partner-deploy/health-check.sh
+   ${C}audit${X}          bash scripts/partner-deploy/audit-readout.sh
+   ${C}kill a node${X}    bash scripts/partner-deploy/kill-partner.sh
+   ${C}blackout all${X}   dark   ${D}(restore: light — your word)${X}
+
+${BD}  TEAM REACH (consented, over Tailscale)${X}
+   ${C}who is online${X}  bash scripts/tmmt who      ${C}every device${X}  bash scripts/tmmt mesh
+   ${C}remote takeover${X} RustDesk over Tailscale → operator dashboards
+
+${D}  full blueprint: docs/PROJECT-X-HAILMARY.md · offer + tiers in §3${X}
+
+EOF
