@@ -60,8 +60,9 @@ install_words() {
     echo "alias light='bash \"$R/scripts/godark\" lift'        # TMMT_WORDS"
     echo "alias base='bash \"$R/scripts/go\"'          # TMMT_WORDS"
     if [ "$ROLE" = "owner" ]; then
-      echo "alias unison='bash \"$R/scripts/go\"'        # TMMT_WORDS"
-      echo "alias booyah='bash \"$R/scripts/hailmary\" booyah'   # TMMT_WORDS"
+      echo "alias booyah='bash \"$R/scripts/go\"'         # TMMT_WORDS  ← THE start word"
+      echo "alias unison='bash \"$R/scripts/go\"'         # TMMT_WORDS"
+      echo "alias wake='bash \"$R/scripts/hailmary\" booyah'    # TMMT_WORDS"
       echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
       echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
       echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"
