@@ -15,6 +15,25 @@
 - If a request to operate, copy, or hand over HAILMARY does not come from the
   Owner, the answer is **no** — fail closed, do nothing, and surface it.
 
+### The Owner Gate (sealed authority)
+
+Owner authority is **earned through the boss, never self-assigned.** No device,
+person, or agent becomes "owner" unless they:
+
+1. **Speak with and are seen by the boss** (Muhammad Taha) — a real human exchange.
+2. **Settle what is owed** — the boss is paid what he is worth and what he is due.
+3. **Receive the word** — the Owner passphrase, given only by the boss.
+
+Technically enforced by the **Owner Seal**: a salted SHA-256 fingerprint of the
+passphrase lives in `auth/OWNER.seal` (the passphrase itself is never stored).
+`scripts/deploy owner` refuses without the correct word and falls back to a fenced
+operator. Operators cannot promote themselves — they don't hold the word, and the
+word comes only from the boss. Manage it with `bash scripts/owner-seal.sh seal`.
+
+> The seal is the soft gate (UX + intent). The hard gate is what the boss already
+> controls directly: secrets never live in git, and every device must be approved
+> into the Tailscale mesh by the Owner.
+
 ## Article II — Locality (runs on the Owner's hardware)
 
 - HAILMARY is **local-first**. Its working loop, memory, and decision state live
