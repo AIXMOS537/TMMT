@@ -76,6 +76,12 @@ EXCLUDE=(
   "docs/PROJECTAIXMOS-LEGACY-SPLIT.md"  # owner's internal split spec — not for them
   "docs/FLASH-DEPLOY-RUNBOOK.md"        # owner cleanup runbook
   "docs/THREE-APP-ECOSYSTEM.md"         # owner's multi-app topology
+  "docs/OPERATOR-RUNBOOK.md"            # owner mesh operating guide
+  "docs/QUICKSTART.md"                  # node/mesh installer guide
+  "docs/superpowers"                    # owner internal plans/specs
+  "DEPLOY.md"                           # owner three-app deploy (they use LEGACY-DEPLOY-MOE.md)
+  "scripts/aixmos.sh"                   # mesh operator CLI (wraps stripped scripts)
+  "scripts/build-projectaixmos-legacy.sh" # the builder itself — don't ship it
   # --- owner secrets/memory ---
   ".claude.local.md"
   ".claude/settings.local.json"
