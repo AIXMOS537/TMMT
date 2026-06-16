@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# motherbox — flash-deploy THIS device into the network. Wraps the role-aware
+# deploy + (for operators) the partner provisioning spine, then prints the
+# device-specific next steps (Tailscale, RustDesk, always-on, e-commerce node).
+# See docs/PROJECT-X-HAILMARY.md.   Owner-only orchestration; operators stay fenced.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null || true; fi
+set +e
+type ok >/dev/null 2>&1 || ok(){ printf '  ✓ %s\n' "$*"; }
+type info >/dev/null 2>&1 || info(){ printf '  › %s\n' "$*"; }
+type say >/dev/null 2>&1 || say(){ printf '%s\n' "$*"; }
+OS="$(uname -s 2>/dev/null)"
+
+say ""
+say "  ╔══════════════════════════════════════════════════╗"
+say "  ║   📦  M O T H E R B O X  — flash-deploy this node ║"
+say "  ╚══════════════════════════════════════════════════╝"
+
+# 1. Role-aware deploy (sets role, identity, hooks, one-word commands, always-on).
+info "1/3  provisioning (deploy)…"
+bash "$ROOT/scripts/deploy" "${1:-}"
+
+# 2. Network checklist — the backbone every node needs.
+say ""
+say "  2/3  NETWORK (do these once per device):"
+command -v tailscale >/dev/null 2>&1 && ok "Tailscale present" || say "     • install Tailscale → https://tailscale.com/download → sign in"
+command -v rustdesk  >/dev/null 2>&1 && ok "RustDesk present"  || say "     • install RustDesk (remote takeover) → https://rustdesk.com/  (self-host over Tailscale)"
+say "     • owner then approves this device in the Tailscale admin (least-privilege)"
+
+# 3. Operator node extras (the always-on $50k box).
+say ""
+say "  3/3  ALWAYS-ON OPERATOR NODE (the workstation that earns in the background):"
+say "     • keep it plugged in + on Wi-Fi/VPN, joined to the tailnet"
+if [[ "$OS" == "Darwin" ]]; then
+  ok "macOS always-on installed by deploy (LaunchAgent)"
+else
+  say "     • Windows: Task Scheduler → run 'bash scripts/go' at logon (keeps it live)"
+fi
+say "     • e-commerce store automation runs here; team takes over via RustDesk (consented)"
+say ""
+ok "MOTHERBOX done. Control it from BRAINIAC 7:  bash scripts/fatherbox"
