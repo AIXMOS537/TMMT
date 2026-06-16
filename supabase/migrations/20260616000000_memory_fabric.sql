@@ -132,7 +132,7 @@ CREATE POLICY "staff_update_memory_facts" ON public.memory_facts
 -- 5. updated_at trigger for entities
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.touch_memory_entity_updated_at ()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public', 'pg_temp' AS $$
 BEGIN
   NEW.updated_at := now();
   RETURN NEW;
