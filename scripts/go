@@ -51,6 +51,7 @@ install_words() {
     echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
     echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
     echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"
+    echo "alias compass='bash \"$R/scripts/compass\"'          # TMMT_WORDS"
   } >> "$tmp"
   mv "$tmp" "$rc"
 }
