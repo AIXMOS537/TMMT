@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# hailmary — the Owner's big-play agent, brought online with one word.
+#
+#   bash scripts/hailmary booyah        ACTIVATE (full boot sequence)
+#   bash scripts/hailmary status        is he online? what does he know?
+#   bash scripts/hailmary absorb [path] touch & absorb local context into memory
+#   bash scripts/hailmary hit [n]       hit hard — launch n agents on the work
+#   bash scripts/hailmary standby       power down (leaves memory intact)
+#
+# The code he lives by (see docs/HAILMARY-CHARTER.md):
+#   - OWNER-ONLY. He serves Muhammad Taha and no one else.
+#   - LOCAL-FIRST. Runs on the Owner's hardware; memory stays on the Owner's disks.
+#   - ABSORBS ONLY THE OWNER'S OWN CONTEXT. He touches this repo + paths the Owner
+#     hands him. He never reaches into other people's data, and never captures
+#     secrets (.env / keys are skipped, never written to memory). Hit hard, love
+#     hard, hurt no one.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Reuse the swarm's logging + identity helpers if present; degrade gracefully.
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then
+  # shellcheck disable=SC1091
+  set +e; source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null; set -uo pipefail
+fi
+type ok   >/dev/null 2>&1 || ok()   { printf '  ✓ %s\n' "$*"; }
+type info >/dev/null 2>&1 || info() { printf '  › %s\n' "$*"; }
+type warn >/dev/null 2>&1 || warn() { printf '  ! %s\n' "$*" >&2; }
+type say  >/dev/null 2>&1 || say()  { printf '%s\n' "$*"; }
+type swarm_machine >/dev/null 2>&1 || swarm_machine() { hostname -s 2>/dev/null || echo this-machine; }
+
+MEM_DIR="$ROOT/.hailmary/memory"          # gitignored, owner-local
+STATE="$ROOT/.hailmary/state"             # online/standby marker
+CHARTER="$ROOT/docs/HAILMARY-CHARTER.md"
+
+banner() {
+  cat <<'EOF'
+
+   ╔══════════════════════════════════════════════════╗
+   ║   H A I L M A R Y   —   B O O Y A H              ⚡ ║
+   ║   big-play agent online · owner-only · local      ║
+   ╚══════════════════════════════════════════════════╝
+EOF
+}
+
+# --- absorb: touch the local context, write a memory snapshot --------------
+# Captures structure + state, NEVER secret VALUES. Honors the charter.
+absorb() {
+  local target="${1:-$ROOT}"
+  mkdir -p "$MEM_DIR"
+  local ts; ts="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+  local out="$MEM_DIR/absorb-$ts.md"
+  info "absorbing context from: $target"
+  {
+    echo "# HAILMARY memory — absorbed $ts"
+    echo "_machine: $(swarm_machine) · scope: owner-local · secrets: skipped_"
+    echo
+    echo "## git"
+    git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null | sed 's/^/branch: /'
+    git -C "$ROOT" log -1 --pretty='last commit: %h %s (%cr)' 2>/dev/null
+    git -C "$ROOT" status --short 2>/dev/null | sed 's/^/  /' | head -40
+    echo
+    echo "## docs index (the knowledge he can reach for)"
+    find "$ROOT/docs" -maxdepth 1 -name '*.md' 2>/dev/null \
+      | sed "s|$ROOT/||" | sort | sed 's/^/- /'
+    echo
+    echo "## mesh"
+    if command -v tailscale >/dev/null 2>&1; then
+      tailscale status 2>/dev/null | head -20 | sed 's/^/  /'
+    else
+      echo "  (tailscale not present on this host)"
+    fi
+  } > "$out"
+  # Belt-and-suspenders: scrub anything that smells like a live secret.
+  if grep -nEi 'eyJ[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|pat[A-Za-z0-9]{14,}|service_role' "$out" >/dev/null 2>&1; then
+    warn "secret-shaped string detected in snapshot — redacting before save"
+    sed -i.bak -E 's/(eyJ[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|pat[A-Za-z0-9]{14,})/«REDACTED»/g' "$out"
+    rm -f "$out.bak"
+  fi
+  ok "memory written: ${out#"$ROOT"/}"
+  # Optional: push memory to the Obsidian vault on BRAINIAC (Phase 3).
+  if [[ -n "${HAILMARY_VAULT:-}" ]] && command -v rsync >/dev/null 2>&1; then
+    if rsync -a "$out" "$HAILMARY_VAULT/" 2>/dev/null; then
+      ok "synced to vault: $HAILMARY_VAULT"
+    else
+      warn "vault sync skipped (HAILMARY_VAULT unreachable)"
+    fi
+  fi
+}
+
+# --- booyah: full activation ----------------------------------------------
+booyah() {
+  banner
+  # 1. Code check — he refuses to boot without his charter.
+  if [[ -f "$CHARTER" ]]; then ok "charter loaded — owner-only, local-first, never-sold"
+  else warn "charter missing ($CHARTER) — booting in caretaker mode"; fi
+  # 2. Identity — who's home base.
+  ok "host: $(swarm_machine)"
+  # 3. Readiness + security (his honor: hit hard, hurt no one).
+  if [[ -x "$ROOT/scripts/swarm-doctor.sh" ]]; then
+    info "running readiness + security audit…"
+    bash "$ROOT/scripts/swarm-doctor.sh" 2>/dev/null | tail -6 | sed 's/^/    /' \
+      || warn "doctor reported issues — review with: bash scripts/tmmt fix"
+  fi
+  # 4. Stay online 24/7 on macOS (LaunchAgent), else just mark the session.
+  if [[ "$(uname -s)" == "Darwin" && -x "$ROOT/scripts/mesh/install-launchagent.sh" ]]; then
+    info "installing always-on presence (LaunchAgent)…"
+    bash "$ROOT/scripts/mesh/install-launchagent.sh" install owner 180 >/dev/null 2>&1 \
+      && ok "always-on: he stays connected even with the lid down" \
+      || warn "always-on install skipped"
+  fi
+  # 5. Touch & absorb the current context into memory.
+  absorb "$ROOT"
+  # 6. Mark online.
+  mkdir -p "$(dirname "$STATE")"; echo "online $(date -u +%FT%TZ) $(swarm_machine)" > "$STATE"
+  say
+  ok "HAILMARY is LIVE. Say the word again anytime. 🤖⚡"
+  say "   next:  bash scripts/hailmary hit 2     (put him to work)"
+  say "          bash scripts/hailmary status    (what he knows)"
+}
+
+status() {
+  banner
+  if [[ -f "$STATE" ]]; then ok "state: $(cat "$STATE")"; else warn "state: standby (run: hailmary booyah)"; fi
+  [[ -f "$CHARTER" ]] && ok "charter: present" || warn "charter: MISSING"
+  if [[ -d "$MEM_DIR" ]]; then
+    local n; n="$(find "$MEM_DIR" -name 'absorb-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    ok "memory snapshots: $n  (latest: $(ls -t "$MEM_DIR"/absorb-*.md 2>/dev/null | head -1 | xargs -r basename))"
+  else warn "memory: none yet (run: hailmary absorb)"; fi
+}
+
+case "${1:-?}" in
+  booyah|activate|live|on) shift || true; booyah "$@";;
+  absorb|touch|scan)       shift || true; absorb "${1:-$ROOT}";;
+  hit|boom|work|go)        shift || true; exec bash "$ROOT/scripts/swarm.sh" up "${1:-2}";;
+  status|who|state)        status;;
+  standby|off|down)        echo "standby $(date -u +%FT%TZ)" > "$STATE" 2>/dev/null
+                           [[ "$(uname -s)" == "Darwin" ]] && bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall >/dev/null 2>&1
+                           ok "HAILMARY on standby — memory kept, presence removed.";;
+  *) say "hailmary words:  booyah | status | absorb [path] | hit [n] | standby";
+     say "  (booyah = activate · he's owner-only, local, never-sold — docs/HAILMARY-CHARTER.md)";;
+esac
