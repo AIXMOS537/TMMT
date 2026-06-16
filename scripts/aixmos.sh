@@ -15,6 +15,8 @@
 #   aixmos integrity   compromise scan THIS device (ssh/persistence/ports/hosts)
 #   aixmos presence    mesh presence board (last-seen for every device)
 #   aixmos beat        record THIS device's heartbeat now
+#   aixmos where       YOU ARE HERE: env (DEV/TEST/PROD) + branch + path guard
+#   aixmos onboard     mission-gated onboarding interview (operator/dev/vendor)
 #   aixmos help
 #
 # Tip: add the repo's scripts/ to PATH, or alias:  alias aixmos='bash scripts/aixmos.sh'
@@ -82,6 +84,8 @@ case "$cmd" in
   integrity) exec bash "$S/device-integrity.sh" "$@";;
   presence) exec bash "$S/heartbeat.sh" "${1:-status}";;
   beat)    exec bash "$S/heartbeat.sh" beat;;
+  where|whereami) exec bash "$S/whereami.sh";;
+  onboard) exec bash "$S/onboard-interview.sh" "$@";;
   help|-h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//';;
   *) bad "unknown command: $cmd"; echo "try: aixmos help"; exit 2;;
 esac
