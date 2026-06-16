@@ -34,6 +34,24 @@ read on another. There's no device-to-device pairing; the brain *is* the sync.
   multi-device user agent: the PS5, the Fire Stick, your phone, and your Mac all
   talk to the same brain and see each other's notes.
 
+## Install it like a native app (PWA — works on any device)
+`/hailmary` is now an installable PWA (`src/app/manifest.ts` + `public/hailmary-sw.js`):
+- **Android / Chrome / Edge / desktop / Chromebook / Google TV:** open `/hailmary`
+  → browser shows **Install** (or menu → "Install app" / "Add to Home Screen").
+  Launches standalone, full-screen, with the HAILMARY icon.
+- **iPhone / iPad (Safari):** Share → **Add to Home Screen**.
+- **Fire Tablet / Fire TV (Silk):** menu → Add to Home Screen / bookmark.
+- It caches the shell, so it opens instantly and survives a brief network blip.
+
+## Voice on screenless devices (Echo / Fire) — Alexa skill
+`scripts/hailmary-alexa-skill.mjs` is a ready thin-proxy handler:
+1. Alexa Developer Console → new custom skill → invocation name "hailmary".
+2. Add intent **AskIntent** with slot `{query}` (type `AMAZON.SearchQuery`),
+   sample utterance: `ask {query}`.
+3. Backend = deploy the script as a Lambda (Node 18+) or any HTTPS endpoint; set
+   env `HAILMARY_API_URL` (`…/api/hailmary`) + `HAILMARY_API_TOKEN`.
+4. "Alexa, ask hailmary what's my brief" → operative answer, local-first AI.
+
 ## Security
 - Reachable **only over Tailscale** (or a locked Cloudflare Tunnel) — never open
   to the public internet.

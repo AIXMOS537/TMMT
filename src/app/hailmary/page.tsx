@@ -19,6 +19,11 @@ export default function HailmaryConsole() {
   useEffect(() => {
     setToken(localStorage.getItem("hm_token") || "");
     setNode(localStorage.getItem("hm_node") || "web");
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/hailmary-sw.js", { scope: "/hailmary" })
+        .catch(() => {});
+    }
   }, []);
 
   function persist() {

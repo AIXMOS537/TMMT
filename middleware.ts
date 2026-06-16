@@ -11,6 +11,7 @@ function isPublicPath(pathname: string) {
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname === "/hailmary" ||
+    pathname === "/manifest.webmanifest" ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/webhooks/") ||

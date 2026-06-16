@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HAILMARY">
+  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#059669" stroke-width="20"/>
+  <path d="M256 120 L256 392 M170 180 L170 332 M342 180 L342 332" stroke="#10b981" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="22" fill="#10b981"/>
+</svg>
