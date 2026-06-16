@@ -9,6 +9,8 @@ function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
     pathname === "/robots.txt" ||
+    pathname === "/offline" ||
+    pathname === "/manifest.webmanifest" ||
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/explainer" ||
