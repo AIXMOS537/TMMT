@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# godark — the panic button. Stops anything and everything this machine controls.
+# Anyone can pull it (fail-safe). ONLY the boss's word can lift it.
+#
+#   bash scripts/godark            GO DARK — blackout now
+#   bash scripts/godark hard       blackout + cut the network (tailscale down)
+#   bash scripts/godark lift       restore (requires the Owner passphrase)
+#   bash scripts/godark status     are we dark?
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DARK="$ROOT/.swarm/DARK"
+mkdir -p "$ROOT/.swarm"
+if [[ -t 1 ]]; then RED=$'\e[31m'; G=$'\e[32m'; Y=$'\e[33m'; BD=$'\e[1m'; X=$'\e[0m'; else RED=; G=; Y=; BD=; X=; fi
+
+go_dark() {
+  local hard="${1:-}"
+  printf '%s%s\n   ⛔  G O   D A R K  —  BLACKOUT\n%s' "$RED" "$BD" "$X"
+  printf '%s' "$RED$BD"; cat <<'EOF'
+   ████████████████████████████████████████
+EOF
+  printf '%s' "$X"
+  # 1. stop always-on presence + memory loop
+  bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall >/dev/null 2>&1 && echo "  ✓ presence stopped" || true
+  bash "$ROOT/scripts/mesh/memory-sync.sh" uninstall >/dev/null 2>&1 && echo "  ✓ memory loop stopped" || true
+  # 2. agents to standby/dormant
+  bash "$ROOT/scripts/hailmary" standby >/dev/null 2>&1 && echo "  ✓ HAILMARY standby" || true
+  bash "$ROOT/scripts/aixmos" sleep >/dev/null 2>&1 && echo "  ✓ AIXMOS dormant" || true
+  # 3. mark offline on the mesh
+  bash "$ROOT/scripts/swarm.sh" beat "${SWARM_ROLE:-owner}" offline >/dev/null 2>&1 && echo "  ✓ marked offline" || true
+  # 4. best-effort: stop swarm tmux sessions on this box
+  if command -v tmux >/dev/null 2>&1; then
+    tmux ls 2>/dev/null | awk -F: '/swarm|agent/{print $1}' | while read -r s; do tmux kill-session -t "$s" 2>/dev/null && echo "  ✓ killed session $s"; done
+  fi
+  # 5. hard: cut the network entirely
+  if [ "$hard" = "hard" ] && command -v tailscale >/dev/null 2>&1; then
+    tailscale down >/dev/null 2>&1 && echo "  ✓ ${BD}network CUT (tailscale down)${X}" || true
+  fi
+  # flip the flag LAST, so the stops above run unguarded
+  echo "dark $(date -u +%FT%TZ) $(hostname -s 2>/dev/null)" > "$DARK"
+  echo
+  echo "  ${RED}${BD}DARK.${X} Everything is stopped. Nothing boots until the boss lifts it."
+  echo "  lift:  bash scripts/godark lift"
+}
+
+case "${1:-on}" in
+  on|dark|now) go_dark "";;
+  hard|nuke)   go_dark "hard";;
+  lift|light|up|clear)
+    [ -f "$DARK" ] || { echo "  not dark."; exit 0; }
+    if [ -f "$ROOT/auth/OWNER.seal" ]; then
+      echo "  🔒 Only the boss can lift DARK."
+      bash "$ROOT/scripts/owner-seal.sh" check || { echo "  ${RED}✗ refused — still DARK.${X}"; exit 1; }
+    else
+      echo "  ! no owner seal set — lifting unguarded (set one: bash scripts/owner-seal.sh seal)"
+    fi
+    rm -f "$DARK"
+    if command -v tailscale >/dev/null 2>&1; then tailscale up >/dev/null 2>&1 && echo "  ✓ network back up" || true; fi
+    echo "  ${G}${BD}✓ LIGHT restored.${X} Boot when ready:  bash scripts/go"
+    ;;
+  status|state)
+    [ -f "$DARK" ] && echo "  ${RED}${BD}DARK${X} — $(cat "$DARK")" || echo "  ${G}clear (light)${X}";;
+  *) echo "godark words: (none) | hard | lift | status";;
+esac

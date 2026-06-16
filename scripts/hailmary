@@ -28,6 +28,12 @@ type warn >/dev/null 2>&1 || warn() { printf '  ! %s\n' "$*" >&2; }
 type say  >/dev/null 2>&1 || say()  { printf '%s\n' "$*"; }
 type swarm_machine >/dev/null 2>&1 || swarm_machine() { hostname -s 2>/dev/null || echo this-machine; }
 
+# DARK kill-switch: HAILMARY won't wake while blacked out (standby/status ok).
+if [ -f "$ROOT/.swarm/DARK" ]; then
+  case "${1:-}" in standby|status|state|""|"?") : ;;
+    *) echo "⛔ DARK — HAILMARY is down. Lift with the boss word: bash scripts/godark lift"; exit 1;; esac
+fi
+
 MEM_DIR="$ROOT/.hailmary/memory"          # gitignored, owner-local
 STATE="$ROOT/.hailmary/state"             # online/standby marker
 CHARTER="$ROOT/docs/HAILMARY-CHARTER.md"
