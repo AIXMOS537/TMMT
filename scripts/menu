@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# menu — the picture board. One colorful screen of every one-word command.
+#   bash scripts/menu      (or just type:  menu )
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ -t 1 ]]; then
+  R=$'\e[31m'; G=$'\e[32m'; Y=$'\e[33m'; B=$'\e[34m'; M=$'\e[35m'; C=$'\e[36m'
+  W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'
+  BGB=$'\e[44m'; BGM=$'\e[45m'
+else
+  R=; G=; Y=; B=; M=; C=; W=; D=; BD=; X=; BGB=; BGM=
+fi
+
+cat <<EOF
+
+${C}${BD}   ╔══════════════════════════════════════════════════════════╗${X}
+${C}${BD}   ║${W}        🤖  T M M T   ·   A I X M O S   ·   H A I L M A R Y      ${C}║${X}
+${C}${BD}   ║${D}        one word does the thing · owner-only · local       ${X}${C}${BD}║${X}
+${C}${BD}   ╚══════════════════════════════════════════════════════════╝${X}
+
+${BGB}${W}${BD}  🚀  EVERYDAY  ${X}
+   ${G}${BD}unison${X}      ${D}—${X} ⚡ boot the whole base (update + everything online)
+   ${G}${BD}menu${X}        ${D}—${X} 🗺️  show this picture board
+   ${G}${BD}booyah${X}      ${D}—${X} 🤖 wake HAILMARY (your local big-play agent)
+
+${BGM}${W}${BD}  🧠  CLIENTS  ${X}
+   ${M}${BD}onboard${X}     ${D}—${X} 🪜 the 10-step popup — decode a client to the foundation
+   ${M}${BD}aixmos${X}      ${D}—${X} 👥 show the cast (CAPTAIN·MOOSE·CHUMMO·SCOUT·CLOSER·WARDEN)
+
+${Y}${BD}  🔧  POWER MOVES  ${X}
+   ${Y}${BD}hailmary${X}    ${D}—${X} 📋 what HAILMARY knows right now (status)
+   ${C}bash scripts/hailmary hit 2${X}  ${D}—${X} 💪 put 2 agents to work (build it)
+   ${C}bash scripts/tmmt fix${X}        ${D}—${X} 🛡️  health + security check
+   ${C}bash scripts/tmmt mesh${X}       ${D}—${X} 🌐 every device on the mesh
+
+${B}${BD}  🪜  THE LADDER  (locked) ${X}
+   ${W}🚗 Rental ${D}→${X} ${W}💳 Membership ${D}→${X} ${W}📈 Credit Guidance ${D}→${X} ${W}🏗️ Builds/Kits ${D}→${X} ${W}🤝 Affiliate${X}
+
+${D}   first time on a machine? paste the one-liner in GO.md — then just type a word.${X}
+${D}   docs: AIXMOS-SUPER-OPERATIVE.md · HAILMARY-CHARTER.md · AIXMOS-CHARTER.md${X}
+
+EOF

@@ -37,13 +37,25 @@ chmod +x "$R"/scripts/go "$R"/scripts/tmmt "$R"/scripts/hailmary \
          "$R"/scripts/mesh/*.sh "$R"/TMMT-GO.command 2>/dev/null || true
 git config core.hooksPath scripts/hooks 2>/dev/null || true
 
-# Install a permanent one-word shortcut so you never type a path again.
-for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
-  [ -e "$rc" ] || touch "$rc"
-  grep -q 'alias unison=' "$rc" 2>/dev/null || {
-    printf '\n# TMMT one-word base\nalias unison="bash %s/scripts/go"\nalias base="bash %s/scripts/go"\n' "$R" "$R" >> "$rc"
-  }
-done
-echo "› shortcut ready: type 'unison' anytime (new terminal)"
+# Install permanent one-word shortcuts so you never type a path again.
+# Idempotent: rewrite the block between guards every run (handles path changes).
+install_words() {
+  local rc="$1" tmp; tmp="$(mktemp)"
+  [ -e "$rc" ] && grep -v 'TMMT_WORDS' "$rc" > "$tmp" 2>/dev/null || true
+  {
+    echo "# TMMT_WORDS (auto-managed by scripts/go — one word does the thing)"
+    echo "alias unison='bash \"$R/scripts/go\"'        # TMMT_WORDS"
+    echo "alias base='bash \"$R/scripts/go\"'          # TMMT_WORDS"
+    echo "alias menu='bash \"$R/scripts/menu\"'        # TMMT_WORDS"
+    echo "alias booyah='bash \"$R/scripts/hailmary\" booyah'   # TMMT_WORDS"
+    echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
+    echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
+    echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"
+  } >> "$tmp"
+  mv "$tmp" "$rc"
+}
+for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do install_words "$rc"; done
+echo "› one-word commands ready (new terminal): unison · menu · booyah · onboard · aixmos · hailmary"
 
+bash "$R/scripts/menu" || true
 exec bash "$R/scripts/tmmt" unison
