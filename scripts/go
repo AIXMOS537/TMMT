@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# go — ONE command to update + boot the whole base, from anywhere on any Mac/Linux
+# (or Windows Git Bash). Finds the TMMT repo if it exists, clones it if it
+# doesn't, pulls the latest, and brings everything online in unison.
+#
+#   bash scripts/go            # if you already have the repo
+#   curl/paste one-liner       # see GO.md — works even with no repo yet
+#
+# Override defaults with env vars if ever needed:
+#   TMMT_BRANCH=...  TMMT_REPO=https://github.com/<owner>/TMMT.git  bash scripts/go
+set -uo pipefail
+BRANCH="${TMMT_BRANCH:-claude/organize-chats-sessions-7t7zjy}"
+REPO="${TMMT_REPO:-https://github.com/AIXMOS537/TMMT.git}"
+
+locate() {
+  # Already inside the repo? Use its root.
+  if git rev-parse --show-toplevel >/dev/null 2>&1; then
+    git rev-parse --show-toplevel; return
+  fi
+  local d
+  for d in "$HOME/Projects/TMMT" "$HOME/projects/TMMT" "$HOME/TMMT" \
+           "$HOME/Documents/TMMT" "$HOME/Desktop/TMMT"; do
+    [ -d "$d/.git" ] && { printf '%s' "$d"; return; }
+  done
+  d="$(find "$HOME" -maxdepth 4 -type d -name .git -path '*/TMMT/.git' 2>/dev/null | head -1)"
+  [ -n "$d" ] && dirname "$d"
+}
+
+R="$(locate)"
+if [ -z "${R:-}" ]; then
+  R="$HOME/TMMT"
+  echo "› No TMMT repo found — cloning into $R"
+  git clone "$REPO" "$R" || { echo "✗ clone failed — check network / repo URL ($REPO)"; exit 1; }
+fi
+
+cd "$R" || { echo "✗ could not enter $R"; exit 1; }
+echo "› repo: $R"
+
+# Don't let local edits block the update.
+git stash push -u -m "auto-stash by go $(date -u +%FT%TZ)" >/dev/null 2>&1 || true
+git fetch origin "$BRANCH" >/dev/null 2>&1 || git fetch origin >/dev/null 2>&1 || true
+git checkout "$BRANCH" >/dev/null 2>&1 || true
+git pull origin "$BRANCH" || echo "! pull skipped (offline?) — booting with what's on disk"
+
+exec bash "$R/scripts/tmmt" unison
