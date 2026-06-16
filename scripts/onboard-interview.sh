@@ -38,7 +38,10 @@ bold "You must accept the mission to continue."
 if [ -z "$ACK" ]; then
   printf "Type exactly:  %s\n> " "$PHRASE"; IFS= read -r ACK
 fi
-[ "$ACK" = "$PHRASE" ] || die "Mission not acknowledged (got: '$ACK'). Onboarding stopped."
+# normalize: strip CR + surrounding whitespace, uppercase — so a trailing space or
+# different case never rejects a correct acknowledgment
+norm(){ printf '%s' "$1" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:lower:]' '[:upper:]'; }
+[ "$(norm "$ACK")" = "$(norm "$PHRASE")" ] || die "Mission not acknowledged (got: '$ACK'). Onboarding stopped."
 ok "Mission acknowledged."
 
 # ---- STEP 1: the interview ----
