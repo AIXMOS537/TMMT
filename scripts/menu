@@ -2,6 +2,8 @@
 # menu — the picture board. One colorful screen of every one-word command.
 #   bash scripts/menu      (or just type:  menu )
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROLE="${SWARM_ROLE:-}"; [ -z "$ROLE" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
+[ -z "$ROLE" ] && ROLE=operator
 
 if [[ -t 1 ]]; then
   R=$'\e[31m'; G=$'\e[32m'; Y=$'\e[33m'; B=$'\e[34m'; M=$'\e[35m'; C=$'\e[36m'
@@ -11,13 +13,13 @@ else
   R=; G=; Y=; B=; M=; C=; W=; D=; BD=; X=; BGB=; BGM=
 fi
 
+printf '\n%s%s   ╔══════════════════════════════════════════════════════════╗%s\n' "$C" "$BD" "$X"
+printf '%s%s   ║%s        🤖  T M M T   ·   A I X M O S   ·   H A I L M A R Y      %s║%s\n' "$C" "$BD" "$W" "$C" "$X"
+printf '%s%s   ║%s        one word does the thing · %s · local       %s%s%s║%s\n' "$C" "$BD" "$D" "$ROLE" "$X" "$C" "$BD" "$X"
+printf '%s%s   ╚══════════════════════════════════════════════════════════╝%s\n\n' "$C" "$BD" "$X"
+
+if [ "$ROLE" = "owner" ]; then
 cat <<EOF
-
-${C}${BD}   ╔══════════════════════════════════════════════════════════╗${X}
-${C}${BD}   ║${W}        🤖  T M M T   ·   A I X M O S   ·   H A I L M A R Y      ${C}║${X}
-${C}${BD}   ║${D}        one word does the thing · owner-only · local       ${X}${C}${BD}║${X}
-${C}${BD}   ╚══════════════════════════════════════════════════════════╝${X}
-
 ${BGB}${W}${BD}  🚀  EVERYDAY  ${X}
    ${G}${BD}unison${X}      ${D}—${X} ⚡ boot the whole base (update + everything online)
    ${G}${BD}menu${X}        ${D}—${X} 🗺️  show this picture board
@@ -35,12 +37,30 @@ ${Y}${BD}  🔧  POWER MOVES  ${X}
    ${Y}${BD}hailmary${X}    ${D}—${X} 📋 what HAILMARY knows right now (status)
    ${C}bash scripts/hailmary hit 2${X}  ${D}—${X} 💪 put 2 agents to work (build it)
    ${C}bash scripts/tmmt fix${X}        ${D}—${X} 🛡️  health + security check
-   ${C}bash scripts/tmmt mesh${X}       ${D}—${X} 🌐 every device on the mesh
+EOF
+else
+cat <<EOF
+${BGB}${W}${BD}  🚀  YOUR DAY  ${X}
+   ${G}${BD}menu${X}        ${D}—${X} 🗺️  show this board
+   ${G}${BD}work${X}        ${D}—${X} 💪 start your assigned work
+   ${G}${BD}sync${X}        ${D}—${X} 🔄 pull/push the latest
+   ${G}${BD}who${X}         ${D}—${X} 🌐 who's online right now
+
+${R}${BD}  ❤️  YOU FIRST  ${X}
+   ${C}${BD}compass${X}     ${D}—${X} ☾ one gentle step · protect your peace · toward God
+   ${C}${BD}compass help${X}${D} —${X} 🤲 if today is heavy — real support, one breath
+
+${Y}${BD}  🆘  NEED A HAND  ${X}
+   ${Y}${BD}sos${X}         ${D}—${X} 📣 reach the owner (e.g. sos "stuck on intake")
+   ${Y}${BD}update${X}      ${D}—${X} ⬇️  get the latest version
+EOF
+fi
+
+cat <<EOF
 
 ${B}${BD}  🪜  THE LADDER  (locked) ${X}
    ${W}🚗 Rental ${D}→${X} ${W}💳 Membership ${D}→${X} ${W}📈 Credit Guidance ${D}→${X} ${W}🏗️ Builds/Kits ${D}→${X} ${W}🤝 Affiliate${X}
 
-${D}   first time on a machine? paste the one-liner in GO.md — then just type a word.${X}
-${D}   docs: AIXMOS-SUPER-OPERATIVE.md · HAILMARY-CHARTER.md · AIXMOS-CHARTER.md${X}
+${D}   new device? see DEPLOY-EVERYWHERE.md · phone? see MOBILE.md${X}
 
 EOF
