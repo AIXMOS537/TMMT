@@ -48,15 +48,16 @@ ok "Mission acknowledged."
 # prompt goes to stderr so $(ask ...) captures ONLY the typed answer
 ask(){ local q="$1" v=""; printf "%s\n> " "$q" >&2; IFS= read -r v; printf '%s' "$v"; }
 [ -n "$NAME" ] || NAME="$(ask 'Full name / handle:')"
-[ -n "$ROLE" ] || ROLE="$(ask 'Role (operator | developer | vendor | teammate):')"
-case "$ROLE" in operator|developer|vendor|teammate) :;; *) die "role must be operator|developer|vendor|teammate";; esac
+[ -n "$ROLE" ] || ROLE="$(ask 'Role (owner | operator | developer | vendor | teammate):')"
+ROLE="$(printf '%s' "$ROLE" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+case "$ROLE" in owner|operator|developer|vendor|teammate) :;; *) die "role must be owner|operator|developer|vendor|teammate";; esac
 
 WHAT="$(ask 'In one line: what will you own / move forward for the mission?')"
 SKILLS="$(ask 'Your skills / tools (comma-separated):')"
 SCOPE="$(ask 'What systems do you need access to? (be specific, least-privilege):')"
 STEP1="$(ask 'Your FIRST step — the one move you will make next (one step at a time):')"
-CONSENT="$(ask 'Do you agree to: owner-granted least-privilege access, the fact-check gate, and never acting against the owner/family? (yes/no):')"
-[ "$CONSENT" = yes ] || die "Onboarding requires agreement to the rules. Stopped."
+CONSENT="$(ask 'Do you agree to: least-privilege access, the fact-check gate, and never acting against the owner/family? (yes/no):')"
+case "$(printf '%s' "$CONSENT" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in y|yes) :;; *) die "Onboarding requires agreement to the rules. Stopped.";; esac
 
 # ---- STEP 2: record a LOCAL profile (owner reviews before granting) ----
 OUT="$ROOT/.aixmos/operators"; mkdir -p "$OUT"
@@ -72,15 +73,35 @@ skills: $SKILLS
 access_requested: $SCOPE
 first_step: $STEP1
 agreed_to_rules: yes
+EOF
+
+if [ "$ROLE" = owner ]; then
+  cat >> "$F" <<EOF
+
+## owner
+- This is THE OWNER. Owner access is established via the owner-seal
+  (scripts/owner-seal.sh), not granted through this recruit flow.
+- Full authority: approvals, the word, the kill-switch. Protect first.
+EOF
+else
+  cat >> "$F" <<EOF
 
 ## owner action (not granted yet)
 - [ ] verify identity + settle anything owed
 - [ ] grant role (tailnet tag, env access) per docs/IT-SUPPORT-TEAM-PLAYBOOK.md §7
 - [ ] scope secrets (brokered, never raw prod keys)
 EOF
+fi
 
 echo
-ok "Welcome, $NAME — mission accepted, profile saved (LOCAL, owner reviews):"
-echo "   $F"
-bold "Your first step: $STEP1"
-echo "Access is granted by the owner after review — not automatically. One step at a time."
+if [ "$ROLE" = owner ]; then
+  ok "Welcome back, $NAME — the owner. Mission re-affirmed. Profile saved:"
+  echo "   $F"
+  bold "Your first step: $STEP1"
+  echo "You hold the word. Owner access is set by the owner-seal, not this flow."
+else
+  ok "Welcome, $NAME — mission accepted, profile saved (LOCAL, owner reviews):"
+  echo "   $F"
+  bold "Your first step: $STEP1"
+  echo "Access is granted by the owner after review — not automatically. One step at a time."
+fi
