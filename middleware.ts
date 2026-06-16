@@ -7,6 +7,7 @@ import { isOwnerHubHost } from "@/lib/site-domains";
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
+    pathname === "/locked" ||
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname.startsWith("/forms") ||
@@ -113,6 +114,26 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace(/^\/partner/, "/investor") || "/investor";
     return withRobotsHeader(NextResponse.redirect(url));
+  }
+
+  // Backend lock — opt-in via BACKEND_LOCK_ENABLED. Until a client org's $50k
+  // installation is paid + setup + comprehension + active, its users get the
+  // locked screen. The provider/owner (admin) is always exempt (enforced in SQL
+  // too, so this never locks the builder out).
+  if (
+    user &&
+    process.env.BACKEND_LOCK_ENABLED === "true" &&
+    !isPublicPath(pathname) &&
+    getTierForUser(user) !== "owner"
+  ) {
+    const { data: unlocked } = await supabase.rpc("backend_unlocked_for", {
+      p_user: user.id,
+    });
+    if (unlocked !== true) {
+      return withRobotsHeader(
+        NextResponse.redirect(new URL("/locked", request.url))
+      );
+    }
   }
 
   return withRobotsHeader(response);

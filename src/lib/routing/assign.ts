@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { logMemoryEvent } from "@/lib/memory";
+import { notifyTelegram } from "@/lib/notify";
 
 /**
  * Work Routing — Phase 3d: evaluate / plan / assign across the FULL pool.
@@ -103,6 +104,29 @@ export async function routeWork(
       },
       dedupeKey: `route:${caseId}:assigned`,
     });
+
+    // Notify the assignee (3e) — Telegram if they're a profile-backed candidate.
+    // Fail-open; never affects the assignment outcome.
+    try {
+      const { data: cand } = await supabase
+        .from("routing_candidates")
+        .select("ref_kind, ref_id")
+        .eq("id", top.candidate_id)
+        .maybeSingle();
+      if (cand?.ref_kind === "profiles" && cand.ref_id) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("telegram_chat_id")
+          .eq("id", cand.ref_id)
+          .maybeSingle();
+        await notifyTelegram(
+          prof?.telegram_chat_id as string | undefined,
+          `New work assigned: case ${caseId} (${top.candidate_kind}). Open the queue to accept.`
+        );
+      }
+    } catch {
+      /* notify is best-effort */
+    }
 
     return {
       ok: true,

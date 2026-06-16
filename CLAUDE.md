@@ -115,7 +115,17 @@ Quo is the **sole backend customer-support channel** — one number clients call
 - **Inbound:** `POST /api/webhooks/quo` (header `x-quo-webhook-secret` = `QUO_WEBHOOK_SECRET`, fail-closed). Handles OpenPhone `message.received` / `call.completed`.
 - **Ingestor:** `src/lib/quo/inbound.ts` — `parseQuoWebhook()` + `ingestQuoInbound()`: resolve caller `memory_entity` by `external_refs->>primary_phone`, **gate by `customer_services` (opted-in)**, `logMemoryEvent(source=quo, actor=external)`, classify via `detectWorkFromEvent()`, create a support `cases` row. Idempotent via `dedupe_key` (`quo:msg:<id>`/`quo:call:<id>`). Service-role; never throws to the webhook.
 - **Routing (Phase 3d) — SHIPPED** via a new full-pool layer (NOT `executeRouting`, which needs the absent `ops_locations`/`dispatch_loads`). Migration `20260616200000_work_routing.sql`: `verticals`, `routing_candidates` (unified pool: employee|agent|vendor|unit, capability_tags + vertical_slugs + load), `work_assignments`, `cases.required_capabilities`; SQL `rank_work_candidates(case)` + `assign_work(...)`; seeded from `vendors`/`profiles`/`units`. `routeWork(caseId)` in `src/lib/routing/assign.ts` ranks + assigns the best candidate and remembers it; wired into `ingestQuoInbound` for covered requests. Deterministic ranking is the fail-open baseline (agent/CAPTAIN can refine later). Verified end-to-end against live DB.
-- New env: `QUO_WEBHOOK_SECRET`.
+- **Poll fallback + notify (Phase 3e) — SHIPPED:** `/api/cron/quo-poll` (CRON_SECRET; needs `QUO_API_KEY` + optional `QUO_PHONE_NUMBER_ID`) sweeps missed inbound and ingests idempotently; `notifyTelegram()` (`src/lib/notify.ts`) pings the assignee from `routeWork`.
+- New env: `QUO_WEBHOOK_SECRET`, `QUO_API_KEY`, `QUO_PHONE_NUMBER_ID`.
+
+## Backend Lock & Installation Licensing — SHIPPED (off by default)
+
+Doc: `docs/SECURITY-LICENSING.md`
+Migration: `supabase/migrations/20260616300000_installation_licensing.sql`.
+
+Gate backend access behind the **full $50k installation** (paid + setup + comprehension + active), hardware-bound. `installations` table + `backend_unlocked_for(user)` (SECURITY DEFINER; **owner `role='admin'` always exempt**). Middleware redirects non-owner, non-activated users to `/locked` — **only when `BACKEND_LOCK_ENABLED=true`** (off by default so it can't lock the running app before licenses are seeded).
+
+True source secrecy is a **deployment posture** (ship no source / server-side host / sealed encrypted appliance / hardware-bind), NOT the DB lock — see the doc. Supercomputer ships locked until activation. New env: `BACKEND_LOCK_ENABLED`.
 
 ## Production Gaps (ordered by priority)
 
