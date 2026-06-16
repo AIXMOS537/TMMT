@@ -82,4 +82,3 @@ brain-dump agent, workflow engine, and dispatch core, reusing `organizations`,
 
 After these, the fabric runs itself: agents and ingestors keep it current with
 no further owner input.
-</content>

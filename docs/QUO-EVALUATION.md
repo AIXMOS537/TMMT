@@ -88,4 +88,3 @@ categorically cheaper paths each cost you something:
 GetVoIP, KrispCall, CloudTalk, Retell reviews (2026); twilio.com/sms/pricing;
 GetApp/Capterra (Sakari/TextMagic); mcpmarket.com & pipedream (Quo/OpenPhone
 MCP). Full URL list captured in the research pass on 2026-06-16.*
-</content>

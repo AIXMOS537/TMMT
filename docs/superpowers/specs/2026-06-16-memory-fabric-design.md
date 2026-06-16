@@ -199,5 +199,4 @@ Each phase is independently shippable and leaves the system working.
 2. An operator action in ClickUp and an owner approval in Slack both appear in one unified, attributed timeline within minutes.
 3. The owner never manually enters a memory; everything arrives via agents or ingestors.
 4. Swapping the recall backend (DIY ↔ Zep) requires **no** change to any agent.
-</content>
 </invoke>

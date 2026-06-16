@@ -101,4 +101,3 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 console.error("memory-fabric MCP server running on stdio");
-</content>

@@ -181,4 +181,3 @@ Agents must not adopt or sign as "Hailmary."
 2. Do the hardware tiers (8/16/32 GB) map 1:1 to the price tiers?
 3. Confirm "16 GB" (RAM) vs "16 TB" (storage) for the mid laptop tier.
 4. What is the operator curriculum, and what counts as "completion" for the teach-unlock gate?
-</content>

@@ -105,6 +105,18 @@ A single store that captures **every actor** — AI agents, operators, team, own
 - **Airtable is a permanent, first-class source** (its in-table agent automations) — NOT to be retired. This supersedes the "Airtable replaced" framing below.
 - New env: `MEMORY_API_TOKEN` (gates `/api/memory`).
 
+## Quo Support → Brain → Dispatch (Phase 3a/3b) — SHIPPED
+
+Spec: `docs/superpowers/specs/2026-06-16-quo-support-dispatch-design.md`
+Migration: `supabase/migrations/20260616100000_quo_support_dispatch.sql` (`customer_services` opt-in model + `cases.agent_draft`).
+
+Quo is the **sole backend customer-support channel** — one number clients call/text for urgent help with the service they opted into at setup.
+
+- **Inbound:** `POST /api/webhooks/quo` (header `x-quo-webhook-secret` = `QUO_WEBHOOK_SECRET`, fail-closed). Handles OpenPhone `message.received` / `call.completed`.
+- **Ingestor:** `src/lib/quo/inbound.ts` — `parseQuoWebhook()` + `ingestQuoInbound()`: resolve caller `memory_entity` by `external_refs->>primary_phone`, **gate by `customer_services` (opted-in)**, `logMemoryEvent(source=quo, actor=external)`, classify via `detectWorkFromEvent()`, create a support `cases` row. Idempotent via `dedupe_key` (`quo:msg:<id>`/`quo:call:<id>`). Service-role; never throws to the webhook.
+- **Not wired (env/tables absent here):** `executeRouting()` depends on `ops_locations` + `dispatch_loads`, which don't exist in this project — so full candidate assignment (CAPTAIN + `find_best_unit`/vendor) is Phase 3d. Cases land at `routing_status='detected'` ready for it.
+- New env: `QUO_WEBHOOK_SECRET`.
+
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.
