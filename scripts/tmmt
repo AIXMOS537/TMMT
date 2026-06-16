@@ -33,7 +33,8 @@ case "$v" in
   notify-test|ping) exec bash "$ROOT/scripts/mesh/link.sh" notify-test;;
   always) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" install "${1:-owner}" "${2:-180}";;
   always-off) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall;;
-  booyah|hailmary) exec bash "$ROOT/scripts/hailmary" "${1:-booyah}" "${@:2}";;
+  booyah|start) exec bash "$ROOT/scripts/mesh/unison.sh" up;;
+  wake|hailmary) exec bash "$ROOT/scripts/hailmary" "${1:-booyah}" "${@:2}";;
   unison|base) exec bash "$ROOT/scripts/mesh/unison.sh" "${1:-up}" "${@:2}";;
   onboard|client) exec bash "$ROOT/scripts/aixmos" onboard;;
   aixmos) exec bash "$ROOT/scripts/aixmos" "${1:-roster}" "${@:2}";;
