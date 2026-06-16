@@ -29,6 +29,28 @@ if [ -z "$ROLE" ]; then
 fi
 [ "$ROLE" = "owner" ] || ROLE=operator   # anything not 'owner' is fenced
 
+# THE GATE: owner authority is sealed. No one gets it without the boss's word.
+if [ "$ROLE" = "owner" ]; then
+  SEAL="$ROOT/auth/OWNER.seal"
+  if [ -f "$SEAL" ]; then
+    say; say "  🔒 Owner is sealed. The word comes only from the boss (Muhammad Taha)."
+    if ! bash "$ROOT/scripts/owner-seal.sh" check; then
+      warn "owner refused — deploying as OPERATOR instead."
+      ROLE=operator
+    fi
+  else
+    say; warn "No owner seal exists yet. This must be the boss's first device."
+    printf '  Set the owner seal now to lock it for everyone after you? [y/N] '
+    IFS= read -r yn || true
+    if [ "$yn" = "y" ] || [ "$yn" = "Y" ]; then
+      bash "$ROOT/scripts/owner-seal.sh" seal || { warn "seal not set — deploying as operator."; ROLE=operator; }
+    else
+      warn "no seal set — deploying as OPERATOR (run 'seal' later to claim owner)."
+      ROLE=operator
+    fi
+  fi
+fi
+
 say
 say "  ┌──────────────────────────────────────────────┐"
 say "  │   DEPLOY · role: $ROLE"
