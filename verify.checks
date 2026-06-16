@@ -1,0 +1,10 @@
+# verify.checks — the fact-check gate's check set (read by scripts/verify-gate.sh)
+# Format: name|command   (lines starting with # are ignored)
+#
+# This is the FAST pre-push set. CI / escalation runs the full `npm run build`.
+# Add tests/integration lines as they stabilize.
+types|npx tsc --noEmit
+lint|npm run lint
+# build|npm run build        # uncomment for the full gate (slower)
+# test|npm run test          # when unit tests exist
+# smoke|bash scripts/smoke-prod.sh   # integration, needs a target
