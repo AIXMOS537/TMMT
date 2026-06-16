@@ -6,8 +6,8 @@
 > run: Ollama on the carry Mac, `qwen2.5:14b`, Private LLM, n8n, Qdrant, Redis,
 > Tailscale.
 >
-> **Knowledge moves fast** (cutoff Jan 2026). The *architecture* below is durable;
-> verify exact model versions/benchmarks before you commit (ask me to web-check).
+> **Model picks researched June 15 2026** (sources at bottom). The architecture is
+> durable; the space moves weekly, so re-verify exact versions before a big commit.
 
 ---
 
@@ -59,42 +59,51 @@ router_settings:
 Run tailnet-only: `litellm --config litellm.config.yaml --port 4000`. Now your
 "AI endpoint" is `http://<hub-tailnet-ip>:4000` for the whole mesh.
 
-## 3. Model picks — honest, by job and hardware
+## 3. Model picks — honest, by job and hardware  _(updated June 15 2026)_
 
-> Carry Mac (M5, 24GB) comfortably runs up to ~14B at good quant; 32B is tight.
-> A GPU box (brainiac) or vLLM is where 32–70B+ and batching live.
+> Carry Mac (M5, 24GB): comfortably runs up to ~27B at Q4 (e.g. Qwen3.6-27B Q4 GGUF
+> is ~16.8 GB and fits with headroom). True 70B needs an M5 Max 128 GB or a GPU box;
+> trillion-param MoEs (Kimi) are **hosted/cluster only**. brainiac/vLLM is where
+> 32–70B+ and batching live.
 
-| Job | Recommended local | Why |
+| Job | Recommended (mid-2026) | Why |
 |---|---|---|
-| **Coding (terminal agent)** | **Qwen2.5-Coder 14B/32B**, **Devstral** (Mistral, agentic) | Best local coding track record in their size classes |
-| **General / reasoning / ops** | **Qwen2.5/Qwen3 14B–32B**, **Llama 3.3 70B** (on GPU) | Reliable, huge quant ecosystem |
-| **Agentic / tool-calling / steerable** | **Hermes 3** (Nous, on Llama 3.1 8B/70B) | Strong function-calling, steerable — good for your agents |
-| **Phone / offline** | **Qwen 4B in Private LLM** (you have it) | On-device, no network |
-| **Frontier-only hard tasks** | **Kimi K2**, **DeepSeek V3/R1** (hosted or big GPU), Claude | Top agentic/reasoning — but heavy |
+| **Coding (terminal agent), local** | **Qwen3-Coder-Next** (≈58.7% SWE-bench Verified, 256K ctx, fits a 24 GB GPU) · **Devstral Small 2 24B** (smartest viable coder on a Mac) · **Qwen3.6-27B** | Best local coding track record in class; Apache-2.0 (Qwen) |
+| **General / ops / reasoning, local** | **Qwen3.6 27B** · **Gemma 4** · **DeepSeek V3.2/V4** (reasoning, on GPU) | Reliable, Apache-2.0 (Qwen/Gemma), huge quant ecosystem |
+| **Agentic / tool-calling, local** | **Hermes 4.3 36B** (Nous, GGUF, local-optimized) + the **Hermes Agent** framework | Strong steerable function-calling for your agents — runs on the Macs |
+| **Huge context** | **Llama 4 Scout** (up to ~10M tokens) | Paste a whole codebase in one prompt |
+| **Phone / offline** | **Qwen ~4B in Private LLM** (you have it) | On-device, no network |
+| **Frontier escalation (hosted/cluster)** | **Kimi K2.6** (≈80.2% SWE-bench Verified, ~Claude Opus 4.6 level) · **Qwen 3.6 Plus/Max** (1M ctx) · **GLM 5.1** · **MiniMax M2.7** · **DeepSeek V4** · Claude | Top agentic — but heavy; use only on the hard 5% |
 
 Honest notes on the ones you named:
-- **Hermes** — yes, run it locally (Llama-based GGUF/MLX). Great default for agent/
-  tool work. ✅ truly local.
-- **Kimi (K2)** — excellent agentic/coding, but it's a ~trillion-param MoE: **not**
-  runnable on a 24GB Mac. Use it **hosted** (or on a serious GPU cluster) as an
-  *escalation* target, not your local default.
-- **Venice** — Venice.ai is a **privacy-preserving hosted** service (no logging),
-  not a local model. It's a good *private escalation* endpoint, but it's still a
-  network call — so it's "private cloud," not "super local." Treat it like the
-  `escalate` tier, swappable with Claude/Kimi.
+- **Hermes** — ✅ truly local. Current is **Hermes 4.3 (36B)** (released Dec 2 2025),
+  GGUF, tuned for local; pair with Nous's **Hermes Agent** for a local Mac agent.
+- **Kimi** — current is **Kimi K2.6** (Moonshot, Apr 2026): a **~1T-param MoE** that
+  sustains multi-hour agent runs and spins up swarms of sub-agents. Class-leading
+  open agentic model, **but not runnable on a 24 GB Mac** — use it **hosted** (e.g.
+  via OpenRouter/Venice) or on a GPU cluster as your `escalate` target.
+- **Venice** — **Venice.ai** is **privacy-preserving hosted inference**: zero data
+  retention, and some models run in a **TEE with hardware attestation** (verifiable
+  private enclave). It hosts **GLM 5.1, MiniMax M2.7, Venice Uncensored 1.2**, etc.
+  So it's an excellent *private escalation* endpoint — "private cloud," not "super
+  local." Slot it into the `escalate` tier, swappable with Claude/Kimi.
 
-## 4. Quantization — the "best quant track record"
+## 4. Quantization — the "best quant track record"  _(updated June 15 2026)_
 
-- **Format:** **GGUF** (llama.cpp/Ollama) everywhere; **MLX 4-bit/6-bit** on Macs for speed.
-- **Sweet spot:** **Q4_K_M** (best size/quality balance), step up to **Q5_K_M / Q6_K**
-  if you have RAM and want fidelity. Below Q4 quality drops fast — avoid Q2/Q3 for
-  real work.
-- **Reputable quant sources (track record):**
-  - **Unsloth "dynamic" GGUF** (e.g., `UD-Q4_K_XL`) — quality-preserving, well-regarded.
-  - **bartowski** GGUF with **imatrix** (importance-matrix) — strong, widely trusted.
-  - **mlx-community** — the go-to for Apple-Silicon MLX quants.
-- **Rule of thumb:** a **bigger model at Q4** usually beats a **smaller model at Q8**.
-  Pick the largest model that fits at Q4_K_M, then raise quant only if RAM allows.
+- **Format:** **GGUF** (llama.cpp/Ollama) everywhere; **MLX** on the Macs for speed.
+- **Best-in-class quant:** **Unsloth Dynamic 2.0 GGUF**, start at **`UD-Q4_K_XL`**.
+  It's calibrated on real datasets and upscales important layers, and benchmarks
+  show **lower KL-divergence than standard imatrix *and* QAT** quants across Llama 4,
+  Gemma 3, Qwen3.5 — i.e. closest-to-full-precision at a Q4 file size.
+- **Sweet spot stays Q4_K_M**; step to **Q5_K_M / Q6_K** if RAM allows. Avoid Q2/Q3
+  for real work. Unsloth also added Apple-Silicon/ARM-tuned formats (Q4_NL, Q5.1, etc.).
+- **MLX vs GGUF on Apple Silicon (2026):** MLX wins **~15–40% throughput** on the same
+  Mac; GGUF wins on ecosystem/portability and is *slightly* better quality at 4-bit
+  (Q4_K_M). → **Use MLX for speed on the Macs, GGUF for everything cross-platform.**
+- **Reputable sources:** **Unsloth** (Dynamic 2.0), **bartowski** (imatrix), **mlx-community** (Apple).
+- **Rule of thumb:** a **bigger model at Q4** beats a **smaller model at Q8**. Example:
+  **Qwen3.6-27B Unsloth Q4 (~16.8 GB)** runs ~**25 tok/s on a single Mac** with
+  flagship-class coding output — a great carry-Mac default.
 
 ## 5. Terminal / PowerShell workflow (use less Claude)
 
@@ -114,7 +123,12 @@ Honest notes on the ones you named:
   PowerShell: `Invoke-RestMethod -Uri ... -Method Post -Body (... | ConvertTo-Json)`
 - **n8n** (you have it): every workflow node calls the **same** router URL → automations
   run on local models for free.
-- **Other agents that take a local endpoint:** Cline / Continue (VS Code), OpenCode, goose.
+- **Other terminal/CLI agents that take a local endpoint (mid-2026, all run local via
+  Ollama/LM Studio/OpenAI-compatible):**
+  - **OpenCode** (~172k★, MIT) — most-starred open CLI agent.
+  - **Cline** (~63k★) — now ships a standalone **CLI + SDK** (not just the IDE extension).
+  - **Aider** (~46k★, Apache-2.0) — cleanest **terminal + git-first** flow; uses LiteLLM.
+  - Continue (VS Code), goose. Pick OpenCode/Cline for autonomy, Aider for git-discipline.
 
 ## 6. The macOS-VM question (be careful here)
 
@@ -155,7 +169,21 @@ Honest notes on the ones you named:
 
 ---
 
-_Want me to web-check the **current** best local models + quant releases and drop
-exact versions into §3/§4? Just ask._
+## Sources (researched June 15 2026)
+
+Model landscape moves weekly — re-verify versions before a big commit.
+
+- HuggingFace — Best open-source LLMs 2026 (coding/local/agentic): https://huggingface.co/blog/daya-shankar/open-source-llms
+- MindStudio — Best open-source LLMs for agentic coding 2026: https://www.mindstudio.ai/blog/best-open-source-llms-agentic-coding-2026
+- DeepLearning.ai (The Batch) — Kimi K2.6 vs Qwen3.6 Max / DeepSeek V4: https://www.deeplearning.ai/the-batch/kimi-k2-6-matches-open-qwen3-6-max-anddeepseek-v4-falls-just-behind-top-closed-models
+- Atlas Cloud — Kimi K2.6 vs GLM 5.1 vs Qwen 3.6 Plus vs MiniMax M2.7 (coding 2026): https://www.atlascloud.ai/blog/guides/kimi-k2-6-vs-glm-5-1-vs-qwen-3-6-plus-vs-minimax-m2-7-coding-2026
+- Unsloth — Dynamic 2.0 GGUFs: https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs
+- BuildFastWithAI — Qwen3.6-27B review: https://www.buildfastwithai.com/blogs/qwen3-6-27b-review-2026
+- Contra Collective — GGUF vs MLX on Apple Silicon (2026): https://contracollective.com/blog/gguf-vs-mlx-quantization-formats-apple-silicon-2026
+- Nous Research — Hermes Agent / local LLM on Mac: https://hermes-agent.nousresearch.com/docs/guides/local-llm-on-mac
+- Morph — Open-source AI coding assistants ranked (2026): https://www.morphllm.com/ai-coding-assistant-open-source
+- SiliconScore — Best Mac for local LLMs 2026 (M4–M5 Max): https://siliconscore.com/guides/best-mac-for-local-llms/
+- Venice provider (OpenRouter): https://openrouter.ai/provider/venice
+
 _See also: `docs/DEVICE-SYNC-PRIVATELLM.md`, `docs/MESH-COORDINATION.md`,
 `infra/tailscale-acl.jsonc`, AIXMOS Master File §1._
