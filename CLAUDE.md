@@ -138,6 +138,12 @@ Each number has one job + a policy: **GHL** = campaigns/ads/leads; **Quo** (+157
 - `escalateToOwner()` (`src/lib/escalate.ts`): work-cell escalation, working-hours aware, transport via Tailscale-exposed Mac iMessage bridge (`IMESSAGE_BRIDGE_URL`) else queued in the brain; **never** contacts a `do_not_contact` number. Wired into `routeWork` no-candidate path.
 - New env: `IMESSAGE_BRIDGE_URL`, `IMESSAGE_BRIDGE_TOKEN`.
 
+## HAILMARY local agent (cross-device) — SHIPPED
+
+Doc: `docs/HAILMARY.md`. CLI: `bin/hailmary`. Setup: `scripts/hailmary-setup.sh`.
+
+The owner's personal agent on work Mac + carry Mac + iPhones. Nodes don't talk directly — they share ONE brain (`/api/memory`) over Tailscale (write on one, read on another). `scripts/hailmary-setup.sh --role work|carry` installs the `hailmary` CLI, writes `~/.hailmary/config.env` + `HAILMARY.md` rules, and registers MCP servers (memory bridge both; iMessage bridge on work Mac). iPhones use Tailscale + an Apple Shortcut POSTing to `/api/memory`. CLI: `hailmary recall|remember|note|inbox|status`. Rules: recall→act→remember; never contact the personal line; reach owner on work cell in hours.
+
 ## Production Gaps (ordered by priority)
 
 1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.

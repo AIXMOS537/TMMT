@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+#
+# HAILMARY — the owner's local agent CLI.
+#
+# Every device (work Mac, carry Mac, iPhone) runs the same command and talks to
+# the ONE shared brain (Memory Fabric) over Tailscale. That shared brain is how
+# the nodes "talk to each other and stay in sync" — no node-to-node wiring
+# needed: write on one, read on another.
+#
+# Config: ~/.hailmary/config.env  (written by scripts/hailmary-setup.sh)
+#   MEMORY_API_URL    e.g. https://brainiac.<tailnet>.ts.net/api/memory
+#   MEMORY_API_TOKEN  same token the app uses (MEMORY_API_TOKEN)
+#   HAILMARY_NODE     a label for this device, e.g. "work-mac"
+#
+# Usage:
+#   hailmary recall "<query>"        # ask the brain what it knows
+#   hailmary remember "<text>"       # save a note to the brain (all nodes see it)
+#   hailmary note <node> "<text>"    # leave a note addressed to another device
+#   hailmary inbox                   # notes addressed to THIS node
+#   hailmary status                  # is the brain reachable?
+#   hailmary whoami                  # show this node's identity/config
+set -euo pipefail
+
+CONFIG="${HAILMARY_CONFIG:-$HOME/.hailmary/config.env}"
+# shellcheck disable=SC1090
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+MEMORY_API_URL="${MEMORY_API_URL:-}"
+MEMORY_API_TOKEN="${MEMORY_API_TOKEN:-}"
+HAILMARY_NODE="${HAILMARY_NODE:-$(hostname 2>/dev/null || echo device)}"
+
+die() { echo "hailmary: $*" >&2; exit 1; }
+
+# JSON-escape a string via python3 (present on macOS) or jq as fallback.
+jstr() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1"
+  elif command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -Rs .
+  else
+    die "need python3 or jq to encode JSON"
+  fi
+}
+
+pretty() {
+  if command -v python3 >/dev/null 2>&1; then python3 -m json.tool 2>/dev/null || cat
+  else cat; fi
+}
+
+api() {
+  [ -n "$MEMORY_API_URL" ] || die "MEMORY_API_URL not set (edit $CONFIG)"
+  [ -n "$MEMORY_API_TOKEN" ] || die "MEMORY_API_TOKEN not set (edit $CONFIG)"
+  curl -fsS -X POST "$MEMORY_API_URL" \
+    -H "authorization: Bearer $MEMORY_API_TOKEN" \
+    -H "content-type: application/json" \
+    -d "$1"
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  recall)
+    [ $# -gt 0 ] || die "usage: hailmary recall \"<query>\""
+    api "{\"op\":\"recall\",\"query\":$(jstr "$*"),\"limit\":15}" | pretty
+    ;;
+  remember)
+    [ $# -gt 0 ] || die "usage: hailmary remember \"<text>\""
+    api "{\"op\":\"remember\",\"action\":\"note\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "$*"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" | pretty
+    ;;
+  note)
+    target="${1:-}"; shift || true
+    { [ -n "$target" ] && [ $# -gt 0 ]; } || die "usage: hailmary note <node> \"<text>\""
+    api "{\"op\":\"remember\",\"action\":\"note_to_node\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "[for $target] $*"),\"details\":{\"from\":$(jstr "$HAILMARY_NODE"),\"target\":$(jstr "$target")}}" | pretty
+    ;;
+  inbox)
+    api "{\"op\":\"recall\",\"query\":$(jstr "[for $HAILMARY_NODE]"),\"limit\":20}" | pretty
+    ;;
+  status)
+    if api '{"op":"recall","query":"__ping__","limit":1}' >/dev/null 2>&1; then
+      echo "brain: OK ($MEMORY_API_URL) as $HAILMARY_NODE"
+    else
+      die "brain unreachable at ${MEMORY_API_URL:-<unset>} — check Tailscale / config"
+    fi
+    ;;
+  whoami)
+    echo "node:  $HAILMARY_NODE"
+    echo "brain: ${MEMORY_API_URL:-<unset>}"
+    echo "config: $CONFIG"
+    ;;
+  help|*)
+    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+esac
