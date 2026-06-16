@@ -114,7 +114,7 @@ Quo is the **sole backend customer-support channel** — one number clients call
 
 - **Inbound:** `POST /api/webhooks/quo` (header `x-quo-webhook-secret` = `QUO_WEBHOOK_SECRET`, fail-closed). Handles OpenPhone `message.received` / `call.completed`.
 - **Ingestor:** `src/lib/quo/inbound.ts` — `parseQuoWebhook()` + `ingestQuoInbound()`: resolve caller `memory_entity` by `external_refs->>primary_phone`, **gate by `customer_services` (opted-in)**, `logMemoryEvent(source=quo, actor=external)`, classify via `detectWorkFromEvent()`, create a support `cases` row. Idempotent via `dedupe_key` (`quo:msg:<id>`/`quo:call:<id>`). Service-role; never throws to the webhook.
-- **Not wired (env/tables absent here):** `executeRouting()` depends on `ops_locations` + `dispatch_loads`, which don't exist in this project — so full candidate assignment (CAPTAIN + `find_best_unit`/vendor) is Phase 3d. Cases land at `routing_status='detected'` ready for it.
+- **Routing (Phase 3d) — SHIPPED** via a new full-pool layer (NOT `executeRouting`, which needs the absent `ops_locations`/`dispatch_loads`). Migration `20260616200000_work_routing.sql`: `verticals`, `routing_candidates` (unified pool: employee|agent|vendor|unit, capability_tags + vertical_slugs + load), `work_assignments`, `cases.required_capabilities`; SQL `rank_work_candidates(case)` + `assign_work(...)`; seeded from `vendors`/`profiles`/`units`. `routeWork(caseId)` in `src/lib/routing/assign.ts` ranks + assigns the best candidate and remembers it; wired into `ingestQuoInbound` for covered requests. Deterministic ranking is the fail-open baseline (agent/CAPTAIN can refine later). Verified end-to-end against live DB.
 - New env: `QUO_WEBHOOK_SECRET`.
 
 ## Production Gaps (ordered by priority)

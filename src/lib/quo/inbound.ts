@@ -3,6 +3,7 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { logMemoryEvent } from "@/lib/memory";
 import { detectWorkFromEvent } from "@/lib/routing/detect";
+import { routeWork } from "@/lib/routing/assign";
 
 /**
  * Quo Support Line → Brain → Dispatch (Phase 3a/3b).
@@ -35,6 +36,8 @@ export interface QuoIngestResult {
   entityId?: string | null;
   covered?: boolean; // caller matched an opted-in service
   workType?: string;
+  assigned?: boolean; // routed to a candidate
+  assignedTo?: string;
   reason?: string;
 }
 
@@ -226,6 +229,7 @@ export async function ingestQuoInbound(
         case_type: detection.caseType,
         routing_status: "detected",
         business_line: svc?.service_slug ?? null,
+        required_capabilities: [svc?.service_slug, "support"].filter(Boolean) as string[],
         metadata: {
           channel: "quo",
           quo_external_id: event.externalId,
@@ -258,12 +262,24 @@ export async function ingestQuoInbound(
       dedupeKey: `${dedupeKey}:case`,
     });
 
+    // 7. Route covered support requests to the best candidate (full pool).
+    //    Uncovered callers stay in manual triage (no auto-assignment).
+    let assigned = false;
+    let assignedTo: string | undefined;
+    if (covered && caseId) {
+      const routed = await routeWork(caseId, { entityId, orgId });
+      assigned = routed.assigned;
+      assignedTo = routed.displayName;
+    }
+
     return {
       ok: true,
       caseId,
       entityId,
       covered,
       workType: detection.workType,
+      assigned,
+      assignedTo,
     };
   } catch (err) {
     console.error("[quo] ingest threw:", (err as Error).message);
