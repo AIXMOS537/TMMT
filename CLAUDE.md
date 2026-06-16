@@ -201,6 +201,32 @@ works in parallel. **Git is the only coordination layer** (no server). Full guid
   unreachable/misconfigured (e.g. a preview deploy without env), it treats the
   request as signed-out (redirect to /login) instead of a 500. Never fails open.
 
+## Agents: HAILMARY + AIXMOS + Unison — SHIPPED 2026-06-16
+
+The owner-only agent layer. Both agents are **owner-only (Muhammad Taha),
+local-first, never-sold**, share the same guardrails, and the same memory of
+record (git + Obsidian vault on BRAINIAC). Charters are the law:
+
+- **HAILMARY** (`docs/HAILMARY-CHARTER.md`) — the Owner's personal "big-play /
+  break-glass" agent. **Activation word: `booyah`.** `scripts/hailmary`:
+  `booyah` (boot + self-audit + absorb + macOS always-on), `absorb` (touch &
+  absorb git/docs/mesh context into `.hailmary/memory/` snapshots — owner-local,
+  **secret values skipped AND scrubbed** by regex at capture), `hit [n]` (launch
+  swarm), `status`, `standby`. `.hailmary/` is gitignored.
+- **AIXMOS** (`docs/AIXMOS-CHARTER.md`) — the operations/network brain that runs
+  the swarm + TMMT operatives. Peer to HAILMARY: AIXMOS runs the network,
+  HAILMARY serves the Owner.
+- **Memory loop** (Phase 3, `scripts/mesh/memory-sync.sh`) — **push-only**
+  (M1 → vault) rsync of memory snapshots into BRAINIAC's Obsidian vault over
+  Tailscale. Set `HAILMARY_VAULT` (Tailscale SSH `host:path`, off git); `install`
+  lays a macOS LaunchAgent (`com.tmmt.memory-sync`).
+- **Unison** (`scripts/mesh/unison.sh`) — the single switch that boots the whole
+  home base as one: HAILMARY `booyah` → memory loop → always-on presence.
+  Launcher verbs: **`bash scripts/tmmt unison|booyah|memory`**.
+- **Owner taps remaining:** run `bash scripts/hailmary booyah` (or `tmmt unison`)
+  **on the M1**; set `HAILMARY_VAULT`; share BRAINIAC into the assistant's
+  tailnet (least-privilege). See `docs/AIXMOS-MESH-BLUEPRINT.md` Phases 2–5.
+
 ## Docs
 
 - `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
