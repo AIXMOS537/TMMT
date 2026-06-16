@@ -192,6 +192,69 @@ export async function recallMemory(input: RecallInput): Promise<RecallResult> {
   }
 }
 
+export interface RecalledEntity {
+  id: string;
+  display_name: string;
+  kind: string;
+}
+
+/**
+ * Richer recall: base keyword/recency recall PLUS, when the query matches a
+ * memory_entity (by name or primary phone), that entity's events and facts are
+ * folded in. Makes ask/recon answers deeper — without any external API calls
+ * (everything comes from the brain). Sources already in the brain (app, quo,
+ * clickup, slack, gmail, …) all surface here.
+ */
+export async function recallRich(
+  query: string,
+  opts?: { limit?: number }
+): Promise<RecallResult & { entities: RecalledEntity[] }> {
+  const base = await recallMemory({ query, limit: opts?.limit ?? 15 });
+  try {
+    const supabase = createServiceRoleClient();
+    const q = query.replace(/[%,()]/g, " ").trim();
+    const { data: ents } = await supabase
+      .from("memory_entities")
+      .select("id, display_name, kind")
+      .or(`display_name.ilike.%${q}%,external_refs->>primary_phone.eq.${query}`)
+      .limit(3);
+    const entities = (ents as RecalledEntity[]) ?? [];
+    if (entities.length) {
+      const ids = entities.map((e) => e.id);
+      const [{ data: ev }, { data: fc }] = await Promise.all([
+        supabase
+          .from("memory_events")
+          .select("action, source, actor_kind, actor_label, summary, occurred_at, details")
+          .in("entity_id", ids)
+          .order("occurred_at", { ascending: false })
+          .limit(15),
+        supabase
+          .from("memory_facts")
+          .select("fact, confidence, entity_id, valid_from")
+          .is("valid_to", null)
+          .in("entity_id", ids)
+          .limit(15),
+      ]);
+      const seenE = new Set(base.events.map((e) => e.summary));
+      for (const e of (ev as RecalledEvent[]) ?? [])
+        if (!seenE.has(e.summary)) {
+          base.events.push(e);
+          seenE.add(e.summary);
+        }
+      const seenF = new Set(base.facts.map((f) => f.fact));
+      for (const f of (fc as RecalledFact[]) ?? [])
+        if (!seenF.has(f.fact)) {
+          base.facts.push(f);
+          seenF.add(f.fact);
+        }
+    }
+    return { ...base, entities };
+  } catch (err) {
+    console.error("[memory] recallRich threw:", (err as Error).message);
+    return { ...base, entities: [] };
+  }
+}
+
 /** Convenience: log an event attributed to an authenticated user. */
 export async function logMemoryEventForUser(
   user: User | null,

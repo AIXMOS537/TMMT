@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { recallMemory, logMemoryEvent } from "@/lib/memory";
+import { recallMemory, recallRich, logMemoryEvent } from "@/lib/memory";
 import { generate } from "@/lib/ai/router";
 import { HAILMARY_OPERATIVE_SYSTEM } from "@/lib/ai/persona";
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   if (op === "ask") {
     const q = String(body.query ?? "").slice(0, 1000);
     if (!q) return NextResponse.json({ error: "query required" }, { status: 400 });
-    const ctx = await recallMemory({ query: q, limit: 15 });
+    const ctx = await recallRich(q, { limit: 15 });
     const prompt = `QUESTION/TASK: ${q}\n\nBRAIN CONTEXT (JSON):\n${JSON.stringify(ctx)}`;
     const res = await generate({
       system: HAILMARY_OPERATIVE_SYSTEM,
