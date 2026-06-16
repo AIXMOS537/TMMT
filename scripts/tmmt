@@ -26,5 +26,6 @@ case "$v" in
   notify-test|ping) exec bash "$ROOT/scripts/mesh/link.sh" notify-test;;
   always) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" install "${1:-owner}" "${2:-180}";;
   always-off) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall;;
-  *) printf 'tmmt words: up | always [role] | always-off | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
+  booyah|hailmary) exec bash "$ROOT/scripts/hailmary" "${1:-booyah}" "${@:2}";;
+  *) printf 'tmmt words: up | always [role] | always-off | booyah | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
