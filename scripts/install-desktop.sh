@@ -13,9 +13,16 @@ make() { # name  command
   echo "✓ $f"
 }
 
+ROLE="${ROLE:-}"; [ -z "$ROLE" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
+[ -z "$ROLE" ] && ROLE=operator
+
 make "TMMT"    'bash "'"$ROOT"'/scripts/menu"'
-make "Booyah"  'bash "'"$ROOT"'/scripts/hailmary" booyah'
 make "Compass" 'bash "'"$ROOT"'/scripts/compass"'
-make "Onboard" 'bash "'"$ROOT"'/scripts/aixmos" onboard'
+if [ "$ROLE" = "owner" ]; then
+  make "Booyah"  'bash "'"$ROOT"'/scripts/hailmary" booyah'
+  make "Onboard" 'bash "'"$ROOT"'/scripts/aixmos" onboard'
+else
+  make "Work"    'bash "'"$ROOT"'/scripts/tmmt" go 2'
+fi
 echo
 echo "Done. Double-click any icon on your Desktop. (First time: right-click → Open.)"
