@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ "$(uname)" = "Darwin" ] || { echo "This script is for macOS (work/carry Mac)." >&2; exit 1; }
-case "$ROLE" in work|carry) ;; *) echo "--role must be 'work' or 'carry'" >&2; exit 1;; esac
+case "$ROLE" in work|carry|home) ;; *) echo "--role must be 'work', 'carry', or 'home'" >&2; exit 1;; esac
 [ -n "$NODE" ] || NODE="${ROLE}-mac"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -119,11 +119,14 @@ if command -v claude >/dev/null 2>&1; then
     -- node "$REPO_ROOT/scripts/memory-mcp-server.mjs" 2>/dev/null \
     || warn "memory MCP may already be registered (claude mcp list)"
 
-  if [ "$ROLE" = "work" ]; then
-    say "Registering Mac iMessage bridge (work Mac = the texting assistant)…"
+  if [ "$ROLE" = "work" ] || [ "$ROLE" = "home" ]; then
+    say "Registering Mac iMessage bridge ($ROLE Mac = texting/escalation node)…"
     claude mcp add messages -- uvx mac-messages-mcp 2>/dev/null \
       || warn "messages MCP may already be registered"
     warn "Grant Full Disk Access to your terminal (System Settings → Privacy & Security → Full Disk Access), then fully quit & reopen it."
+  fi
+  if [ "$ROLE" = "home" ]; then
+    warn "HOME node = always-on EXECUTOR ('little brother'). Keep it plugged in, on Tailscale, and prevent sleep (System Settings → Battery/Lock Screen → never sleep on power). See docs/HAILMARY-FAILOVER.md."
   fi
 else
   warn "Claude Code CLI missing — skipped MCP registration."
