@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# watchtower — Cyborg's post. The League roster + a live read on every system.
+#   bash scripts/watchtower      (or just type:  watchtower )
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null || true; fi
+set +e
+type swarm_machine >/dev/null 2>&1 || swarm_machine(){ hostname -s 2>/dev/null||echo device; }
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; M=$'\e[35m'; B=$'\e[34m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; R=; C=; M=; B=; W=; D=; BD=; X=; fi
+
+# live system reads
+DARK="${G}● clear${X}"; [ -f "$ROOT/.swarm/DARK" ] && DARK="${R}${BD}● DARK${X}"
+SEAL="${Y}unsealed${X}"; [ -f "$ROOT/auth/OWNER.seal" ] && SEAL="${G}sealed${X}"
+ROLE="${SWARM_ROLE:-}"; [ -z "$ROLE" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"; [ -z "$ROLE" ] && ROLE="(unset)"
+HM="${D}standby${X}"; grep -q '^online' "$ROOT/.hailmary/state" 2>/dev/null && HM="${G}online${X}"
+MESHN="$(bash "$ROOT/scripts/swarm.sh" mesh 2>/dev/null | grep -cE 'online|offline')"; [ -z "$MESHN" ] && MESHN=0
+
+cat <<EOF
+
+${C}${BD}   ╔══════════════════════════════════════════════════════════╗${X}
+${C}${BD}   ║${W}   🦾  W A T C H T O W E R   ·   Cyborg has the watch        ${C}║${X}
+${C}${BD}   ╚══════════════════════════════════════════════════════════╝${X}
+
+${BD}   SYSTEMS${X}   this device: ${W}$(swarm_machine)${X} · role: ${W}${ROLE}${X}
+     blackout: ${DARK}    owner gate: ${SEAL}    HAILMARY: ${HM}    mesh devices: ${W}${MESHN}${X}
+
+${BD}   THE LEAGUE${X}
+   🛡️  ${BD}The Boss${X}   ${D}Muhammad Taha — Ops everywhere · holds the word${X}
+   🦾  ${BD}Cyborg${X}     ${D}watches the Watchtower — all systems (AIXMOS/HAILMARY)${X}
+   🐦‍⬛ ${BD}Red Hood${X}   ${D}Umar — Credit Guidance ("guidance," never "repair")${X}
+   🚗  ${BD}The Crew${X}   ${D}rentals + TMMT verticals + operators (fenced)${X}
+   🦇  ${BD}Batman${X}     ${D}E-commerce — guards the back, keeps everyone safe${X}
+
+${B}${BD}   THE LADDER (locked)${X}
+   ${W}🚗 Rental ${D}→${X} ${W}💳 Membership ${D}→${X} ${W}📈 Credit Guidance ${D}→${X} ${W}🏗️ Builds/Kits ${D}→${X} ${W}🤝 Affiliate${X}
+
+${D}   deep checks:  fix (security) · whoami (this device) · mesh (every device)
+   full map:  docs/WATCHTOWER-ROSTER.md${X}
+
+EOF
