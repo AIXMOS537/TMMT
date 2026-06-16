@@ -56,6 +56,7 @@ install_words() {
     echo "alias menu='bash \"$R/scripts/menu\"'        # TMMT_WORDS"
     echo "alias compass='bash \"$R/scripts/compass\"'          # TMMT_WORDS"
     echo "alias whoami='bash \"$R/scripts/whoami-tmmt\"'       # TMMT_WORDS"
+    echo "alias watchtower='bash \"$R/scripts/watchtower\"'    # TMMT_WORDS"
     echo "alias dark='bash \"$R/scripts/godark\"'              # TMMT_WORDS"
     echo "alias light='bash \"$R/scripts/godark\" lift'        # TMMT_WORDS"
     echo "alias base='bash \"$R/scripts/go\"'          # TMMT_WORDS"
