@@ -11,6 +11,10 @@
 #   aixmos handoff ... emit a mesh handoff      (scripts/mesh-handoff.sh passthrough)
 #   aixmos legacy  ... build the Legacy edition (scripts/build-projectaixmos-legacy.sh)
 #   aixmos hooks       install the pre-push gate (git core.hooksPath -> .githooks)
+#   aixmos scan        inventory secrets in this repo (secret-scan.sh)
+#   aixmos integrity   compromise scan THIS device (ssh/persistence/ports/hosts)
+#   aixmos presence    mesh presence board (last-seen for every device)
+#   aixmos beat        record THIS device's heartbeat now
 #   aixmos help
 #
 # Tip: add the repo's scripts/ to PATH, or alias:  alias aixmos='bash scripts/aixmos.sh'
@@ -74,6 +78,10 @@ case "$cmd" in
   handoff) exec bash "$S/mesh-handoff.sh" "$@";;
   legacy)  exec bash "$S/build-projectaixmos-legacy.sh" "$@";;
   hooks)   install_hooks;;
+  scan)    exec bash "$S/secret-scan.sh" "$@";;
+  integrity) exec bash "$S/device-integrity.sh" "$@";;
+  presence) exec bash "$S/heartbeat.sh" "${1:-status}";;
+  beat)    exec bash "$S/heartbeat.sh" beat;;
   help|-h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//';;
   *) bad "unknown command: $cmd"; echo "try: aixmos help"; exit 2;;
 esac
