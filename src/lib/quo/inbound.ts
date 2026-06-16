@@ -219,6 +219,7 @@ export async function ingestQuoInbound(
     const { data: caseRow, error: caseErr } = await supabase
       .from("cases")
       .insert({
+        org_id: orgId,
         customer_name: entityName || event.fromPhone,
         customer_phone: event.fromPhone,
         request_type: "support",
