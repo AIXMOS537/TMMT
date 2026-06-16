@@ -10,9 +10,11 @@ function isPublicPath(pathname: string) {
     pathname === "/locked" ||
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
+    pathname === "/hailmary" ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/login/") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/hailmary")
   );
 }
 
