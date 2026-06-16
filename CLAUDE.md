@@ -227,6 +227,29 @@ record (git + Obsidian vault on BRAINIAC). Charters are the law:
   **on the M1**; set `HAILMARY_VAULT`; share BRAINIAC into the assistant's
   tailnet (least-privilege). See `docs/AIXMOS-MESH-BLUEPRINT.md` Phases 2–5.
 
+## One-word command system — SHIPPED 2026-06-16
+
+Front door: `START-HERE.md`. Every word routes through `scripts/tmmt`; `scripts/go`
+installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
+
+- **`booyah`** = THE start word → full base boot (`scripts/mesh/unison.sh up`).
+  `wake` = HAILMARY only. `menu` = colorful board (`scripts/menu`, role-aware).
+- **Watch (Cyborg):** `watchtower` (`scripts/watchtower` — League roster + live
+  vertical health), `health` (`scripts/health.sh` — pings `watch/targets.tsv`;
+  401/403 = UP🔒, 000/5xx = DOWN), `whoami` (`scripts/whoami-tmmt`).
+- **Clients:** `onboard` (`scripts/aixmos onboard`), `aixmos` (cast).
+- **You first:** `compass` (`scripts/compass` — protect-first, toward God; exempt
+  from DARK). **Protect/kill:** `dark`/`light` (`scripts/godark` — anyone stops,
+  only owner seal lifts; `dark hard` = `tailscale down`), `fix`, `seal`.
+- **Deploy:** `scripts/deploy [owner|operator]` — role-aware (owner needs the
+  Owner Seal `auth/OWNER.seal`; operators fenced). `scripts/install-desktop.sh`
+  (Mac icons), `scripts/make-wallpaper.py` + `make-pocket-card.py` (cheatsheets).
+- **Roster (the League):** `docs/WATCHTOWER-ROSTER.md` — Boss (Muhammad Taha, Ops
+  + the word), Cyborg (Watchtower = AIXMOS/HAILMARY), Red Hood (Umar, Credit
+  Guidance), The Crew (rentals + verticals + operators), Batman (e-commerce).
+- **DARK guards** in tmmt/hailmary/aixmos/go/unison; `.hailmary/` + `.swarm/`
+  gitignored; `auth/OWNER.seal` is a salted hash (no secret), safe to commit.
+
 ## Docs
 
 - `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
