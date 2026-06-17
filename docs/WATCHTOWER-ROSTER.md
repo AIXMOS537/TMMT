@@ -8,11 +8,18 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
 
 | Codename | Who | Runs | Vertical / Post |
 |---|---|---|---|
-| 🦾 **Cyborg** | the Watchtower sentinel | **watches over the Watchtower** — every system, health, and alert | Oversight of all systems · powered by **AIXMOS / HAILMARY** |
+| 🦾 **Cyborg** | the Watchtower sentinel — **both versions: AIXMOS (public) + HAILMARY (Project X)** | **watches over the Watchtower** — every system, health, and alert | Oversight of all systems |
 | 🛡️ **The Boss** | **Muhammad Taha** (Owner) | **Ops, everywhere** — checks in on systems, sets direction | 🔧 Operations (all verticals) |
-| 🐦‍⬛ **Red Hood** | **Umar** — MoeLegacy owner | **Credit repair** | 📈 Credit Guidance |
-| 🚗 **The Crew** | the team + new operators (onboarding soon) | **Car rentals + the other TMMT verticals** | 🚗 Rental · business systems · funding |
+| 🧠 **Brainiac** | **BRAINIAC 7** (always-on brain node) | the memory + control-plane host (Fatherbox lives here) | Command center body |
+| 🦅 **Nightwing** | field-operations lead / first lieutenant *(seat — first operator)* | runs operators on the ground; relays Watchtower ↔ Crew | Field ops |
+| 🐦‍⬛ **Red Hood** | **Umar** — MoeLegacy owner | **Credit repair / guidance** | 📈 Credit Guidance |
+| 🚗 **The Crew** | the team + new operators (more pending down the pipeline) | **Car rentals + the other TMMT verticals** | 🚗 Rental · business systems · funding |
 | 🦇 **Batman** | the guardian in the back | **E-commerce** — and keeping everyone safe | 🛒 E-commerce · protection |
+
+> The global mesh is **protected by AIXMOS Agents of Chaos**, run by **TMMT
+> operators**, and **watched over by the guardians above** (Cyborg both versions,
+> Brainiac, Batman, Red Hood, Nightwing). More operators pending down the pipeline —
+> each joins **fenced**, then earns their post.
 
 ## How the League maps to the machine
 

@@ -42,6 +42,7 @@ case "$v" in
   compass|peace) exec bash "$ROOT/scripts/compass" "${1:-now}" "${@:2}";;
   desktop|icons) exec bash "$ROOT/scripts/install-desktop.sh";;
   deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
+  join) exec bash "$ROOT/scripts/join" "${1:-}";;
   motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
