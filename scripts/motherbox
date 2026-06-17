@@ -39,4 +39,8 @@ else
 fi
 say "     • e-commerce store automation runs here; team takes over via RustDesk (consented)"
 say ""
+say "  ✦  FIRST LOCAL BRAIN (their own private LLM, by RAM):"
+command -v ollama >/dev/null 2>&1 && ok "Ollama present — run: bash scripts/setup-llm.sh" \
+  || say "     • bash scripts/setup-llm.sh   (installs Ollama + the right model, 100% local)"
+say ""
 ok "MOTHERBOX done. Control it from BRAINIAC 7:  bash scripts/fatherbox"
