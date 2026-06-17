@@ -12,7 +12,7 @@
 
 | Operator | Org | Terms |
 |---|---|---|
-| **Ayyan Khan** | TMMT / network | brain free until $50K is collected (hourly / salary / commission) |
+| **Ayyan Khan** *(🦅 Nightwing — field-ops lead)* | TMMT / network | brain free until $50K is collected (hourly / salary / commission) |
 | **Muhammad Umar** | **owner, MoeLegacy** | brain free until $50K is collected (hourly / salary / commission) |
 
 Setup covered now; settled over time. Everyone after the founders pays the ladder.
@@ -93,12 +93,12 @@ One command on any laptop: `bash scripts/setup-llm.sh` → Ollama + the right mo
 | Step | Tool |
 |---|---|
 | Their first local brain | `scripts/setup-llm.sh` |
-| Issue license + consent | `scripts/partner-deploy/issue-license.sh` + `consent/` |
+| Issue license + consent | `scripts/partner-deploy/owner/issue-license.sh` + `consent/` |
 | Flash the node | `scripts/motherbox` (role-aware) |
 | Approve into the mesh (least-privilege) | Tailscale admin + `partner-deploy/tailscale-acl.json` |
 | Remote support | RustDesk over Tailscale (consented, logged) |
 | Watch + run the army | `fatherbox` / `watchtower` |
-| Offboard / kill | `scripts/partner-deploy/kill-partner.sh` |
+| Offboard / kill | `scripts/partner-deploy/owner/kill-partner.sh` |
 
 ---
 
