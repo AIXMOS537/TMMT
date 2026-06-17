@@ -15,7 +15,7 @@ v="${1:-?}"; shift || true
 # DARK kill-switch: while blacked out, only safe words run (compass/whoami/seal/dark).
 if [ -f "$ROOT/.swarm/DARK" ]; then
   case "$v" in
-    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu|watchtower|tower|league|roster|health|verticals|pulse) : ;;
+    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu|watchtower|tower|league|roster|health|verticals|pulse|mesh-map|map|secure|launch-check|launch) : ;;
     *) printf '⛔ DARK — everything is stopped. Lift with the boss word: bash scripts/godark lift\n'; exit 1;;
   esac
 fi
@@ -43,6 +43,8 @@ case "$v" in
   desktop|icons) exec bash "$ROOT/scripts/install-desktop.sh";;
   deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
   join) exec bash "$ROOT/scripts/join" "${1:-}";;
+  mesh-map|map) exec bash "$ROOT/scripts/mesh-map.sh";;
+  secure|launch-check|launch) exec bash "$ROOT/scripts/launch-check.sh";;
   motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
