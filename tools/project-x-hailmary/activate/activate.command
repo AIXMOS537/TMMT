@@ -108,15 +108,24 @@ echo
 # ── STEP 3: REGISTER IN WATCHTOWER ───────────────────────
 step "REGISTERING IN WATCHTOWER"
 
-# Load Supabase service key (from your env on CYBORG)
-SUPABASE_KEY_FILE="$(dirname "$0")/../master/.supabase-service-key"
-if [[ ! -f "$SUPABASE_KEY_FILE" ]]; then
-  warn "Supabase service key not found at $SUPABASE_KEY_FILE"
-  read -p "  Enter Supabase service role key: " SUPABASE_SERVICE_KEY
-  echo "$SUPABASE_SERVICE_KEY" > "$SUPABASE_KEY_FILE"
-  chmod 600 "$SUPABASE_KEY_FILE"
+# Load Supabase service key + revolving seed from the ENCRYPTED vault.
+# Never read plaintext from the FAT32 drive. vault.sh open decrypts to RAM.
+VAULT_SH="$(dirname "$0")/../master/vault.sh"
+if [[ -f "$(dirname "$0")/../master/vault.enc" ]]; then
+  step "UNLOCKING ENCRYPTED VAULT"
+  eval "$(bash "$VAULT_SH" open)" || fail "Vault unlock failed."
+  ok "Vault unlocked in memory."
+
+  # Second factor: revolving authentication code
+  read -p "  Enter current revolving code (from CYBORG or your phone): " RCODE
+  if [[ -n "${HAILMARY_TOTP_SEED:-}" ]]; then
+    python3 "$(dirname "$0")/../master/totp.py" verify "$HAILMARY_TOTP_SEED" "$RCODE" >/dev/null \
+      && ok "Revolving code verified." \
+      || fail "Wrong revolving code. Activation denied."
+  fi
 else
-  SUPABASE_SERVICE_KEY=$(cat "$SUPABASE_KEY_FILE")
+  warn "No encrypted vault found. Run: bash master/vault.sh init  (strongly recommended)"
+  read -p "  Enter Supabase service role key (temporary): " SUPABASE_SERVICE_KEY
 fi
 
 PAYLOAD=$(cat <<JSON
