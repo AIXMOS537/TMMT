@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HailMary Business Vision Intake — Moe Legacy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a0a0a;
+    color: #f0f0f0;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 40px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 16px;
+    border: 1px solid #2a2a4a;
+  }
+
+  .logo {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #c9a84c, #f0d080);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: #aaa;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .section {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #c9a84c;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 24px;
+  }
+
+  .field {
+    margin-bottom: 24px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ccc;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  label .required {
+    color: #c9a84c;
+    margin-left: 4px;
+  }
+
+  label .hint {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  textarea,
+  select {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #f0f0f0;
+    font-size: 15px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: #c9a84c;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  select option {
+    background: #1a1a1a;
+  }
+
+  .radio-group, .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .radio-group label, .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 10px 14px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    margin-bottom: 0;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .radio-group label:hover, .checkbox-group label:hover {
+    border-color: #c9a84c44;
+    background: #1a1a1a;
+  }
+
+  .radio-group input[type="radio"],
+  .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c9a84c;
+    flex-shrink: 0;
+  }
+
+  .divider {
+    height: 1px;
+    background: #1e1e1e;
+    margin: 24px 0;
+  }
+
+  .submit-section {
+    text-align: center;
+    padding: 40px;
+    background: #0f0f0f;
+    border: 1px solid #222;
+    border-radius: 12px;
+  }
+
+  .submit-btn {
+    background: linear-gradient(135deg, #c9a84c, #f0d080);
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 16px 48px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    text-transform: uppercase;
+  }
+
+  .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+
+  .submit-note {
+    color: #555;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  /* Output panel */
+  #output-panel {
+    display: none;
+    background: #0d1117;
+    border: 1px solid #30a14e;
+    border-radius: 12px;
+    padding: 32px;
+    margin-top: 32px;
+  }
+
+  #output-panel h2 {
+    color: #30a14e;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  #output-text {
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #aaa;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .copy-btn {
+    margin-top: 16px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #ccc;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+
+  .copy-btn:hover { background: #222; }
+
+  .save-btn {
+    margin-top: 16px;
+    margin-left: 12px;
+    background: #c9a84c22;
+    border: 1px solid #c9a84c44;
+    color: #c9a84c;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+
+  .save-btn:hover { background: #c9a84c33; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">HailMary System — Business Vision Intake</div>
+    <h1>Moe Legacy</h1>
+    <p class="subtitle">
+      Answer every question honestly. Your answers become the blueprint for your automated system.<br>
+      No wrong answers. This is YOUR vision in YOUR words.
+    </p>
+  </div>
+
+  <form id="intake-form">
+
+    <!-- SECTION 1: WHO YOU ARE -->
+    <div class="section">
+      <div class="section-label">Section 1</div>
+      <div class="section-title">Who You Are & What You Do</div>
+
+      <div class="field">
+        <label>Your full name <span class="required">*</span></label>
+        <input type="text" name="owner_name" placeholder="e.g. Moses / Moe" required>
+      </div>
+
+      <div class="field">
+        <label>Business name(s) <span class="required">*</span>
+          <span class="hint">All brands you operate under</span>
+        </label>
+        <input type="text" name="business_names" placeholder="e.g. Moe Legacy, Moe Legacy Credit..." required>
+      </div>
+
+      <div class="field">
+        <label>City / state you operate in <span class="required">*</span></label>
+        <input type="text" name="location" placeholder="e.g. Northern Virginia / DMV area" required>
+      </div>
+
+      <div class="field">
+        <label>In 1-2 sentences — what does your business actually do for people?
+          <span class="hint">Pretend you're explaining it to your grandmother</span>
+        </label>
+        <textarea name="business_summary" placeholder="e.g. I help people with bad credit get into cars and start building their financial foundation..."></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION 2: YOUR CLIENTS -->
+    <div class="section">
+      <div class="section-label">Section 2</div>
+      <div class="section-title">Your Clients — Who Walks In The Door</div>
+
+      <div class="field">
+        <label>Who is your ideal client? <span class="required">*</span>
+          <span class="hint">Age range, situation, what they're struggling with</span>
+        </label>
+        <textarea name="ideal_client" placeholder="e.g. 25-45 year old, credit score 450-580, employed but can't get approved anywhere, needs a car to keep their job..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>How do most clients find you right now?</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="lead_source" value="word_of_mouth"> Word of mouth / referrals</label>
+          <label><input type="checkbox" name="lead_source" value="instagram"> Instagram</label>
+          <label><input type="checkbox" name="lead_source" value="facebook"> Facebook</label>
+          <label><input type="checkbox" name="lead_source" value="tiktok"> TikTok</label>
+          <label><input type="checkbox" name="lead_source" value="google"> Google search</label>
+          <label><input type="checkbox" name="lead_source" value="walk_in"> Walk-ins / in person</label>
+          <label><input type="checkbox" name="lead_source" value="other"> Other</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What is the #1 problem your client has when they first come to you?</label>
+        <textarea name="client_problem" placeholder="e.g. Bad credit, no money down, been turned down by 5 dealerships, need a car ASAP..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>What does a WIN look like for your client? What's the result they walk away with?</label>
+        <textarea name="client_win" placeholder="e.g. Approved for a vehicle with manageable payments, credit score improving, on a plan to get funding..."></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION 3: YOUR PROCESS -->
+    <div class="section">
+      <div class="section-label">Section 3</div>
+      <div class="section-title">Your Process — Step By Step</div>
+
+      <div class="field">
+        <label>Walk me through what happens from the moment a new client contacts you to the moment they're fully onboarded. Step by step, in your own words.
+          <span class="hint">This is the most important question. Be as detailed as you can. The system will automate exactly this.</span>
+        </label>
+        <textarea name="client_process" style="min-height: 180px;" placeholder="Step 1: They DM me on Instagram or call...&#10;Step 2: I ask for their...&#10;Step 3: I pull their credit and...&#10;Step 4: ..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>What services do you offer? Check all that apply. <span class="required">*</span></label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="services" value="credit_repair"> Credit repair / credit building</label>
+          <label><input type="checkbox" name="services" value="car_rental"> Car rental</label>
+          <label><input type="checkbox" name="services" value="car_leasing"> Car leasing</label>
+          <label><input type="checkbox" name="services" value="car_wholesale"> Car wholesale / dealer connections</label>
+          <label><input type="checkbox" name="services" value="business_funding"> Business funding / financing</label>
+          <label><input type="checkbox" name="services" value="consulting"> 1-on-1 consulting / coaching</label>
+          <label><input type="checkbox" name="services" value="program"> Paid program / course</label>
+          <label><input type="checkbox" name="services" value="other"> Other</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What credit bureaus or tools do you currently use for credit repair?
+          <span class="hint">e.g. Credit Karma, Experian, SmartCredit, specific dispute software</span>
+        </label>
+        <input type="text" name="credit_tools" placeholder="e.g. SmartCredit, Experian, manual dispute letters...">
+      </div>
+
+      <div class="field">
+        <label>What does a client pay you, and when? Walk through your pricing.
+          <span class="hint">e.g. $500 upfront, $97/month, commission on funding, etc.</span>
+        </label>
+        <textarea name="pricing" placeholder="e.g. $297 credit repair setup fee, then $97/month for 6 months. If they get a car through me I get $500 from the dealer..."></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION 4: CURRENT PAIN -->
+    <div class="section">
+      <div class="section-label">Section 4</div>
+      <div class="section-title">What's Broken Right Now</div>
+
+      <div class="field">
+        <label>What takes up most of YOUR time that you wish the system could handle?</label>
+        <textarea name="biggest_time_waster" placeholder="e.g. Answering the same questions over and over, following up with people who ghost, pulling credit reports manually..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Where do clients fall off or disappear in your process?
+          <span class="hint">Where do you lose people before they become paying clients?</span>
+        </label>
+        <textarea name="drop_off_point" placeholder="e.g. After they see the price. Or after I pull credit and tell them what they need to fix..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>What do clients ask you most often that you have to answer manually?</label>
+        <textarea name="faq" placeholder="e.g. 'How long will it take to fix my credit?' 'What score do I need?' 'Can I get a car with no money down?'"></textarea>
+      </div>
+
+      <div class="field">
+        <label>How many active clients are you working with right now?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="client_count" value="0-10"> Just getting started (0-10)</label>
+          <label><input type="radio" name="client_count" value="10-30"> Growing (10-30)</label>
+          <label><input type="radio" name="client_count" value="30-100"> Established (30-100)</label>
+          <label><input type="radio" name="client_count" value="100+"> Running (100+)</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: VISION -->
+    <div class="section">
+      <div class="section-label">Section 5</div>
+      <div class="section-title">Your Vision — Where This Goes</div>
+
+      <div class="field">
+        <label>If the system worked perfectly, what would your business look like in 12 months?
+          <span class="hint">Revenue, number of clients, team size, lifestyle</span>
+        </label>
+        <textarea name="vision_12mo" placeholder="e.g. $50K/month, 200 active credit repair clients, 2 staff members, I only touch the business 4 hours a week..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>What cities or markets do you want to expand into first?</label>
+        <input type="text" name="expansion_cities" placeholder="e.g. DC, Baltimore, Richmond, Atlanta...">
+      </div>
+
+      <div class="field">
+        <label>How involved do you want to be in day-to-day operations once the system is running?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="involvement_level" value="hands_on"> Hands-on — I want to see and approve everything</label>
+          <label><input type="radio" name="involvement_level" value="check_in"> Check in daily — brief me each morning, I'll handle exceptions</label>
+          <label><input type="radio" name="involvement_level" value="weekly"> Weekly — show me numbers once a week, handle everything else</label>
+          <label><input type="radio" name="involvement_level" value="autopilot"> Full autopilot — notify me only when something needs my signature or decision</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Is there anything you will NEVER want the system to do automatically without your approval?
+          <span class="hint">e.g. Send a refund, delete a client, post on your social media</span>
+        </label>
+        <textarea name="never_automate" placeholder="e.g. Never send money back to a client without me approving it. Never post on my Instagram. Never sign anything on my behalf..."></textarea>
+      </div>
+    </div>
+
+    <!-- SECTION 6: CONTACT -->
+    <div class="section">
+      <div class="section-label">Section 6</div>
+      <div class="section-title">How To Reach You</div>
+
+      <div class="field">
+        <label>Best phone number <span class="required">*</span></label>
+        <input type="tel" name="phone" placeholder="(xxx) xxx-xxxx" required>
+      </div>
+
+      <div class="field">
+        <label>Email address <span class="required">*</span></label>
+        <input type="email" name="email" placeholder="your@email.com" required>
+      </div>
+
+      <div class="field">
+        <label>Instagram handle</label>
+        <input type="text" name="instagram" placeholder="@moelegacy">
+      </div>
+
+      <div class="field">
+        <label>Anything else you want Muhammad Taha / AIXMOS to know before building your system?
+          <span class="hint">Your rules, your non-negotiables, your story — anything</span>
+        </label>
+        <textarea name="anything_else" style="min-height: 120px;" placeholder="This is your space. Say whatever you need to say."></textarea>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button type="submit" class="submit-btn">Generate My Vision Brief →</button>
+      <p class="submit-note">Your answers stay on this device. Nothing is sent to the cloud.</p>
+    </div>
+
+  </form>
+
+  <!-- Output -->
+  <div id="output-panel">
+    <h2>✅ Vision Brief Generated</h2>
+    <p style="color:#666; font-size:13px; margin-bottom:16px;">Copy this and send it to Muhammad Taha / AIXMOS to build your system.</p>
+    <div id="output-text"></div>
+    <button class="copy-btn" onclick="copyOutput()">Copy to Clipboard</button>
+    <button class="save-btn" onclick="saveOutput()">Save as .txt File</button>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('intake-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const data = {};
+
+  // Text / textarea / select inputs
+  form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], textarea, select').forEach(el => {
+    if (el.name) data[el.name] = el.value.trim();
+  });
+
+  // Radio inputs
+  form.querySelectorAll('input[type="radio"]:checked').forEach(el => {
+    data[el.name] = el.value;
+  });
+
+  // Checkbox groups (multi-select)
+  const checkboxGroups = {};
+  form.querySelectorAll('input[type="checkbox"]:checked').forEach(el => {
+    if (!checkboxGroups[el.name]) checkboxGroups[el.name] = [];
+    checkboxGroups[el.name].push(el.value.replace(/_/g, ' '));
+  });
+  Object.assign(data, checkboxGroups);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const output = `
+MOE LEGACY — HAILMARY BUSINESS VISION BRIEF
+Generated: ${dateStr}
+Powered by AIXMOS / Muhammad Taha
+${'='.repeat(60)}
+
+OWNER
+Name: ${data.owner_name || '—'}
+Business(es): ${data.business_names || '—'}
+Location: ${data.location || '—'}
+Phone: ${data.phone || '—'}
+Email: ${data.email || '—'}
+Instagram: ${data.instagram || '—'}
+
+${'—'.repeat(60)}
+WHAT THIS BUSINESS DOES
+${'—'.repeat(60)}
+${data.business_summary || '(not answered)'}
+
+${'—'.repeat(60)}
+IDEAL CLIENT
+${'—'.repeat(60)}
+${data.ideal_client || '(not answered)'}
+
+How they find Moe today:
+${Array.isArray(data.lead_source) ? data.lead_source.join(', ') : (data.lead_source || '(not answered)')}
+
+#1 problem when they arrive:
+${data.client_problem || '(not answered)'}
+
+What a WIN looks like for them:
+${data.client_win || '(not answered)'}
+
+${'—'.repeat(60)}
+THE PROCESS (STEP BY STEP — THIS GETS AUTOMATED)
+${'—'.repeat(60)}
+${data.client_process || '(not answered)'}
+
+${'—'.repeat(60)}
+SERVICES OFFERED
+${'—'.repeat(60)}
+${Array.isArray(data.services) ? data.services.join(', ') : (data.services || '(not answered)')}
+
+Credit tools currently used:
+${data.credit_tools || '(not answered)'}
+
+Pricing structure:
+${data.pricing || '(not answered)'}
+
+${'—'.repeat(60)}
+WHAT'S BROKEN RIGHT NOW
+${'—'.repeat(60)}
+Biggest time waster:
+${data.biggest_time_waster || '(not answered)'}
+
+Where clients fall off:
+${data.drop_off_point || '(not answered)'}
+
+Questions answered manually over and over:
+${data.faq || '(not answered)'}
+
+Active clients right now:
+${data.client_count || '(not answered)'}
+
+${'—'.repeat(60)}
+THE VISION
+${'—'.repeat(60)}
+12-month goal:
+${data.vision_12mo || '(not answered)'}
+
+Expansion cities:
+${data.expansion_cities || '(not answered)'}
+
+Desired involvement level:
+${data.involvement_level ? data.involvement_level.replace(/_/g, ' ') : '(not answered)'}
+
+NEVER automate without approval:
+${data.never_automate || '(not answered)'}
+
+${'—'.repeat(60)}
+ANYTHING ELSE MOE WANTS AIXMOS TO KNOW
+${'—'.repeat(60)}
+${data.anything_else || '(nothing added)'}
+
+${'='.repeat(60)}
+END OF BRIEF — AIXMOS SYSTEM BUILD BEGINS FROM THIS DOCUMENT
+`.trim();
+
+  document.getElementById('output-text').textContent = output;
+  document.getElementById('output-panel').style.display = 'block';
+  document.getElementById('output-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  window._outputText = output;
+});
+
+function copyOutput() {
+  navigator.clipboard.writeText(window._outputText || '').then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000);
+  });
+}
+
+function saveOutput() {
+  const blob = new Blob([window._outputText || ''], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'moe-legacy-vision-brief.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
