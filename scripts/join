@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# join — the universal plug-and-play entry. Gets THIS computer onto the global mesh
+# in one word: reminds Tailscale, runs the role-aware deploy, sets up the local
+# brain hook, prints the phone path. (Phones use docs/MOBILE.md — they're windows.)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+say(){ printf '%s\n' "$*"; }
+
+say ""
+say "  🌐  JOIN THE GLOBAL MESH"
+say "  ─────────────────────────"
+if command -v tailscale >/dev/null 2>&1; then
+  say "  ✓ Tailscale present (owner approves this device in the admin)"
+else
+  say "  1) install Tailscale → https://tailscale.com/download → sign in"
+  say "     (owner then approves this device — least-privilege)"
+fi
+say "  2) provisioning this device…"
+exec bash "$ROOT/scripts/deploy" "${1:-}"
