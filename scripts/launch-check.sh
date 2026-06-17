@@ -38,6 +38,11 @@ grep -rq "fails closed\|redirect.*login" "$ROOT/middleware.ts" 2>/dev/null && P 
 # 10. token in history (anyone who clones gets full history) — onboard via partner-deploy, not raw clone
 hits="$(git -C "$ROOT" log --all --oneline -S 'pat8mah6k' 2>/dev/null | wc -l | tr -d ' ')"
 if [ "${hits:-0}" -gt 0 ]; then Wn "Airtable token in history ($hits commits) — REVOKE it before any full git-clone onboarding; onboard operators via partner-deploy"; else P "no known token in history"; fi
+# 11b. secrets vault — local, encrypted, code-gated (SECRETS-POLICY)
+VDIR="$ROOT/tools/project-x-hailmary/master"
+[ -f "$VDIR/vault.enc" ] && P "encrypted vault present (AES-256, local, TOTP-gated)" || Wn "vault not initialized — run: vault init  (then vault enroll)"
+plain="$(ls "$VDIR"/.supabase-service-key "$VDIR"/*.plain "$VDIR"/*.seed 2>/dev/null || true)"
+[ -z "$plain" ] && P "no plaintext secret files beside the vault" || Fl "PLAINTEXT secret file(s) present: $plain — move into vault + delete"
 # 11. operators get the SECURE channel (no raw clone)
 [ -x "$ROOT/scripts/partner-deploy/burn-partner-usb.sh" ] && P "partner-deploy payload present (operators get a fenced package, not the repo)" || Wn "partner-deploy payload missing"
 

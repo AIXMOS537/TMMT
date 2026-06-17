@@ -78,6 +78,7 @@ install_words() {
       echo "alias secure='bash \"$R/scripts/launch-check.sh\"'   # TMMT_WORDS"
       echo "alias golive='bash \"$R/scripts/golive.sh\"'         # TMMT_WORDS"
       echo "alias deal='bash \"$R/scripts/new-deal.sh\"'         # TMMT_WORDS"
+      echo "alias vault='bash \"$R/tools/project-x-hailmary/master/vault.sh\"' # TMMT_WORDS"
     else
       # operator: work + sync + reach the owner; compass for well-being. No owner agents.
       echo "alias work='bash \"$R/scripts/tmmt\" go 2'   # TMMT_WORDS"
