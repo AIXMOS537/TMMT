@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# workstation — turn THIS machine into one of the Owner's super-workstations:
+# owner role (seal-gated), the local brain, the full toolchain, always-on, and
+# ready to spin up verticals fast. For Muhammad Taha's own computers only.
+#   bash scripts/workstation         (word: workstation)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; BD=$'\e[1m'; D=$'\e[2m'; X=$'\e[0m'; else G=; Y=; C=; BD=; D=; X=; fi
+ok(){ printf '  %s✓%s %s\n' "$G" "$X" "$*"; }
+miss(){ printf '  %s•%s %s\n' "$Y" "$X" "$*"; }
+
+cat <<EOF
+
+  ${C}${BD}╔════════════════════════════════════════════════╗
+  ║   ⚡  S U P E R   W O R K S T A T I O N           ║
+  ║   owner power-node · grow + scale · lightning    ║
+  ╚════════════════════════════════════════════════╝${X}
+EOF
+
+# 1. Owner provisioning (seal-gated; sets owner role, always-on, one-word kit).
+printf '\n%s  1/4  Owner provisioning%s\n' "$BD" "$X"
+bash "$ROOT/scripts/deploy" owner
+
+# 2. The local brain.
+printf '\n%s  2/4  Local brain%s\n' "$BD" "$X"
+if command -v ollama >/dev/null 2>&1; then ok "Ollama present — refresh anytime: bash scripts/setup-llm.sh"
+else miss "set up the local brain: bash scripts/setup-llm.sh"; fi
+
+# 3. Toolchain check (what a power-node wants).
+printf '\n%s  3/4  Toolchain%s\n' "$BD" "$X"
+for t in git node npm tailscale; do
+  command -v "$t" >/dev/null 2>&1 && ok "$t" || miss "$t missing"
+done
+command -v rustdesk >/dev/null 2>&1 && ok "rustdesk (remote takeover)" || miss "rustdesk → https://rustdesk.com (remote takeover)"
+command -v docker >/dev/null 2>&1 && ok "docker (optional, for heavier stacks)" || miss "docker (optional) → https://docker.com"
+
+# 4. Ready to scale.
+printf '\n%s  4/4  Ready to scale%s\n' "$BD" "$X"
+ok "this machine is an Owner super-workstation"
+cat <<EOF
+
+  ${BD}grow + scale from here:${X}
+   ${C}vertical <name>${X}   spin up a NEW vertical, lightning fast
+   ${C}fatherbox${X}         run the whole network
+   ${C}watchtower${X}        systems + every vertical, live
+   ${C}secure${X}            pre-launch security gate
+
+EOF
