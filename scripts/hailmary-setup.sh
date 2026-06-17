@@ -126,7 +126,9 @@ if command -v claude >/dev/null 2>&1; then
     warn "Grant Full Disk Access to your terminal (System Settings → Privacy & Security → Full Disk Access), then fully quit & reopen it."
   fi
   if [ "$ROLE" = "home" ]; then
-    warn "HOME node = always-on EXECUTOR ('little brother'). Keep it plugged in, on Tailscale, and prevent sleep (System Settings → Battery/Lock Screen → never sleep on power). See docs/HAILMARY-FAILOVER.md."
+    say "Installing HAILMARY always-on (owner-proxy, forever)…"
+    bash "$REPO_ROOT/scripts/hailmary-autostart.sh" || warn "autostart install failed — run: bash scripts/hailmary-autostart.sh"
+    warn "HOME node = always-on OWNER-PROXY (acts AS you). Keep it plugged in, on Tailscale, never-sleep-on-power. Install Ollama for free local AI. See docs/HAILMARY-ALWAYS-ON.md."
   fi
 else
   warn "Claude Code CLI missing — skipped MCP registration."
