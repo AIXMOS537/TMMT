@@ -68,8 +68,6 @@ install_words() {
       echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
       echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
       echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"
-      echo "alias fatherbox='bash \"$R/scripts/fatherbox\"'      # TMMT_WORDS"
-      echo "alias motherbox='bash \"$R/scripts/motherbox\"'      # TMMT_WORDS"
     else
       # operator: work + sync + reach the owner; compass for well-being. No owner agents.
       echo "alias work='bash \"$R/scripts/tmmt\" go 2'   # TMMT_WORDS"
