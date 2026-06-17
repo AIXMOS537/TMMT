@@ -43,6 +43,7 @@ case "$v" in
   desktop|icons) exec bash "$ROOT/scripts/install-desktop.sh";;
   deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
   motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;
+  brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
   whoami|me) exec bash "$ROOT/scripts/whoami-tmmt" "${1:-}";;
