@@ -21,10 +21,10 @@ bash "$ROOT/scripts/watchtower" 2>/dev/null | sed -n '5,40p'
 cat <<EOF
 
 ${BD}  LEVERS (owner)${X}
-   ${C}new operator${X}   bash scripts/partner-deploy/issue-license.sh   ${D}then:${X} bash scripts/motherbox operator
-   ${C}health check${X}   bash scripts/partner-deploy/health-check.sh
-   ${C}audit${X}          bash scripts/partner-deploy/audit-readout.sh
-   ${C}kill a node${X}    bash scripts/partner-deploy/kill-partner.sh
+   ${C}new operator${X}   bash scripts/partner-deploy/owner/issue-license.sh   ${D}then:${X} bash scripts/motherbox operator
+   ${C}health check${X}   bash scripts/partner-deploy/owner/health-check.sh
+   ${C}audit${X}          bash scripts/partner-deploy/owner/audit-readout.sh
+   ${C}kill a node${X}    bash scripts/partner-deploy/owner/kill-partner.sh
    ${C}blackout all${X}   dark   ${D}(restore: light — your word)${X}
 
 ${BD}  TEAM REACH (consented, over Tailscale)${X}

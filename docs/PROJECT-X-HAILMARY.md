@@ -33,7 +33,7 @@ Windows, Mac, Android, iPhone — as if they're on one LAN, encrypted, no open p
   operator workstation to help with any process — **with the operator's consent,
   logged** (the consent flow already exists: `scripts/partner-deploy/consent/`).
 - **Kill switch everywhere:** `dark` / `dark hard` on any node; `light` needs the
-  owner seal. Per-operator remote kill: `scripts/partner-deploy/kill-partner.sh`.
+  owner seal. Per-operator remote kill: `scripts/partner-deploy/owner/kill-partner.sh`.
 
 ---
 
@@ -98,7 +98,7 @@ Fatherbox watches and supports it.
 
 ```
  OWNER (BRAINIAC 7 / Fatherbox)
-   │  1. issue license + consent           scripts/partner-deploy/issue-license.sh
+   │  1. issue license + consent           scripts/partner-deploy/owner/issue-license.sh
    │  2. flash the node (Motherbox)        scripts/motherbox   (deploy + provision)
    │  3. approve device into tailnet       Tailscale admin (least-privilege ACL)
    ▼
