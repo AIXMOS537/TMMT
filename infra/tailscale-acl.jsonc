@@ -1,0 +1,82 @@
+// Tailscale ACL — AIXMOS mesh, least-privilege for the offshore backend team.
+// Paste into Tailscale admin → Access Controls (HuJSON: comments allowed).
+//
+// Principle: the offshore team (Pakistan / Philippines) can reach SUPPORT
+// surfaces only. They CANNOT reach the brain hub (Ollama), the secrets host,
+// or the admin database. Enforced by the network, not by trust.
+// See docs/IT-SUPPORT-TEAM-PLAYBOOK.md.
+//
+// Before applying: in the Tailscale admin, assign these tags to devices and
+// set tagOwners to your account. Replace example users with real emails.
+{
+  "tagOwners": {
+    "tag:owner":       ["autogroup:admin"],   // your carry/work devices
+    "tag:hub":         ["autogroup:admin"],   // carry-Mac Ollama brain hub (qwen2.5:14b)
+    "tag:nas":         ["autogroup:admin"],   // UGREEN NAS file tier
+    "tag:secrets":     ["autogroup:admin"],   // secrets broker / vault host
+    "tag:db":          ["autogroup:admin"],   // admin DB / Supabase tunnel host
+    "tag:support":     ["autogroup:admin"],   // shared support surface (ticketing, RustDesk relay, app)
+    "tag:offshore-pk": ["autogroup:admin"],   // Pakistan team devices
+    "tag:offshore-ph": ["autogroup:admin"]    // Philippines team devices
+  },
+
+  // Groups — put real people here (named accounts only, never shared logins).
+  "groups": {
+    "group:owner":    ["you@tmmtrentals.com"],
+    "group:pakistan": ["pk-eng-1@tmmtrentals.com"],   // add per person
+    "group:ph":       ["ph-eng-1@tmmtrentals.com"]    // add per person
+  },
+
+  "acls": [
+    // 1. Owner: full reach across the mesh.
+    { "action": "accept", "src": ["group:owner", "tag:owner"], "dst": ["*:*"] },
+
+    // 2. Offshore PK/PH: SUPPORT surfaces only.
+    //    - app/support host on web + RustDesk control port (over tailnet)
+    //    - NAS read share for runbooks/tickets (SMB) — scope to a support subfolder at the NAS
+    {
+      "action": "accept",
+      "src": ["group:pakistan", "group:ph", "tag:offshore-pk", "tag:offshore-ph"],
+      "dst": [
+        "tag:support:443",     // support app / ticketing UI
+        "tag:support:21118",   // RustDesk relay/control (tailnet-only)
+        "tag:nas:445"          // NAS SMB — restrict to the support share in NAS perms
+      ]
+    }
+
+    // 3. Everything NOT listed is DENIED by default. So offshore devices CANNOT
+    //    reach tag:hub (Ollama 11434), tag:secrets, or tag:db — no rule grants it.
+  ],
+
+  // Belt-and-suspenders: explicit deny if you later add broad rules above.
+  "ssh": [
+    // SSH only owner → owner. No offshore SSH to anything.
+    {
+      "action": "accept",
+      "src": ["group:owner"],
+      "dst": ["tag:owner", "tag:hub", "tag:nas", "tag:db"],
+      "users": ["autogroup:nonroot", "muhammad"]
+    }
+  ],
+
+  // Require MFA-backed, short-lived keys for the sensitive tags.
+  "tagOwners_note": "In admin → Settings, enable device approval + key expiry for offshore tags.",
+
+  "tests": [
+    // CI for the policy: these MUST pass, proving the lockdown holds.
+    {
+      "src": "pk-eng-1@tmmtrentals.com",
+      "accept": ["tag:support:443"],
+      "deny":   ["tag:hub:11434", "tag:secrets:443", "tag:db:5432"]
+    },
+    {
+      "src": "ph-eng-1@tmmtrentals.com",
+      "accept": ["tag:support:443"],
+      "deny":   ["tag:hub:11434", "tag:secrets:443", "tag:db:5432"]
+    },
+    {
+      "src": "you@tmmtrentals.com",
+      "accept": ["tag:hub:11434", "tag:db:5432", "tag:secrets:443"]
+    }
+  ]
+}

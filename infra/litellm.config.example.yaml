@@ -1,0 +1,45 @@
+# LiteLLM router — one endpoint for the whole mesh. Tailnet-only.
+# Copy to repo root as litellm.config.yaml, edit the tailnet IPs, then:
+#   litellm --config litellm.config.yaml --port 4000
+#   export LITELLM_BASE=http://127.0.0.1:4000/v1
+# See docs/LOCAL-FIRST-AI-STACK.md.
+
+model_list:
+  # EASY — tiny local model on the carry-Mac hub
+  - model_name: fast
+    litellm_params:
+      model: ollama/qwen2.5:3b
+      api_base: http://CARRY-MAC-TAILNET-IP:11434
+
+  # CODE / MED — local coder (the verify-gate's default fixer)
+  - model_name: code
+    litellm_params:
+      model: ollama/qwen2.5-coder:14b
+      api_base: http://CARRY-MAC-TAILNET-IP:11434
+
+  # HEAVY — bigger local model on the brainiac GPU box (vLLM, OpenAI-compatible)
+  - model_name: heavy
+    litellm_params:
+      model: openai/Qwen3.6-27B
+      api_base: http://BRAINIAC-TAILNET-IP:8000/v1
+      api_key: local
+
+  # ESCALATE — frontier, only when local can't close it. Pick ONE; keep keys in env.
+  - model_name: escalate
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      # or a privacy-hosted open model:
+      # model: openrouter/moonshotai/kimi-k2.6
+      # api_key: os.environ/OPENROUTER_API_KEY
+
+router_settings:
+  redis_host: 127.0.0.1        # cache identical calls = speed + $0 (optional)
+  redis_port: 6379
+  fallbacks:
+    - code: ["heavy", "escalate"]   # if local coder fails, climb the ladder
+  num_retries: 1
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 180
