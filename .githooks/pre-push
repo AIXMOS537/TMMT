@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Pre-push gate: nothing leaves a machine red.
+# Runs the local fact-check gate in report mode. Red push is blocked.
+# Bypass in a real emergency with:  git push --no-verify
+exec bash "$(git rev-parse --show-toplevel)/scripts/verify-gate.sh"

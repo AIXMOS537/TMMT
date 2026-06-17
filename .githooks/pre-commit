@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Prod-branch guard: never commit directly to PROD. Forces a feature branch so
+# editing can't land on live by accident. (Promotion to prod = PR + owner approval.)
+# Bypass only in a real emergency: git commit --no-verify
+branch="$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+case "$branch" in
+  master|main)
+    printf "\033[41;97m BLOCKED \033[0m direct commit to PROD branch '%s'.\n" "$branch" >&2
+    echo "  Make a feature branch first:" >&2
+    echo "    git checkout -b feat/your-change" >&2
+    echo "  Then commit there and open a PR. (Emergency override: git commit --no-verify)" >&2
+    exit 1
+    ;;
+esac
+exit 0
