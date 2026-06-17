@@ -46,6 +46,8 @@ case "$v" in
   mesh-map|map) exec bash "$ROOT/scripts/mesh-map.sh";;
   secure|launch-check|launch) exec bash "$ROOT/scripts/launch-check.sh";;
   motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;
+  workstation|super) exec bash "$ROOT/scripts/workstation";;
+  vertical|new-vertical) exec bash "$ROOT/scripts/new-vertical.sh" "$@";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
