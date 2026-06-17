@@ -22,38 +22,47 @@
 
 ## Track A — Ayyan Khan (TMMT / network operator)
 
-On Ayyan's laptop, in order (paste each line):
+> 🔒 **Onboard via the partner-deploy payload, NOT a raw repo clone.** It's
+> owner-protection-first: no source code on their disk, Tailscale fenced to
+> `tag:partner-ayyan`, kill-switch they can't disable, one-shot token, consent.
 
-1. **Get on the mesh:** install Tailscale → sign in → tell Owner to approve.
-2. **Get the code + deploy as operator:**
-   ```bash
-   git clone https://github.com/AIXMOS537/TMMT.git ~/TMMT && cd ~/TMMT && bash scripts/motherbox operator
-   ```
-3. **Stand up his first local brain (by his laptop's RAM):**
-   ```bash
-   bash scripts/setup-llm.sh
-   ```
-4. **Remote support tool:** install RustDesk → share ID with Owner (consented).
-5. He's live: `menu` shows his fenced operator words (`work · sync · who · compass · sos`).
+On the **Owner side** first:
+```bash
+bash scripts/partner-deploy/owner/issue-license.sh   # issues Ayyan's one-shot token + consent
+```
+Then ship the payload (USB or secure send): `bash scripts/partner-deploy/burn-partner-usb.sh`.
+
+On **Ayyan's laptop**:
+1. **Get on the mesh:** install Tailscale → sign in → Owner approves (`tag:partner-ayyan`).
+2. **Run the partner installer** from the payload (white-labeled, tenant-scoped).
+3. **First local brain (by RAM):** `bash scripts/setup-llm.sh`
+4. **Remote support:** install RustDesk → share ID with Owner (consented).
+5. Live: his fenced operator surface only — no owner agents, no source, no secrets.
 
 ---
 
 ## Track B — MoeLegacy / Muhammad Umar (credit + funding vertical)
 
-Same base, plus the credit/funding CRM:
+> Same secure partner-deploy channel (this system was built against the **Moe
+> Legacy** spec), plus the credit/funding CRM stack.
 
-1. Tailscale → sign in → Owner approves.
-2. Deploy + brain:
-   ```bash
-   git clone https://github.com/AIXMOS537/TMMT.git ~/TMMT && cd ~/TMMT && bash scripts/motherbox operator && bash scripts/setup-llm.sh
-   ```
+Owner side:
+```bash
+bash scripts/partner-deploy/owner/issue-license.sh   # Umar / MoeLegacy token + consent
+```
+1. Tailscale → sign in → Owner approves (`tag:partner-moelegacy`).
+2. Run the partner installer from the payload + `bash scripts/setup-llm.sh`.
 3. **CRM stack (the $25K vertical), Owner-driven from the backend:**
-   - **GoHighLevel** sub-account for MoeLegacy: pipelines for **credit guidance +
-     funding** (vocabulary: *"guidance," never "repair"*).
+   - **GoHighLevel** sub-account: pipelines for **credit guidance + funding**
+     (vocabulary: *"guidance," never "repair"*).
    - **Airtable** base for client data-entry + workflow automations.
    - AIXMOS agents wired to the pipeline (intake → review → follow-up).
 4. RustDesk for Owner remote-in to build/manage the backend.
 5. Live: Umar/team work the dashboards; Owner runs the backend from the Watchtower.
+
+> ⚠️ Do **not** hand founders a full `git clone` of this repo — it carries Project X,
+> all pricing, the owner charter, and historical commits. The partner payload gives
+> them exactly their lane and nothing more.
 
 ---
 
