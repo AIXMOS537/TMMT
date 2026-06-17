@@ -49,6 +49,7 @@ case "$v" in
   workstation|super) exec bash "$ROOT/scripts/workstation";;
   vertical|new-vertical) exec bash "$ROOT/scripts/new-vertical.sh" "$@";;
   deal|close|contract) exec bash "$ROOT/scripts/new-deal.sh" "$@";;
+  golive|liftoff) exec bash "$ROOT/scripts/golive.sh" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
