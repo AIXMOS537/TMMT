@@ -157,7 +157,7 @@ _show_qr() {
 
 cmd_set_key() {
   # Replace ONLY the Supabase service key, keep passphrase + TOTP seed.
-  local PLAIN; PLAIN="$(_open_to_ram)"
+  _open_inscope; local PLAIN="$PLAINOUT"   # in-scope so PASS survives for re-encrypt
   local SEED; SEED=$(echo "$PLAIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['totp_seed'])")
   echo "  Paste your REAL Supabase service_role key (starts with eyJ...)." >&2
   read -rp "  service_role key: " NEWKEY
@@ -189,6 +189,56 @@ cmd_check() {
   fi
 }
 
+# ---- general secrets (ANY API key), TOTP-gated reads ------------------------
+# In-scope open: sets PASS + PLAINOUT in the CALLER's scope (so re-encrypt with
+# the same passphrase works — a $(...) subshell would lose PASS).
+PLAINOUT=""
+_open_inscope() {
+  [[ -f "$VAULT" ]] || die "No vault. Run: bash vault.sh init"
+  read_pass
+  PLAINOUT="$(_decrypt "$PASS" < "$VAULT")"
+  [[ -n "$PLAINOUT" ]] || die "Wrong passphrase or corrupt vault."
+}
+_seed_of() { printf '%s' "$1" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("totp_seed",""))'; }
+_totp_gate() { # arg = SEED — require the current revolving code before revealing
+  local SEED="$1" code
+  read -rp "  Revolving code (from your phone): " code
+  python3 "$TOTP" verify "$SEED" "$code" >/dev/null 2>&1 \
+    || [[ "$code" == "$(python3 "$TOTP" gen "$SEED")" ]] \
+    || die "Wrong/expired code — access denied."
+}
+cmd_put() { # vault.sh put <NAME>
+  local NAME="${1:-}"; [[ -n "$NAME" ]] || die "usage: vault.sh put <NAME>"
+  _open_inscope
+  read -rs -p "  Secret value for $NAME: " VAL; echo >&2
+  local OUT; OUT="$(printf '%s' "$PLAINOUT" | NAME="$NAME" VAL="$VAL" python3 -c \
+    'import json,sys,os;d=json.load(sys.stdin);d.setdefault("secrets",{})[os.environ["NAME"]]=os.environ["VAL"];print(json.dumps(d))')"
+  [[ -n "$OUT" ]] || die "merge failed"
+  printf '%s' "$OUT" | _encrypt "$PASS" > "$VAULT" || die "encrypt failed"
+  ok "stored '$NAME' — encrypted, local-only, never in git"
+}
+cmd_get() { # vault.sh get <NAME>  (passphrase + revolving code)
+  local NAME="${1:-}"; [[ -n "$NAME" ]] || die "usage: vault.sh get <NAME>"
+  local PLAIN; PLAIN="$(_open_to_ram)"
+  _totp_gate "$(_seed_of "$PLAIN")"
+  printf '%s' "$PLAIN" | NAME="$NAME" python3 -c \
+    'import json,sys,os;v=json.load(sys.stdin).get("secrets",{}).get(os.environ["NAME"]);print(v if v is not None else "‹not found›")'
+}
+cmd_list() { # names only, never values
+  local PLAIN; PLAIN="$(_open_to_ram)"
+  printf '%s' "$PLAIN" | python3 -c \
+    'import json,sys;d=json.load(sys.stdin);ks=list(d.get("secrets",{}).keys());print("  secrets in vault:");[print("   •",k) for k in ks] if ks else print("   (none yet — add: vault.sh put <NAME>)")'
+}
+cmd_rm() { # vault.sh rm <NAME>
+  local NAME="${1:-}"; [[ -n "$NAME" ]] || die "usage: vault.sh rm <NAME>"
+  _open_inscope
+  local OUT; OUT="$(printf '%s' "$PLAINOUT" | NAME="$NAME" python3 -c \
+    'import json,sys,os;d=json.load(sys.stdin);d.get("secrets",{}).pop(os.environ["NAME"],None);print(json.dumps(d))')"
+  [[ -n "$OUT" ]] || die "update failed"
+  printf '%s' "$OUT" | _encrypt "$PASS" > "$VAULT" || die "encrypt failed"
+  ok "removed '$NAME'"
+}
+
 case "${1:-}" in
   init)        cmd_init ;;
   open)        cmd_open ;;
@@ -197,5 +247,9 @@ case "${1:-}" in
   set-key)     cmd_set_key ;;
   check)       cmd_check ;;
   rotate-totp) cmd_rotate_totp ;;
-  *) echo "Usage: bash vault.sh {init|open|code|enroll|set-key|check|rotate-totp}" >&2; exit 1 ;;
+  put)         shift; cmd_put "$@" ;;
+  get)         shift; cmd_get "$@" ;;
+  list|ls)     cmd_list ;;
+  rm|del)      shift; cmd_rm "$@" ;;
+  *) echo "Usage: bash vault.sh {init|open|code|enroll|set-key|check|rotate-totp|put <NAME>|get <NAME>|list|rm <NAME>}" >&2; exit 1 ;;
 esac

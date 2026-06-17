@@ -1,6 +1,10 @@
-# NEVER commit master secrets
+# NEVER commit master secrets — vault is AES-256 local-only, decrypted to RAM only
 master/vault.enc
 master/.supabase-service-key
 master/.passhash
 master/*.key
+master/*.seed
+master/*.png
+master/secrets*
+master/*.plain
 *.tmp
