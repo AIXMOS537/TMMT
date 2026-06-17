@@ -29,8 +29,11 @@ ok "Authenticated."
 echo
 
 # Load service key
-SUPABASE_SERVICE_KEY=$(cat "$(dirname "$0")/.supabase-service-key" 2>/dev/null)
-[[ -n "$SUPABASE_SERVICE_KEY" ]] || { read -s -p "Supabase service key: " SUPABASE_SERVICE_KEY; echo; }
+if [[ -f "$(dirname "$0")/vault.enc" ]]; then
+  eval "$(bash "$(dirname "$0")/vault.sh" open)" || fail "Vault unlock failed."
+else
+  read -s -p "Supabase service key: " SUPABASE_SERVICE_KEY; echo
+fi
 
 # Show active operators
 echo "Fetching active operators from watchtower..."
