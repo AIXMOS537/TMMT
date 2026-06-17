@@ -11,7 +11,7 @@
 
 1. **Issue their seats** (license + consent record):
    ```bash
-   bash scripts/partner-deploy/issue-license.sh   # one for Ayyan, one for MoeLegacy/Umar
+   bash scripts/partner-deploy/owner/issue-license.sh   # one for Ayyan, one for MoeLegacy/Umar
    ```
 2. Have **Tailscale admin** open to **approve their devices** as they join
    (least-privilege per `scripts/partner-deploy/tailscale-acl.json`).

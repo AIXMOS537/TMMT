@@ -58,6 +58,8 @@ install_words() {
     echo "alias whoami='bash \"$R/scripts/whoami-tmmt\"'       # TMMT_WORDS"
     echo "alias watchtower='bash \"$R/scripts/watchtower\"'    # TMMT_WORDS"
     echo "alias health='bash \"$R/scripts/health.sh\"'         # TMMT_WORDS"
+    echo "alias map='bash \"$R/scripts/mesh-map.sh\"'          # TMMT_WORDS"
+    echo "alias secure='bash \"$R/scripts/launch-check.sh\"'   # TMMT_WORDS"
     echo "alias dark='bash \"$R/scripts/godark\"'              # TMMT_WORDS"
     echo "alias light='bash \"$R/scripts/godark\" lift'        # TMMT_WORDS"
     echo "alias base='bash \"$R/scripts/go\"'          # TMMT_WORDS"
