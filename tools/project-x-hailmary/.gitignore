@@ -1,0 +1,6 @@
+# NEVER commit master secrets
+master/vault.enc
+master/.supabase-service-key
+master/.passhash
+master/*.key
+*.tmp
