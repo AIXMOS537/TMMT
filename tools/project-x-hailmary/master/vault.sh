@@ -115,12 +115,9 @@ cmd_enroll() {
   local PLAIN; PLAIN="$(_open_to_ram)"
   local SEED; SEED=$(echo "$PLAIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['totp_seed'])")
   echo >&2
-  printf '%s  PHONE ENROLLMENT%s\n' "$BD" "$X"
-  printf '  Manual seed:  %s%s%s\n' "$CY$BD" "$SEED" "$X"
-  printf '  otpauth URI:  '
-  python3 "$TOTP" uri "$SEED" "muhammad-taha"
-  echo
-  printf '  Add it in Google Authenticator -> + -> Enter setup key.\n\n'
+  printf '%s  PHONE ENROLLMENT — scan the QR that just opened%s\n' "$BD" "$X"
+  _show_qr "$SEED"
+  printf '  (or manual seed: %s%s%s)\n\n' "$CY$BD" "$SEED" "$X"
 }
 
 cmd_rotate_totp() {
@@ -138,8 +135,58 @@ cmd_rotate_totp() {
 JSON
 )
   echo "$OUT" | _encrypt "$PASS" > "$VAULT"
-  ok "Revolving seed rotated. RE-ENROLL your phone with the new seed:"
-  printf '  %s%s%s\n' "$CY$BD" "$NEW" "$X"
+  ok "Revolving seed rotated."
+  _show_qr "$NEW"
+}
+
+# Generate a QR PNG locally (no internet, no leak) and open it for scanning.
+_show_qr() {
+  local SEED="$1"
+  local URI; URI="$(python3 "$TOTP" uri "$SEED" "muhammad-taha")"
+  local QR_PNG="${TMPDIR:-/tmp}/hailmary-qr.png"
+  if command -v qrencode >/dev/null 2>&1; then
+    qrencode -o "$QR_PNG" -s 12 -m 4 "$URI"
+    printf '%s  Opening QR — scan it with Google Authenticator / Authy.%s\n' "$G" "$X" >&2
+    open "$QR_PNG" 2>/dev/null || true
+    # Also draw it right in the terminal as a backup
+    qrencode -t ANSIUTF8 "$URI" >&2 || true
+  else
+    printf '%s  qrencode not installed — manual seed: %s%s\n' "$Y" "$SEED" "$X" >&2
+  fi
+}
+
+cmd_set_key() {
+  # Replace ONLY the Supabase service key, keep passphrase + TOTP seed.
+  local PLAIN; PLAIN="$(_open_to_ram)"
+  local SEED; SEED=$(echo "$PLAIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['totp_seed'])")
+  echo "  Paste your REAL Supabase service_role key (starts with eyJ...)." >&2
+  read -rp "  service_role key: " NEWKEY
+  if [[ "$NEWKEY" != eyJ* ]]; then
+    warn "That doesn't look like a service_role key (should start with 'eyJ')."
+    read -rp "  Use it anyway? (yes/no): " c; [[ "$c" == "yes" ]] || die "Aborted — key unchanged."
+  fi
+  local OUT; OUT=$(cat <<JSON
+{
+  "supabase_service_key": "$NEWKEY",
+  "totp_seed": "$SEED",
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "key_updated": true
+}
+JSON
+)
+  echo "$OUT" | _encrypt "$PASS" > "$VAULT" || die "Re-encryption failed."
+  ok "Service key updated. Passphrase + revolving seed unchanged."
+}
+
+cmd_check() {
+  local PLAIN; PLAIN="$(_open_to_ram)"
+  local SVC; SVC=$(echo "$PLAIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['supabase_service_key'])")
+  if [[ "$SVC" == eyJ* ]]; then
+    ok "Stored service key looks valid (JWT format, ${#SVC} chars)."
+  else
+    warn "Stored service key is NOT valid. First chars: '${SVC:0:10}...'"
+    warn "Fix it with: bash vault.sh set-key"
+  fi
 }
 
 case "${1:-}" in
@@ -147,6 +194,8 @@ case "${1:-}" in
   open)        cmd_open ;;
   code)        cmd_code ;;
   enroll)      cmd_enroll ;;
+  set-key)     cmd_set_key ;;
+  check)       cmd_check ;;
   rotate-totp) cmd_rotate_totp ;;
-  *) echo "Usage: bash vault.sh {init|open|code|enroll|rotate-totp}" >&2; exit 1 ;;
+  *) echo "Usage: bash vault.sh {init|open|code|enroll|set-key|check|rotate-totp}" >&2; exit 1 ;;
 esac
