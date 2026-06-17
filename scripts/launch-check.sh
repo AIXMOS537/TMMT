@@ -35,6 +35,11 @@ grep -rq "fails closed\|redirect.*login" "$ROOT/middleware.ts" 2>/dev/null && P 
 [ -x "$ROOT/scripts/partner-deploy/owner/kill-partner.sh" ] && P "per-operator kill switch present" || Wn "kill-partner.sh missing"
 # 9. dark currently?
 [ -f "$ROOT/.swarm/DARK" ] && Wn "system is currently DARK (lift with: light)" || P "system is clear (not blacked out)"
+# 10. token in history (anyone who clones gets full history) — onboard via partner-deploy, not raw clone
+hits="$(git -C "$ROOT" log --all --oneline -S 'pat8mah6k' 2>/dev/null | wc -l | tr -d ' ')"
+if [ "${hits:-0}" -gt 0 ]; then Wn "Airtable token in history ($hits commits) — REVOKE it before any full git-clone onboarding; onboard operators via partner-deploy"; else P "no known token in history"; fi
+# 11. operators get the SECURE channel (no raw clone)
+[ -x "$ROOT/scripts/partner-deploy/burn-partner-usb.sh" ] && P "partner-deploy payload present (operators get a fenced package, not the repo)" || Wn "partner-deploy payload missing"
 
 # --- owner-hand items (only you can do these) ---
 printf '\n%s  Owner-hand — do these before launch (I cannot do them for you)%s\n' "$BD" "$X"
