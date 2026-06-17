@@ -23,8 +23,11 @@ STORED_HASH=$(cat "$(dirname "$0")/.passhash" 2>/dev/null || echo "")
 [[ "$PASS_HASH" == "$STORED_HASH" ]] || fail "Wrong passphrase."
 ok "Authenticated."
 
-SUPABASE_SERVICE_KEY=$(cat "$(dirname "$0")/.supabase-service-key" 2>/dev/null)
-[[ -n "$SUPABASE_SERVICE_KEY" ]] || { read -s -p "Supabase service key: " SUPABASE_SERVICE_KEY; echo; }
+if [[ -f "$(dirname "$0")/vault.enc" ]]; then
+  eval "$(bash "$(dirname "$0")/vault.sh" open)" || fail "Vault unlock failed."
+else
+  read -s -p "Supabase service key: " SUPABASE_SERVICE_KEY; echo
+fi
 
 read -p "License ID to restore: " TARGET_LICENSE
 
