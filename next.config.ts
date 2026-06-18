@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // Short, friendly team-onboarding link (the "easy as 1-2-3" link)
+      { source: "/join", destination: "/forms/team-onboarding" },
       // Legacy engine paths → unified Learn face
       { source: "/onboarding", destination: "/learn/onboarding" },
       { source: "/dashboard", destination: "/learn/dashboard" },

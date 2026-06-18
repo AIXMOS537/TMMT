@@ -493,3 +493,62 @@ export async function submitCreditFundingIntake(formData: FormData): Promise<For
 
   return result;
 }
+
+// ─── 10. Team Onboarding (the "easy as 1-2-3" link) ──────────────
+// Public link a teammate taps on phone or laptop. No Terminal, no files.
+// Mirrors the lead-intake public-form pattern; pings the owner on submit.
+
+const teamOnboardingSchema = z.object({
+  full_name: z.string().min(1).max(200),
+  phone: z.string().min(7).max(25),
+  email: z.string().email().max(254).or(z.literal("")).optional(),
+  role: z.enum(["operator", "developer", "vendor", "teammate", "owner", ""]).optional(),
+  owns: z.string().max(1000).optional(),
+  skills: z.string().max(1000).optional(),
+  first_step: z.string().max(1000).optional(),
+  mission_accepted: z.literal("on"),
+  confidentiality_agreed: z.literal("on"),
+  device: z.string().max(500).optional(),
+});
+
+export async function submitTeamOnboarding(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = teamOnboardingSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { success: false, error: "Please add your name and phone, and check both boxes." };
+  }
+
+  const d = parsed.data;
+  const role = d.role || "operator";
+
+  const result = await insertRow("team_onboarding", {
+    full_name: d.full_name.trim(),
+    phone: d.phone.replace(/[^\d+]/g, "") || null,
+    email: d.email || null,
+    role,
+    owns: d.owns?.trim() || null,
+    skills: d.skills?.trim() || null,
+    first_step: d.first_step?.trim() || null,
+    mission_accepted: true,
+    confidentiality_agreed: true,
+    device: d.device?.trim() || null,
+    source: "web_link",
+    status: "Pending Review",
+  });
+
+  // Ping the owner the moment someone joins. Fire-and-forget — never blocks the reply.
+  if (result.success) {
+    const text =
+      `🤝 New teammate onboarded\n` +
+      `${d.full_name.trim()} · ${role}\n` +
+      `📱 ${d.phone}` +
+      (d.email ? ` · ${d.email}` : "") +
+      (d.first_step?.trim() ? `\nFirst step: ${d.first_step.trim()}` : "") +
+      `\nReview & grant access in TMMT Ops.`;
+    fanOut(text).catch((err) => {
+      console.warn("[team_onboarding] fanOut error:", err);
+    });
+  }
+
+  return result;
+}
