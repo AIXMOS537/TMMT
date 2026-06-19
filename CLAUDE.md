@@ -259,6 +259,7 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - `docs/FLEET-ROSTER.md` — canonical device map (mesh node + ghost endpoint per machine); brain = M1 `brainiac-mac` (primary) + Windows `brainiac-win` (compute/backup)
 - `docs/BRAINIAC-MAC-SETUP.md` — one-page runbook to stand up the M1 as the always-on assistant the carry Mac talks to/texts. One-shots: `scripts/setup-home-brain.command` (M1) + `scripts/setup-home-brain.ps1` (Windows backup) — family-member-runnable, remote access via Tailscale+SSH
 - `docs/BRAINIAC-RESILIENCE.md` — make the brain never let you down: UPS/power, tower failover, heartbeat tripwire, encrypted offsite backup (`scripts/mesh/vault-backup.sh`), owner-only `tag:brain` ACL
+- `docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md` — owner intent: home HQ → office expansion; per-operator subaccount + one-shot device seats ($97/mo); tier pricing as stated, with a flagged reconciliation vs `OFFER-STACK.md` (monthly vs one-time)
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
