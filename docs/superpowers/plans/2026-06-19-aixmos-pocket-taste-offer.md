@@ -5,6 +5,24 @@
 **Status:** DRAFT — awaiting owner approval of the spec before Phase 1 build begins
 **Workflow:** subagent-driven per `CLAUDE.md`; `npm run build` is the primary gate each phase.
 
+## Progress (2026-06-19)
+
+- ✅ **Phase 0** — compliance copy (`docs/aixmos-pocket/COPY.md`).
+- ✅ **Phase 1** — installable PWA shell (`src/app/(pocket)/`, `/pocket`).
+- ✅ **Phase 2** — assistant on the OWNER'S brain (`src/lib/pocket-brain.ts`,
+  `/api/pocket/chat`), metered in **TMMT tokens** (not Anthropic), compliance guard.
+- ✅ **Phase 3** — top-up: `$97/mo` → token grant wired into `/api/webhooks/ghl`.
+- ✅ **Phase 4** — Earn (single-tier, collected-only referrals; `/pocket/earn`) +
+  Academy (`/pocket/academy`). Migration `20260619020000_pocket_referrals.sql`.
+- ✅ **Phase 5** — operator graduation: role-aware `/pocket/climb` + operator-hub
+  hand-off on the home screen.
+
+**Remaining = owner taps only** (no more code to ship the v1 loop): set
+`POCKET_BRAIN_URL`/`POCKET_BRAIN_MODEL` to the owner's reachable brain endpoint;
+apply migrations `20260619010000` + `20260619020000` to prod via the ship flow;
+confirm the GHL `member-97` checkout fires the webhook. Optional tuning:
+`MEMBER_97_MONTHLY_TOKENS`, `COST_PER_JOB`, `POCKET_REFERRAL_RATE`.
+
 ---
 
 ## Guardrails carried through every phase
