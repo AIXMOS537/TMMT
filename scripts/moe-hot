@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# moe-hot — hottest-leads triage for the operator. Offline-safe, fenced.
+# The live lead data lives in GHL (the operator's CRM), not on disk — so this
+# script does NOT invent leads. It gives the prioritization rule + the exact
+# next action for each ladder stage, and points straight at GHL. Honest by
+# design: a playbook, not a fake feed.
+#
+#   bash scripts/moe-hot      triage playbook + where the leads live
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ -t 1 ]]; then
+  G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; R=$'\e[31m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'
+else G=; Y=; C=; R=; W=; D=; BD=; X=; fi
+
+printf '\n%s   🔥  M O E   H O T  —  who to call first%s\n\n' "$C$BD" "$X"
+
+if [[ -f "$ROOT/.swarm/DARK" ]]; then
+  printf '%s   ⛔ DARK is ON — outreach is stopped. Do not contact leads until lifted.%s\n\n' "$R$BD" "$X"
+fi
+
+printf '%s   PRIORITY ORDER — work them top to bottom:%s\n\n' "$Y$BD" "$X"
+
+printf '%s   1. REPLIED / INBOUND (last 24h)%s\n' "$BD$W" "$X"
+printf '      → Respond first. Speed wins. AI disclaimer = first sentence.\n\n'
+printf '%s   2. BOOKED CALL TODAY%s\n' "$BD$W" "$X"
+printf '      → Confirm + prep with %sguide%s. Pull their stage on the ladder.\n\n' "$BD" "$X"
+printf '%s   3. RENTAL → not yet on membership%s\n' "$BD$W" "$X"
+printf '      → Offer the $97/mo membership — the entry point for EVERYONE.\n\n'
+printf '%s   4. MEMBER → credit not started%s\n' "$BD$W" "$X"
+printf '      → Open credit guidance. "Subject to lender approval." No guarantees.\n\n'
+printf '%s   5. CREDIT DONE → not funded%s\n' "$BD$W" "$X"
+printf '      → Introduce funding (Fund&Grow / Credit Suite). Referral fee stage.\n\n'
+printf '%s   6. COLD / NO REPLY (7+ days)%s\n' "$BD$W" "$X"
+printf '      → One value follow-up. If STOP: remove + log immediately (CROA).\n\n'
+
+printf '%s   WHERE THE LIVE LEADS ARE:%s\n' "$G$BD" "$X"
+printf '     • GHL Mobile app → Conversations (sort: most recent)\n'
+printf '     • GHL → Opportunities → your pipeline (drag to next stage)\n'
+printf '     • Texting window: 8:00am – 9:00pm local only\n\n'
+
+printf '%s   Need a hand with a specific lead? %ssos "lead: <name> — <question>"%s\n\n' "$D" "$BD$W" "$X$D$X"
