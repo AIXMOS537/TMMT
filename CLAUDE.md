@@ -169,6 +169,14 @@ Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM
 - `tmmt-command-center` → owner + leadership portfolio hub at https://tmmt-command-center.vercel.app
 - `aixmos-landing` → AIXMOS public funnel at https://aixmos-landing.vercel.app
 
+> **DEPLOY POLICY (LAW, 2026-06-18) — see `docs/DEPLOY-POLICY.md`.** Vercel git
+> auto-deploy is **DISCONNECTED on every project** (a push can never deploy; this
+> killed the `swarm-coord` 100/day quota bleed where 4 projects watched one repo).
+> The ONLY way to ship is **`bash scripts/ship [project]`** — Owner-Seal gated,
+> local-build-verified, type-`DEPLOY`-to-confirm, then `vercel --prod`. Never
+> re-enable git auto-deploy and never run `scripts/ship` for the owner (it needs
+> his seal). Build/verify locally, then hand off to the owner to ship.
+
 Legacy `tmmt-c919` and `tmmt` projects are retired (`tmmt-c919.vercel.app` returns HTTP 404 as of 2026-06-08). Run `scripts/retire-vercel-duplicates.sh --apply` to delete the empty project shells from the Vercel team once env-var + domain pre-flight in `docs/THREE-APP-ECOSYSTEM.md` is signed off. Local `.vercel/project.json` should point at `tmmt-ops` (`prj_g80HsnBcQ34tukCFCGPxcP5cmQF1`) — not the old `tmmt-c919` ID.
 
 ## Mesh Operations Layer (multi-machine + agent swarm) — SHIPPED 2026-06-15

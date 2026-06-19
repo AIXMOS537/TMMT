@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# ship — the ONE blessed path to production. Nothing reaches a live site any
+# other way: Vercel git auto-deploy is OFF on every project (disconnected
+# 2026-06-18), so a push can never deploy. Deploys are deliberate, owner-gated,
+# and verified-first.
+#
+# THE LAW (per the owner, 2026-06-18 — "Project X HAILMARY"):
+#   Build locally  ->  the owner verifies & ACCEPTS  ->  then, and only then, ship.
+#
+#   bash scripts/ship                 # build + verify + confirm + deploy tmmt-ops
+#   bash scripts/ship tmmt-ops        # explicit project
+#   bash scripts/ship aixmos-landing  # other apps: tmmt-command-center | aixmos-landing | aixmos-offer
+#   bash scripts/ship --dry-run       # do everything EXCEPT the deploy (safe to run anytime)
+#
+# Gates, in order:
+#   1) Owner Seal (auth/OWNER.seal) — the owner's passphrase. No seal, no ship.
+#   2) Local production build (npm run build) — never spend a deploy on broken code.
+#   3) Explicit typed confirmation: DEPLOY
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
+
+ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+info() { printf '  \033[36m›\033[0m %s\n' "$*"; }
+warn() { printf '  \033[33m!\033[0m %s\n' "$*" >&2; }
+die()  { printf '  \033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+hr()   { printf '\033[2m%s\033[0m\n' "────────────────────────────────────────────────────────"; }
+
+DRYRUN=0; ASSUME_YES=0; PROJECT="tmmt-ops"
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRYRUN=1 ;;
+    --yes|-y)  ASSUME_YES=1 ;;
+    tmmt-ops|tmmt-command-center|aixmos-landing|aixmos-offer) PROJECT="$a" ;;
+    -*) die "unknown flag: $a" ;;
+    *)  die "unknown project: $a (use tmmt-ops | tmmt-command-center | aixmos-landing | aixmos-offer)" ;;
+  esac
+done
+
+hr; printf '  \033[1m🚀 SHIP → %s\033[0m  (production)\n' "$PROJECT"; hr
+
+# ── Gate 0: kill-switch awareness ────────────────────────────────────────────
+if [ -f "$ROOT/.swarm/DARK" ] || [ -f "$ROOT/auth/DARK" ]; then
+  die "Base is DARK (kill-switch on). Run 'light' with the owner seal first."
+fi
+
+# ── Gate 1: Owner Seal ───────────────────────────────────────────────────────
+if [ ! -f "$ROOT/auth/OWNER.seal" ]; then
+  die "No Owner Seal set. Run: bash scripts/owner-seal.sh seal"
+fi
+info "Owner Seal required — only the boss (Muhammad Taha) can ship."
+if ! bash "$ROOT/scripts/owner-seal.sh" check; then
+  die "Owner not verified. Deploy refused."
+fi
+ok "Owner verified."
+
+# ── Show exactly what will ship ──────────────────────────────────────────────
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+HEAD="$(git log -1 --format='%h  %s' 2>/dev/null || echo '?')"
+DIRTY="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+echo
+info "Branch:  $BRANCH"
+info "Commit:  $HEAD"
+if [ "$DIRTY" != "0" ]; then
+  warn "Working tree has $DIRTY uncommitted change(s) — they WILL be included in this deploy:"
+  git status --short | sed 's/^/      /' | head -20
+fi
+echo
+
+# ── Gate 2: local build (don't waste a deploy on broken code) ────────────────
+info "Building locally to verify (npm run build)…"
+if npm run build > /tmp/ship-build.log 2>&1; then
+  ok "Local build passed."
+else
+  echo; tail -25 /tmp/ship-build.log
+  die "Local build FAILED — fix it before shipping. (full log: /tmp/ship-build.log)"
+fi
+
+if [ "$DRYRUN" = "1" ]; then
+  echo; ok "DRY RUN complete — everything passed. No deploy was made."
+  info "When the owner is ready: bash scripts/ship $PROJECT"
+  exit 0
+fi
+
+# ── Gate 3: explicit confirmation ────────────────────────────────────────────
+if [ "$ASSUME_YES" != "1" ]; then
+  echo; hr
+  printf '  This will publish to PRODUCTION: \033[1m%s\033[0m\n' "$PROJECT"
+  printf '  Type exactly  \033[1mDEPLOY\033[0m  to ship (anything else aborts):\n  > '
+  IFS= read -r confirm
+  [ "$confirm" = "DEPLOY" ] || die "Not confirmed. Aborted — nothing deployed."
+fi
+
+# ── Deploy (CLI; git is disconnected so this is the only path) ───────────────
+command -v vercel >/dev/null 2>&1 || die "vercel CLI not found. npm i -g vercel"
+info "Linking project $PROJECT…"
+vercel link --yes --project "$PROJECT" --scope aixmos537 >/dev/null 2>&1 || die "could not link $PROJECT"
+ok "Linked $PROJECT."
+info "Deploying to production… (Vercel builds with the project's own env)"
+if vercel deploy --prod --yes; then
+  echo; ok "Shipped $PROJECT to production. 🎉"
+  info "Verify the live URL, then you're done."
+else
+  die "Deploy failed (see output above). Nothing was promoted if the build errored."
+fi
