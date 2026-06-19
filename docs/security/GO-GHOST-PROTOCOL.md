@@ -1,6 +1,7 @@
 # GO GHOST → APPEAR AS X
 
 > A personal privacy & identity-compartmentalization protocol.
+> Everyday defaults: [`GHOST-EVERYDAY-DEFAULTS.md`](./GHOST-EVERYDAY-DEFAULTS.md).
 > Companion tracker: [`FOOTPRINT-CLEANUP-TRACKER.md`](./FOOTPRINT-CLEANUP-TRACKER.md).
 
 **Goal:** Make the legal you nearly invisible in public, and let a single
