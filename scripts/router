@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Operation Overdrive — worker daemon. Usage: router [up|once|install|uninstall|status]
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PLIST="$HOME/Library/LaunchAgents/com.tmmt.router.plist"
+case "${1:-up}" in
+  install)
+    cp scripts/overdrive/com.tmmt.router.plist "$PLIST"
+    launchctl unload "$PLIST" 2>/dev/null || true
+    launchctl load "$PLIST"
+    echo "router: installed + loaded (always-on). Logs: /tmp/tmmt-router.log" ;;
+  uninstall)
+    launchctl unload "$PLIST" 2>/dev/null || true
+    rm -f "$PLIST"; echo "router: uninstalled" ;;
+  status)
+    launchctl list | grep com.tmmt.router || echo "router: not loaded" ;;
+  *)
+    exec npx tsx scripts/router.ts "${1:-up}" ;;
+esac

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Operation Overdrive — Owner control (X). Usage: x set|unlock|lock|status
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec npx tsx scripts/x.ts "$@"
