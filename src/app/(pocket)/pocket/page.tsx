@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Lock, MessageCircle, GraduationCap, DollarSign, Compass, TrendingUp } from "lucide-react";
+import { Lock, MessageCircle, GraduationCap, DollarSign, Compass, TrendingUp, Coins } from "lucide-react";
 import { createSSRClient } from "@/lib/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-service";
+import { resolveOrgIdByEmail, getTokenBalance } from "@/lib/token-ledger";
 import { Card } from "@/components/ui";
 import {
   isActivePocketMember,
@@ -80,14 +82,33 @@ function ActivateCard() {
   );
 }
 
+interface Wallet {
+  balance: number;
+  unlimited: boolean;
+}
+
 export default async function PocketHomePage() {
   let member = false;
+  let wallet: Wallet | null = null;
   try {
     const supabase = await createSSRClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     member = isActivePocketMember(user);
+    // Best-effort TMMT token balance for members (the "pay in tokens" currency).
+    if (member && user?.email) {
+      try {
+        const service = createServiceRoleClient();
+        const orgId = await resolveOrgIdByEmail(service, user.email);
+        if (orgId) {
+          const bal = await getTokenBalance(service, orgId);
+          if (bal) wallet = { balance: bal.balance, unlimited: bal.unlimited };
+        }
+      } catch {
+        wallet = null; // balance is non-critical chrome
+      }
+    }
   } catch {
     member = false; // fail closed — locked tiles route to activation
   }
@@ -95,7 +116,15 @@ export default async function PocketHomePage() {
   return (
     <div>
       <header className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AIXMOS Pocket</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AIXMOS Pocket</h1>
+          {member && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+              <Coins className="h-3.5 w-3.5" />
+              {wallet?.unlimited ? "Unlimited" : `${wallet?.balance ?? 0} TMMT`}
+            </span>
+          )}
+        </div>
         <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Your credit-guidance coach and earn-as-you-learn hub — on every device.
         </p>
