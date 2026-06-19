@@ -54,6 +54,7 @@ case "$v" in
   brief|moe-brief)  exec bash "$ROOT/scripts/moe-brief";;
   hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
   memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
+  member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
