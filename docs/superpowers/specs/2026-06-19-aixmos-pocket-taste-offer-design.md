@@ -20,10 +20,20 @@ The format is a **Progressive Web App (PWA)** served from the existing Next.js/V
 stack — *not* the owner's SSH-to-Mac pocket setup (`docs/IPHONE-ULTIMATE.md`). A
 mass-market member has no Mac, no Tailscale, no terminal. The PWA installs to the home
 screen from **one link or QR code** on any device, with **zero install friction**, and
-its assistant is powered by the **hosted Claude API** (server-side, fenced,
-compliance-gated). This is the only architecture that delivers "any and all devices,
-easily" while keeping the owner's local-first HAILMARY/AIXMOS brain completely separate
-and private.
+its assistant is powered by the **owner's self-hosted brain** (the LiteLLM/Ollama stack —
+*not* Anthropic), **metered in TMMT TOKENS** so members pay in the network's own currency.
+This is the only architecture that delivers "any and all devices, easily" while keeping
+the owner's local-first HAILMARY/AIXMOS brain separate and private — and keeping the
+margin inside the network.
+
+> **Brain + currency correction (2026-06-19):** an earlier draft of this spec proposed
+> the hosted Claude API. That bleeds margin to a third party and defeats the purpose of
+> the local-first stack. The product runs on the **owner's brain** and is metered by the
+> existing **TMMT Token Ledger** (`docs/superpowers/specs/2026-06-18-tmmt-token-ledger.md`,
+> `src/lib/token-ledger.ts`): $97/mo tops up an org's token stack; each message spends a
+> token; owner + first-10 operators are `unlimited`. *No crypto — internal credits only.*
+> Where this document below says "Claude API / Haiku," read **"the owner's self-hosted
+> brain via `POCKET_BRAIN_URL`, metered in TMMT tokens."**
 
 > **The line that governs this whole spec:** *Public only ever sees AIXMOS.* HAILMARY —
 > and the owner's real AIXMOS network brain — are **never sold, never multi-tenant, never
