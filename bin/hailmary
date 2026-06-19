@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+#
+# HAILMARY — the owner's local agent CLI.
+#
+# Every device (work Mac, carry Mac, iPhone) runs the same command and talks to
+# the ONE shared brain (Memory Fabric) over Tailscale. That shared brain is how
+# the nodes "talk to each other and stay in sync" — no node-to-node wiring
+# needed: write on one, read on another.
+#
+# Config: ~/.hailmary/config.env  (written by scripts/hailmary-setup.sh)
+#   MEMORY_API_URL    e.g. https://brainiac.<tailnet>.ts.net/api/memory
+#   MEMORY_API_TOKEN  same token the app uses (MEMORY_API_TOKEN)
+#   HAILMARY_NODE     a label for this device, e.g. "work-mac"
+#
+# Usage:
+#   hailmary recall "<query>"        # ask the brain what it knows
+#   hailmary remember "<text>"       # save a note to the brain (all nodes see it)
+#   hailmary do "<task>"             # recall context, plan the task, remember the plan
+#   hailmary recon "<subject>"       # lawful operative intel brief from the brain
+#   hailmary brief                   # operative situation brief: top priorities + next moves
+#   hailmary note <node> "<text>"    # leave a note addressed to another device
+#   hailmary inbox                   # notes addressed to THIS node
+#   hailmary status                  # is the brain reachable?
+#   hailmary whoami                  # show this node's identity/config
+set -euo pipefail
+
+CONFIG="${HAILMARY_CONFIG:-$HOME/.hailmary/config.env}"
+# shellcheck disable=SC1090
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+MEMORY_API_URL="${MEMORY_API_URL:-}"
+MEMORY_API_TOKEN="${MEMORY_API_TOKEN:-}"
+HAILMARY_NODE="${HAILMARY_NODE:-$(hostname 2>/dev/null || echo device)}"
+
+die() { echo "hailmary: $*" >&2; exit 1; }
+
+# JSON-escape a string via python3 (present on macOS) or jq as fallback.
+jstr() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1"
+  elif command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -Rs .
+  else
+    die "need python3 or jq to encode JSON"
+  fi
+}
+
+pretty() {
+  if command -v python3 >/dev/null 2>&1; then python3 -m json.tool 2>/dev/null || cat
+  else cat; fi
+}
+
+# Operative system prompt (PROJECTX-HAILMARY), concise for the CLI.
+OP_SYS="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Lock onto the objective and FINISH it; economy of force; keep a fallback tree; total recall. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell (+15713265611) in working hours; protect client data; flag risky/irreversible moves."
+
+# local-first LLM: llm "<system>" "<prompt>" -> plan text on stdout ("" if none).
+llm() {
+  local sys="$1" prompt="$2" ourl omodel obody oresp out=""
+  ourl="${OLLAMA_URL:-http://localhost:11434}"; omodel="${OLLAMA_MODEL:-qwen2.5:14b}"
+  obody="$(python3 - "$omodel" "$sys" "$prompt" <<'PY'
+import json,sys
+m,s,p=sys.argv[1:4]
+print(json.dumps({"model":m,"stream":False,"messages":[{"role":"system","content":s},{"role":"user","content":p}]}))
+PY
+)"
+  oresp="$(curl -fsS "$ourl/api/chat" -H 'content-type: application/json' -d "$obody" 2>/dev/null || true)"
+  [ -n "$oresp" ] && out="$(printf '%s' "$oresp" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("message",{}).get("content",""))
+except Exception: print("")' 2>/dev/null)"
+  if [ -z "$out" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    local model abody aresp
+    model="${HAILMARY_MODEL:-claude-sonnet-4-6}"
+    abody="$(python3 - "$model" "$sys" "$prompt" <<'PY'
+import json,sys
+m,s,p=sys.argv[1:4]
+print(json.dumps({"model":m,"max_tokens":1024,"system":s,"messages":[{"role":"user","content":p}]}))
+PY
+)"
+    aresp="$(curl -fsS https://api.anthropic.com/v1/messages -H "x-api-key: $ANTHROPIC_API_KEY" -H 'anthropic-version: 2023-06-01' -H 'content-type: application/json' -d "$abody" 2>/dev/null || true)"
+    out="$(printf '%s' "$aresp" | python3 -c 'import json,sys
+try: print("".join(b.get("text","") for b in json.load(sys.stdin).get("content",[])))
+except Exception: print("")' 2>/dev/null)"
+  fi
+  printf '%s' "$out"
+}
+
+api() {
+  [ -n "$MEMORY_API_URL" ] || die "MEMORY_API_URL not set (edit $CONFIG)"
+  [ -n "$MEMORY_API_TOKEN" ] || die "MEMORY_API_TOKEN not set (edit $CONFIG)"
+  curl -fsS -X POST "$MEMORY_API_URL" \
+    -H "authorization: Bearer $MEMORY_API_TOKEN" \
+    -H "content-type: application/json" \
+    -d "$1"
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  recall)
+    [ $# -gt 0 ] || die "usage: hailmary recall \"<query>\""
+    api "{\"op\":\"recall\",\"query\":$(jstr "$*"),\"limit\":15}" | pretty
+    ;;
+  remember)
+    [ $# -gt 0 ] || die "usage: hailmary remember \"<text>\""
+    api "{\"op\":\"remember\",\"action\":\"note\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "$*"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" | pretty
+    ;;
+  do)
+    [ $# -gt 0 ] || die "usage: hailmary do \"<task>\""
+    task="$*"
+    ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$task"),\"limit\":12}")"
+    sysmsg="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Method: (1) define the TRUE objective, (2) use the recalled brain context + question assumptions, (3) inventory resources and what can be repurposed (rubber-band-in-a-stripped-screw ingenuity), (4) give 3 angles incl. one unconventional, prefer cheap/reversible first, (5) calibrate force & name each failure mode + a bail tripwire, (6) hold two truths: it CAN fail AND it MUST get done, keep a fallback tree. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell (+15713265611) in working hours; protect client data; flag risky/irreversible moves first. Output a short numbered plan with a primary path and at least one fallback."
+    plan=""; backend=""
+    # 1) LOCAL FIRST — Ollama on Brainiac (free, unlimited). No token cost.
+    ourl="${OLLAMA_URL:-http://localhost:11434}"; omodel="${OLLAMA_MODEL:-qwen2.5:14b}"
+    obody="$(python3 - "$omodel" "$sysmsg" "$task" "$ctx" <<'PY'
+import json,sys
+m,s,t,c=sys.argv[1:5]
+print(json.dumps({"model":m,"stream":False,"messages":[{"role":"system","content":s},{"role":"user","content":f"TASK: {t}\n\nBRAIN CONTEXT (JSON):\n{c}"}]}))
+PY
+)"
+    oresp="$(curl -fsS "$ourl/api/chat" -H "content-type: application/json" -d "$obody" 2>/dev/null || true)"
+    if [ -n "$oresp" ]; then
+      plan="$(printf '%s' "$oresp" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("message",{}).get("content",""))
+except Exception: print("")' 2>/dev/null)"
+      [ -n "$plan" ] && backend="ollama (local)"
+    fi
+    # 2) FALLBACK — Claude, only if local unavailable and a key is set.
+    if [ -z "$plan" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+      model="${HAILMARY_MODEL:-claude-sonnet-4-6}"
+      abody="$(python3 - "$model" "$sysmsg" "$task" "$ctx" <<'PY'
+import json,sys
+m,s,t,c=sys.argv[1:5]
+print(json.dumps({"model":m,"max_tokens":1024,"system":s,"messages":[{"role":"user","content":f"TASK: {t}\n\nBRAIN CONTEXT (JSON):\n{c}"}]}))
+PY
+)"
+      aresp="$(curl -fsS https://api.anthropic.com/v1/messages -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" -d "$abody" 2>/dev/null || true)"
+      plan="$(printf '%s' "$aresp" | python3 -c 'import json,sys
+try: print("".join(b.get("text","") for b in json.load(sys.stdin).get("content",[])))
+except Exception: print("")' 2>/dev/null)"
+      [ -n "$plan" ] && backend="claude (fallback)"
+    fi
+    if [ -n "$plan" ]; then
+      echo "— plan via $backend —"
+      printf '%s\n' "$plan"
+      api "{\"op\":\"remember\",\"action\":\"task_plan\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Plan for: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE"),\"backend\":$(jstr "$backend"),\"plan\":$(jstr "$plan")}}" >/dev/null
+    else
+      echo "(no local model and no ANTHROPIC_API_KEY — recalled context only)"
+      printf '%s\n' "$ctx" | pretty
+      api "{\"op\":\"remember\",\"action\":\"task_requested\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Task requested: $task"),\"details\":{\"node\":$(jstr "$HAILMARY_NODE")}}" >/dev/null
+    fi
+    ;;
+  recon)
+    [ $# -gt 0 ] || die "usage: hailmary recon \"<subject>\""
+    subj="$*"
+    ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$subj"),\"limit\":25}")"
+    prompt="$(printf 'SUBJECT: %s\n\nProduce a tight, lawful operative intel brief from the recalled data: (1) what we know, (2) gaps/unknowns, (3) non-obvious connections, (4) recommended next moves (primary + fallback). Use ONLY the data provided; mark anything inferred.\n\nBRAIN CONTEXT (JSON):\n%s' "$subj" "$ctx")"
+    out="$(llm "$OP_SYS" "$prompt")"
+    if [ -n "$out" ]; then
+      printf '%s\n' "$out"
+      api "{\"op\":\"remember\",\"action\":\"recon_brief\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Recon: $subj"),\"details\":{\"subject\":$(jstr "$subj"),\"brief\":$(jstr "$out")}}" >/dev/null
+    else
+      echo "(no model reachable — raw recall:)"; printf '%s\n' "$ctx" | pretty
+    fi
+    ;;
+  brief)
+    q="${*:-recent priorities support assignment escalation}"
+    ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$q"),\"limit\":25}")"
+    prompt="$(printf 'Give the owner a short operative situation brief: the top 3-5 priorities right now and the single next move for each, based ONLY on the recalled data.\n\nBRAIN CONTEXT (JSON):\n%s' "$ctx")"
+    out="$(llm "$OP_SYS" "$prompt")"
+    if [ -n "$out" ]; then printf '%s\n' "$out"; else printf '%s\n' "$ctx" | pretty; fi
+    ;;
+  note)
+    target="${1:-}"; shift || true
+    { [ -n "$target" ] && [ $# -gt 0 ]; } || die "usage: hailmary note <node> \"<text>\""
+    api "{\"op\":\"remember\",\"action\":\"note_to_node\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "[for $target] $*"),\"details\":{\"from\":$(jstr "$HAILMARY_NODE"),\"target\":$(jstr "$target")}}" | pretty
+    ;;
+  inbox)
+    api "{\"op\":\"recall\",\"query\":$(jstr "[for $HAILMARY_NODE]"),\"limit\":20}" | pretty
+    ;;
+  status)
+    if api '{"op":"recall","query":"__ping__","limit":1}' >/dev/null 2>&1; then
+      echo "brain: OK ($MEMORY_API_URL) as $HAILMARY_NODE"
+    else
+      die "brain unreachable at ${MEMORY_API_URL:-<unset>} — check Tailscale / config"
+    fi
+    ;;
+  whoami)
+    echo "node:  $HAILMARY_NODE"
+    echo "brain: ${MEMORY_API_URL:-<unset>}"
+    echo "config: $CONFIG"
+    ;;
+  help|*)
+    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+esac
