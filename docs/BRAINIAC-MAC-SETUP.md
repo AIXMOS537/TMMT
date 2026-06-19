@@ -10,7 +10,29 @@ Claude Code running on the M1. That's the reliable path, not a workaround.
 
 ---
 
-## One-time setup (≈20 min, on the M1)
+## Fastest path: the one-shot (hand it to a family member)
+
+If you just want the M1 **reachable from anywhere** with zero technical steps on
+your end, use the standalone one-shot — a family member runs it **once**:
+
+1. **Owner prep (once, from anywhere):** Tailscale admin console → Settings →
+   Keys → **Generate auth key** (Reusable). Copy it (`tskey-…`).
+2. **Send the family member:** the file `scripts/setup-home-brain.command` +
+   that key (iMessage/AirDrop is fine — a key only joins a device; revoke anytime).
+3. **They run it once:** double-click the file → enter the Mac password when
+   asked → paste the key → wait for the green **ALL DONE** banner.
+
+That makes the M1 join your tailnet, enable SSH, go always-on (no sleep, wake-on-
+network, auto-restart), and **auto-rejoin on every boot**. Then **from your carry
+M5**:
+```bash
+tailscale ssh <you>@brainiac-mac        # reach the home brain from anywhere
+```
+The one-shot is **standalone** — no git/GitHub login, no repo needed. The brain
+stack below (HAILMARY, iMessage bridge) you then layer on **remotely yourself**,
+once you can SSH in.
+
+## One-time setup (≈20 min, on the M1) — the full brain stack
 
 **1. Name it on the mesh + install secret-guard hooks**
 ```bash

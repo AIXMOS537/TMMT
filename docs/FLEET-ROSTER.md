@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | **Windows home build** (the $3k+ powerhouse) | `brainiac-win` | High-end x86 · Windows | **Owner (home base)** | 🧠 **Heavy-compute engine + warm backup** — the original brain (Fatherbox); standby failover for `brainiac-mac` | **Yes** |
 | **Work Mac @ home (M1)** | `brainiac-mac` | **Apple M1 (Pro/Max)** · macOS | **Owner (home base)** | 🧠 **PRIMARY brain** — the node the carry Mac talks to + texts (the "Donna/Gretchen" assistant); HAILMARY `booyah`, memory loop, vault host | **Yes** |
-| **Carry Mac** | `carry-mac` | Apple Silicon · macOS | **Owner** | Mobile command — travels with you; talks to the brain remotely, runs the swarm on the go | No (with you) |
+| **Carry Mac (M5)** | `carry-mac` | **Apple M5** · macOS | **Owner** | Mobile command — travels with you; the main device that talks to + texts the home brain remotely | No (with you) |
 | **Moe Legacy Mac** | `moe-legacy` | **Apple M5 Pro** · macOS | **Umar / Red Hood** (MoeLegacy) | 📈 Credit Guidance partner node — **fenced / least-privilege** | When working |
 | **Surface Pro 4** | `surface` | Microsoft Surface Pro 4 · Windows | **Owner** | Windows swarm node (best run via Linux/WSL) | No |
 | **Other Windows device #1** | `win-________` | _Windows (confirm)_ | _confirm_ | _confirm role_ | No |
