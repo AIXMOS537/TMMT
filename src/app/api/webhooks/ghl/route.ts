@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
+import { grantMonthlyTokensForPayment, type TopupOutcome } from "@/lib/token-ledger";
 import { isClickUpEnabled } from "@/lib/clickup/client";
 import { syncGhlEventToClickUp } from "@/lib/clickup/sync-case";
 import { dispatchGhlWebhook } from "@/lib/ghl/dispatch";
@@ -113,6 +114,23 @@ export async function POST(request: NextRequest) {
     paymentResult = await recordGhlPayment(supabase, body, tags);
   }
 
+  // TMMT token top-up: a member-97 (or other granting) payment grants the org's
+  // monthly token stack — the "$97/mo buys TMMT tokens" half of the genie meter.
+  // Idempotent (dedupe on the payment ref) and a no-op for non-granting tags or
+  // members not yet tied to an org. Never blocks the webhook on failure.
+  let tokenTopup: TopupOutcome | undefined;
+  try {
+    tokenTopup = await grantMonthlyTokensForPayment(supabase, {
+      email,
+      tags,
+      paymentRef: paymentResult?.id ?? null,
+    });
+  } catch (e) {
+    console.error("[ghl tmmt-topup]", e instanceof Error ? e.message : e);
+  }
+  const tokenLine =
+    tokenTopup?.topped_up ? { tokens: tokenTopup } : {};
+
   let clickupResult: { taskId: string; url: string } | null = null;
   if (isClickUpEnabled()) {
     try {
@@ -150,6 +168,7 @@ export async function POST(request: NextRequest) {
       updated: "active_customers",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
+      ...tokenLine,
     });
   }
 
@@ -168,14 +187,16 @@ export async function POST(request: NextRequest) {
       updated: "incoming_leads",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
+      ...tokenLine,
     });
   }
 
-  if (paymentResult?.recorded || clickupResult) {
+  if (paymentResult?.recorded || clickupResult || tokenTopup?.topped_up) {
     return NextResponse.json({
       ok: true,
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
+      ...tokenLine,
     });
   }
 
