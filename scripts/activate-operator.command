@@ -15,7 +15,13 @@
 set -uo pipefail
 G=$'\e[42;30m'; Y=$'\e[43;30m'; BD=$'\e[1m'; D=$'\e[2m'; R=$'\e[31m'; X=$'\e[0m'
 say(){ printf '\n%s%s%s\n' "$BD" "$*" "$X"; }
-ROOT="$(cd ~/Projects/TMMT 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Projects/TMMT")"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$ROOT" ]; then
+  for _d in "$HOME/projects/TMMT" "$HOME/Projects/TMMT" "$HOME/TMMT" "$HOME/Documents/TMMT"; do
+    [ -d "$_d/.git" ] && { ROOT="$_d"; break; }
+  done
+fi
+ROOT="${ROOT:-$HOME/projects/TMMT}"
 GR="$ROOT/.aixmos/grants"; mkdir -p "$GR"
 
 # find the profile card

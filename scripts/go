@@ -3,7 +3,7 @@
 # Self-sufficient: finds the repo, learns its own remote, self-heals, and installs
 # a permanent `unison` shortcut so next time you just type one word.
 set -uo pipefail
-BRANCH="${TMMT_BRANCH:-claude/organize-chats-sessions-7t7zjy}"
+BRANCH="${TMMT_BRANCH:-master}"
 
 locate() {
   git rev-parse --show-toplevel 2>/dev/null && return
@@ -81,11 +81,15 @@ install_words() {
       echo "alias vault='bash \"$R/tools/project-x-hailmary/master/vault.sh\"' # TMMT_WORDS"
     else
       # operator: work + sync + reach the owner; compass for well-being. No owner agents.
-      echo "alias work='bash \"$R/scripts/tmmt\" go 2'   # TMMT_WORDS"
-      echo "alias sync='bash \"$R/scripts/tmmt\" sync'   # TMMT_WORDS"
-      echo "alias who='bash \"$R/scripts/tmmt\" who'     # TMMT_WORDS"
-      echo "alias sos='bash \"$R/scripts/tmmt\" help'    # TMMT_WORDS"
-      echo "alias update='bash \"$R/scripts/go\"'        # TMMT_WORDS"
+      echo "alias work='bash \"$R/scripts/tmmt\" go 2'          # TMMT_WORDS"
+      echo "alias sync='bash \"$R/scripts/tmmt\" sync'          # TMMT_WORDS"
+      echo "alias who='bash \"$R/scripts/tmmt\" who'            # TMMT_WORDS"
+      echo "alias sos='bash \"$R/scripts/tmmt\" help'           # TMMT_WORDS"
+      echo "alias update='bash \"$R/scripts/go\"'               # TMMT_WORDS"
+      echo "alias brief='bash \"$R/scripts/moe-brief\"'         # TMMT_WORDS"
+      echo "alias hot='bash \"$R/scripts/moe-hot\"'             # TMMT_WORDS"
+      echo "alias 'moe-brief'='bash \"$R/scripts/moe-brief\"'   # TMMT_WORDS"
+      echo "alias 'moe-hot'='bash \"$R/scripts/moe-hot\"'       # TMMT_WORDS"
     fi
   } >> "$tmp"
   mv "$tmp" "$rc"
