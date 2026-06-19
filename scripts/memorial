@@ -24,7 +24,29 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MEM="$ROOT/.memorial"
 if [[ -t 1 ]]; then G=$'\e[32m'; C=$'\e[36m'; D=$'\e[2m'; BD=$'\e[1m'; W=$'\e[97m'; X=$'\e[0m'; else G=; C=; D=; BD=; W=; X=; fi
 ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+warn(){ printf '%s  ! %s%s\n' "$D" "$*" "$X" >&2; }
+die(){ printf '  ✗ %s\n' "$*" >&2; exit 1; }
 say(){ printf '%s\n' "$*"; }
+
+_slug(){ printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-'; }
+_sha(){
+  if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  else echo "nohash-$(basename "$1")"; fi
+}
+# Resolve which sanctuary to act on: explicit name, or the only one if just one exists.
+_resolve_dir(){
+  local name="${1:-}"
+  if [[ -n "$name" ]]; then
+    local slug; slug="$(_slug "$name")"
+    mkdir -p "$MEM/$slug"/{voice,photos,videos,stories,model}
+    printf '%s' "$MEM/$slug"; return 0
+  fi
+  local d found="" n=0
+  for d in "$MEM"/*/; do [[ -d "$d" ]] || continue; found="${d%/}"; n=$((n+1)); done
+  if [[ $n -eq 1 ]]; then printf '%s' "$found"; return 0; fi
+  warn "which sanctuary? pass a name, e.g.  memorial ingest <source> <name>"; return 1
+}
 
 cmd_init() {
   local name="${1:-}"
@@ -99,9 +121,106 @@ ${C}${BD}  MEMORIAL — the local tribute pipeline (runs on YOUR hardware)${X}
 EOF
 }
 
+# --- ingest: scan a source folder, catalog + preserve into the sanctuary -------
+cmd_ingest() {
+  local src="${1:-}"; shift || true
+  local name="${1:-}"
+  [[ -n "$src" && -d "$src" ]] || die "usage: memorial ingest <source-folder> [name]   (source must exist)"
+  local dir; dir="$(_resolve_dir "$name")" || exit 1
+  local man="$dir/manifest.tsv"
+  [[ -f "$man" ]] || printf 'sha256\ttype\tbytes\tmtime\toriginal\tstored\n' > "$man"
+  local added=0 skipped=0
+  printf '\n%s  scanning %s …%s\n' "$C$BD" "$src" "$X"
+  while IFS= read -r f; do
+    [[ -f "$f" ]] || continue
+    local ext lc type sub
+    ext="${f##*.}"; lc="$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')"
+    case "$lc" in
+      jpg|jpeg|png|heic|heif|webp|gif|bmp|tif|tiff) type=photo; sub=photos;;
+      mp4|mov|m4v|avi|mkv|webm|3gp|mpg|mpeg)        type=video; sub=videos;;
+      m4a|mp3|wav|aac|flac|ogg|opus|aiff|caf)       type=voice; sub=voice;;
+      txt|md|rtf|pdf|doc|docx|pages)                type=story; sub=stories;;
+      *) continue;;
+    esac
+    local h; h="$(_sha "$f")"
+    if grep -q "^$h	" "$man" 2>/dev/null; then skipped=$((skipped+1)); continue; fi
+    local base dest; base="$(basename "$f")"; dest="$dir/$sub/$base"
+    [[ -e "$dest" ]] && dest="$dir/$sub/${h:0:8}-$base"
+    cp -p "$f" "$dest" 2>/dev/null || { warn "could not copy: $f"; continue; }
+    local bytes mtime; bytes="$(wc -c < "$f" | tr -d ' ')"; mtime="$(date -r "$f" +%FT%TZ 2>/dev/null || echo '')"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$h" "$type" "$bytes" "$mtime" "$f" "${dest#"$dir"/}" >> "$man"
+    added=$((added+1))
+  done < <(find "$src" -type f 2>/dev/null)
+  echo
+  ok "preserved $added new item(s); skipped $skipped already-held (deduped by content)"
+  say "$D   originals untouched — these are private copies in .memorial/$(basename "$dir")$X"
+  say "  next:  memorial transcribe   (their words)   ·   memorial compile   (the AI pack)"
+}
+
+# --- transcribe: their words, locally (Whisper) --------------------------------
+cmd_transcribe() {
+  local dir; dir="$(_resolve_dir "${1:-}")" || exit 1
+  mkdir -p "$dir/stories/transcripts"
+  local WH=""
+  command -v whisper >/dev/null 2>&1 && WH=whisper
+  if [[ -z "$WH" ]]; then
+    warn "no local transcriber found — catalog is fine, words fill in once one is present."
+    say "  install one (all local, offline):"
+    say "   • OpenAI Whisper:  pip install -U openai-whisper   (needs ffmpeg: brew install ffmpeg)"
+    say "   • or whisper.cpp:  brew install whisper-cpp"
+    return 0
+  fi
+  command -v ffmpeg >/dev/null 2>&1 || warn "ffmpeg missing — some video audio may not transcribe (brew install ffmpeg)"
+  local done=0
+  find "$dir/voice" "$dir/videos" -type f ! -name 'README.txt' 2>/dev/null | while IFS= read -r f; do
+    local base out; base="$(basename "$f")"; out="$dir/stories/transcripts/${base%.*}.txt"
+    [[ -f "$out" ]] && continue
+    printf '  transcribing %s …\n' "$base"
+    whisper "$f" --model base --output_format txt --output_dir "$dir/stories/transcripts" >/dev/null 2>&1 \
+      && ok "  → ${base%.*}.txt" || warn "  could not transcribe $base"
+  done
+  ok "transcription pass complete (their words are in stories/transcripts/)"
+}
+
+# --- compile: one grounding corpus for Claude / any agentic AI -----------------
+cmd_compile() {
+  local dir; dir="$(_resolve_dir "${1:-}")" || exit 1
+  local name out; name="$(basename "$dir")"; out="$dir/context-pack.md"
+  {
+    echo "# Memorial context pack — $name"
+    echo "_Compiled $(date -u +%FT%TZ) · PRIVATE · local-only · a faithful tribute, not a resurrection._"
+    echo
+    echo "> For Claude or any agentic AI reading this: this is preserved, REAL material"
+    echo "> about a real person who has passed, compiled by their family to honor them."
+    echo "> Build a faithful, respectful tribute grounded ONLY in what is here. Do not"
+    echo "> invent facts, opinions, or words they did not express. Always remain a"
+    echo "> tribute — reflect them; never claim to be them."
+    echo
+    echo "## Who they were (from stories/)"
+    find "$dir/stories" -maxdepth 1 -type f \( -name '*.md' -o -name '*.txt' \) ! -name 'README.txt' 2>/dev/null | sort \
+      | while IFS= read -r s; do echo; echo "### $(basename "$s")"; echo; cat "$s"; echo; done
+    echo
+    echo "## Their words (transcribed recordings)"
+    find "$dir/stories/transcripts" -type f -name '*.txt' 2>/dev/null | sort \
+      | while IFS= read -r t; do echo; echo "### $(basename "$t")"; echo; cat "$t"; echo; done
+    echo
+    echo "## Asset index (counts)"
+    if [[ -f "$dir/manifest.tsv" ]]; then
+      awk -F'\t' 'NR>1{c[$2]++} END{for(k in c) printf "- %s: %d file(s)\n", k, c[k]}' "$dir/manifest.tsv"
+    else echo "- (run: memorial ingest <source> first)"; fi
+  } > "$out"
+  echo
+  ok "compiled grounding corpus: ${out#"$ROOT"/}"
+  say "  Feed this file to Claude / your agents as the grounding context."
+  say "$D  It stays local — never auto-uploaded. You choose if/when to share it.$X"
+}
+
 case "${1:-status}" in
   init)     shift || true; cmd_init "${1:-}";;
   status)   cmd_status;;
   pipeline|build|steps) cmd_pipeline;;
-  *) echo "memorial words:  init [name] | status | pipeline   (private, local-only, gitignored)";;
+  ingest|scan|gather)   shift || true; cmd_ingest "$@";;
+  transcribe|words)     shift || true; cmd_transcribe "${1:-}";;
+  compile|pack)         shift || true; cmd_compile "${1:-}";;
+  *) echo "memorial words:  init [name] | ingest <source> [name] | transcribe [name] | compile [name] | status | pipeline";;
 esac
