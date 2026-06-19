@@ -71,24 +71,20 @@ on the device**, idiot-proof first-run. The one-shot today is
 > is **"credit guidance," never "repair,"** and no guaranteed outcomes. See
 > `docs/sops/CREDIT-GUIDANCE-SOP.md`. Recorded here as guidance.
 
-### ⚠️ Reconcile with canonical pricing (one decision for you)
+### Reconciliation — LOCKED (two layers: BUILD + RUN)
 
-`docs/OFFER-STACK.md` + `docs/LEARN-EARN-CHURN.md` (merged today) list
-**$1,875 / $3,750 / $7,500 as ONE-TIME build/DLC tiers**, and **$97/mo as the L1
-membership** (that part matches ✅). Your message frames $1,875/$3,750/$7,500 as
-**monthly**. Those can't both be the literal truth — so pick the model:
+**Decided 2026-06-19:** the model is **BUILD once (capex) + RUN monthly (MRR)** —
+the revenue-maximizing, no-contradiction option. Canonical pricing now lives in
+`docs/OFFER-STACK.md` ("Two layers" section):
 
-- **Recommended — two layers, no contradiction:** keep the **one-time BUILD
-  ladder** (capex: you buy the stack/agency once, $1,875 → $50K) **and** add your
-  numbers as **monthly MANAGED-SERVICE retainers** (opex: ongoing run/support).
-  That's the standard agency model — build fee + monthly — and it turns these
-  into **recurring revenue** without breaking the existing ladder.
-- **Or — subscription pivot:** the ladder itself becomes monthly. Cleaner story,
-  but it rewrites `OFFER-STACK.md` and the DLC framing.
+- **BUILD (one-time):** the ladder — $1,875 → $3,750 → $7,500 → $15K → $25K →
+  $35K → $45–50K → $100K — pay once to get it stood up.
+- **RUN (monthly):** Operator Seat **$97/seat**, Credit Guidance Basic
+  **$1,875/mo**, Mid/Fleet **$3,750/mo**, Full-Service **$7,500/mo** — pay
+  monthly to keep it live + managed.
 
-Tell me which, and I'll make `OFFER-STACK.md` say exactly that — one canonical
-pricing truth, no drift. Until you choose, **`OFFER-STACK.md` stays the
-authority** and this section is your stated intent on record.
+Every deal names **both** (build fee + monthly + seats). `OFFER-STACK.md` is the
+single pricing authority; the table above is the operator-facing summary.
 
 ---
 
