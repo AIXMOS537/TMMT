@@ -68,6 +68,11 @@ bash scripts/mesh/link.sh assist brainiac-mac
 
 ---
 
+> **Make it bulletproof:** once it's up, see
+> [`BRAINIAC-RESILIENCE.md`](./BRAINIAC-RESILIENCE.md) for UPS/power, tower
+> failover, a heartbeat tripwire, encrypted offsite backup, and the owner-only
+> `tag:brain` ACL — the difference between "works" and "never lets you down."
+
 ## Keep-it-alive (the brain's #1 job)
 
 The assistant only works while the M1 is **awake + on Tailscale**. Make that
