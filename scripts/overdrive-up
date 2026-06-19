@@ -13,7 +13,13 @@ if [ ! -f auth/OWNER.seal ]; then
   ./scripts/x set
 fi
 
-./scripts/x unlock
+if ! ./scripts/x unlock; then
+  echo
+  echo "Couldn't unlock. If you don't know the existing seal passphrase, set your own:"
+  echo "    ./scripts/x set      (choose your master key — replaces the old seal)"
+  echo "    ./scripts/overdrive-up   (then run this again)"
+  exit 1
+fi
 
 cat <<'EOF'
 
