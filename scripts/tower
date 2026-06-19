@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Operation Overdrive — Watchtower view. Usage: tower | tower assign <id> <name>
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec npx tsx scripts/overdrive.ts "$@"

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Operation Overdrive — ONE SHOT. Owner setup + bring the whole mesh online. You are X.
+#   ./scripts/overdrive-up            -> local only ($0, no Claude), foreground
+#   ./scripts/overdrive-up install    -> same, but always-on (survives reboot)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+command -v npx >/dev/null 2>&1 || { echo "Operation Overdrive needs Node/npx installed."; exit 1; }
+[ -d node_modules/tsx ] || npm i -D tsx >/dev/null 2>&1 || true
+
+if [ ! -f auth/OWNER.seal ]; then
+  echo "First run — set your master passphrase (the only key to everything):"
+  ./scripts/x set
+fi
+
+./scripts/x unlock
+
+cat <<'EOF'
+
+Owner control is yours, X. The mesh is online — LOCAL only ($0, no Claude, no one else).
+  capture a job:   ./scripts/catch "fix X, draft Y, research Z"
+  watch it:        ./scripts/tower
+  stop anytime:    ./scripts/x lock
+EOF
+echo
+
+if [ "${1:-}" = "install" ]; then
+  ./scripts/router install
+  ./scripts/tower
+else
+  OVERDRIVE_LOCAL_ONLY=1 exec ./scripts/router up
+fi

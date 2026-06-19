@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Operation Overdrive — capture. Usage: catch "text" | echo text | catch | (superwhisper -> ~/.tmmt/inbox)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec npx tsx scripts/catch.ts "$@"
