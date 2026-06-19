@@ -98,8 +98,15 @@ caffeinate -s &                          # keep awake while plugged in (quick ve
 
 The $3k Windows build stays on as **heavy-compute + warm failover**. If the M1
 is ever down, it's the standby — but the *talk/text* experience stays on the Mac
-(that's where the rails are). No action needed beyond keeping it powered and on
-the tailnet.
+(that's where the rails are).
+
+**One-shot for it too:** `scripts/setup-home-brain.ps1` — the Windows twin of the
+Mac one-shot. A family member runs it once (right-click → **Run with
+PowerShell** → approve the admin prompt → paste the auth key). It installs
+Tailscale (unattended), enables Windows OpenSSH Server, and forces always-on.
+Reach it from the carry M5 with plain `ssh <you>@brainiac-win` over the tailnet
+(Tailscale SSH is Mac/Linux-only as a server, so the Windows box uses native
+OpenSSH instead).
 
 ---
 
