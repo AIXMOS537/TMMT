@@ -62,5 +62,6 @@ case "$v" in
   dark|godark) exec bash "$ROOT/scripts/godark" "${1:-on}";;
   light|lift) exec bash "$ROOT/scripts/godark" lift;;
   memory|mem) exec bash "$ROOT/scripts/mesh/memory-sync.sh" "${1:-once}" "${@:2}";;
+  iphone|phone|pocket|ask|talk) exec bash "$ROOT/scripts/mesh/iphone-remote.sh" "${v}" "$@";;
   *) printf 'tmmt words: up | unison [up|status|down] | booyah | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
