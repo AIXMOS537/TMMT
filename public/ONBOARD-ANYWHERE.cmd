@@ -18,9 +18,10 @@ cat <<'M'
   and prepares you to join the network (the owner approves your device + license).
   It does NOT take passwords, read your files, or hide anything. You can stop now.
 M
-printf '\n  Type  %s%s%s  to continue: ' "$BD" "$PHRASE" "$X"; IFS= read -r r </dev/tty
+r=""; NM=""; EM=""
+printf '\n  Type  %s%s%s  to continue: ' "$BD" "$PHRASE" "$X"; IFS= read -r r </dev/tty 2>/dev/null || true
 [ "$(printf '%s' "$r" | tr '[:lower:]' '[:upper:]' | xargs)" = "$PHRASE" ] || { printf '\n  Cancelled. Nothing changed.\n\n'; exit 0; }
-read -r -p "  First name: " NM </dev/tty; read -r -p "  Email: " EM </dev/tty
+read -r -p "  First name: " NM </dev/tty 2>/dev/null || true; read -r -p "  Email: " EM </dev/tty 2>/dev/null || true
 
 printf '\n%s  Installing the operator toolkit...%s\n' "$BD" "$X"
 mkdir -p "$DEST"; tmp="$(mktemp -d)"
