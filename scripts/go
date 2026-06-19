@@ -66,7 +66,9 @@ install_words() {
     if [ "$ROLE" = "owner" ]; then
       echo "alias booyah='bash \"$R/scripts/go\"'         # TMMT_WORDS  ← THE start word"
       echo "alias unison='bash \"$R/scripts/go\"'         # TMMT_WORDS"
-      echo "alias wake='bash \"$R/scripts/hailmary\" booyah'    # TMMT_WORDS"
+      echo "alias wake='bash \"$R/scripts/traptop-wake.sh\" wake'  # TMMT_WORDS ← traptop activation"
+      echo "alias traptop='bash \"$R/scripts/traptop-wake.sh\" status' # TMMT_WORDS"
+      echo "alias seal='bash \"$R/scripts/traptop-seal.sh\"'   # TMMT_WORDS ← seal before ship"
       echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
       echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
       echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"

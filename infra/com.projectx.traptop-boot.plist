@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- LaunchAgent: shows dormant screen on login if device is sealed.
+     Install: cp infra/com.projectx.traptop-boot.plist ~/Library/LaunchAgents/
+              launchctl load ~/Library/LaunchAgents/com.projectx.traptop-boot.plist -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.projectx.traptop-boot</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-c</string>
+    <string>
+      ROOT="$HOME/Projects/TMMT"
+      DORMANT="$ROOT/.aixmos/sealed/.dormant"
+      if [ -f "$DORMANT" ]; then
+        osascript -e 'tell application "Terminal" to do script "bash ~/Projects/TMMT/scripts/traptop-wake.sh wake"' 2>/dev/null \
+        || bash "$ROOT/scripts/traptop-wake.sh" status
+      else
+        bash "$ROOT/scripts/go" 2>/dev/null &
+      fi
+    </string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/tmp/traptop-boot.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/traptop-boot.log</string>
+</dict>
+</plist>
