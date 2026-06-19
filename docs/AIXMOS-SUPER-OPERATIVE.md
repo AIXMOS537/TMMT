@@ -1,7 +1,7 @@
 # AIXMOS — The Super-Operative
 
 > One operative, many hands. AIXMOS is the single brain the client talks to; a
-> cast of subagents powers it underneath. Owner-only (Muhammad Taha), local-first,
+> cast of subagents powers it underneath. Owner-only (PROJECT X HAILMARY), local-first,
 > never-sold. Charters are law: `docs/AIXMOS-CHARTER.md`, `docs/HAILMARY-CHARTER.md`.
 > Verticals are **locked** (see §4) — add rungs, never remove them.
 

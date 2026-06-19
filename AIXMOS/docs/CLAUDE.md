@@ -10,7 +10,7 @@ AIXMOS is a workforce infrastructure platform built for everyday entrepreneurs.
 It combines dispatching, AI agents, operator networks, vendor routing, and
 business-in-a-box deployment into one ecosystem.
 
-**Founder:** Muhammad Taha
+**Founder:** PROJECT X HAILMARY
 **Mission:** Help everyday people access the American Dream through systems,
 automation, virtual assistance, and operational infrastructure.
 **Tagline:** For the people. By the people.
@@ -394,7 +394,7 @@ Every message, email, and interaction follows these rules:
 
 ## THE FOUNDER STORY (for About pages, pitches, investor decks)
 
-Muhammad Taha came to America at 6 years old and immediately started navigating
+PROJECT X HAILMARY came to America at 6 years old and immediately started navigating
 systems for his family — housing, documents, taxes. He's been solving operational
 problems for people he loves his entire life.
 
@@ -433,7 +433,7 @@ the same infrastructure that large corporations already have.
 ## CONTACT / OWNER
 
 Project: AIXMOS
-Founder: Muhammad Taha
+Founder: PROJECT X HAILMARY
 Built with: Claude (Anthropic)
 Stack: HTML + CSS + JS + GHL + UGREEN NAS + Anthropic API
 Version: 1.0 — Pre-launch

@@ -33,7 +33,7 @@ fi
 if [ "$ROLE" = "owner" ]; then
   SEAL="$ROOT/auth/OWNER.seal"
   if [ -f "$SEAL" ]; then
-    say; say "  🔒 Owner is sealed. The word comes only from the boss (Muhammad Taha)."
+    say; say "  🔒 Owner is sealed. The word comes only from the boss (PROJECT X HAILMARY)."
     if ! bash "$ROOT/scripts/owner-seal.sh" check; then
       warn "owner refused — deploying as OPERATOR instead."
       ROLE=operator

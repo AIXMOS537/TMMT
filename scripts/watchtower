@@ -25,7 +25,7 @@ ${BD}   SYSTEMS${X}   this device: ${W}$(swarm_machine)${X} · role: ${W}${ROLE}
      blackout: ${DARK}    owner gate: ${SEAL}    HAILMARY: ${HM}    mesh devices: ${W}${MESHN}${X}
 
 ${BD}   THE LEAGUE${X}
-   🛡️  ${BD}The Boss${X}   ${D}Muhammad Taha — Ops everywhere · holds the word${X}
+   🛡️  ${BD}The Boss${X}   ${D}PROJECT X HAILMARY — Ops everywhere · holds the word${X}
    🦾  ${BD}Cyborg${X}     ${D}watches the Watchtower — AIXMOS (public) + HAILMARY (Project X)${X}
    🧠  ${BD}Brainiac${X}   ${D}BRAINIAC 7 — the brain node + control plane (Fatherbox)${X}
    🦅  ${BD}Nightwing${X}  ${D}Ayyan Khan — field-ops lead, runs operators on the ground${X}

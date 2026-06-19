@@ -32,7 +32,7 @@ bash "$ROOT/scripts/swarm.sh" mesh 2>/dev/null | sed 's/^/   /' | head -30 || pr
 cat <<EOF
 
 ${BD}  GUARDIANS holding the map${X}
-   🛡️  The Boss   ${D}Muhammad Taha — Ops everywhere · the word${X}
+   🛡️  The Boss   ${D}PROJECT X HAILMARY — Ops everywhere · the word${X}
    🦾  Cyborg     ${D}Watchtower — AIXMOS (public) + HAILMARY (Project X)${X}
    🧠  Brainiac   ${D}BRAINIAC 7 — brain node + control plane${X}
    🦅  Nightwing  ${D}Ayyan Khan — field-ops lead${X}
