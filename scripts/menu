@@ -48,6 +48,8 @@ else
 cat <<EOF
 ${BGB}${W}${BD}  🚀  YOUR DAY  ${X}
    ${G}${BD}menu${X}        ${D}—${X} 🗺️  show this board
+   ${G}${BD}brief${X}       ${D}—${X} ☀️  daily briefing — ladder + compliance + today's actions
+   ${G}${BD}hot${X}         ${D}—${X} 🔥 hottest leads + next action for each
    ${G}${BD}work${X}        ${D}—${X} 💪 start your assigned work
    ${G}${BD}sync${X}        ${D}—${X} 🔄 pull/push the latest
    ${G}${BD}who${X}         ${D}—${X} 🌐 who's online right now
