@@ -34,4 +34,18 @@ describe("compliance guard", () => {
     expect(scanCompliance("credit repair").length).toBe(1);
     expect(scanCompliance("totally clean text").length).toBe(0);
   });
+
+  it("neutralizes 'guaranteeing' and 'repairing your credit'", () => {
+    const a = enforceCompliance("I'm guaranteeing your approval.");
+    expect(a.text.toLowerCase()).not.toContain("guarantee");
+    const b = enforceCompliance("We'll be repairing your credit this month.");
+    expect(b.text.toLowerCase()).not.toContain("repairing your credit");
+    expect(b.violations.length).toBeGreaterThan(0);
+  });
+
+  it("rewrites 'erase negative items' language", () => {
+    const r = enforceCompliance("We can erase the negative items from your file.");
+    expect(r.violations.length).toBeGreaterThan(0);
+    expect(r.text.toLowerCase()).not.toMatch(/erase .*negative items/);
+  });
 });

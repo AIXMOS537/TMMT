@@ -26,7 +26,22 @@ export interface BrainResult {
 }
 
 const DEFAULT_MODEL = "qwen2.5:14b";
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = (() => {
+  const n = Number(process.env.POCKET_BRAIN_TIMEOUT_MS);
+  return Number.isFinite(n) && n >= 2_000 && n <= 120_000 ? n : 30_000;
+})();
+// Cap output so a runaway generation can't burn tokens/time. Tunable via env.
+const MAX_TOKENS = (() => {
+  const n = Number(process.env.POCKET_BRAIN_MAX_TOKENS);
+  return Number.isInteger(n) && n >= 64 && n <= 4_000 ? n : 600;
+})();
+// Keep at most this many prior turns for continuity (bounds prompt size/cost).
+const MAX_HISTORY = 6;
+
+export interface ChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
 
 // The compliance-locked persona (see docs/aixmos-pocket/COPY.md). Guidance only.
 export const POCKET_SYSTEM_PROMPT = [
@@ -50,12 +65,19 @@ export async function askPocketBrain(args: {
   userMessage: string;
   system?: string;
   model?: string;
+  history?: ChatTurn[];
 }): Promise<BrainResult> {
   const url = process.env.POCKET_BRAIN_URL;
   if (!url) return { ok: false, text: "", error: "not_configured" };
 
   const model = args.model || process.env.POCKET_BRAIN_MODEL || DEFAULT_MODEL;
   const key = process.env.POCKET_BRAIN_KEY;
+
+  // Bound + sanitize prior turns so the prompt (and cost) can't grow unbounded.
+  const history = (args.history ?? [])
+    .filter((t) => (t.role === "user" || t.role === "assistant") && typeof t.content === "string" && t.content.trim())
+    .slice(-MAX_HISTORY)
+    .map((t) => ({ role: t.role, content: t.content.slice(0, 2000) }));
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -70,8 +92,11 @@ export async function askPocketBrain(args: {
       body: JSON.stringify({
         model,
         stream: false,
+        max_tokens: MAX_TOKENS,
+        temperature: 0.4,
         messages: [
           { role: "system", content: args.system ?? POCKET_SYSTEM_PROMPT },
+          ...history,
           { role: "user", content: args.userMessage },
         ],
       }),

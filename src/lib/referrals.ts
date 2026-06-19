@@ -69,6 +69,26 @@ export async function getOrCreateReferralCode(
   return code;
 }
 
+/**
+ * Idempotency key for an earning. A real transaction ref makes every legit sale
+ * credit exactly once. With no ref we fall back to a per-code, per-referred,
+ * per-amount, per-month key so a webhook retry can't double-pay a commission.
+ * (Postgres treats NULL as distinct on the unique index, so we must never store
+ * NULL for an unreffed sale.)
+ */
+export function referralDedupeKey(
+  code: string,
+  referredEmail: string | null | undefined,
+  saleAmount: number,
+  paymentRef: string | null | undefined,
+  now: Date = new Date()
+): string {
+  if (paymentRef) return `ref:${paymentRef}`;
+  const who = (referredEmail ?? "").trim().toLowerCase() || "anon";
+  const month = now.toISOString().slice(0, 7); // YYYY-MM
+  return `ref:${code}:${who}:${saleAmount}:${month}`;
+}
+
 export type ReferralRecordOutcome =
   | { recorded: true; commission: number }
   | { recorded: false; reason: "unknown_code" | "no_amount" | "duplicate" | "error" };
@@ -106,7 +126,8 @@ export async function recordCollectedReferral(
     sale_amount: args.saleAmount,
     commission,
     status: "collected",
-    payment_ref: args.paymentRef ?? null,
+    // Never NULL — synthesize a stable key so retries can't double-pay.
+    payment_ref: referralDedupeKey(code, args.referredEmail, args.saleAmount, args.paymentRef),
   });
   if (error) {
     // Unique violation on payment_ref => already recorded (idempotent).
@@ -122,7 +143,7 @@ export interface ReferralSummary {
   collectedCount: number;
 }
 
-/** A member's earnings summary (collected only). */
+/** A member's earnings summary — collected commission NET of clawbacks. */
 export async function getReferralSummary(
   supabase: SupabaseClient,
   code: string
@@ -130,10 +151,43 @@ export async function getReferralSummary(
   const { data } = await supabase
     .from("pocket_referral_earnings")
     .select("commission, status")
-    .eq("code", code)
-    .eq("status", "collected");
-  const rows = (data as { commission: number }[] | null) ?? [];
-  const collectedTotal =
-    Math.round(rows.reduce((s, r) => s + Number(r.commission || 0), 0) * 100) / 100;
-  return { code, collectedTotal, collectedCount: rows.length };
+    .eq("code", code);
+  const rows = (data as { commission: number; status: string }[] | null) ?? [];
+  let total = 0;
+  let count = 0;
+  for (const r of rows) {
+    const c = Number(r.commission || 0);
+    if (r.status === "collected") {
+      total += c;
+      count += 1;
+    } else if (r.status === "clawed_back") {
+      total -= c;
+    }
+  }
+  return {
+    code,
+    collectedTotal: Math.max(0, Math.round(total * 100) / 100),
+    collectedCount: count,
+  };
+}
+
+/**
+ * Claw back a referral commission on a refund/chargeback. Writes a compensating
+ * 'clawed_back' row (idempotent on its own ref). Best-effort.
+ */
+export async function clawbackReferral(
+  supabase: SupabaseClient,
+  args: { code: string; saleAmount: number; paymentRef: string; rate?: number }
+): Promise<{ clawed: boolean }> {
+  const code = args.code.trim();
+  if (!code || !args.paymentRef) return { clawed: false };
+  const commission = commissionFor(args.saleAmount, args.rate);
+  const { error } = await supabase.from("pocket_referral_earnings").insert({
+    code,
+    sale_amount: args.saleAmount,
+    commission,
+    status: "clawed_back",
+    payment_ref: `clawback:${args.paymentRef}`,
+  });
+  return { clawed: !error };
 }

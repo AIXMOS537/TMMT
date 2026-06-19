@@ -28,13 +28,18 @@ export default function PocketAssistantPage() {
     if (!text || loading) return;
     setInput("");
     setError(null);
+    // Send the last few turns so the coach has continuity (bounded server-side).
+    const history = messages.slice(-6).map((m) => ({
+      role: m.role === "you" ? ("user" as const) : ("assistant" as const),
+      content: m.text,
+    }));
     setMessages((m) => [...m, { role: "you", text }]);
     setLoading(true);
     try {
       const res = await fetch("/api/pocket/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history }),
       });
       const data = await res.json();
       if (res.ok) {
