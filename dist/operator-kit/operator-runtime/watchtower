@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+D="$(cd "$(dirname "$0")" && pwd)"; [ -f "$D/operator.conf" ] && . "$D/operator.conf"
+G=$'\e[32m';BD=$'\e[1m';X=$'\e[0m'
+printf '\n%s  AIXMOS OPERATOR STATUS%s\n   machine: %s\n   role:    fenced operator\n   network: %s\n   tools:   v%s\n\n' "$G$BD" "$X" "$(hostname 2>/dev/null)" "${OWNER:-PROJECT X AIXMOS}" "$(cat "$D/VERSION" 2>/dev/null)"
