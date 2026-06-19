@@ -43,6 +43,24 @@ export const ACADEMY_LESSONS: Lesson[] = [
     ],
   },
   {
+    slug: "where-leads-come-from",
+    title: "Where your leads come from",
+    minutes: 3,
+    body: [
+      "Two agencies drive the network. MOE LEGACY runs credit-guidance and business-" +
+        "funding — people seeking capital. TMMT RENTALS runs car brokering, rentals, and " +
+        "transportation — people who need a vehicle (B2B and B2C). Both run ads.",
+      "Those ads feed one shared, attributed lead pool. Leads route by what the person " +
+        "wants — a renter to the rentals side, a capital seeker to the funding side — into " +
+        "the right agency, then down to operators like you.",
+      "As an operator with your own sub-account, you claim leads from the pool, work them, " +
+        "and close them with the engine (PROJECT AIXMOS) in your pocket. You're paid a " +
+        "single-tier commission on sales that are actually collected — never on hype.",
+      "It's a plug-and-play business: the infrastructure, tools, and engine are set up for " +
+        "you once you join the mesh. Your job is to serve the person in front of you well.",
+    ],
+  },
+  {
     slug: "your-first-referrals",
     title: "Your first referrals",
     minutes: 3,
