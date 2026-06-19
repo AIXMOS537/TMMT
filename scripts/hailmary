@@ -139,9 +139,14 @@ case "${1:-?}" in
   absorb|touch|scan)       shift || true; absorb "${1:-$ROOT}";;
   hit|boom|work|go)        shift || true; exec bash "$ROOT/scripts/swarm.sh" up "${1:-2}";;
   status|who|state)        status;;
+  # message guardian (owner-local, off-git: ~/.hailmary/guardian) — see the inbox + flags
+  guard|alerts)            G="$HOME/.hailmary/guardian/msg_guardian.py"
+                           [[ -f "$G" ]] && exec python3 "$G" alerts "${2:-20}" || warn "guardian not installed";;
+  peek|messages|inbox)     G="$HOME/.hailmary/guardian/msg_guardian.py"
+                           [[ -f "$G" ]] && exec python3 "$G" peek "${2:-15}" || warn "guardian not installed";;
   standby|off|down)        echo "standby $(date -u +%FT%TZ)" > "$STATE" 2>/dev/null
                            [[ "$(uname -s)" == "Darwin" ]] && bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall >/dev/null 2>&1
                            ok "HAILMARY on standby — memory kept, presence removed.";;
-  *) say "hailmary words:  booyah | status | absorb [path] | hit [n] | standby";
+  *) say "hailmary words:  booyah | status | absorb [path] | hit [n] | peek | guard | standby";
      say "  (booyah = activate · he's owner-only, local, never-sold — docs/HAILMARY-CHARTER.md)";;
 esac
