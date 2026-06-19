@@ -552,3 +552,96 @@ export async function submitTeamOnboarding(formData: FormData): Promise<FormResu
 
   return result;
 }
+
+// ─── 11. Dealer Application (the /apply front door + qualification gate) ──────
+// A dealer applies to deploy the empire (TMMT + AIXMOS + Moe Legacy) at their lot.
+// The "bouncer": the three non-negotiables (licensed, real lot, plays fair) plus
+// both agreements are REQUIRED — you cannot submit without them.
+
+const dealerApplicationSchema = z.object({
+  dealership_name: z.string().min(1).max(200),
+  owner_name: z.string().min(1).max(200),
+  phone: z.string().min(7).max(25),
+  email: z.string().email().max(254).or(z.literal("")).optional(),
+  city_state: z.string().max(200).optional(),
+  // the gate — all required "on"
+  licensed_dealer: z.literal("on"),
+  has_real_lot: z.literal("on"),
+  plays_fair: z.literal("on"),
+  mission_accepted: z.literal("on"),
+  confidentiality_agreed: z.literal("on"),
+  // judgment info
+  license_number: z.string().max(100).optional(),
+  years_in_business: z.string().max(20).optional(),
+  units_on_lot: z.string().max(20).optional(),
+  biggest_struggle: z.string().max(2000).optional(),
+  interested_tier: z.enum(["downtime_engine", "multi_lane", "flagship", ""]).optional(),
+  device: z.string().max(500).optional(),
+});
+
+export async function submitDealerApplication(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = dealerApplicationSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "To apply you must be a licensed dealer with a real lot, agree to play fair, and accept the mission. Please check every box.",
+    };
+  }
+
+  const d = parsed.data;
+
+  // The bouncer: hard non-negotiables already enforced by the schema. `qualifies`
+  // additionally weighs the soft signal (time in business) for the owner's at-a-glance review.
+  const years = Number(d.years_in_business ?? "");
+  const meetsTimeFloor = Number.isFinite(years) ? years >= 1 : true; // unknown → let owner judge
+  const qualifies = meetsTimeFloor;
+
+  const result = await insertRow("dealer_applications", {
+    dealership_name: d.dealership_name.trim(),
+    owner_name: d.owner_name.trim(),
+    phone: d.phone.replace(/[^\d+]/g, "") || null,
+    email: d.email || null,
+    city_state: d.city_state?.trim() || null,
+    licensed_dealer: true,
+    has_real_lot: true,
+    plays_fair: true,
+    mission_accepted: true,
+    confidentiality_agreed: true,
+    license_number: d.license_number?.trim() || null,
+    years_in_business: d.years_in_business?.trim() || null,
+    units_on_lot: d.units_on_lot?.trim() || null,
+    biggest_struggle: d.biggest_struggle?.trim() || null,
+    interested_tier: d.interested_tier || null,
+    qualifies,
+    device: d.device?.trim() || null,
+    source: "apply_link",
+    status: "New Application",
+  });
+
+  if (result.success) {
+    const flag = qualifies ? "✅ QUALIFIES" : "⚠️ REVIEW (under 1yr / unknown)";
+    const tierLabel: Record<string, string> = {
+      downtime_engine: "Downtime Engine",
+      multi_lane: "Multi-Lane",
+      flagship: "Flagship",
+    };
+    const tier = d.interested_tier ? ` · wants: ${tierLabel[d.interested_tier] ?? d.interested_tier}` : "";
+    const where = d.city_state?.trim() ? ` · ${d.city_state.trim()}` : "";
+    const text =
+      `🏁 New DEALER application — ${flag}\n` +
+      `${d.dealership_name.trim()} (${d.owner_name.trim()})${where}\n` +
+      `📱 ${d.phone}` +
+      (d.email ? ` · ${d.email}` : "") +
+      (d.units_on_lot?.trim() ? ` · ${d.units_on_lot.trim()} units` : "") +
+      (d.years_in_business?.trim() ? ` · ${d.years_in_business.trim()}yr` : "") +
+      tier +
+      (d.biggest_struggle?.trim() ? `\nStruggle: ${d.biggest_struggle.trim().slice(0, 240)}` : "") +
+      `\nReview in TMMT Ops.`;
+    fanOut(text).catch((err) => {
+      console.warn("[dealer_applications] fanOut error:", err);
+    });
+  }
+
+  return result;
+}

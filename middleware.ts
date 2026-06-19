@@ -15,6 +15,7 @@ function isPublicPath(pathname: string) {
     pathname === "/build" ||
     pathname === "/explainer" ||
     pathname === "/join" ||
+    pathname === "/apply" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
@@ -32,6 +33,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/build" ||
     pathname === "/explainer" ||
     pathname === "/join" ||
+    pathname === "/apply" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
