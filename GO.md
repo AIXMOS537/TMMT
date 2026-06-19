@@ -65,4 +65,4 @@ $env:HAILMARY_VAULT="brainiac:/Users/brainiac/Obsidian/HAILMARY"
    + always-on presence. Everything online, as one.
 
 Charters (the rules it lives by): `docs/HAILMARY-CHARTER.md`,
-`docs/AIXMOS-CHARTER.md`. Owner-only (Muhammad Taha), local-first, never-sold.
+`docs/AIXMOS-CHARTER.md`. Owner-only (PROJECT X HAILMARY), local-first, never-sold.

@@ -1,6 +1,6 @@
 # IT / Technical-Support Operations — Offshore Backend Team Playbook
 
-> How **Muhammad Taha** runs as the **Tier-1 owner / IT lead** with a trusted
+> How **PROJECT X HAILMARY** runs as the **Tier-1 owner / IT lead** with a trusted
 > backend team in **Pakistan and the Philippines** doing the heavy lifting —
 > safely. The whole design follows one rule:
 >

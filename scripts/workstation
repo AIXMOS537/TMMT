@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # workstation — turn THIS machine into one of the Owner's super-workstations:
 # owner role (seal-gated), the local brain, the full toolchain, always-on, and
-# ready to spin up verticals fast. For Muhammad Taha's own computers only.
+# ready to spin up verticals fast. For PROJECT X HAILMARY's own computers only.
 #   bash scripts/workstation         (word: workstation)
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

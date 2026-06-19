@@ -9,7 +9,7 @@
 #   bash scripts/owner-seal.sh status       is a seal set?
 #
 # The terms (charter): no one gets owner unless they speak with, are seen by, and
-# have settled with the boss (Muhammad Taha). The word is the proof of that.
+# have settled with the boss (PROJECT X HAILMARY). The word is the proof of that.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SEAL="$ROOT/auth/OWNER.seal"

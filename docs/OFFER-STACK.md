@@ -82,7 +82,7 @@ One command on any laptop: `bash scripts/setup-llm.sh` → Ollama + the right mo
 
 - **The Watchtower** (BRAINIAC 7 / `fatherbox`) runs the army **anytime** the
   client's **"antenna"** (an always-on device on the mesh + internet) is online.
-- **Muhammad Taha = Head Master** (IT, engineering, architecture, business). He
+- **PROJECT X HAILMARY = Head Master** (IT, engineering, architecture, business). He
   **remotes in** (Tailscale + consented RustDesk) to review any file, doc, app, or
   pain point — the client's **head & lead backend team.**
 

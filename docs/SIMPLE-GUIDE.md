@@ -5,7 +5,7 @@
 
 ## Two helper brothers
 
-- 🦾 **HAILMARY** — the **BIG brother**. He helps **YOU** (Muhammad Taha) on your
+- 🦾 **HAILMARY** — the **BIG brother**. He helps **YOU** (PROJECT X HAILMARY) on your
   **carry Mac + your own devices** — your personal mesh. You only.
 - 🤖 **AIXMOS** — the **LITTLE brother**. He helps your **TEAM** on the
   **MoeLegacy mesh**. Little brother does what big brother says.
