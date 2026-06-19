@@ -37,7 +37,16 @@ NAME="$(grep -i '^name:'  "$CARD" | head -1 | cut -d: -f2- | xargs)"
 EMAIL="$(grep -i '^email:' "$CARD" | head -1 | cut -d: -f2- | xargs)"
 MACH="$(grep -i '^machine:' "$CARD" | head -1 | cut -d: -f2- | xargs)"
 
-printf '\n%s Activate %s <%s>? Type YES to proceed: %s' "$Y" "${NAME:-?}" "${EMAIL:-?}" "$X"; read -r ok
+# Refuse a profile that isn't a real operator card. Prevents junk grants when
+# the file is a pasted command or anything missing the required fields.
+if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
+  printf '\n%s  ✗ Not a valid operator profile — needs at least:%s\n' "$R" "$X"
+  printf '      name: <full name>\n      email: <email>\n      machine: <device name>\n'
+  printf '%s  Nothing activated. Fix the card and re-run.%s\n\n' "$D" "$X"
+  exit 1
+fi
+
+printf '\n%s Activate %s <%s>? Type YES to proceed: %s' "$Y" "$NAME" "$EMAIL" "$X"; read -r ok
 [ "$(printf '%s' "$ok" | tr '[:lower:]' '[:upper:]')" = "YES" ] || { echo "  Stopped. Nothing activated."; exit 0; }
 
 read -p "  Commission % on the \$97 (default 30): " COMM; COMM="${COMM:-30}"
