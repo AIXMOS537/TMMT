@@ -83,12 +83,18 @@
 Reuse GHL tags as funnel state: `tmmt-customer` → `ready-for-aixmos` → `member-97` →
 `credit-guidance-active`.
 
-## New env (server-side only)
+## New env (server-side only) — the OWNER'S brain, NOT Anthropic
 
-- `ANTHROPIC_API_KEY` — the hosted assistant key (never client-exposed).
-- `POCKET_MODEL_DEFAULT` / `POCKET_MODEL_ESCALATE` — model selection.
-- `POCKET_MONTHLY_TOKEN_BUDGET` — per-member cost cap.
-- (Reuse existing `NEXT_PUBLIC_GHL_CHECKOUT_97`, `GHL_WEBHOOK_SECRET`, Supabase vars.)
+- `POCKET_BRAIN_URL` — the owner's OpenAI-compatible endpoint (LiteLLM router or
+  Ollama `/v1/chat/completions`). Must be reachable from where the app runs; for a
+  Vercel deploy that means a reachable host (rented GPU box / gateway), not a
+  home-only tailnet IP. **No Anthropic key. The brain is the owner's.**
+- `POCKET_BRAIN_MODEL` — model name (LiteLLM `model_name` or e.g. `qwen2.5:14b`).
+- `POCKET_BRAIN_KEY` — optional bearer for the router (server-side only).
+- Cost cap is the **TMMT Token Ledger** (`src/lib/token-ledger.ts`):
+  `MEMBER_97_MONTHLY_TOKENS` (the monthly stack) + `COST_PER_JOB` (per message).
+- (Reuse `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_GHL_CHECKOUT_97`,
+  `GHL_WEBHOOK_SECRET`, Supabase vars.)
 
 ## Dependencies / owner taps
 
