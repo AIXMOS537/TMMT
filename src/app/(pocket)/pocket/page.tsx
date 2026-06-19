@@ -97,21 +97,27 @@ export default async function PocketHomePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    member = isActivePocketMember(user);
     operator = isOperatorUser(user);
-    // Best-effort TMMT token balance for members (the "pay in tokens" currency).
-    if (member && user?.email) {
+    const preview = isActivePocketMember(user); // owner/admin or flagged
+
+    // Source of truth for membership: an ACTIVE TMMT token account. That's what
+    // the $97/mo grant creates (and what owners/operators carry as `unlimited`).
+    if (user?.email) {
       try {
         const service = createServiceRoleClient();
         const orgId = await resolveOrgIdByEmail(service, user.email);
         if (orgId) {
           const bal = await getTokenBalance(service, orgId);
-          if (bal) wallet = { balance: bal.balance, unlimited: bal.unlimited };
+          if (bal) {
+            wallet = { balance: bal.balance, unlimited: bal.unlimited };
+            if (bal.status === "active") member = true;
+          }
         }
       } catch {
         wallet = null; // balance is non-critical chrome
       }
     }
+    member = member || preview;
   } catch {
     member = false; // fail closed — locked tiles route to activation
   }

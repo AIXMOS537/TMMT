@@ -19,7 +19,18 @@ export const runtime = "nodejs";
 // (src/lib/token-ledger.ts); each message spends from it. Owner + first-10
 // operators are `unlimited` and never metered.
 
-const BodySchema = z.object({ message: z.string().trim().min(1).max(2000) });
+const BodySchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(2000),
+      })
+    )
+    .max(12)
+    .optional(),
+});
 
 function err(status: number, error: string, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ error, ...extra }, { status });
@@ -28,8 +39,9 @@ function err(status: number, error: string, extra: Record<string, unknown> = {})
 export async function POST(request: Request) {
   // 1. Validate input.
   let message: string;
+  let history: { role: "user" | "assistant"; content: string }[] | undefined;
   try {
-    ({ message } = BodySchema.parse(await request.json()));
+    ({ message, history } = BodySchema.parse(await request.json()));
   } catch {
     return err(400, "Send a message (1–2000 characters).");
   }
@@ -75,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   // 6. Serve from the OWNER'S brain. On failure, refund the token (unless unlimited).
-  const brain = await askPocketBrain({ userMessage: message });
+  const brain = await askPocketBrain({ userMessage: message, history });
   if (!brain.ok) {
     if (!spend.unlimited) {
       try {
