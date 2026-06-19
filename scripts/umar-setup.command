@@ -27,7 +27,7 @@ printf '%s%s\n' "$CY$BD" "
 printf '%s' "$X"
 printf '  Credit Guidance Operator — Powered by AIXMOS\n'
 printf '  Role: 🐦‍⬛ Red Hood | Vertical: Credit Guidance\n'
-printf '  Controlled by: Muhammad Taha / AIXMOS Watchtower\n\n'
+printf '  Controlled by: PROJECT X HAILMARY / AIXMOS Watchtower\n\n'
 
 # ── STEP 1: CONFIRM IDENTITY ──────────────────────────────
 say "STEP 1 — Confirm your identity"
@@ -118,14 +118,36 @@ echo
 GUIDE
 chmod +x ~/.config/tmmt/credit-guidance/guide.sh
 
-# Add 'guide' alias
-if ! grep -q "red-hood" ~/.zshrc 2>/dev/null; then
-  echo "" >> ~/.zshrc
-  echo "# RED HOOD — Credit Guidance" >> ~/.zshrc
-  echo "alias guide='bash ~/.config/tmmt/credit-guidance/guide.sh'" >> ~/.zshrc
-  echo "alias tmmt='bash $INSTALL_DIR/scripts/tmmt'" >> ~/.zshrc
-fi
-ok "Credit guidance tools installed. Type 'guide' anytime."
+# ── Install one-word operator commands (idempotent) ──────
+# Mirrors the operator word block in scripts/go so the words the operator
+# guide promises (menu · work · sync · sos · dark · guide · watchtower ·
+# compass · moe-brief · moe-hot) actually resolve after restarting the
+# terminal. Fenced: no owner agents, no booyah/seal/wake here.
+install_words() {
+  local rc="$1" tmp
+  tmp="$(mktemp)"
+  [[ -e "$rc" ]] && grep -v 'TMMT_WORDS' "$rc" 2>/dev/null > "$tmp" || true
+  {
+    echo "# TMMT_WORDS (auto-managed by umar-setup.command — one word does the thing)"
+    echo "alias guide='bash ~/.config/tmmt/credit-guidance/guide.sh'   # TMMT_WORDS"
+    echo "alias tmmt='bash \"$INSTALL_DIR/scripts/tmmt\"'              # TMMT_WORDS"
+    echo "alias menu='bash \"$INSTALL_DIR/scripts/menu\"'              # TMMT_WORDS"
+    echo "alias compass='bash \"$INSTALL_DIR/scripts/compass\"'        # TMMT_WORDS"
+    echo "alias watchtower='bash \"$INSTALL_DIR/scripts/watchtower\"'  # TMMT_WORDS"
+    echo "alias dark='bash \"$INSTALL_DIR/scripts/godark\"'            # TMMT_WORDS"
+    echo "alias light='bash \"$INSTALL_DIR/scripts/godark\" lift'      # TMMT_WORDS"
+    echo "alias work='bash \"$INSTALL_DIR/scripts/tmmt\" go 2'         # TMMT_WORDS"
+    echo "alias sync='bash \"$INSTALL_DIR/scripts/tmmt\" sync'         # TMMT_WORDS"
+    echo "alias who='bash \"$INSTALL_DIR/scripts/tmmt\" who'           # TMMT_WORDS"
+    echo "alias sos='bash \"$INSTALL_DIR/scripts/tmmt\" help'          # TMMT_WORDS"
+    echo "alias moe-brief='bash \"$INSTALL_DIR/scripts/moe-brief\"'    # TMMT_WORDS"
+    echo "alias moe-hot='bash \"$INSTALL_DIR/scripts/moe-hot\"'        # TMMT_WORDS"
+  } >> "$tmp"
+  mv "$tmp" "$rc"
+}
+touch ~/.zshrc ~/.bashrc 2>/dev/null || true
+for rc in ~/.zshrc ~/.bashrc; do install_words "$rc"; done
+ok "One-word commands installed: menu · work · sync · sos · dark · guide · watchtower · compass · moe-brief · moe-hot"
 
 # ── STEP 8: TAILSCALE ────────────────────────────────────
 say "STEP 8 — Tailscale mesh node"
@@ -135,12 +157,12 @@ if command -v tailscale &>/dev/null; then
     ok "Already on Tailscale: $TS_IP"
   else
     warn "Tailscale installed but not connected. Run: sudo tailscale up"
-    warn "Then share your Tailscale IP with Muhammad Taha to join the mesh."
+    warn "Then share your Tailscale IP with PROJECT X HAILMARY to join the mesh."
   fi
 else
   warn "Tailscale not installed."
   printf '  Install it at: https://tailscale.com/download\n'
-  printf '  Then: sudo tailscale up --auth-key=<key Muhammad Taha sends you>\n'
+  printf '  Then: sudo tailscale up --auth-key=<key PROJECT X HAILMARY sends you>\n'
 fi
 
 # ── STEP 9: HAILMARY LICENSE ─────────────────────────────
@@ -151,7 +173,7 @@ if [[ -f "$LICENSE_FILE" ]]; then
   grep "TIER\|OPERATOR_NAME\|LICENSE_ID" "$LICENSE_FILE" | sed 's/^/  /'
 else
   warn "No HailMary license found."
-  printf '  Muhammad Taha needs to run activate.command from CYBORG on this machine.\n'
+  printf '  PROJECT X HAILMARY needs to run activate.command from CYBORG on this machine.\n'
 fi
 
 # ── DONE ─────────────────────────────────────────────────
@@ -164,10 +186,17 @@ printf '%s' "$X"
 printf '  Operator:   %s\n' "$OP_NAME"
 printf '  Role:       Red Hood — Credit Guidance\n'
 printf '  Vertical:   Credit Guidance (compliance vocab enforced)\n'
-printf '  Watchtower: Muhammad Taha / AIXMOS\n\n'
+printf '  Watchtower: PROJECT X HAILMARY / AIXMOS\n\n'
 printf '  Commands available after restarting terminal:\n'
-printf '    guide   — Credit guidance quick reference\n'
-printf '    tmmt    — TMMT operator menu\n\n'
+printf '    menu      — your whole command board\n'
+printf '    work      — start your assigned work\n'
+printf '    sync      — pull/push the latest\n'
+printf '    sos       — reach PROJECT X HAILMARY  (e.g. sos "stuck on intake")\n'
+printf '    dark      — emergency stop\n'
+printf '    guide     — credit guidance quick reference\n'
+printf '    moe-brief — your daily briefing\n'
+printf '    moe-hot   — your hottest leads + next action\n'
+printf '    tmmt      — full operator dispatcher\n\n'
 printf '  IMPORTANT: You are a fenced operator. You have access\n'
 printf '  to credit guidance tools only. Owner authority is sealed.\n\n'
 read -p "  Press ENTER to close."
