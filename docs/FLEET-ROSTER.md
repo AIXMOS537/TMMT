@@ -106,10 +106,10 @@ three rails only exist on the Mac itself:
   or the assistant goes dark. That's why "always-on" is the brain's #1 job.
 - Texting still rides Apple's iMessage/SMS — normal carrier/Apple rules apply.
 
-**To stand this up** (owner-only, on the M1 — say the word and I'll prep a
-one-page runbook): set up the iMessage bridge → `hailmary booyah` → `link.sh
-serve`, then from the carry Mac `link.sh assist brainiac-mac`. That's the whole
-Donna/Gretchen channel.
+**To stand this up** (owner-only, on the M1 — full steps in
+[`BRAINIAC-MAC-SETUP.md`](./BRAINIAC-MAC-SETUP.md)): set up the iMessage bridge →
+`hailmary booyah` → `link.sh serve`, then from the carry Mac `link.sh assist
+brainiac-mac`. That's the whole Donna/Gretchen channel.
 
 ## Naming rule (so the mesh never collides)
 
