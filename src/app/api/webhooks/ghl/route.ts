@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
 import { grantMonthlyTokensForPayment, type TopupOutcome } from "@/lib/token-ledger";
+import { recordCollectedReferral } from "@/lib/referrals";
+import { extractPaymentRef } from "@/lib/ghl-payment-sync";
 import { isClickUpEnabled } from "@/lib/clickup/client";
 import { syncGhlEventToClickUp } from "@/lib/clickup/sync-case";
 import { dispatchGhlWebhook } from "@/lib/ghl/dispatch";
@@ -109,7 +111,9 @@ export async function POST(request: NextRequest) {
   const supabase = createClient(url, serviceKey);
   const stamp = new Date().toISOString();
 
-  let paymentResult: { recorded: boolean; id?: string; reason?: string } | undefined;
+  let paymentResult:
+    | { recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null }
+    | undefined;
   if (shouldRecordPayment(body, tags)) {
     paymentResult = await recordGhlPayment(supabase, body, tags);
   }
@@ -130,6 +134,26 @@ export async function POST(request: NextRequest) {
   }
   const tokenLine =
     tokenTopup?.topped_up ? { tokens: tokenTopup } : {};
+
+  // Referral earnings: a COLLECTED sale that carries a referral code pays the
+  // referrer a single-tier commission. Idempotent on the payment ref; a no-op
+  // when there's no code, no amount, or an unknown code. Collected sales only —
+  // no guaranteed/passive income (protective structure for the owner).
+  let referralPaid: { commission: number } | undefined;
+  if (paymentResult?.recorded && paymentResult.affiliateRef && (paymentResult.amount ?? 0) > 0) {
+    try {
+      const r = await recordCollectedReferral(supabase, {
+        code: paymentResult.affiliateRef,
+        referredEmail: email,
+        saleAmount: paymentResult.amount as number,
+        paymentRef: extractPaymentRef(body),
+      });
+      if (r.recorded) referralPaid = { commission: r.commission };
+    } catch (e) {
+      console.error("[ghl referral]", e instanceof Error ? e.message : e);
+    }
+  }
+  const referralLine = referralPaid ? { referral: referralPaid } : {};
 
   let clickupResult: { taskId: string; url: string } | null = null;
   if (isClickUpEnabled()) {
@@ -169,6 +193,7 @@ export async function POST(request: NextRequest) {
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
+      ...referralLine,
     });
   }
 
@@ -188,6 +213,7 @@ export async function POST(request: NextRequest) {
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
+      ...referralLine,
     });
   }
 
@@ -197,6 +223,7 @@ export async function POST(request: NextRequest) {
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
+      ...referralLine,
     });
   }
 
