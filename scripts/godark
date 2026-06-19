@@ -53,6 +53,26 @@ case "${1:-on}" in
     else
       echo "  ! no owner seal set — lifting unguarded (set one: bash scripts/owner-seal.sh seal)"
     fi
+    # Second factor: rotating code from vault (prevents remote coercion without phone)
+    TOTP_PY="$ROOT/tools/project-x-hailmary/master/totp.py"
+    VAULT_ENC="$ROOT/tools/project-x-hailmary/master/vault.enc"
+    if [[ -f "$TOTP_PY" && -f "$VAULT_ENC" ]]; then
+      read -rs -p "  Vault passphrase (to read TOTP seed): " _VP; echo >&2
+      _SEED="$(openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -salt -base64 \
+                  -pass pass:"$_VP" < "$VAULT_ENC" 2>/dev/null \
+                | python3 -c 'import json,sys;print(json.load(sys.stdin).get("totp_seed",""))' 2>/dev/null || true)"
+      unset _VP
+      if [[ -n "$_SEED" ]]; then
+        read -rp "  Revolving code (from your phone): " _CODE
+        python3 "$TOTP_PY" verify "$_SEED" "$_CODE" >/dev/null 2>&1 \
+          || [[ "$_CODE" == "$(python3 "$TOTP_PY" gen "$_SEED" 2>/dev/null)" ]] \
+          || { echo "  ${RED}✗ wrong code — still DARK.${X}"; unset _SEED _CODE; exit 1; }
+        unset _SEED _CODE
+        echo "  ✓ revolving code accepted"
+      else
+        echo "  ${Y}! vault unreadable — skipping TOTP (enroll: vault.sh enroll)${X}"
+      fi
+    fi
     rm -f "$DARK"
     if command -v tailscale >/dev/null 2>&1; then tailscale up >/dev/null 2>&1 && echo "  ✓ network back up" || true; fi
     echo "  ${G}${BD}✓ LIGHT restored.${X} Boot when ready:  bash scripts/go"
