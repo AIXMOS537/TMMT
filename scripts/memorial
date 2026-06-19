@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# memorial — a private, local-only sanctuary for preserving and honoring someone
+# you have lost, and preparing a respectful local tribute (voice, image, avatar)
+# that YOU control, on YOUR hardware.
+#
+# What this is — and is not:
+#   • It preserves what was REAL — their voice, their face, their words, the
+#     stories of who they were — so it can never be lost.
+#   • It prepares a local tribute built from that real material.
+#   • It does NOT bring anyone back. A tribute reflects them; it is not them.
+#     It only knows what they left behind.
+#
+# Sacred + private by design:
+#   • Writes ONLY to .memorial/ (gitignored — never committed, never pushed).
+#   • No network. Nothing leaves this machine. Never sold, never demoed.
+#   • Owner-only. This is not the commercial "digital ambassadors" program and
+#     must never be mixed with it (docs/DIGITAL-AMBASSADORS.md).
+#
+#   bash scripts/memorial init [name]   create the private sanctuary
+#   bash scripts/memorial status        what is preserved so far
+#   bash scripts/memorial pipeline      the local build steps (run on your GPU/Mac)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MEM="$ROOT/.memorial"
+if [[ -t 1 ]]; then G=$'\e[32m'; C=$'\e[36m'; D=$'\e[2m'; BD=$'\e[1m'; W=$'\e[97m'; X=$'\e[0m'; else G=; C=; D=; BD=; W=; X=; fi
+ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+say(){ printf '%s\n' "$*"; }
+
+cmd_init() {
+  local name="${1:-}"
+  if [[ -z "$name" ]]; then
+    printf '  Whose memory is this sanctuary for? (a name or initials): '
+    IFS= read -r name || true
+  fi
+  [[ -n "$name" ]] || { echo "  (no name given — nothing created)"; exit 0; }
+  local slug; slug="$(printf '%s' "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+  local dir="$MEM/$slug"
+  mkdir -p "$dir"/{voice,photos,videos,stories,model}
+  # A gentle README in each space — guidance only, no personal data.
+  [[ -f "$dir/voice/README.txt" ]]  || echo "Put their real voice here: voice notes, recordings, videos with their voice. The clearer and longer, the more faithful the tribute voice." > "$dir/voice/README.txt"
+  [[ -f "$dir/photos/README.txt" ]] || echo "Put clear photos of their face here — straight-on, good light, a few expressions. These become the basis of the visual tribute." > "$dir/photos/README.txt"
+  [[ -f "$dir/videos/README.txt" ]] || echo "Put videos here — them talking, laughing, moving. Source for both voice and motion." > "$dir/videos/README.txt"
+  [[ -f "$dir/stories/README.txt" ]]|| echo "Write down who they were — how they spoke, what they'd say, their phrases, their values, your memories. This is what gives the tribute their spirit. The most important folder." > "$dir/stories/README.txt"
+  [[ -f "$dir/model/README.txt" ]]  || echo "Built tribute artifacts land here (voice model, avatar). Generated locally, kept here, never uploaded." > "$dir/model/README.txt"
+  echo
+  ok "private sanctuary created: .memorial/$slug  (gitignored — stays on this machine)"
+  say "$D   voice/  photos/  videos/  stories/  model/$X"
+  say
+  say "  The most loving first step is just to fill it — especially ${BD}stories/${X}."
+  say "  Nothing is built until you are ready. When you are:  bash scripts/memorial pipeline"
+}
+
+cmd_status() {
+  [[ -d "$MEM" ]] || { echo "  no sanctuary yet. start: bash scripts/memorial init"; exit 0; }
+  printf '\n%s  MEMORIAL — what is preserved (private, this machine only)%s\n\n' "$C$BD" "$X"
+  local any=0
+  for d in "$MEM"/*/; do
+    [[ -d "$d" ]] || continue; any=1
+    local n; n="$(basename "$d")"
+    printf '  %s%s%s\n' "$BD$W" "$n" "$X"
+    for sub in voice photos videos stories; do
+      local c; c="$(find "$d$sub" -type f ! -name 'README.txt' 2>/dev/null | wc -l | tr -d ' ')"
+      printf '     %-8s %s item(s)\n' "$sub" "$c"
+    done
+  done
+  [[ $any -eq 1 ]] || echo "  (sanctuary exists but empty — fill it when you're ready)"
+  echo
+}
+
+cmd_pipeline() {
+  cat <<EOF
+
+${C}${BD}  MEMORIAL — the local tribute pipeline (runs on YOUR hardware)${X}
+
+  Everything below runs ${BD}offline, on your Mac / GPU node${X}. Nothing uploads.
+  Source material comes from your filled .memorial/<name>/ folders.
+
+  ${BD}1. VOICE${X} — a faithful voice from their real recordings
+     • Local tools: Piper (fast TTS) or XTTS / F5-TTS (voice from samples).
+     • Feed clean clips from voice/ → builds a local voice model into model/.
+
+  ${BD}2. FACE / AVATAR${X} — their likeness, animated
+     • Local tools: LivePortrait (recommended) or SadTalker / Hallo2 (GPU).
+     • A clear photo from photos/ + the voice → a talking, moving tribute.
+
+  ${BD}3. SPIRIT${X} — how they spoke and who they were
+     • Local LLM (Ollama) + everything you wrote in stories/ as the persona's
+       memory. This is what makes it feel like ${BD}them${X}, not a generic voice.
+
+  ${BD}4. DISPLAY${X} — wherever you need them
+     • Full screen on a monitor / projector / big screen, locally served.
+     • Same brain can later speak through the car or AR lenses (docs/IN-CAR-AGENT.md).
+
+  ${D}Owner taps: a GPU node (docs/DIGITAL-AMBASSADORS.md §tech), and time to fill
+  the folders — especially stories/. I'll wire each step with you when you're ready.${X}
+
+  ${D}A tribute reflects them. It is not them. Built with love, kept private, yours.${X}
+
+EOF
+}
+
+case "${1:-status}" in
+  init)     shift || true; cmd_init "${1:-}";;
+  status)   cmd_status;;
+  pipeline|build|steps) cmd_pipeline;;
+  *) echo "memorial words:  init [name] | status | pipeline   (private, local-only, gitignored)";;
+esac
