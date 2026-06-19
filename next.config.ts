@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     return [
       // Short, friendly team-onboarding link (the "easy as 1-2-3" link)
       { source: "/join", destination: "/forms/team-onboarding" },
+      // Dealer front door (the /apply qualification gate)
+      { source: "/apply", destination: "/forms/dealer-apply" },
       // Legacy engine paths → unified Learn face
       { source: "/onboarding", destination: "/learn/onboarding" },
       { source: "/dashboard", destination: "/learn/dashboard" },
