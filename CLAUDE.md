@@ -255,6 +255,10 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
 - `docs/MESH-SWARM.md` — the mesh/swarm system: setup, daily flow, security model
 - `docs/security/SUPABASE-ADVISORS-2026-06-15.md` — security audit + key-rotation runbook
+- `docs/security/GO-GHOST-PROTOCOL.md` — personal privacy / identity-compartmentalization protocol (GHOST = the real you; X = the one public node). Companions: `GHOST-EVERYDAY-DEFAULTS.md` (daily-driver stack), `FOOTPRINT-CLEANUP-TRACKER.md` (working tracker), `X-NODE-DEFINITION.md` (**X = AIXMOS**)
+- `docs/FLEET-ROSTER.md` — canonical device map (mesh node + ghost endpoint per machine); brain = M1 `brainiac-mac` (primary) + Windows `brainiac-win` (compute/backup)
+- `docs/BRAINIAC-MAC-SETUP.md` — one-page runbook to stand up the M1 as the always-on assistant the carry Mac talks to/texts. One-shots: `scripts/setup-home-brain.command` (M1) + `scripts/setup-home-brain.ps1` (Windows backup) — family-member-runnable, remote access via Tailscale+SSH
+- `docs/BRAINIAC-RESILIENCE.md` — make the brain never let you down: UPS/power, tower failover, heartbeat tripwire, encrypted offsite backup (`scripts/mesh/vault-backup.sh`), owner-only `tag:brain` ACL
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
