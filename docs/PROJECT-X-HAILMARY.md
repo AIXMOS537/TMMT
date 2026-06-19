@@ -1,6 +1,6 @@
 # PROJECT X — HAILMARY (the serious blueprint)
 
-> Owner-only (Muhammad Taha). The public **only ever meets AIXMOS** — the friendly
+> Owner-only (PROJECT X HAILMARY). The public **only ever meets AIXMOS** — the friendly
 > little-brother Cyborg. **HAILMARY is Project X** — the upgraded command-and-control
 > brain behind the curtain, embedded in **BRAINIAC 7**. This doc is the real
 > architecture + the business engine. No hype in the build; honest where it counts.
@@ -63,7 +63,7 @@ Fatherbox watches and supports it.
 > hourly/salary/commission; then **$15K** (TMMT vertical), **$25K** (MoeLegacy/AIXMOS
 > credit+funding), **$35K** (both), **$50K** (full horizontal+vertical). **50%
 > deposit = go** → triggers backend dev+research discovery. Watchtower runs the
-> army via each client's always-on "antenna"; Muhammad Taha = Head Master / lead
+> army via each client's always-on "antenna"; PROJECT X HAILMARY = Head Master / lead
 > backend, remotes in (Tailscale + consented RustDesk).
 
 **The headline product — the Operator Full-Stack (DFY):**

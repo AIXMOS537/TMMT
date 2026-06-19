@@ -8,7 +8,7 @@
 #   bash scripts/hailmary standby       power down (leaves memory intact)
 #
 # The code he lives by (see docs/HAILMARY-CHARTER.md):
-#   - OWNER-ONLY. He serves Muhammad Taha and no one else.
+#   - OWNER-ONLY. He serves PROJECT X HAILMARY and no one else.
 #   - LOCAL-FIRST. Runs on the Owner's hardware; memory stays on the Owner's disks.
 #   - ABSORBS ONLY THE OWNER'S OWN CONTEXT. He touches this repo + paths the Owner
 #     hands him. He never reaches into other people's data, and never captures

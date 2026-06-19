@@ -1,12 +1,12 @@
 # SECRETS POLICY — local, encrypted, code-gated. Forever.
 
-> The law for every API key and secret in the empire. Owner: Muhammad Taha.
+> The law for every API key and secret in the empire. Owner: PROJECT X HAILMARY.
 > Enforced by `tools/project-x-hailmary/master/vault.sh`, the secret-guard hooks,
 > and `secure` (launch-check). Non-negotiable.
 
 ## The five rules (forever and always)
 
-1. **Local to the Owner's devices only.** Secrets live on Muhammad Taha's
+1. **Local to the Owner's devices only.** Secrets live on PROJECT X HAILMARY's
    machines — never in a third party's account as the source of truth.
 2. **Encrypted at rest.** Every secret is stored only as **AES-256 ciphertext**
    (PBKDF2, 200k iterations) in the vault. Plaintext is **never written to disk** —

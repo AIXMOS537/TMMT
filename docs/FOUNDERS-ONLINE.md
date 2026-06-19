@@ -2,12 +2,12 @@
 
 > Fast runbook for the two founding seats. Deferred brain cost (settle the $50K
 > over time). Goal: nodes on the mesh, first local brain running, dashboards up,
-> Owner able to remote in — **today**. Owner = Muhammad Taha (Head Master).
+> Owner able to remote in — **today**. Owner = PROJECT X HAILMARY (Head Master).
 > Companions: `docs/OFFER-STACK.md`, `docs/PROJECT-X-HAILMARY.md`, `docs/DEPLOY-EVERYWHERE.md`.
 
 ---
 
-## Do this once on the Owner side (Muhammad Taha)
+## Do this once on the Owner side (PROJECT X HAILMARY)
 
 1. **Issue their seats** (license + consent record):
    ```bash
