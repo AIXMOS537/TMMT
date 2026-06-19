@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+D="$(cd "$(dirname "$0")" && pwd)"; [ -f "$D/operator.conf" ] && . "$D/operator.conf"
+G=$'\e[32m';BD=$'\e[1m';X=$'\e[0m'
+URL="${AIXMOS_BASE:-https://tmmt-ops.vercel.app}"
+printf '\n%s  Your work hub:%s %s\n  (GHL Mobile = leads + conversations on your phone)\n\n' "$G$BD" "$X" "$URL"
+command -v open >/dev/null 2>&1 && open "$URL" 2>/dev/null
+command -v xdg-open >/dev/null 2>&1 && xdg-open "$URL" 2>/dev/null
+true

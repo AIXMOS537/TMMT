@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+D="$(cd "$(dirname "$0")" && pwd)"; [ -f "$D/operator.conf" ] && . "$D/operator.conf"
+C=$'\e[36m';G=$'\e[32m';Y=$'\e[33m';BD=$'\e[1m';X=$'\e[0m'
+cat <<M
+
+  ${C}${BD}AIXMOS OPERATOR — command board${X}   ${OWNER:-PROJECT X AIXMOS}
+
+   ${G}${BD}work${X}       — open your work hub (CRM, leads, pipeline)
+   ${G}${BD}guide${X}      — credit-guidance quick reference (compliance vocab)
+   ${G}${BD}sync${X}       — pull the latest operator tools
+   ${Y}${BD}sos${X} "..."  — reach the owner for help
+   ${BD}compass${X}    — protect your peace, one step
+   ${BD}watchtower${X} — your status
+   ${Y}${BD}dark${X}       — stop everything (panic)
+
+M

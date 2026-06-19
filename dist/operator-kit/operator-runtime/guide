@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+BD=$'\e[1m';C=$'\e[36m';X=$'\e[0m'
+cat <<G
+${BD}${C}CREDIT GUIDANCE — quick reference${X}
+
+${BD}COMPLIANCE (always):${X}
+  ✓ "credit guidance"   ✗ never "credit repair"
+  ✓ "subject to lender approval"   ✗ never guarantee scores/results
+  ✓ AI disclosure = first sentence   ✗ no upfront charge for DFY (CROA)
+  ✓ text 8am–9pm only   ✓ honor STOP instantly + log
+
+${BD}SCORE TIERS:${X}
+  300-549 subprime  → secured card + dispute errors first
+  550-619 near-prime → authorized user + pay down utilization (<30%)
+  620-679 fair       → rapid-rescore eligible, push for 680
+  680+    ready      → car + funding, move fast
+G

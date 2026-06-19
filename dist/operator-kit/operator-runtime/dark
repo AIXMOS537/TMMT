@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+R=$'\e[31m';BD=$'\e[1m';X=$'\e[0m'
+touch "$HOME/.aixmos-dark"
+printf '\n%s  ⛔ DARK — stopped. Reach the owner to lift.%s\n\n' "$R$BD" "$X"
