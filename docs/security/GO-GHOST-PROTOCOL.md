@@ -103,6 +103,9 @@ The Ghost only stays a ghost if the core is unbreakable.
 
 ### PILLAR 5 — SURFACE AS X (the only thing that appears)
 
+> **X is defined: X = AIXMOS** at `allinonemanagementsolutions.com`. Full spec:
+> [`X-NODE-DEFINITION.md`](./X-NODE-DEFINITION.md).
+
 Build one deliberate public node and make it dominate.
 
 - **One authoritative home for X**: a site/profile you own, that states exactly

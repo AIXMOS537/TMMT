@@ -5,9 +5,9 @@
 > plus the **30-Day Checklist** and the **Quarterly Re-Audit**.
 > Check boxes as you go. Keep dates so you know when a relisting is overdue.
 
-**Define X first:** `__________________________`  (the one public-facing node)
+**X = AIXMOS** — `allinonemanagementsolutions.com` (see [`X-NODE-DEFINITION.md`](./X-NODE-DEFINITION.md))
 **Registered agent / virtual address:** `__________________________`
-**X public email:** `__________________________`  **X phone (VoIP):** `__________`
+**X public email:** `hello@allinonemanagementsolutions.com`  **X phone (VoIP):** `__________`
 
 > ⚠️ Never put personal cell / personal email / home address in this file or any
 > shared doc. Map secrets (which alias → what) live **in the vault**, not here.
@@ -82,7 +82,7 @@ depends on this). One row = the one you chose; leave the rest for comparison.
 ## 30-Day Checklist
 
 ### Week 1 — Scrub (Pillar 1)
-- [ ] Define X (name/handle, what it is)
+- [x] Define X (name/handle, what it is) → **X = AIXMOS** ([`X-NODE-DEFINITION.md`](./X-NODE-DEFINITION.md))
 - [ ] Work Tab A to zero open items
 - [ ] Opt out of every broker in Tab B
 - [ ] Stand up a continuous removal service (Tab C)
