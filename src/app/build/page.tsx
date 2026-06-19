@@ -7,12 +7,10 @@ import {
   supportContact,
 } from "@/lib/high-ticket";
 
-// Unlisted by design — flip to indexable + link from nav when copy/prices are
-// approved and GHL checkout URLs are set. See docs/HIGH-TICKET-GO-LIVE.md.
+// Public + indexable as of 2026-06-18 go-live. See docs/HIGH-TICKET-GO-LIVE.md.
 export const metadata: Metadata = {
   title: "Done-for-you builds — TMMT × AIXMOS",
   description: "We build your operation end to end. Reserve your build with a deposit.",
-  robots: { index: false, follow: false },
 };
 
 const steps = [

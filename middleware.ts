@@ -39,6 +39,11 @@ function isPitchPublicPath(pathname: string) {
   );
 }
 
+/** Public marketing pages that SHOULD be crawlable (no noindex header). */
+function isIndexablePath(pathname: string) {
+  return pathname === "/build" || pathname === "/kits";
+}
+
 function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (isPublicPath(pathname)) return true;
 
@@ -92,7 +97,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPitchPublicPath(pathname)) {
-    return withRobotsHeader(NextResponse.next({ request }));
+    const res = NextResponse.next({ request });
+    return isIndexablePath(pathname) ? res : withRobotsHeader(res);
   }
 
   const response = NextResponse.next({ request });
