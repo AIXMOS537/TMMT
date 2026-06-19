@@ -15,7 +15,7 @@ v="${1:-?}"; shift || true
 # DARK kill-switch: while blacked out, only safe words run (compass/whoami/seal/dark).
 if [ -f "$ROOT/.swarm/DARK" ]; then
   case "$v" in
-    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu|watchtower|tower|league|roster|health|verticals|pulse|mesh-map|map|secure|launch-check|launch|vault|secret|keys) : ;;
+    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu|watchtower|tower|league|roster|health|verticals|pulse|mesh-map|map|secure|launch-check|launch|vault|secret|keys|brief|moe-brief|hot|moe-hot) : ;;
     *) printf '⛔ DARK — everything is stopped. Lift with the boss word: bash scripts/godark lift\n'; exit 1;;
   esac
 fi
@@ -51,6 +51,8 @@ case "$v" in
   deal|close|contract) exec bash "$ROOT/scripts/new-deal.sh" "$@";;
   golive|liftoff) exec bash "$ROOT/scripts/golive.sh" "${1:-}";;
   vault|secret|keys) exec bash "$ROOT/tools/project-x-hailmary/master/vault.sh" "$@";;
+  brief|moe-brief)  exec bash "$ROOT/scripts/moe-brief";;
+  hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
