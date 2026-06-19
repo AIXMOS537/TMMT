@@ -1,7 +1,7 @@
 # CYBORG USB — PROJECT X HAILMARY LAYOUT
 
 This is the folder structure to copy onto the CYBORG flash drive.
-CYBORG is the master key. Only Muhammad Taha carries it.
+CYBORG is the master key. Only PROJECT X HAILMARY carries it.
 
 ```
 /Volumes/CYBORG/
@@ -61,7 +61,7 @@ CYBORG is the master key. Only Muhammad Taha carries it.
 | flagship   | 14 days                      | Yes          | Still under watchtower always |
 
 **Even $50K full pay = watchtower stays on.**
-Muhammad Taha can revoke any operator at any time for any threat to the clan.
+PROJECT X HAILMARY can revoke any operator at any time for any threat to the clan.
 
 ## MASTER PASSPHRASE
 

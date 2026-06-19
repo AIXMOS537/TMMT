@@ -217,7 +217,7 @@ Create `LICENSE` with the standard MIT text (substituting copyright):
 ```
 MIT License
 
-Copyright (c) 2026 AIXMOS / Muhammad Taha
+Copyright (c) 2026 AIXMOS / PROJECT X HAILMARY
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1044,7 +1044,7 @@ fi
 open "$target/.last-brief.html" 2>/dev/null || open "https://allinonemanagementsolutions.net"
 
 log "Done. You are ready to start working."
-log "If anything broke: text Taha what's on screen, and click Help on the brief."
+log "If anything broke: text PROJECT X HAILMARY what's on screen, and click Help on the brief."
 ```
 
 Make executable:
@@ -1172,7 +1172,7 @@ if (Test-Path $driver) { & powershell -NoProfile -File $driver }
 if (Test-Path $brief) { Start-Process $brief } else { Start-Process 'https://allinonemanagementsolutions.net' }
 
 Log "Done. You are ready to start working."
-Log "If anything broke: text Taha what's on screen, and click Help on the brief."
+Log "If anything broke: text PROJECT X HAILMARY what's on screen, and click Help on the brief."
 ```
 
 - [ ] **Step 3: Lint PowerShell locally if possible.**
@@ -1280,7 +1280,7 @@ h1 { font-size: 22px; margin-bottom: 4px; }
 </div>
 
 <div class="help">
-  <strong>Need help?</strong> Text Taha what's on this page and the error from your terminal.<br>
+  <strong>Need help?</strong> Text PROJECT X HAILMARY what's on this page and the error from your terminal.<br>
   Brief regenerated: $(date "+%Y-%m-%d %H:%M:%S")
 </div>
 </body>
@@ -1402,7 +1402,7 @@ h1 { font-size: 22px; margin-bottom: 4px; }
 </div>
 
 <div class="help">
-  <strong>Need help?</strong> Text Taha what's on this page and the error from your terminal.<br>
+  <strong>Need help?</strong> Text PROJECT X HAILMARY what's on this page and the error from your terminal.<br>
   Brief regenerated: $now
 </div>
 </body>
@@ -1484,7 +1484,7 @@ if [[ -n "$kit_id" ]]; then
   if curl -fsSL "https://raw.githubusercontent.com/AIXMOS537/aixmos-kit/main/revoked-kits.txt" -o /tmp/revoked-kits.txt 2>/dev/null; then
     if grep -qFx "$kit_id" /tmp/revoked-kits.txt; then
       log "kit-id $kit_id is REVOKED — aborting. Contact owner."
-      osascript -e "display notification \"This kit is revoked. Contact Taha.\" with title \"AIXMOS Auto-Pull\"" 2>/dev/null || true
+      osascript -e "display notification \"This kit is revoked. Contact PROJECT X HAILMARY.\" with title \"AIXMOS Auto-Pull\"" 2>/dev/null || true
       exit 1
     fi
   fi
@@ -1672,7 +1672,7 @@ if ($kitId) {
     $revoked = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AIXMOS537/aixmos-kit/main/revoked-kits.txt" -UseBasicParsing).Content -split "`n" | ForEach-Object { $_.Trim() }
     if ($revoked -contains $kitId) {
       Log "kit-id $kitId is REVOKED - aborting. Contact owner."
-      try { New-BurntToastNotification -Text "AIXMOS Auto-Pull", "This kit is revoked. Contact Taha." } catch {}
+      try { New-BurntToastNotification -Text "AIXMOS Auto-Pull", "This kit is revoked. Contact PROJECT X HAILMARY." } catch {}
       exit 1
     }
   } catch { Log "revocation check skipped (offline?)" }
@@ -2326,7 +2326,7 @@ To begin:
   macOS:   double-click START_HERE.command
   Windows: double-click START_HERE.bat
 
-If something breaks: text Taha what you see on screen.
+If something breaks: text PROJECT X HAILMARY what you see on screen.
 EOF
 
 # --- 5. Per-kit ID file (read by first-run installer) ---
@@ -2484,8 +2484,8 @@ When asked, choose **"operator"** (the default for any new computer).
 
 The wizard will install Tailscale and a browser, then open your browser to a series of sign-in pages:
 
-1. **Tailscale** — sign in with the invitation email Taha sent you
-2. **TMMT Admin** — use the email + temporary password Taha gave you
+1. **Tailscale** — sign in with the invitation email PROJECT X HAILMARY sent you
+2. **TMMT Admin** — use the email + temporary password PROJECT X HAILMARY gave you
 3. **Open WebUI (CHUMMO Chat)** — works automatically once Tailscale is signed in
 4. **GHL + ClickUp** — use your accounts
 
@@ -2495,14 +2495,14 @@ After the last sign-in, your **Daily Brief** will open. You'll see today's hot l
 
 ## If something breaks
 
-**Text Taha** with whatever's on your screen. Click the **Help** button on your Daily Brief to upload your error log — copy the URL Taha asks for.
+**Text PROJECT X HAILMARY** with whatever's on your screen. Click the **Help** button on your Daily Brief to upload your error log — copy the URL PROJECT X HAILMARY asks for.
 
 ## What's on your desktop now
 
 - **TMMT Admin** — your main work screen
 - **CHUMMO Chat** — to draft warm customer messages
 - **Daily Brief** — refreshes when you log in
-- **Update Now** — click if Taha tells you to
+- **Update Now** — click if PROJECT X HAILMARY tells you to
 - **Help** — for when something breaks
 ```
 

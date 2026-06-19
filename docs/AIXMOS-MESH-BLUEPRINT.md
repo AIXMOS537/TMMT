@@ -83,7 +83,7 @@ operators stay fenced to their lane (see `scripts/partner-deploy/tailscale-acl.j
     Activation word: **`booyah`** (`scripts/hailmary`).
   - **`docs/AIXMOS-CHARTER.md`** — the operations/network brain that runs the
     swarm + TMMT operatives.
-- Both: owner-only (Muhammad Taha), local-first, never-sold, shared guardrails,
+- Both: owner-only (PROJECT X HAILMARY), local-first, never-sold, shared guardrails,
   shared memory of record (git + Obsidian vault). AIXMOS runs the network;
   HAILMARY serves the Owner; they move in unison.
 

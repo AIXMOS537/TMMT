@@ -203,7 +203,7 @@ works in parallel. **Git is the only coordination layer** (no server). Full guid
 
 ## Agents: HAILMARY + AIXMOS + Unison — SHIPPED 2026-06-16
 
-The owner-only agent layer. Both agents are **owner-only (Muhammad Taha),
+The owner-only agent layer. Both agents are **owner-only (PROJECT X HAILMARY),
 local-first, never-sold**, share the same guardrails, and the same memory of
 record (git + Obsidian vault on BRAINIAC). Charters are the law:
 
@@ -244,7 +244,7 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - **Deploy:** `scripts/deploy [owner|operator]` — role-aware (owner needs the
   Owner Seal `auth/OWNER.seal`; operators fenced). `scripts/install-desktop.sh`
   (Mac icons), `scripts/make-wallpaper.py` + `make-pocket-card.py` (cheatsheets).
-- **Roster (the League):** `docs/WATCHTOWER-ROSTER.md` — Boss (Muhammad Taha, Ops
+- **Roster (the League):** `docs/WATCHTOWER-ROSTER.md` — Boss (PROJECT X HAILMARY, Ops
   + the word), Cyborg (Watchtower = AIXMOS/HAILMARY), Red Hood (Umar, Credit
   Guidance), The Crew (rentals + verticals + operators), Batman (e-commerce).
 - **DARK guards** in tmmt/hailmary/aixmos/go/unison; `.hailmary/` + `.swarm/`

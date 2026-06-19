@@ -9,7 +9,7 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
 | Codename | Who | Runs | Vertical / Post |
 |---|---|---|---|
 | 🦾 **Cyborg** | the Watchtower sentinel — **both versions: AIXMOS (public) + HAILMARY (Project X)** | **watches over the Watchtower** — every system, health, and alert | Oversight of all systems |
-| 🛡️ **The Boss** | **Muhammad Taha** (Owner) | **Ops, everywhere** — checks in on systems, sets direction | 🔧 Operations (all verticals) |
+| 🛡️ **The Boss** | **PROJECT X HAILMARY** (Owner) | **Ops, everywhere** — checks in on systems, sets direction | 🔧 Operations (all verticals) |
 | 🧠 **Brainiac** | **BRAINIAC 7** (always-on brain node) | the memory + control-plane host (Fatherbox lives here) | Command center body |
 | 🦅 **Nightwing** | **Ayyan Khan** — field-operations lead / first lieutenant | runs operators on the ground; relays Watchtower ↔ Crew | Field ops |
 | 🐦‍⬛ **Red Hood** | **Umar** — MoeLegacy owner | **Credit repair / guidance** | 📈 Credit Guidance |
