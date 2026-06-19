@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+W=$'\e[97m';C=$'\e[36m';BD=$'\e[1m';D=$'\e[2m';X=$'\e[0m'
+s=("Breathe: in 4, hold 4, out 6 — three times. You're allowed to rest."
+"Name one thing you're grateful for, out loud."
+"Drink water. Unclench your jaw. Drop your shoulders. You're carried."
+"Do the next small right thing — just one. The path is walked one step.")
+i=$(( ($(date +%j)+$(date +%H)) % ${#s[@]} ))
+printf '\n%s   ☾ COMPASS%s\n\n   %s%s%s\n\n%s   You are protected here. Come back anytime: compass%s\n\n' "$C$BD" "$X" "$W" "${s[$i]}" "$X" "$D" "$X"

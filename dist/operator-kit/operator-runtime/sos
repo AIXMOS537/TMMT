@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+D="$(cd "$(dirname "$0")" && pwd)"; [ -f "$D/operator.conf" ] && . "$D/operator.conf"
+Y=$'\e[33m';BD=$'\e[1m';X=$'\e[0m'
+msg="$*"; [ -z "$msg" ] && msg="(no message)"
+echo "$(date -u +%FT%TZ)  $msg" >> "$HOME/.aixmos-sos.log"
+printf '\n%s  📣 SOS logged.%s Reach %s and send: "%s"\n\n' "$Y$BD" "$X" "${OWNER:-the owner}" "$msg"

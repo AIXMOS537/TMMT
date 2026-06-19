@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+D="$(cd "$(dirname "$0")" && pwd)"; [ -f "$D/operator.conf" ] && . "$D/operator.conf"
+URL="${AIXMOS_BASE:-https://tmmt-ops.vercel.app}/operator-runtime.tar.gz"
+echo "  Pulling the latest operator tools from $URL ..."
+tmp="$(mktemp -d)"
+if curl -fsSL "$URL" -o "$tmp/r.tgz" 2>/dev/null && tar -xzf "$tmp/r.tgz" -C "$tmp" 2>/dev/null; then
+  src="$(find "$tmp" -name menu -path '*operator-runtime*' | head -1)"; [ -n "$src" ] && cp -f "$(dirname "$src")"/* "$D"/ && chmod +x "$D"/* && echo "  ✓ updated."
+else echo "  Couldn't reach the update server — you're still good on the current version."; fi
+rm -rf "$tmp"
