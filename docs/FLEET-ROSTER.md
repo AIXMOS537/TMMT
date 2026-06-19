@@ -16,8 +16,8 @@
 
 | Device | Mesh name | Chip / OS | Held by | Role | Always-on? |
 |---|---|---|---|---|---|
-| **Windows home build** (the $3k+ powerhouse) | `brainiac-win` | High-end x86 · Windows | **Owner (home base)** | 🧠 **Original main brain** — heavyweight compute / control plane (Fatherbox) | **Yes** |
-| **Work Mac @ home (M1)** | `brainiac-mac` | **Apple M1 (Pro/Max)** · macOS | **Owner (home base)** | 🧠 **Main-or-backup brain** — the node the carry Mac talks to + texts (the "Donna/Gretchen" assistant); HAILMARY `booyah`, memory loop, vault host | **Yes (target)** |
+| **Windows home build** (the $3k+ powerhouse) | `brainiac-win` | High-end x86 · Windows | **Owner (home base)** | 🧠 **Heavy-compute engine + warm backup** — the original brain (Fatherbox); standby failover for `brainiac-mac` | **Yes** |
+| **Work Mac @ home (M1)** | `brainiac-mac` | **Apple M1 (Pro/Max)** · macOS | **Owner (home base)** | 🧠 **PRIMARY brain** — the node the carry Mac talks to + texts (the "Donna/Gretchen" assistant); HAILMARY `booyah`, memory loop, vault host | **Yes** |
 | **Carry Mac** | `carry-mac` | Apple Silicon · macOS | **Owner** | Mobile command — travels with you; talks to the brain remotely, runs the swarm on the go | No (with you) |
 | **Moe Legacy Mac** | `moe-legacy` | **Apple M5 Pro** · macOS | **Umar / Red Hood** (MoeLegacy) | 📈 Credit Guidance partner node — **fenced / least-privilege** | When working |
 | **Surface Pro 4** | `surface` | Microsoft Surface Pro 4 · Windows | **Owner** | Windows swarm node (best run via Linux/WSL) | No |
@@ -28,20 +28,19 @@
 > before — tell me the make/role and I'll name and slot them. I left them blank
 > rather than guess.
 
-### The brain — lineage & today
-- **Original main brain = the Windows home build** (`brainiac-win`). The $3k+
-  powerhouse you built — the heavyweight compute / control-plane host (the
-  "Fatherbox" the roster refers to). It keeps that job.
-- **The M1 becomes the main-or-backup brain** (`brainiac-mac`) — and crucially,
-  it's the body the **carry Mac talks to and texts.** Why the Mac and not the
-  Windows box for this: the conversational rails — **HAILMARY `booyah`**, the
-  macOS always-on LaunchAgents, and the **iMessage bridge** — are **Mac-native**.
-  So the M1 is the right home for the "talk to it like a person" assistant, with
-  the Windows build as the heavy-compute engine and warm backup behind it.
-- **Open call (your decision):** is the M1 the new **primary** brain with the
-  Windows build as warm backup, or the **backup/assistant** with Windows staying
-  primary? I've recorded it as "main-or-backup" until you pick — see the
-  recommendation in chat.
+### The brain — lineage & decision (locked)
+- **Lineage:** the **original main brain was the Windows home build**
+  (`brainiac-win`) — the $3k+ powerhouse, the heavyweight compute / control-plane
+  host (the "Fatherbox" the roster refers to).
+- **Decision (locked):** the **M1 (`brainiac-mac`) is now the PRIMARY brain** —
+  the body the **carry Mac talks to and texts** (the "Donna/Gretchen" assistant).
+  Why the Mac: the conversational rails — **HAILMARY `booyah`**, the macOS
+  always-on LaunchAgents, and the **iMessage bridge** — are **Mac-native**, so
+  this is the reliable everyday path, not a workaround.
+- **The Windows build stays on as `brainiac-win`** — the **heavy-compute engine
+  and warm backup**: it carries the heavyweight jobs the Mac shouldn't, and is
+  the standby failover if the M1 is ever down. Nothing wasted; it just stops
+  being the thing you talk to.
 - **`moe-legacy` = Umar's M5 Pro.** Maps to **Red Hood / Credit Guidance** in
   [`WATCHTOWER-ROSTER.md`](./WATCHTOWER-ROSTER.md) and the MoeLegacy deploy in
   [`LEGACY-DEPLOY-MOE.md`](./LEGACY-DEPLOY-MOE.md). Onboards **fenced** — partner
