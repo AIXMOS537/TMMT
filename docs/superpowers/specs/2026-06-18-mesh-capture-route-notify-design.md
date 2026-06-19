@@ -1,8 +1,15 @@
-# Mesh Capture → Route → Notify — Design Spec
+# Operation Overdrive — Watchtower Command Center (Design Spec)
+
+> The carry MacBook becomes the mobile **Watchtower/command center** for the whole
+> empire: capture any job from anywhere, do it himself via the AI mesh, or pull in
+> outside help — operators, employees, AI agents, the brain (BRAINIAC), or vendors —
+> whoever, whenever, wherever. This spec is **Phase 1** of Operation Overdrive: the
+> machine core loop plus a first command-center view and manual hand-off to people.
 
 **Date:** 2026-06-18
 **Status:** Approved (design); pending spec review
 **Owner:** Muhammad Taha
+**Program:** Operation Overdrive
 **Builds on:** `docs/MESH-SWARM.md`, `scripts/swarm.sh`, `scripts/mesh/presence.sh`,
 the live iMessage relay (`100.77.126.8:8787`), and the local-first agent stack
 (Ollama default → Claude Haiku → Claude Opus/Sonnet).
@@ -19,6 +26,13 @@ high-cost API), staying **safe and testable** ("nothing cracks"), getting
 into full cross-device integration where any task can spin up **any skill, file,
 document, or tool** available across the network, always staying current and in
 unison with the owner.
+
+**Two routing ladders.** Work flows down a *cost ladder* across machines (local →
+Haiku → Opus) and, when a job needs a human, an *escalation ladder* across people
+(do-it-himself → AI mesh → operator → employee → the brain/BRAINIAC → vendor). The
+carry MacBook is the **Watchtower**: one mobile command surface that shows every job
+across every empire, who/what is online, and lets the owner capture, watch, and
+dispatch from anywhere.
 
 That North Star is large. This spec scopes only the **first slice** that makes the
 core loop real end-to-end. Everything else is captured in §10 (Future Phases) so
@@ -40,6 +54,7 @@ iMessage back,"* with test-gates and the deploy seal intact.
 | Cost ladder: local → Haiku → Opus/Sonnet, escalate on failure | Operator onboarding automation, ACL provisioning |
 | iMessage notify on done/fail + morning digest | Per-day token budget caps (noted in §11) |
 | Stale-task reclaim (lease) so any machine can drop/resume | Web dashboard / mobile app |
+| `overdrive` Watchtower view: board + who's online + capture + **manual** hand-off to a person | **Automated** human escalation (SLAs, auto-assign, vendor dispatch) |
 
 **Success criteria (Phase 1):**
 1. A spoken/pasted braindump on the carry Mac becomes ≥1 well-formed board task
@@ -178,6 +193,35 @@ output: tier) with no model calls.
 
 ---
 
+## 6.5 The dispatch ladder (who does the work) + Watchtower
+
+The cost ladder (§6) decides *which engine* runs a task. A second ladder decides
+*who* — used when a job can't or shouldn't be done by the machine mesh alone:
+
+| Step | Who | Engaged when |
+|---|---|---|
+| 0 | Owner does it himself | he grabs it from the Watchtower |
+| 1 | AI mesh (machines) | default — `router` claims it |
+| 2 | Operator | mesh fails/declines, or task tagged `human` |
+| 3 | Employee | operator unavailable or task needs a specific role |
+| 4 | The brain (BRAINIAC) | long-running / local-heavy jobs |
+| 5 | Vendor | specialist / outsourced work |
+
+Phase 1 builds the **machine rung (1) fully automated**, plus **manual hand-off to a
+person (rungs 0, 2–5)**: from the Watchtower the owner assigns a task to a named
+operator/employee/vendor on the roster and they get pinged (reuses the existing mesh
+notify + roster). Automated escalation/SLAs across rungs is Phase 3 (§12).
+
+**Watchtower command surface (`overdrive` / `watch`, carry Mac, mobile-friendly):**
+a single view that shows the live board (all jobs, status, who/what, cost) · who and
+what is online (machines from presence + people from the roster) · one-key **capture**
+(`catch`) · and **dispatch** (send to the mesh or hand to a person). Read-only +
+manual-dispatch in Phase 1; it reuses the board, the presence roster
+(`scripts/watchtower`, `docs/WATCHTOWER-ROSTER.md`), and notify that already exist —
+a *view + orchestration* layer, not new infrastructure.
+
+---
+
 ## 7. Board schema change
 
 Extend `board.tsv` (on `swarm-coord`) from `id|status|machine|branch|task` to:
@@ -261,8 +305,10 @@ learning; §10.)
 - **Phase 2 — broaden capture & "always up to date":** auto-pickup from email,
   Slack, Telegram, calendar; watchers that keep context current; richer iMessage
   two-way control.
-- **Phase 3 — operators & real learning:** operator onboarding + covenant + ACL
-  automation; ledger → learned model-choice; per-day **token/cost budget caps**.
+- **Phase 3 — humans in the loop & real learning:** automated escalation down the
+  dispatch ladder (operator → employee → vendor) with SLAs and auto-assign; people
+  presence on the roster (who's available now); operator onboarding + covenant + ACL
+  automation; ledger → learned model/who choice; per-day **token/cost budget caps**.
 - **Phase 4 — full cross-device federation:** any task can spin up **any skill,
   file, or document** on any machine (shared/synced skills dir + MCP); the owner's
   iPhone and Windows home PC fully in the loop; "unison" = one switch boots the
