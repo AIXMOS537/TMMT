@@ -3,6 +3,7 @@ import { Lock, MessageCircle, GraduationCap, DollarSign, Compass, TrendingUp, Co
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { resolveOrgIdByEmail, getTokenBalance } from "@/lib/token-ledger";
+import { isOperatorUser } from "@/lib/auth-roles";
 import { Card } from "@/components/ui";
 import {
   isActivePocketMember,
@@ -89,6 +90,7 @@ interface Wallet {
 
 export default async function PocketHomePage() {
   let member = false;
+  let operator = false;
   let wallet: Wallet | null = null;
   try {
     const supabase = await createSSRClient();
@@ -96,6 +98,7 @@ export default async function PocketHomePage() {
       data: { user },
     } = await supabase.auth.getUser();
     member = isActivePocketMember(user);
+    operator = isOperatorUser(user);
     // Best-effort TMMT token balance for members (the "pay in tokens" currency).
     if (member && user?.email) {
       try {
@@ -131,6 +134,17 @@ export default async function PocketHomePage() {
       </header>
 
       {!member && <ActivateCard />}
+
+      {operator && (
+        <Link href="/operator" className="block mb-4">
+          <Card className="p-4 border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20">
+            <p className="font-semibold text-gray-900 dark:text-white">Operator hub →</p>
+            <p className="mt-0.5 text-sm text-gray-600 dark:text-slate-300">
+              Your fenced workspace: leads, training, daily driver.
+            </p>
+          </Card>
+        </Link>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {POCKET_TILES.map((tile) => (
