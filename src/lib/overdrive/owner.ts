@@ -1,13 +1,14 @@
-import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 /**
  * Owner control = X's master passphrase. We never store the passphrase, only a
- * salted scrypt hash ("saltHex:hashHex") — safe to commit, useless without the
- * passphrase. Verifying unlocks complete owner control across any device.
+ * salted SHA-256 hash ("saltHex:hashHex") — safe to commit, useless without the
+ * passphrase. This MATCHES scripts/owner-seal.sh exactly, so a single master
+ * passphrase (one auth/OWNER.seal) unlocks both `ship` and Operation Overdrive.
  */
 
 export function hashPassphrase(passphrase: string, saltHex: string): string {
-  return scryptSync(passphrase, Buffer.from(saltHex, "hex"), 32).toString("hex");
+  return createHash("sha256").update(`${saltHex}:${passphrase}`).digest("hex");
 }
 
 export function makeSeal(passphrase: string, saltHex: string = randomBytes(16).toString("hex")): string {
