@@ -19,9 +19,9 @@ cat <<'M'
   and prepares you to join the network (the owner approves your device + license).
   It does NOT take passwords, read your files, or hide anything. You can stop now.
 M
-printf '\n  Type  %s%s%s  to continue: ' "$BD" "$PHRASE" "$X"; IFS= read -r r
+printf '\n  Type  %s%s%s  to continue: ' "$BD" "$PHRASE" "$X"; IFS= read -r r </dev/tty
 [ "$(printf '%s' "$r" | tr '[:lower:]' '[:upper:]' | xargs)" = "$PHRASE" ] || { printf '\n  Cancelled. Nothing changed.\n\n'; exit 0; }
-read -p "  First name: " NM; read -p "  Email: " EM
+read -r -p "  First name: " NM </dev/tty; read -r -p "  Email: " EM </dev/tty
 
 printf '\n%s  Installing the operator toolkit...%s\n' "$BD" "$X"
 mkdir -p "$DEST"; tmp="$(mktemp -d)"
@@ -47,4 +47,4 @@ printf '\n%s  OPERATOR STATION READY (pending activation)%s\n' "$G$BD" "$X"
 printf '   1) Send %s back to the owner.\n   2) Owner approves your device + activates your license.\n' "$PROF"
 printf '   3) Open a NEW terminal and type: %smenu%s\n\n' "$BD" "$X"
 printf '%s   Fenced operator on PROJECT X AIXMOS. Owner holds the keys. Your engine stays VIP.%s\n\n' "$D" "$X"
-read -p "  Press ENTER to close." _ 2>/dev/null || true
+read -r -p "  Press ENTER to close." _ </dev/tty 2>/dev/null || true
