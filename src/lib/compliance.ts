@@ -20,17 +20,18 @@ export interface ComplianceResult {
 // Phrase → compliant replacement. Order matters (longer/more specific first).
 const REWRITES: ReadonlyArray<[RegExp, string]> = [
   [/\bcredit repair\b/gi, "credit guidance"],
-  [/\brepair your credit\b/gi, "work on your credit"],
-  [/\bfix your credit\b/gi, "work on your credit"],
-  [/\bfix(?:ing)? (?:your )?credit\b/gi, "working on your credit"],
+  [/\brepair(?:ing)? (?:your )?credit\b/gi, "work on your credit"],
+  [/\bfix(?:ing|ed)? (?:your )?credit\b/gi, "work on your credit"],
   [/\bdelete[ds]? .{0,30}credit report\b/gi, "review items on your credit report"],
+  [/\b(?:erase|wipe|remove|delete)\w* .{0,20}\b(?:negative|bad|derogatory)\b.{0,20}\b(?:items?|accounts?|marks?|debts?)\b/gi, "review items on your credit report"],
   [/\bguaranteed income\b/gi, "income based on real, collected sales"],
-  [/\bguarantee[ds]?\b/gi, "may help"],
+  [/\bguarantee\w*/gi, "may help"],
   [/\b100\s?%/gi, "a lot"],
 ];
 
 // Anything still matching these AFTER rewrite means we cannot safely show it.
-const HARD_BLOCK = /\b(credit repair|fix your credit|repair your credit|guarantee|guaranteed)\b/i;
+const HARD_BLOCK =
+  /\b(credit repair|fix(?:ing)? your credit|repair(?:ing)? your credit|guarantee)\b/i;
 
 const SAFE_FALLBACK =
   "I can help with credit guidance and education — building a plan and learning " +

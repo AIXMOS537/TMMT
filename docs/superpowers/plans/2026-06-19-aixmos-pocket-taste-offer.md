@@ -101,6 +101,27 @@ confirm the GHL `member-97` checkout fires the webhook. Optional tuning:
 Reuse GHL tags as funnel state: `tmmt-customer` → `ready-for-aixmos` → `member-97` →
 `credit-guidance-active`.
 
+## Tuning knobs (live via Vercel env — no code change)
+
+The engine is built to be tuned. Every lever below reads from env at runtime with
+a safe default, so the owner can adjust the ride without recutting a part:
+
+| Env var | Default | What it tunes |
+|---|---|---|
+| `MEMBER_97_MONTHLY_TOKENS` | `500` | Monthly TMMT stack a $97 member gets (the cost cap) |
+| `POCKET_COST_PER_JOB` | `1` | TMMT tokens spent per assistant message |
+| `POCKET_REFERRAL_RATE` | `0.20` | Commission on a collected sale (single-tier) |
+| `POCKET_BRAIN_MAX_TOKENS` | `600` | Max output length per reply (caps time/cost) |
+| `POCKET_BRAIN_TIMEOUT_MS` | `30000` | Brain call timeout (2s–120s) |
+| `POCKET_BRAIN_URL` / `_MODEL` / `_KEY` | — | The owner's self-hosted brain endpoint |
+
+Money-safety tunes baked in (master-mechanic pass 2026-06-19): referral earnings
+are idempotent even with no transaction ref (`referralDedupeKey` → never double-pay
+on a webhook retry); refunds/chargebacks claw back via `clawbackReferral` and the
+earnings summary is **net of clawbacks**; membership unlocks off an **active token
+account** (so paying members actually get in); the assistant carries short-term
+memory (bounded to 6 turns) for continuity without runaway cost.
+
 ## New env (server-side only) — the OWNER'S brain, NOT Anthropic
 
 - `POCKET_BRAIN_URL` — the owner's OpenAI-compatible endpoint (LiteLLM router or
