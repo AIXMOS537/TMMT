@@ -55,6 +55,38 @@ One command on any laptop: `bash scripts/setup-llm.sh` → Ollama + the right mo
 
 ---
 
+## Two layers: BUILD once (capex) + RUN monthly (MRR) — LOCKED 2026-06-19
+
+The ladder above is the **BUILD** layer — what a client pays **once** to get the
+stack/vertical/agency stood up. On top of it sits the **RUN** layer — **monthly
+managed-service retainers** that keep it live, supported, and improving. **Build
+fills the war chest; Run compounds** — recurring revenue is the engine.
+
+> **One client = one build fee + one monthly retainer (+ seats).** That's the
+> money model: upfront cash to deliver, MRR to sustain.
+
+### RUN — monthly managed service (recurring)
+
+| Plan | Monthly | What it covers |
+|---|---|---|
+| **Operator Seat** | **$97 / seat** | A working seat: the operator's **own subaccount** + a **one-shot on any/all their devices**; work at the office or on the move. Per person. |
+| **Credit Guidance — Basic** | **$1,875 / mo** | Basic ongoing credit-**guidance** ops + support (never "repair"). |
+| **Mid — Fleet Management** | **$3,750 / mo** | Mid-tier: fleet management + automation run + support. |
+| **Full-Service** | **$7,500 / mo** | "Anything and everything" run on their behalf — full managed ops. |
+
+### BUILD — one-time stand-up (capex)
+
+The existing ladder, as one-time delivery: **$1,875 → $3,750 → $7,500 → $15K
+(agency) → $25K (inner circle: credit guidance + funding network) → $35K (all
+verticals) → $45–50K (enterprise 1:1 brain + stack, deploy-ready) → $100K
+(apex/HAILMARY-tier, Owner-only)**.
+
+> The build rungs and the run plans share price *anchors* on purpose — but they
+> are different charges: **BUILD = pay once to get it; RUN = pay monthly to keep
+> it live + managed.** Every deal should name both. Seats stack on top per head.
+
+---
+
 ## Engagement terms (how a deal starts)
 
 - **50% deposit = GO.** Proves the client is 100% serious and **triggers the

@@ -118,6 +118,7 @@ are `swarm/<machine>/*`, so unique names are what keep two devices from stepping
 on each other. Use the names in the table above when you run `swarm-join`.
 
 ## Cross-links
+- HQ → office topology + operator seats/pricing → [`HOMELAND-HQ-AND-OPERATOR-SEATS.md`](./HOMELAND-HQ-AND-OPERATOR-SEATS.md)
 - Mesh / swarm mechanics → [`MESH-SWARM.md`](./MESH-SWARM.md)
 - Presence + integrity → [`FLEET-PRESENCE-SECURITY.md`](./FLEET-PRESENCE-SECURITY.md)
 - Endpoint hardening defaults → [`security/GHOST-EVERYDAY-DEFAULTS.md`](./security/GHOST-EVERYDAY-DEFAULTS.md)
