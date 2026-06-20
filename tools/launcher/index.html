@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>AIXMOS · Mission Control</title>
+<style>
+  :root{--cy:#00e5ff;--mg:#ff3ea5;--gd:#ffd54f;--gr:#69f0ae;--vi:#b388ff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#03040a;color:#eafcff;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+  #bg{position:fixed;inset:0;z-index:0}
+  .wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:30px;gap:26px}
+  .logo{text-align:center;animation:rise .8s ease}
+  .logo .mark{font-size:clamp(40px,9vw,86px);font-weight:800;letter-spacing:8px;
+    background:linear-gradient(90deg,var(--cy),#fff,var(--mg));-webkit-background-clip:text;
+    background-clip:text;color:transparent;text-shadow:0 0 60px rgba(0,229,255,.35);line-height:1}
+  .logo .sub{margin-top:8px;font-size:12px;letter-spacing:6px;opacity:.6}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(200px,260px));gap:18px;animation:rise 1s ease}
+  @media(min-width:900px){.grid{grid-template-columns:repeat(4,200px)}}
+  a.tile,div.tile{position:relative;text-decoration:none;color:#eafcff;cursor:pointer;
+    height:150px;border-radius:18px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;
+    background:linear-gradient(160deg,rgba(10,22,38,.85),rgba(4,9,20,.85));
+    border:1px solid rgba(0,229,255,.25);transition:.2s;overflow:hidden;backdrop-filter:blur(6px)}
+  a.tile:hover,div.tile:hover{transform:translateY(-5px) scale(1.02);border-color:var(--cy);
+    box-shadow:0 14px 50px rgba(0,229,255,.22),inset 0 0 40px rgba(0,229,255,.05)}
+  .tile .ic{font-size:34px;filter:drop-shadow(0 0 12px currentColor)}
+  .tile .nm{font-size:16px;font-weight:700;letter-spacing:1px}
+  .tile .ds{font-size:11px;opacity:.6;line-height:1.4;margin-top:3px}
+  .tile.cy{color:var(--cy)} .tile.mg{color:var(--mg)} .tile.gd{color:var(--gd)} .tile.gr{color:var(--gr)} .tile.vi{color:var(--vi)}
+  .tile .nm,.tile .ds{color:#eafcff}
+  .cmds{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:880px;animation:rise 1.2s ease}
+  .cmd{display:flex;align-items:center;gap:9px;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+    background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 11px;color:#bfefff}
+  .cmd b{color:var(--gd);font-weight:600}
+  .cmd .cp{cursor:pointer;opacity:.55;font-family:sans-serif;font-size:11px;
+    border:1px solid rgba(0,229,255,.3);border-radius:6px;padding:2px 7px;color:#bfefff}
+  .cmd .cp:hover{opacity:1;background:rgba(0,229,255,.15)}
+  .foot{position:fixed;bottom:14px;width:100%;text-align:center;font-size:10.5px;letter-spacing:2px;opacity:.35;z-index:1}
+  #toast{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:var(--cy);color:#022;
+    padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:.25s;z-index:5;pointer-events:none}
+  #toast.show{opacity:1}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="wrap">
+  <div class="logo">
+    <div class="mark">◆ AIXMOS</div>
+    <div class="sub">MISSION CONTROL · PROJECT X</div>
+  </div>
+
+  <div class="grid">
+    <a class="tile cy" href="../hologram-cockpit/index.html">
+      <div class="ic">🛰️</div><div><div class="nm">3D COCKPIT</div><div class="ds">Orbit & dissect the empire</div></div>
+    </a>
+    <a class="tile gr" href="../wiki/index.html">
+      <div class="ic">📚</div><div><div class="nm">WIKI</div><div class="ds">Every doc, rendered inline</div></div>
+    </a>
+    <div class="tile gd" onclick="copy('bash scripts/deploy')">
+      <div class="ic">⚡</div><div><div class="nm">FLASH DEPLOY</div><div class="ds">Stand up a node · copy cmd</div></div>
+    </div>
+    <div class="tile mg" onclick="copy('bash scripts/hailmary booyah')">
+      <div class="ic">🔱</div><div><div class="nm">BOOYAH</div><div class="ds">Wake HAILMARY · copy cmd</div></div>
+    </div>
+  </div>
+
+  <div class="cmds">
+    <div class="cmd"><b>flash deploy</b><code>bash scripts/deploy owner</code><span class="cp" onclick="copy('bash scripts/deploy owner')">copy</span></div>
+    <div class="cmd"><b>operator seat</b><code>bash scripts/deploy operator</code><span class="cp" onclick="copy('bash scripts/deploy operator')">copy</span></div>
+    <div class="cmd"><b>send to family</b><code>bash scripts/send-pack family</code><span class="cp" onclick="copy('bash scripts/send-pack family')">copy</span></div>
+    <div class="cmd"><b>boot the base</b><code>bash scripts/tmmt unison</code><span class="cp" onclick="copy('bash scripts/tmmt unison')">copy</span></div>
+  </div>
+</div>
+<div class="foot">PLUG & PLAY · FLASH DEPLOYABLE · OWNER-SEALED · GO GHOST</div>
+<div id="toast">copied ✓</div>
+
+<script>
+// holographic animated background — light, offline, no deps
+const cv=document.getElementById('bg'), x=cv.getContext('2d'); let W,H,t=0;
+function size(){W=cv.width=innerWidth;H=cv.height=innerHeight;} size(); addEventListener('resize',size);
+const N=70, pts=[...Array(N)].map(()=>({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.0006,vy:(Math.random()-.5)*.0006}));
+function draw(){
+  t+=.005; x.clearRect(0,0,W,H);
+  // perspective grid floor
+  x.strokeStyle='rgba(0,229,255,.07)'; x.lineWidth=1;
+  const hz=H*.62;
+  for(let i=0;i<=20;i++){ const p=i/20; const y=hz+(H-hz)*p*p; x.beginPath(); x.moveTo(0,y); x.lineTo(W,y); x.stroke(); }
+  for(let i=-10;i<=10;i++){ const vx=W/2+i*(W/12); x.beginPath(); x.moveTo(W/2+i*8,hz); x.lineTo(vx,H); x.stroke(); }
+  // floating nodes + links
+  for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>1)p.vx*=-1; if(p.y<0||p.y>1)p.vy*=-1; }
+  for(let i=0;i<N;i++){ const a=pts[i];
+    for(let j=i+1;j<N;j++){ const b=pts[j]; const dx=(a.x-b.x)*W, dy=(a.y-b.y)*H; const d=Math.hypot(dx,dy);
+      if(d<130){ x.strokeStyle='rgba(0,229,255,'+(.13*(1-d/130))+')'; x.beginPath(); x.moveTo(a.x*W,a.y*H); x.lineTo(b.x*W,b.y*H); x.stroke(); } }
+    const px=a.x*W, py=a.y*H, r=1.6+Math.sin(t*3+i)*.8;
+    x.fillStyle='rgba(120,230,255,.8)'; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+  requestAnimationFrame(draw);
+}
+draw();
+function copy(s){ navigator.clipboard&&navigator.clipboard.writeText(s);
+  const tt=document.getElementById('toast'); tt.textContent='copied: '+s; tt.classList.add('show');
+  setTimeout(()=>tt.classList.remove('show'),1400); }
+</script>
+</body>
+</html>
