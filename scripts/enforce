@@ -1,199 +1,174 @@
 #!/usr/bin/env bash
 # enforce — PROJECT X HAILMARY access enforcement.
-#
 # One shot, any device (macOS / Linux / Pi / Windows via WSL).
-# Pulls the live authorized operator list from Supabase,
-# compares against every local session/identity/process on this machine,
-# and hard-cuts anyone who isn't paid + active.
 #
-#   enforce            — audit + cut unpaid, keep paid
-#   enforce --dry-run  — show what WOULD be cut, touch nothing
-#   enforce --report   — print full roster, no action
-#   enforce --cut <email>   — cut one specific person immediately
-#   enforce --restore <email> — restore one person (X only, requires owner-seal)
-#
-# Cuts applied locally:
-#   • Kills any running TMMT/AIXMOS process owned by that user/session
-#   • Removes their local .aixmos/grants/<email>.grant file
-#   • Sets their .dormant flag if this is a Traptop device
-#   • Writes a REVOKED stamp to .aixmos/revoked/<email>.revoked
-#   • Logs cut to .aixmos/enforce.log
-#
-# Supabase check (requires env with SERVICE_ROLE_KEY):
-#   • billing_status = 'active' OR tmmt_token_balances.balance > 0 → AUTHORIZED
-#   • billing_status = 'trialing' + balance = 0 + trial expired → CUT
-#   • no operator_profile row → CUT
-#   • org suspended → CUT
+#   enforce              — audit + cut anyone unpaid/suspended
+#   enforce --dry-run    — show what WOULD be cut, touch nothing
+#   enforce --report     — full roster, no action
+#   enforce --cut <email>      — cut one person right now
+#   enforce --restore <email>  — bring someone back (owner seal required)
 #
 set -uo pipefail
+export TERM="${TERM:-xterm-256color}"
 
-# ── colors ──────────────────────────────────────────────────────────────────────
-R=$'\e[31m'; G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; B=$'\e[1m'; D=$'\e[2m'; X=$'\e[0m'
-say()  { printf '\n%s%s%s\n' "$B" "$*" "$X"; }
-ok()   { printf '  %s✓%s %s\n' "$G" "$X" "$*"; }
-cut_()  { printf '  %s✂%s %s\n' "$R" "$X" "$*"; }
-warn() { printf '  %s!%s %s\n' "$Y" "$X" "$*"; }
-info() { printf '  %s›%s %s\n' "$D" "$X" "$*"; }
+R=$'\e[31m'; G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; B=$'\e[1m'; D=$'\e[2m'; N=$'\e[0m'
+say()  { printf '\n%s%s%s\n'  "$B" "$*" "$N"; }
+ok()   { printf '  %s✓%s %s\n' "$G" "$N" "$*"; }
+snip() { printf '  %s✂%s %s\n' "$R" "$N" "$*"; }
+warn() { printf '  %s!%s %s\n' "$Y" "$N" "$*"; }
+info() { printf '  %s›%s %s\n' "$D" "$N" "$*"; }
 
-# ── parse args ──────────────────────────────────────────────────────────────────
-DRY_RUN=false
-REPORT_ONLY=false
-FORCE_CUT=""
-FORCE_RESTORE=""
+# ── args ─────────────────────────────────────────────────────────────────────────
+DRY_RUN=false; REPORT_ONLY=false; FORCE_CUT=""; FORCE_RESTORE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)  DRY_RUN=true ;;
     --report)   REPORT_ONLY=true ;;
     --cut)      FORCE_CUT="${2:-}"; shift ;;
     --restore)  FORCE_RESTORE="${2:-}"; shift ;;
-    *) ;;
   esac
-  shift
+  shift 2>/dev/null || true
 done
 
-# ── locate repo ─────────────────────────────────────────────────────────────────
-REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null \
-  || echo "${TMMT_ROOT:-$HOME/Projects/TMMT}")"
+# ── locate repo ──────────────────────────────────────────────────────────────────
+REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null || echo "${TMMT_ROOT:-$HOME/Projects/TMMT}")"
 AIXMOS_DIR="$REPO/.aixmos"
 GRANTS_DIR="$AIXMOS_DIR/grants"
 REVOKED_DIR="$AIXMOS_DIR/revoked"
 LOG="$AIXMOS_DIR/enforce.log"
 mkdir -p "$GRANTS_DIR" "$REVOKED_DIR"
-
 ts()  { date -u +%FT%TZ; }
-log() { echo "$(ts) | $*" >> "$LOG"; }
+tlog(){ echo "$(ts) | $*" >> "$LOG"; }
 
-# ── load env ────────────────────────────────────────────────────────────────────
+# ── load env ─────────────────────────────────────────────────────────────────────
+ENV_FILE=""
 for f in "$REPO/.env.local" "$REPO/.env" "$HOME/.config/tmmt/supabase.env"; do
   [ -f "$f" ] && { ENV_FILE="$f"; break; }
 done
-[ -z "${ENV_FILE:-}" ] && { warn "No env file — running offline/local-only mode."; OFFLINE=true; } || {
+OFFLINE=true
+if [ -n "$ENV_FILE" ]; then
   while IFS='=' read -r k v; do
-    [[ "$k" =~ ^[[:space:]]*# ]] || [[ -z "$k" ]] && continue
+    [[ "$k" =~ ^[[:space:]]*#|^[[:space:]]*$ ]] && continue
     v="${v%\"}" v="${v#\"}" v="${v%\'}" v="${v#\'}"
-    export "$k=$v"
+    export "$k=$v" 2>/dev/null || true
   done < "$ENV_FILE"
-  OFFLINE=false
-}
+  SUPA_URL="${NEXT_PUBLIC_SUPABASE_URL:-}"
+  SUPA_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
+  [ -n "$SUPA_URL" ] && [ -n "$SUPA_KEY" ] && OFFLINE=false
+fi
 
-SUPA_URL="${NEXT_PUBLIC_SUPABASE_URL:-}"
-SUPA_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
-[ -z "$SUPA_URL" ] || [ -z "$SUPA_KEY" ] && OFFLINE=true
-
-# ── print header ────────────────────────────────────────────────────────────────
+# ── header ───────────────────────────────────────────────────────────────────────
 clear
 echo ""
-echo "  ${B}╔══════════════════════════════════════════════════════════╗${X}"
-echo "  ${B}║   TMMT ACCESS ENFORCEMENT — PROJECT X HAILMARY          ║${X}"
-echo "  ${B}║   Host: $(hostname -s | cut -c1-20 | awk '{printf "%-20s",$0}')   $(ts | cut -c1-16)    ║${X}"
-$DRY_RUN    && echo "  ${Y}║   MODE: DRY RUN — no changes will be made                ║${X}"
-$REPORT_ONLY && echo "  ${C}║   MODE: REPORT ONLY                                      ║${X}"
-echo "  ${B}╚══════════════════════════════════════════════════════════╝${X}"
+echo "  ${B}╔══════════════════════════════════════════════════════════╗${N}"
+echo "  ${B}║   TMMT ACCESS ENFORCEMENT — PROJECT X HAILMARY          ║${N}"
+printf "  ${B}║   Host: %-20s  %s    ║${N}\n" "$(hostname -s | cut -c1-20)" "$(ts | cut -c1-16)"
+$DRY_RUN     && echo "  ${Y}║   MODE: DRY RUN — no changes will be made                ║${N}"
+$REPORT_ONLY && echo "  ${C}║   MODE: REPORT ONLY                                      ║${N}"
+echo "  ${B}╚══════════════════════════════════════════════════════════╝${N}"
 echo ""
 
-# ── fetch authorized list from Supabase ─────────────────────────────────────────
-declare -a AUTHORIZED=()
-declare -a SUSPENDED=()
+# ── fetch authorized list ────────────────────────────────────────────────────────
+TO_KEEP=(); TO_CUT=()
 
 if [ "$OFFLINE" = false ]; then
-  info "Fetching authorized operator list from Supabase..."
+  info "Fetching live operator list from Supabase..."
   RESP=$(curl -sf \
     -H "apikey: $SUPA_KEY" \
     -H "Authorization: Bearer $SUPA_KEY" \
     -H "Accept: application/json" \
-    "$SUPA_URL/rest/v1/operator_profiles?select=customer_email,level,ghl_pipeline_stage,org_id,organizations(billing_status,suspended_at),tmmt_token_balances(balance,status)&organizations.billing_status=neq.suspended" \
+    "$SUPA_URL/rest/v1/operator_profiles?select=customer_email,org_id,organizations(billing_status,suspended_at),tmmt_token_balances(balance,status)" \
     2>/dev/null || echo "[]")
 
-  # Also pull organizations with billing_status
-  ORG_RESP=$(curl -sf \
-    -H "apikey: $SUPA_KEY" \
-    -H "Authorization: Bearer $SUPA_KEY" \
-    "$SUPA_URL/rest/v1/organizations?select=id,name,billing_status,suspended_at&billing_status=eq.active" \
-    2>/dev/null || echo "[]")
-
-  # Parse authorized emails: active billing OR has tokens
   while IFS= read -r line; do
-    AUTHORIZED+=("$line")
-  done < <(echo "$RESP" | python3 -c "
+    [[ "$line" == OK:* ]]        && TO_KEEP+=("${line#OK:}")
+    [[ "$line" == UNPAID:* ]]    && TO_CUT+=("${line#UNPAID:}")
+    [[ "$line" == SUSPENDED:* ]] && TO_CUT+=("${line#SUSPENDED:}")
+  done < <(python3 - "$RESP" << 'PYEOF'
 import json, sys
-rows = json.load(sys.stdin)
+rows = json.loads(sys.argv[1]) if len(sys.argv) > 1 else []
 for r in rows:
     email = r.get('customer_email','')
     if not email or 'tmmtrentals.local' in email:
         continue
     org = r.get('organizations') or {}
-    if isinstance(org, list): org = org[0] if org else {}
-    tokens = r.get('tmmt_token_balances') or {}
-    if isinstance(tokens, list): tokens = tokens[0] if tokens else {}
-    billing = org.get('billing_status','')
-    suspended = org.get('suspended_at')
-    balance = tokens.get('balance', 0) or 0
-    tok_status = tokens.get('status','active')
+    org = (org[0] if isinstance(org, list) and org else org) if isinstance(org, list) else org
+    tok = r.get('tmmt_token_balances') or {}
+    tok = (tok[0] if isinstance(tok, list) and tok else tok) if isinstance(tok, list) else tok
+    billing  = org.get('billing_status','') if isinstance(org, dict) else ''
+    suspended= org.get('suspended_at')      if isinstance(org, dict) else None
+    balance  = int(tok.get('balance',0) or 0) if isinstance(tok, dict) else 0
+    tok_ok   = (tok.get('status','active') == 'active') if isinstance(tok, dict) else True
     if suspended:
         print('SUSPENDED:' + email)
-    elif billing == 'active' or balance > 0:
+    elif billing == 'active' or (balance > 0 and tok_ok):
         print('OK:' + email)
     else:
         print('UNPAID:' + email)
-" 2>/dev/null || echo "")
+PYEOF
+)
 else
-  warn "Offline mode — using local grant files only."
+  warn "Offline — Supabase unreachable. Checking local grants only."
+  # Offline: trust local grant files as source of truth
+  for g in "$GRANTS_DIR"/*.grant; do
+    [ -f "$g" ] || continue
+    e="$(basename "$g" .grant | tr '-' '@' | sed 's/@/@/;s/-/./2g')"
+    TO_KEEP+=("$e")
+  done
 fi
 
-# ── build cut/keep lists ────────────────────────────────────────────────────────
-declare -a TO_CUT=()
-declare -a TO_KEEP=()
-
-for entry in "${AUTHORIZED[@]}"; do
-  status="${entry%%:*}"
-  email="${entry#*:}"
-  [ -z "$email" ] && continue
-  case "$status" in
-    OK)        TO_KEEP+=("$email") ;;
-    UNPAID|SUSPENDED) TO_CUT+=("$email") ;;
-  esac
-done
-
-# Force-cut override
+# ── force-cut override ───────────────────────────────────────────────────────────
 [ -n "$FORCE_CUT" ] && TO_CUT+=("$FORCE_CUT")
-
-# ── report ───────────────────────────────────────────────────────────────────────
-echo "  ${G}AUTHORIZED (paid + active):${X}"
-if [ ${#TO_KEEP[@]} -eq 0 ]; then
-  echo "    (none found — offline or no active operators)"
-else
-  for e in "${TO_KEEP[@]}"; do echo "    ${G}✓${X} $e"; done
+# Remove force-cut from keep list if it was there
+if [ -n "$FORCE_CUT" ]; then
+  FILTERED=()
+  for e in "${TO_KEEP[@]+"${TO_KEEP[@]}"}"; do
+    [ "$e" = "$FORCE_CUT" ] || FILTERED+=("$e")
+  done
+  TO_KEEP=("${FILTERED[@]+"${FILTERED[@]}"}")
 fi
 
+# ── print roster ─────────────────────────────────────────────────────────────────
+echo "  ${G}AUTHORIZED (paid + active):${N}"
+if [ "${#TO_KEEP[@]}" -eq 0 ]; then
+  echo "    (none found)"
+else
+  for e in "${TO_KEEP[@]}"; do printf '    %s✓%s %s\n' "$G" "$N" "$e"; done
+fi
 echo ""
-echo "  ${R}TO BE CUT (unpaid / suspended / no account):${X}"
-if [ ${#TO_CUT[@]} -eq 0 ]; then
+echo "  ${R}TO BE CUT (unpaid / suspended / unregistered):${N}"
+if [ "${#TO_CUT[@]}" -eq 0 ]; then
   echo "    (none — all clear)"
 else
-  for e in "${TO_CUT[@]}"; do echo "    ${R}✂${X} $e"; done
+  for e in "${TO_CUT[@]}"; do printf '    %s✂%s %s\n' "$R" "$N" "$e"; done
 fi
 echo ""
 
-$REPORT_ONLY && { echo "  Report complete. No action taken."; exit 0; }
+$REPORT_ONLY && { echo "  Report done. No action taken."; exit 0; }
 
-# ── RESTORE flow (owner-only, requires seal check) ───────────────────────────────
+# ── restore flow (X only) ────────────────────────────────────────────────────────
 if [ -n "$FORCE_RESTORE" ]; then
   say "  RESTORE: $FORCE_RESTORE"
   if bash "$REPO/scripts/owner-seal.sh" check 2>/dev/null; then
-    REVOKE_FILE="$REVOKED_DIR/$(echo "$FORCE_RESTORE" | tr '@.' '-').revoked"
-    rm -f "$REVOKE_FILE"
+    rm -f "$REVOKED_DIR/$(echo "$FORCE_RESTORE" | tr '@.' '-').revoked"
     touch "$GRANTS_DIR/$(echo "$FORCE_RESTORE" | tr '@.' '-').grant"
-    ok "Restored: $FORCE_RESTORE"
-    log "RESTORE | $FORCE_RESTORE"
+    ok "Access restored: $FORCE_RESTORE"
+    tlog "RESTORE | $FORCE_RESTORE"
   else
-    err "${R}Owner seal required to restore access. Run: bash scripts/owner-seal.sh${X}"
+    echo "  ${R}Owner seal required. Run: bash scripts/owner-seal.sh${N}" >&2
+    exit 1
   fi
   exit 0
 fi
 
-# ── CUT execution ────────────────────────────────────────────────────────────────
-[ ${#TO_CUT[@]} -eq 0 ] && { say "  ✓ ALL CLEAR — no unauthorized access detected."; exit 0; }
+# ── all clear? ───────────────────────────────────────────────────────────────────
+if [ "${#TO_CUT[@]}" -eq 0 ]; then
+  say "  ✓ ALL CLEAR — no unauthorized access detected."
+  tlog "RUN | ALL CLEAR | host=$(hostname -s)"
+  exit 0
+fi
 
+# ── execute cuts ─────────────────────────────────────────────────────────────────
 say "  CUTTING ${#TO_CUT[@]} UNAUTHORIZED ACCOUNT(S)..."
 
 for EMAIL in "${TO_CUT[@]}"; do
@@ -202,78 +177,67 @@ for EMAIL in "${TO_CUT[@]}"; do
   GRANT="$GRANTS_DIR/${SLUG}.grant"
   REVOKE="$REVOKED_DIR/${SLUG}.revoked"
   echo ""
-  cut_ "$EMAIL"
+  snip "$EMAIL"
 
   if $DRY_RUN; then
-    info "  [DRY] Would remove grant, write revoked stamp, kill processes"
+    info "[DRY] Would remove grant, write revoked stamp, kill processes, suspend tokens"
     continue
   fi
 
   # 1. Remove local grant
-  rm -f "$GRANT" && info "Removed local grant"
+  rm -f "$GRANT"
+  info "Local grant removed"
 
-  # 2. Write revoked stamp
-  cat > "$REVOKE" << STAMP
-email: $EMAIL
-revoked_at: $(ts)
-revoked_on: $(hostname -s)
-reason: unpaid or suspended
-STAMP
+  # 2. Revoked stamp
+  printf 'email: %s\nrevoked_at: %s\nrevoked_on: %s\nreason: unpaid or suspended\n' \
+    "$EMAIL" "$(ts)" "$(hostname -s)" > "$REVOKE"
   info "Revoked stamp written"
 
-  # 3. Kill any running TMMT/AIXMOS processes tied to this email/session
-  #    (searches running node/python/bash procs for --email or env var match)
+  # 3. Kill local processes tied to this email
   KILLED=0
   while IFS= read -r pid; do
     [ -z "$pid" ] && continue
-    kill -9 "$pid" 2>/dev/null && (( KILLED++ )) || true
-  done < <(pgrep -f "OPERATOR_EMAIL=$EMAIL\|--email=$EMAIL\|tmmt.*$EMAIL" 2>/dev/null || true)
-  [ "$KILLED" -gt 0 ] && info "Killed $KILLED process(es)"
+    kill -9 "$pid" 2>/dev/null && KILLED=$((KILLED+1)) || true
+  done < <(pgrep -f "OPERATOR_EMAIL=${EMAIL}\|--email=${EMAIL}" 2>/dev/null || true)
+  [ "$KILLED" -gt 0 ] && info "Killed $KILLED process(es)" || info "No active processes to kill"
 
-  # 4. If Supabase is reachable, revoke their token balance + suspend in DB
+  # 4. Suspend in Supabase (token balance + GHL stage)
   if [ "$OFFLINE" = false ]; then
-    # Suspend token balance
     ORG_ID=$(curl -sf \
       -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" \
-      "$SUPA_URL/rest/v1/operator_profiles?customer_email=eq.$(python3 -c "import urllib.parse; print(urllib.parse.quote('$EMAIL'))")&select=org_id" \
-      2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0]['org_id'] if d else '')" 2>/dev/null || echo "")
+      "$SUPA_URL/rest/v1/operator_profiles?customer_email=eq.$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('$EMAIL'))")&select=org_id" \
+      2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0].get('org_id','') if d else '')" 2>/dev/null || echo "")
 
     if [ -n "$ORG_ID" ]; then
-      # Suspend token balance
       curl -sf -X PATCH \
-        -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" \
-        -H "Content-Type: application/json" \
+        -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" -H "Content-Type: application/json" \
         "$SUPA_URL/rest/v1/tmmt_token_balances?org_id=eq.$ORG_ID" \
         -d '{"status":"suspended"}' >/dev/null 2>&1 && info "Token balance suspended in DB"
-      # Update GHL stage
       curl -sf -X PATCH \
-        -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" \
-        -H "Content-Type: application/json" \
-        "$SUPA_URL/rest/v1/operator_profiles?customer_email=eq.$(python3 -c "import urllib.parse; print(urllib.parse.quote('$EMAIL'))")" \
-        -d '{"ghl_pipeline_stage":"Access Revoked — Unpaid"}' >/dev/null 2>&1 && info "GHL stage updated"
+        -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" -H "Content-Type: application/json" \
+        "$SUPA_URL/rest/v1/operator_profiles?customer_email=eq.$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('$EMAIL'))")" \
+        -d '{"ghl_pipeline_stage":"Access Revoked — Unpaid"}' >/dev/null 2>&1 && info "GHL stage → Access Revoked"
     fi
   fi
 
-  # 5. If this is a Traptop device, set dormant flag
-  DORMANT="$AIXMOS_DIR/sealed/.dormant"
-  GATE="$AIXMOS_DIR/sealed/GATE.seal"
-  if [ -f "$GATE" ] && [ ! -f "$DORMANT" ]; then
-    touch "$DORMANT" && chmod 600 "$DORMANT"
+  # 5. Traptop: re-seal if this is a sealed device
+  if [ -f "$AIXMOS_DIR/sealed/GATE.seal" ] && [ ! -f "$AIXMOS_DIR/sealed/.dormant" ]; then
+    touch "$AIXMOS_DIR/sealed/.dormant" && chmod 600 "$AIXMOS_DIR/sealed/.dormant"
     info "Traptop set DORMANT"
   fi
 
-  log "CUT | $EMAIL | host=$(hostname -s)"
-  ok "  Done: $EMAIL cut."
+  tlog "CUT | $EMAIL | host=$(hostname -s)"
+  ok "Done: $EMAIL is cut."
 done
 
-# ── Final summary ────────────────────────────────────────────────────────────────
+# ── summary ───────────────────────────────────────────────────────────────────────
 echo ""
-echo "  ${B}╔══════════════════════════════════════════════════════════╗${X}"
-echo "  ${B}║   ENFORCEMENT COMPLETE                                   ║${X}"
-echo "  ${B}║   Cut: ${#TO_CUT[@]} | Kept: ${#TO_KEEP[@]} | Host: $(hostname -s | cut -c1-18 | awk '{printf "%-18s",$0}')  ║${X}"
-echo "  ${B}╚══════════════════════════════════════════════════════════╝${X}"
+echo "  ${B}╔══════════════════════════════════════════════════════════╗${N}"
+printf "  ${B}║   DONE — Cut: %-3s  Kept: %-3s  Host: %-18s  ║${N}\n" \
+  "${#TO_CUT[@]}" "${#TO_KEEP[@]}" "$(hostname -s | cut -c1-18)"
+echo "  ${B}╚══════════════════════════════════════════════════════════╝${N}"
 echo ""
-echo "  To push this enforcement to ALL mesh nodes:"
-echo "  ${C}bash scripts/mesh/mesh-broadcast.sh 'bash ~/Projects/TMMT/scripts/enforce'${X}"
+echo "  Push to every mesh node:"
+printf '  %s  bash scripts/mesh/mesh-broadcast.sh "enforce"%s\n' "$C" "$N"
 echo ""
-log "RUN COMPLETE | cut=${#TO_CUT[@]} kept=${#TO_KEEP[@]}"
+tlog "RUN COMPLETE | cut=${#TO_CUT[@]} kept=${#TO_KEEP[@]}"
