@@ -1,11 +1,40 @@
-import type { AppState } from "../types";
+import type { AppState, Application } from "../types";
+import { createInitialState } from "../mock-data";
 import { CUBE_BROADCAST_CHANNEL, CUBE_STORAGE_KEY } from "./config";
+
+/**
+ * Backfill any loaded/partial cube state onto a fresh full state, so the
+ * application object and its array fields can NEVER be undefined — even if an
+ * older or partial payload was persisted before the schema changed. This is
+ * what keeps the Learn/Work faces from crashing on stale localStorage data.
+ */
+export function normalizeCubeState(raw: unknown): AppState {
+  const base = createInitialState();
+  if (!raw || typeof raw !== "object") return base;
+  const r = raw as Partial<AppState>;
+  const app = (r.application ?? {}) as Partial<Application>;
+  const arr = <T,>(v: unknown, fallback: T[]): T[] => (Array.isArray(v) ? (v as T[]) : fallback);
+  return {
+    ...base,
+    ...r,
+    currentUser: { ...base.currentUser, ...(r.currentUser ?? {}) },
+    application: {
+      ...base.application,
+      ...app,
+      readiness: arr(app.readiness, base.application.readiness),
+      auditLog: arr(app.auditLog, base.application.auditLog),
+      documents: arr(app.documents, base.application.documents),
+      coachingInsights: arr(app.coachingInsights, base.application.coachingInsights),
+      productMatches: arr(app.productMatches, base.application.productMatches),
+    },
+  };
+}
 
 export function loadCubeState(): AppState | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(CUBE_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AppState) : null;
+    return raw ? normalizeCubeState(JSON.parse(raw)) : null;
   } catch {
     return null;
   }
@@ -29,7 +58,7 @@ export function subscribeCubeSync(onState: (state: AppState) => void): () => voi
   const onStorage = (e: StorageEvent) => {
     if (e.key === CUBE_STORAGE_KEY && e.newValue) {
       try {
-        onState(JSON.parse(e.newValue) as AppState);
+        onState(normalizeCubeState(JSON.parse(e.newValue)));
       } catch {
         /* ignore */
       }
@@ -41,7 +70,7 @@ export function subscribeCubeSync(onState: (state: AppState) => void): () => voi
     channel = new BroadcastChannel(CUBE_BROADCAST_CHANNEL);
     channel.onmessage = (ev) => {
       if (ev.data?.type === "state" && ev.data.state) {
-        onState(ev.data.state as AppState);
+        onState(normalizeCubeState(ev.data.state));
       }
     };
   } catch {
