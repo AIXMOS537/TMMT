@@ -261,6 +261,7 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - `docs/BRAINIAC-RESILIENCE.md` — make the brain never let you down: UPS/power, tower failover, heartbeat tripwire, encrypted offsite backup (`scripts/mesh/vault-backup.sh`), owner-only `tag:brain` ACL
 - `docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md` — owner intent: home HQ → office expansion; per-operator subaccount + one-shot device seats ($97/mo); tier pricing as stated, with a flagged reconciliation vs `OFFER-STACK.md` (monthly vs one-time)
 - `docs/ARCHITECT-COCKPIT.md` — the 3D "go virtual" cockpit (`bash scripts/hologram` → `tools/hologram-cockpit/index.html`): orbit/zoom/click-to-dissect the whole empire; WebXR/Vision-Pro + live-data upgrade path; cross-operator learning-brain vision
+- `docs/WIKI-DROPDOWN-METHOD.md` — the Karpathy-style home base (replaces Obsidian): plain-markdown source + a generated offline collapsible-dropdown page. `WIKI.md` (markdown home) + `scripts/wiki` (`build`/`open` → `tools/wiki/index.html`); cockpit ↔ wiki cross-linked
 - `docs/DMV-CLUBHOUSE-OFFICE.md` — the Virginia office buildout: the Ultimate Clubhouse (Traphouse) for TMMT Rentals + DMV operators; systems/network blueprint (same tailnet, fenced seats, office brain node, MRR tie-in)
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams

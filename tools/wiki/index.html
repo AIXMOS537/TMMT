@@ -1,0 +1,181 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AIXMOS · Wiki</title>
+<style>
+:root{--cy:#00e5ff;--mg:#ff3ea5;--gd:#ffd54f;--gr:#69f0ae;--bg:#03040a;--pan:#0a1422;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 700px at 70% -10%,#0a1f33,#03040a);color:#dff3ff;
+ font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;min-height:100vh;padding:26px 22px 60px}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+h1{font-size:18px;letter-spacing:3px;text-shadow:0 0 16px var(--cy)}
+h1 span{color:var(--cy)}
+.sub{font-size:11px;opacity:.55;letter-spacing:1px;margin-top:3px}
+.tools{display:flex;gap:10px;flex-wrap:wrap}
+.btn{cursor:pointer;text-decoration:none;font-size:12px;letter-spacing:1px;color:#bfefff;
+ background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.32);border-radius:10px;padding:9px 14px;transition:.15s}
+.btn:hover{background:rgba(0,229,255,.22);color:#fff}
+.btn.mg{color:#ffc6e2;background:rgba(255,62,165,.08);border-color:rgba(255,62,165,.32)}
+.btn.mg:hover{background:rgba(255,62,165,.22);color:#fff}
+#q{width:100%;max-width:420px;padding:11px 14px;border-radius:10px;border:1px solid rgba(0,229,255,.25);
+ background:#06101c;color:#dff3ff;font-size:13px;margin:6px 0 20px}
+details{background:linear-gradient(160deg,rgba(10,20,34,.8),rgba(4,8,18,.8));border:1px solid rgba(255,255,255,.08);
+ border-radius:14px;margin:0 0 14px;overflow:hidden}
+summary{cursor:pointer;padding:15px 18px;font-size:13px;letter-spacing:1.5px;font-weight:700;list-style:none;
+ display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary .c{opacity:.45;font-weight:400;font-size:11px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:4px 16px 18px}
+.card{display:block;text-decoration:none;color:inherit;background:#06101c;border:1px solid rgba(0,229,255,.14);
+ border-radius:11px;padding:13px 15px;transition:.15s}
+.card:hover{border-color:var(--cy);box-shadow:0 0 22px rgba(0,229,255,.12);transform:translateY(-2px)}
+.card .t{font-size:13.5px;font-weight:600;color:#fff;margin-bottom:5px}
+.card .b{font-size:11.5px;opacity:.7;line-height:1.5;max-height:3.4em;overflow:hidden}
+.card .p{font-size:10px;opacity:.32;margin-top:8px;font-family:ui-monospace,Menlo,monospace}
+.foot{opacity:.4;font-size:11px;margin-top:24px;line-height:1.8}
+.hide{display:none!important}
+</style></head><body>
+<header>
+  <div><h1><span>◆</span> AIXMOS · WIKI</h1><div class="sub">YOUR HOME BASE · COLLAPSIBLE DROPDOWNS · OFFLINE · GIT-SYNCED</div></div>
+  <div class="tools">
+    <a class="btn mg" href="../hologram-cockpit/index.html">🛰️ OPEN 3D COCKPIT</a>
+    <a class="btn" href="https://github.com/AIXMOS537/TMMT" target="_blank">⎘ GITHUB (rendered)</a>
+  </div>
+</header>
+<input id="q" placeholder="🔎 filter everything…" oninput="filt(this.value)"/>
+<details open><summary>🏠 HOME BASE — what you live in <span class="c">pinned</span></summary><div class="grid">
+<a class="card" href="../../docs/ARCHITECT-COCKPIT.md"><div class="t">🛰️ Architect's Cockpit (3D)</div><div class="b">Your empire as a holographic engine you can rotate, zoom, and **pick apart</div><div class="p">docs/ARCHITECT-COCKPIT.md</div></a>
+<a class="card" href="../../docs/FLEET-ROSTER.md"><div class="t">🖥️ Fleet Roster (devices)</div><div class="b">The single source of truth for **which physical machine is which**. Every</div><div class="p">docs/FLEET-ROSTER.md</div></a>
+<a class="card" href="../../docs/BRAINIAC-MAC-SETUP.md"><div class="t">🧠 Brain Setup (M1)</div><div class="b">One page, run **on the M1 Mac itself**, top to bottom. This turns the M1 into</div><div class="p">docs/BRAINIAC-MAC-SETUP.md</div></a>
+<a class="card" href="../../docs/BRAINIAC-RESILIENCE.md"><div class="t">🛡️ Brain Resilience</div><div class="b">The access layer (Tailscale + SSH) is solid. This closes the gap between</div><div class="p">docs/BRAINIAC-RESILIENCE.md</div></a>
+<a class="card" href="../../docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md"><div class="t">🏠 Homeland HQ + Seats</div><div class="b">Captures the owner's direction: **home = the central homeland server/HQ**,</div><div class="p">docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md</div></a>
+<a class="card" href="../../docs/DMV-CLUBHOUSE-OFFICE.md"><div class="t">🏢 DMV Clubhouse</div><div class="b">X's office buildout: the **Ultimate Clubhouse (the "Traphouse")** for TMMT</div><div class="p">docs/DMV-CLUBHOUSE-OFFICE.md</div></a>
+<a class="card" href="../../docs/OFFER-STACK.md"><div class="t">💰 Offer Stack (pricing)</div><div class="b">Canonical pricing for the whole network. Public sees AIXMOS; this is the</div><div class="p">docs/OFFER-STACK.md</div></a>
+<a class="card" href="../../docs/LEARN-EARN-CHURN.md"><div class="t">🎮 Learn·Earn·Churn</div><div class="b">The public membership that turns anyone into an operator, one level at a time.</div><div class="p">docs/LEARN-EARN-CHURN.md</div></a>
+<a class="card" href="../../docs/security/GO-GHOST-PROTOCOL.md"><div class="t">👻 Go Ghost Protocol</div><div class="b">A personal privacy &amp; identity-compartmentalization protocol.</div><div class="p">docs/security/GO-GHOST-PROTOCOL.md</div></a>
+<a class="card" href="../../docs/WIKI-DROPDOWN-METHOD.md"><div class="t">📚 This Wiki Method</div><div class="b">Plain markdown is the brain; a single collapsible **dropdown page** is the</div><div class="p">docs/WIKI-DROPDOWN-METHOD.md</div></a>
+</div></details>
+<details><summary>📂 ALL DOCUMENTATION <span class="c">112 files</span></summary><div class="grid">
+<a class="card" href="../../docs/ACTION-CHECKLIST.md"><div class="t">Master Action Checklist</div><div class="b">Work through `docs/ACTION-CHECKLIST.md` one item at a time, **🤖 [Cursor] items only**.</div><div class="p">docs/ACTION-CHECKLIST.md</div></a>
+<a class="card" href="../../docs/AFFILIATE_RECRUITMENT_KIT.md"><div class="t">AIXMOS Affiliate Program — Recruitment Kit</div><div class="b">Get paid $35 every time someone gets their money + credit on track.</div><div class="p">docs/AFFILIATE_RECRUITMENT_KIT.md</div></a>
+<a class="card" href="../../docs/AIXMOS-CHARTER.md"><div class="t">AIXMOS — Agent Charter (the network brain's constitution)</div><div class="b">Architecture and intent, not credentials. No secrets, keys, or personal</div><div class="p">docs/AIXMOS-CHARTER.md</div></a>
+<a class="card" href="../../docs/AIXMOS-MESH-BLUEPRINT.md"><div class="t">AIXMOS Mesh — Always-On Assistant + Memory Blueprint</div><div class="b">The owner's intent, captured so it persists. Device-specific secrets and</div><div class="p">docs/AIXMOS-MESH-BLUEPRINT.md</div></a>
+<a class="card" href="../../docs/AIXMOS-PLATFORM-BLUEPRINT.md"><div class="t">AIXMOS — All-In-One Management Platform Blueprint</div><div class="b">**Founder:** PROJECT X HAILMARY · **Thesis:** one platform that runs **any business in</div><div class="p">docs/AIXMOS-PLATFORM-BLUEPRINT.md</div></a>
+<a class="card" href="../../docs/AIXMOS-SUPER-OPERATIVE.md"><div class="t">AIXMOS — The Super-Operative</div><div class="b">One operative, many hands. AIXMOS is the single brain the client talks to; a</div><div class="p">docs/AIXMOS-SUPER-OPERATIVE.md</div></a>
+<a class="card" href="../../docs/AIXMOS-TMMT-FUNNEL.md"><div class="t">AIXMOS × TMMT — Revenue funnel</div><div class="b">—</div><div class="p">docs/AIXMOS-TMMT-FUNNEL.md</div></a>
+<a class="card" href="../../docs/AIXMOS_LAYOUT.md"><div class="t">AIXMOS Layout — Where Each Copy Lives and Why</div><div class="b">—</div><div class="p">docs/AIXMOS_LAYOUT.md</div></a>
+<a class="card" href="../../docs/ARCHITECT-COCKPIT.md"><div class="t">The Architect's Cockpit — go virtual</div><div class="b">Your empire as a holographic engine you can rotate, zoom, and **pick apart</div><div class="p">docs/ARCHITECT-COCKPIT.md</div></a>
+<a class="card" href="../../docs/ARCHITECTURE.md"><div class="t">TMMT Rentals — Architecture</div><div class="b">—</div><div class="p">docs/ARCHITECTURE.md</div></a>
+<a class="card" href="../../docs/BRAIN-TAILSCALE-ACL.md"><div class="t">HAILMARY brain — Tailscale ACL (owner + family only)</div><div class="b">Replace `AIXMOS537@` if your owner login differs, and assign `tag:family`</div><div class="p">docs/BRAIN-TAILSCALE-ACL.md</div></a>
+<a class="card" href="../../docs/BRAINIAC-MAC-SETUP.md"><div class="t">Stand up the M1 as your brain (`brainiac-mac`)</div><div class="b">One page, run **on the M1 Mac itself**, top to bottom. This turns the M1 into</div><div class="p">docs/BRAINIAC-MAC-SETUP.md</div></a>
+<a class="card" href="../../docs/BRAINIAC-RESILIENCE.md"><div class="t">Brain resilience — make it never let you down</div><div class="b">The access layer (Tailscale + SSH) is solid. This closes the gap between</div><div class="p">docs/BRAINIAC-RESILIENCE.md</div></a>
+<a class="card" href="../../docs/CEO-BRAIN.md"><div class="t">CEO Brain — always-on, ever-learning infrastructure for executive work</div><div class="b">How the mesh + brain are set up to stay **on**, keep **learning**, and help you</div><div class="p">docs/CEO-BRAIN.md</div></a>
+<a class="card" href="../../docs/CLAUDE-CODE-FASTTRACK.md"><div class="t">Claude Code — fast-track setup</div><div class="b">**Primary runbook:** [`CLAUDE-CODE-RUNBOOK.md`](CLAUDE-CODE-RUNBOOK.md)  </div><div class="p">docs/CLAUDE-CODE-FASTTRACK.md</div></a>
+<a class="card" href="../../docs/CLAUDE-CODE-RUNBOOK.md"><div class="t">Claude Code — TMMT Revenue Fast-Track Runbook</div><div class="b">—</div><div class="p">docs/CLAUDE-CODE-RUNBOOK.md</div></a>
+<a class="card" href="../../docs/CLIENT-ONBOARDING-DISCOVERY.md"><div class="t">Client Onboarding &amp; Discovery — scan, evaluate, integrate (with consent)</div><div class="b">Help a client (e.g. moe legacy) tailor and integrate their business into the</div><div class="p">docs/CLIENT-ONBOARDING-DISCOVERY.md</div></a>
+<a class="card" href="../../docs/CLOSER_PLAYBOOK_V1.md"><div class="t">Closer &amp; Setter Playbook — V1</div><div class="b">"We don't pull credit. We need a valid driver's license, deposit, and the first week's payment. That's it. Easier than a dealership for most of our customers."</div><div class="p">docs/CLOSER_PLAYBOOK_V1.md</div></a>
+<a class="card" href="../../docs/CONTINUE-ON-CARRY-MAC.md"><div class="t">Continue on the Carry Mac</div><div class="b">⚠️ **SUPERSEDED (2026-06-15).** The key-flashdrive flow below is **retired** —</div><div class="p">docs/CONTINUE-ON-CARRY-MAC.md</div></a>
+<a class="card" href="../../docs/COST-AND-CAPACITY.md"><div class="t">Cost &amp; Capacity Plan — don't run out</div><div class="b">**Your AI cost is bounded by how much YOU use the command desk — not by how</div><div class="p">docs/COST-AND-CAPACITY.md</div></a>
+<a class="card" href="../../docs/CREDIT-FUNDING-COMPLIANCE.md"><div class="t">AI Credit-Repair &amp; Funding Guidance — compliance-by-design</div><div class="b">Moe Legacy runs the **first AI credit-repair + business-funding guidance** company,</div><div class="p">docs/CREDIT-FUNDING-COMPLIANCE.md</div></a>
+<a class="card" href="../../docs/DATABASE-SCHEMA.md"><div class="t">TMMT Rentals — Database Schema</div><div class="b">—</div><div class="p">docs/DATABASE-SCHEMA.md</div></a>
+<a class="card" href="../../docs/DEPLOY-EVERYWHERE.md"><div class="t">Deploy Everywhere — any Mac, iPhone, Apple device, or Android</div><div class="b">Card to hand someone: `docs/cheatsheets/POCKET-CARD.png` (scannable).</div><div class="p">docs/DEPLOY-EVERYWHERE.md</div></a>
+<a class="card" href="../../docs/DEVICE-LOADING.md"><div class="t">Device Loading — getting the stack ONTO any device, every method, ranked honestly</div><div class="b">Companion to `docs/MOBILE.md` (which covers the **safe default**: phone as a</div><div class="p">docs/DEVICE-LOADING.md</div></a>
+<a class="card" href="../../docs/DEVICE-SYNC-PRIVATELLM.md"><div class="t">Device Sync — Private LLM + Shortcuts over the Tailnet</div><div class="b">Keep all four Apple devices — **carry Mac, carry iPhone, work Mac, work iPhone**</div><div class="p">docs/DEVICE-SYNC-PRIVATELLM.md</div></a>
+<a class="card" href="../../docs/DIGITAL-AMBASSADORS.md"><div class="t">Digital Ambassadors — consent-first licensed digital talent (spec &amp; plan)</div><div class="b">Status: **SPEC / PLANNING.** No code, no avatars generated yet. This designs a</div><div class="p">docs/DIGITAL-AMBASSADORS.md</div></a>
+<a class="card" href="../../docs/DISPATCH-CORE.md"><div class="t">Dispatch Core — Operator Runbook</div><div class="b">—</div><div class="p">docs/DISPATCH-CORE.md</div></a>
+<a class="card" href="../../docs/DMV-CLUBHOUSE-OFFICE.md"><div class="t">The DMV Clubhouse — TMMT Rentals HQ (Virginia)</div><div class="b">X's office buildout: the **Ultimate Clubhouse (the "Traphouse")** for TMMT</div><div class="p">docs/DMV-CLUBHOUSE-OFFICE.md</div></a>
+<a class="card" href="../../docs/DOMAIN-SETUP.md"><div class="t">Domain setup — All In One Management Solutions</div><div class="b">**`.com`** = public AIXMOS (clients, operators applying, marketing)  </div><div class="p">docs/DOMAIN-SETUP.md</div></a>
+<a class="card" href="../../docs/ENVIRONMENTS.md"><div class="t">Environments — never a mix-up: DEV · TEST · PROD</div><div class="b">The clean separation so you and your team (operators, developers, vendors) can</div><div class="p">docs/ENVIRONMENTS.md</div></a>
+<a class="card" href="../../docs/EVENT-DEMO-PLAYBOOK.md"><div class="t">Event Demo Playbook — pull up, shock &amp; awe, walk away with operators</div><div class="b">Status: **GO-TO-MARKET / LIVE-DEMO PLAN.** The room is influencers + credit-</div><div class="p">docs/EVENT-DEMO-PLAYBOOK.md</div></a>
+<a class="card" href="../../docs/EXECUTE-NOW.md"><div class="t">EXECUTE NOW — the one ordered runbook (carry Mac, tonight)</div><div class="b">Everything built this session, in the order to run it. ☁️ = already done by the</div><div class="p">docs/EXECUTE-NOW.md</div></a>
+<a class="card" href="../../docs/EXPLAIN-AND-DEMO.md"><div class="t">Explain It &amp; Demo It — the simple version</div><div class="b">**It's a lemonade stand that runs itself — for car rentals and helping people</div><div class="p">docs/EXPLAIN-AND-DEMO.md</div></a>
+<a class="card" href="../../docs/FLASH-DEPLOY-RUNBOOK.md"><div class="t">Flash-Deploy &amp; Cleanup Runbook</div><div class="b">One consolidated checklist to take the stack to a clean, deployable state and</div><div class="p">docs/FLASH-DEPLOY-RUNBOOK.md</div></a>
+<a class="card" href="../../docs/FLASH-DRIVE-PRODUCT-LINE.md"><div class="t">Flash Drive Product Line — Print, Ship, Sell</div><div class="b">—</div><div class="p">docs/FLASH-DRIVE-PRODUCT-LINE.md</div></a>
+<a class="card" href="../../docs/FLEET-PRESENCE-SECURITY.md"><div class="t">Fleet Presence &amp; Security — know it's clean, know it's alive</div><div class="b">Two jobs: **(1)** prove every machine that ever touched this code is clean of</div><div class="p">docs/FLEET-PRESENCE-SECURITY.md</div></a>
+<a class="card" href="../../docs/FLEET-ROSTER.md"><div class="t">Fleet Roster — the canonical device map</div><div class="b">The single source of truth for **which physical machine is which**. Every</div><div class="p">docs/FLEET-ROSTER.md</div></a>
+<a class="card" href="../../docs/FOUNDERS-ONLINE.md"><div class="t">Founders Online — get Ayyan Khan + MoeLegacy live NOW</div><div class="b">Fast runbook for the two founding seats. Deferred brain cost (settle the $50K</div><div class="p">docs/FOUNDERS-ONLINE.md</div></a>
+<a class="card" href="../../docs/GHL-PIPELINE-SETUP.md"><div class="t">GoHighLevel — AIXMOS × TMMT pipeline setup</div><div class="b">—</div><div class="p">docs/GHL-PIPELINE-SETUP.md</div></a>
+<a class="card" href="../../docs/GHL-WEBHOOK-SETUP.md"><div class="t">GHL webhook → Supabase notes</div><div class="b">—</div><div class="p">docs/GHL-WEBHOOK-SETUP.md</div></a>
+<a class="card" href="../../docs/GO-LIVE-RUNBOOK.md"><div class="t">Go-live runbook — do all (≈45 min)</div><div class="b">—</div><div class="p">docs/GO-LIVE-RUNBOOK.md</div></a>
+<a class="card" href="../../docs/HAILMARY-CHARTER.md"><div class="t">HAILMARY — Agent Charter (the constitution)</div><div class="b">This is the founding law of the HAILMARY agent. It is **architecture and</div><div class="p">docs/HAILMARY-CHARTER.md</div></a>
+<a class="card" href="../../docs/HIGH-TICKET-GO-LIVE.md"><div class="t">High-ticket go-live — payments &amp; `/build`</div><div class="b">**Why `tmmt-ops`, not `tmmt-command-center`:** the public webhook routes are deployed on the canonical `tmmt-ops` Vercel project. The `tmmt-command-center` deploy has staff-only middleware gating that returns `307 → /login` on POST. Verified 2026-06-09 with a live smoke test (`tmmt-ops` returned 405 to GET = correct POST-only route; `tmmt-command-center` returned 307).</div><div class="p">docs/HIGH-TICKET-GO-LIVE.md</div></a>
+<a class="card" href="../../docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md"><div class="t">Homeland HQ + Operator Seats — the model (owner intent, 2026-06-19)</div><div class="b">Captures the owner's direction: **home = the central homeland server/HQ**,</div><div class="p">docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md</div></a>
+<a class="card" href="../../docs/IN-CAR-AGENT.md"><div class="t">In-Car Agent — Spec &amp; Build Plan (McLaren / CarPlay / any vehicle)</div><div class="b">Status: **SPEC / PLANNING.** No code shipped yet. This is the architecture and</div><div class="p">docs/IN-CAR-AGENT.md</div></a>
+<a class="card" href="../../docs/IT-SUPPORT-TEAM-PLAYBOOK.md"><div class="t">IT / Technical-Support Operations — Offshore Backend Team Playbook</div><div class="b">How **PROJECT X HAILMARY** runs as the **Tier-1 owner / IT lead** with a trusted</div><div class="p">docs/IT-SUPPORT-TEAM-PLAYBOOK.md</div></a>
+<a class="card" href="../../docs/JOIN-THE-VERSE.md"><div class="t">Join the Verse — consent-and-pay digitization onboarding (spec)</div><div class="b">Status: **SPEC / PLANNING.** The commercial, opt-in counterpart to the private</div><div class="p">docs/JOIN-THE-VERSE.md</div></a>
+<a class="card" href="../../docs/LEARN-EARN-CHURN.md"><div class="t">Learn · Earn · Churn — the $50K Stretch (Project X AIXMOS public program)</div><div class="b">The public membership that turns anyone into an operator, one level at a time.</div><div class="p">docs/LEARN-EARN-CHURN.md</div></a>
+<a class="card" href="../../docs/LEGACY-DEPLOY-MOE.md"><div class="t">Deploy &amp; Launch — moe legacy (car rentals), Legacy edition</div><div class="b">The full rental operating platform for **moe legacy's owner**, running on</div><div class="p">docs/LEGACY-DEPLOY-MOE.md</div></a>
+<a class="card" href="../../docs/LOCAL-FIRST-AI-STACK.md"><div class="t">Local-First AI Stack — run (almost) everything locally, Claude only on escalation</div><div class="b">Goal: do **most** work locally through the terminal / PowerShell against your own</div><div class="p">docs/LOCAL-FIRST-AI-STACK.md</div></a>
+<a class="card" href="../../docs/MAC-IMESSAGE-BRIDGE.md"><div class="t">Mac iMessage Bridge</div><div class="b">Run only **one** instance (e.g. Cursor *or* Claude Desktop, not both).</div><div class="p">docs/MAC-IMESSAGE-BRIDGE.md</div></a>
+<a class="card" href="../../docs/MEMORIAL-NAS.md"><div class="t">Memorial on the NAS — private, durable, timeless (architecture)</div><div class="b">Companion to `scripts/memorial` and the gitignored `.memorial/` sanctuary. This</div><div class="p">docs/MEMORIAL-NAS.md</div></a>
+<a class="card" href="../../docs/MESH-COORDINATION.md"><div class="t">Agent Mesh — Coordination Contract</div><div class="b">The carry Mac, the M1 Mac Pro, the PC brain, and cloud Claude sessions act as</div><div class="p">docs/MESH-COORDINATION.md</div></a>
+<a class="card" href="../../docs/MESH-SWARM.md"><div class="t">Mesh Agentic Swarm — many machines, many agents, in sync</div><div class="b">**Different accounts per machine (by design).** carry-mac and work-mac are on</div><div class="p">docs/MESH-SWARM.md</div></a>
+<a class="card" href="../../docs/MIDDLEMAN_BOLT_ONS_SPRINT1.md"><div class="t">Middleman Bolt-Ons — Sprint 1</div><div class="b">[firstname], it's Sumaima with AIXMOS. Quick first move most of our members make in week one — a starter card that reports to all 3 bureaus. Here's the one we recommend: [link]. Reply here with any questions.</div><div class="p">docs/MIDDLEMAN_BOLT_ONS_SPRINT1.md</div></a>
+<a class="card" href="../../docs/MISSION-CONTROL-PUSH.md"><div class="t">Mission Control — Daily Push (Owner + Team)</div><div class="b">—</div><div class="p">docs/MISSION-CONTROL-PUSH.md</div></a>
+<a class="card" href="../../docs/MOBILE.md"><div class="t">HAILMARY in your pocket — iPhone &amp; Android</div><div class="b">Core promise, on every screen: **protect the user first, guard their peace, and</div><div class="p">docs/MOBILE.md</div></a>
+<a class="card" href="../../docs/OFFER-STACK.md"><div class="t">THE OFFER STACK — the full learn-and-earn ladder</div><div class="b">Canonical pricing for the whole network. Public sees AIXMOS; this is the</div><div class="p">docs/OFFER-STACK.md</div></a>
+<a class="card" href="../../docs/ONE-APP-CONSOLIDATION.md"><div class="t">One app: TMMT Ops + Command Center</div><div class="b">**Updated:** Vercel runs **three separate apps** — [`THREE-APP-ECOSYSTEM.md`](THREE-APP-ECOSYSTEM.md). This doc is historical context for merging ops routes into the monorepo; it does **not** mean delete `tmmt-ops` or `aixmos-landing` on Vercel.</div><div class="p">docs/ONE-APP-CONSOLIDATION.md</div></a>
+<a class="card" href="../../docs/OPERATOR-RUNBOOK.md"><div class="t">Operator Runbook — run the business with minimal backstops</div><div class="b">Everything you need to run day-to-day. Agents do the work, the gate decides</div><div class="p">docs/OPERATOR-RUNBOOK.md</div></a>
+<a class="card" href="../../docs/OPERATOR-START-HERE.md"><div class="t">Operator start here</div><div class="b">—</div><div class="p">docs/OPERATOR-START-HERE.md</div></a>
+<a class="card" href="../../docs/PARTNER-PORTAL.md"><div class="t">Partner / investor portal</div><div class="b">—</div><div class="p">docs/PARTNER-PORTAL.md</div></a>
+<a class="card" href="../../docs/PIPELINE-FLOW.md"><div class="t">TMMT Rentals — Business Pipeline Flow</div><div class="b">—</div><div class="p">docs/PIPELINE-FLOW.md</div></a>
+<a class="card" href="../../docs/PRIME-AND-SYNC.md"><div class="t">Prime &amp; Sync — one-shot on carry Mac + local cross-sync across all 3 devices</div><div class="b">Get the whole base primed on the carry Mac in one shot, then keep the carry Mac,</div><div class="p">docs/PRIME-AND-SYNC.md</div></a>
+<a class="card" href="../../docs/PROJECT-X-HAILMARY.md"><div class="t">PROJECT X — HAILMARY (the serious blueprint)</div><div class="b">Owner-only (PROJECT X HAILMARY). The public **only ever meets AIXMOS** — the friendly</div><div class="p">docs/PROJECT-X-HAILMARY.md</div></a>
+<a class="card" href="../../docs/PROJECTAIXMOS-LEGACY-SPLIT.md"><div class="t">ProjectAixmos — Legacy Edition (backend-less variant)</div><div class="b">**Purpose:** Define a self-sufficient, **managed-cloud-only** variant of the</div><div class="p">docs/PROJECTAIXMOS-LEGACY-SPLIT.md</div></a>
+<a class="card" href="../../docs/QA-WALKTHROUGH.md"><div class="t">TMMT — Page-by-Page QA Walkthrough</div><div class="b">You are doing a page-by-page QA pass of this Next.js + Supabase app using</div><div class="p">docs/QA-WALKTHROUGH.md</div></a>
+<a class="card" href="../../docs/QUICKSTART.md"><div class="t">Quickstart — set up any computer in 3 steps</div><div class="b">So simple it's copy-paste. Run this on **each** machine (carry Mac, work Mac,</div><div class="p">docs/QUICKSTART.md</div></a>
+<a class="card" href="../../docs/ROADMAP.md"><div class="t">TMMT Rentals — Project Roadmap &amp; Status</div><div class="b">Last updated: May 17, 2026</div><div class="p">docs/ROADMAP.md</div></a>
+<a class="card" href="../../docs/RUN-IT-ALL.md"><div class="t">Run It All — the operating manual</div><div class="b">For: you, Moe, your executive (Justin), VAs, operators — and family who just</div><div class="p">docs/RUN-IT-ALL.md</div></a>
+<a class="card" href="../../docs/SALES-CHANNELS.md"><div class="t">Sales channels — USB + online checkout</div><div class="b">Subject: Your TMMT / AIXMOS access is ready  </div><div class="p">docs/SALES-CHANNELS.md</div></a>
+<a class="card" href="../../docs/SECRET-ROTATION.md"><div class="t">Secret Rotation &amp; Scrub — runbook</div><div class="b">Rotate every credential, purge them from history, and stop new ones from ever</div><div class="p">docs/SECRET-ROTATION.md</div></a>
+<a class="card" href="../../docs/SECRETS-POLICY.md"><div class="t">SECRETS POLICY — local, encrypted, code-gated. Forever.</div><div class="b">The law for every API key and secret in the empire. Owner: PROJECT X HAILMARY.</div><div class="p">docs/SECRETS-POLICY.md</div></a>
+<a class="card" href="../../docs/SECURITY-LAYER-3-RLS-FINDINGS.md"><div class="t">Security audit — Layer 3 (RLS / DB policies)</div><div class="b">—</div><div class="p">docs/SECURITY-LAYER-3-RLS-FINDINGS.md</div></a>
+<a class="card" href="../../docs/SENTRY-SETUP.md"><div class="t">Sentry Error Monitoring — Setup Guide</div><div class="b">—</div><div class="p">docs/SENTRY-SETUP.md</div></a>
+<a class="card" href="../../docs/SIMPLE-GUIDE.md"><div class="t">The Super Simple Guide (picture book)</div><div class="b">📕 The colorful version: **`docs/cheatsheets/HAILMARY-GUIDE.pdf`** — print it,</div><div class="p">docs/SIMPLE-GUIDE.md</div></a>
+<a class="card" href="../../docs/STATUS.md"><div class="t">TMMT Rentals — Project Status</div><div class="b">Last updated: May 17, 2026</div><div class="p">docs/STATUS.md</div></a>
+<a class="card" href="../../docs/SYSTEM-BLUEPRINT.md"><div class="t">The System Blueprint — How It All Works</div><div class="b">The one place that explains the whole thing: where it came from, what it is,</div><div class="p">docs/SYSTEM-BLUEPRINT.md</div></a>
+<a class="card" href="../../docs/THREE-APP-ECOSYSTEM.md"><div class="t">TMMT × AIXMOS — Three-app Vercel ecosystem</div><div class="b">—</div><div class="p">docs/THREE-APP-ECOSYSTEM.md</div></a>
+<a class="card" href="../../docs/WATCHTOWER-ROSTER.md"><div class="t">The Watchtower Roster — the League</div><div class="b">The global mesh is **protected by AIXMOS Agents of Chaos**, run by **TMMT</div><div class="p">docs/WATCHTOWER-ROSTER.md</div></a>
+<a class="card" href="../../docs/WIKI-DROPDOWN-METHOD.md"><div class="t">The Wiki Dropdown Method — your home base (kill Obsidian)</div><div class="b">Plain markdown is the brain; a single collapsible **dropdown page** is the</div><div class="p">docs/WIKI-DROPDOWN-METHOD.md</div></a>
+<a class="card" href="../../docs/affiliates/AFFILIATE_AGREEMENT_DRAFT.md"><div class="t">AIXMOS Affiliate Agreement — Draft v1</div><div class="b">⚠️ **Lawyer review required before any affiliate signs this.** This is a working draft to anchor the conversation with counsel, not final legal copy. It captures the business terms in plain English so a Virginia (or your jurisdiction) attorney can convert it into binding language.</div><div class="p">docs/affiliates/AFFILIATE_AGREEMENT_DRAFT.md</div></a>
+<a class="card" href="../../docs/affiliates/EMAIL_TEMPLATES.md"><div class="t">Affiliate Program — Email Templates</div><div class="b">Hey [first_name],</div><div class="p">docs/affiliates/EMAIL_TEMPLATES.md</div></a>
+<a class="card" href="../../docs/deal-kit/CLOSE-CHECKLIST.md"><div class="t">FAST-TRACK CLOSE — lead → paid → building</div><div class="b">The repeatable flow that turns a "yes" into money in the account and a project</div><div class="p">docs/deal-kit/CLOSE-CHECKLIST.md</div></a>
+<a class="card" href="../../docs/deal-kit/DISCOVERY-INTAKE.md"><div class="t">DISCOVERY INTAKE — {{CLIENT}}</div><div class="b">Fills the moment the 50% deposit clears. This is what kicks the build network</div><div class="p">docs/deal-kit/DISCOVERY-INTAKE.md</div></a>
+<a class="card" href="../../docs/deal-kit/ENGAGEMENT-LETTER.md"><div class="t">ENGAGEMENT LETTER — {{CLIENT}}</div><div class="b">⚠️ **Template, not legal advice.** Have a licensed attorney in your state review</div><div class="p">docs/deal-kit/ENGAGEMENT-LETTER.md</div></a>
+<a class="card" href="../../docs/deal-kit/README.md"><div class="t">Deal Kit — close fast, get paid, start building</div><div class="b">⚠️ **These are templates, not legal advice.** Have a licensed attorney in your</div><div class="p">docs/deal-kit/README.md</div></a>
+<a class="card" href="../../docs/deal-kit/REMOTE-ACCESS-CONSENT.md"><div class="t">REMOTE ACCESS CONSENT — {{CLIENT}}</div><div class="b">⚠️ Template, not legal advice — have counsel review. Keeps remote takeover clean,</div><div class="p">docs/deal-kit/REMOTE-ACCESS-CONSENT.md</div></a>
+<a class="card" href="../../docs/flash-drive-kits/PRINT-AND-SHIP-CHECKLIST.md"><div class="t">Print &amp; ship checklist</div><div class="b">—</div><div class="p">docs/flash-drive-kits/PRINT-AND-SHIP-CHECKLIST.md</div></a>
+<a class="card" href="../../docs/flash-drive-kits/README.md"><div class="t">Flash drive kits — print &amp; ship</div><div class="b">—</div><div class="p">docs/flash-drive-kits/README.md</div></a>
+<a class="card" href="../../docs/marketing/2026-06-18-moe-legacy-genie-demo-campaign.md"><div class="t">Campaign: "Watch The Genie Work" — Moe Legacy → TASTE Demo → $97 Door</div><div class="b">Owned: Moe Legacy profiles + moelegacy.com demo page. Earned: stitches/duets, "react to the genie" UGC.</div><div class="p">docs/marketing/2026-06-18-moe-legacy-genie-demo-campaign.md</div></a>
+<a class="card" href="../../docs/operator-team/OPERATOR_MANUAL.md"><div class="t">TMMT Rentals — Operator &amp; Owner Manual</div><div class="b">**TL;DR — first thing to know:** The live app lives at **`https://tmmt-command-center.vercel.app`**. Sign in there. Everything else is in this manual.</div><div class="p">docs/operator-team/OPERATOR_MANUAL.md</div></a>
+<a class="card" href="../../docs/operator-team/QUICK_REFERENCE.md"><div class="t">TMMT Rentals — Quick Reference (one page)</div><div class="b">Print this. Tape it next to the workstation.</div><div class="p">docs/operator-team/QUICK_REFERENCE.md</div></a>
+<a class="card" href="../../docs/operator-team/TEAM_SETUP_GUIDE.md"><div class="t">docs/operator-team/TEAM_SETUP_GUIDE.md</div><div class="b">—</div><div class="p">docs/operator-team/TEAM_SETUP_GUIDE.md</div></a>
+<a class="card" href="../../docs/ops-company-policy.md"><div class="t">TMMT / AIXMOS — Company policy (AI review context)</div><div class="b">—</div><div class="p">docs/ops-company-policy.md</div></a>
+<a class="card" href="../../docs/pitch/01-lease-to-own.md"><div class="t">Lease-to-Own — Pitch Deck</div><div class="b">**Get the keys today. Own the car at the end. No credit score required.**</div><div class="p">docs/pitch/01-lease-to-own.md</div></a>
+<a class="card" href="../../docs/pitch/02-credit-guidance.md"><div class="t">Credit Guidance — Pitch Deck</div><div class="b">**A guided path to a stronger credit profile. No score guarantees. No magic. Just the work, done with someone who's been there.**</div><div class="p">docs/pitch/02-credit-guidance.md</div></a>
+<a class="card" href="../../docs/pitch/03-business-funding.md"><div class="t">Business Funding — Pitch Deck</div><div class="b">**The capital handoff at the end of the funnel. You've earned it the right way — now we make the introduction.**</div><div class="p">docs/pitch/03-business-funding.md</div></a>
+<a class="card" href="../../docs/pitch/README.md"><div class="t">TMMT × AIXMOS — Pitch Deck Library</div><div class="b">**Compliance is not optional.** Read the [Universal Compliance Footer](#universal-compliance-footer) before pitching anything.</div><div class="p">docs/pitch/README.md</div></a>
+<a class="card" href="../../docs/runbooks/ACTIVATE-GHL-MONEY-COLLECTION.md"><div class="t">Activate GHL Money Collection — the simple runbook</div><div class="b">If any of the above isn't true yet, fix it before going live. This is the protection.</div><div class="p">docs/runbooks/ACTIVATE-GHL-MONEY-COLLECTION.md</div></a>
+<a class="card" href="../../docs/runbooks/GHL-COPY-PASTE-PACK.md"><div class="t">GHL Copy-Paste Pack — paste this straight into GoHighLevel</div><div class="b">**Billing:** "one-time" = single charge · "mo" = recurring subscription · "setup + mo" = initial charge then monthly.</div><div class="p">docs/runbooks/GHL-COPY-PASTE-PACK.md</div></a>
+<a class="card" href="../../docs/runbooks/LANE_WIRING_GHL.md"><div class="t">GHL Lane Wiring — Brand Architecture v1.0</div><div class="b">—</div><div class="p">docs/runbooks/LANE_WIRING_GHL.md</div></a>
+<a class="card" href="../../docs/runbooks/MASTER_OPERATOR_RUNBOOK.md"><div class="t">MASTER OPERATOR RUNBOOK — Get All Three Businesses Live</div><div class="b">—</div><div class="p">docs/runbooks/MASTER_OPERATOR_RUNBOOK.md</div></a>
+<a class="card" href="../../docs/sales/DEALER-KIT-ONE-PAGER.md"><div class="t">Independent dealership — your own instance (sales 1-pager)</div><div class="b">You get your **own** TMMT + AIXMOS stack — your customers, your fleet, your data. We deploy it, train your team, and you run it. Not a shared login where someone else might see your books.</div><div class="p">docs/sales/DEALER-KIT-ONE-PAGER.md</div></a>
+<a class="card" href="../../docs/security/FOOTPRINT-CLEANUP-TRACKER.md"><div class="t">TMMT Footprint Cleanup Tracker</div><div class="b">Companion to [`GO-GHOST-PROTOCOL.md`](./GO-GHOST-PROTOCOL.md).</div><div class="p">docs/security/FOOTPRINT-CLEANUP-TRACKER.md</div></a>
+<a class="card" href="../../docs/security/GHOST-EVERYDAY-DEFAULTS.md"><div class="t">Everyday Ghost — Recommended Defaults</div><div class="b">The daily-driver layer for [`GO-GHOST-PROTOCOL.md`](./GO-GHOST-PROTOCOL.md).</div><div class="p">docs/security/GHOST-EVERYDAY-DEFAULTS.md</div></a>
+<a class="card" href="../../docs/security/GO-GHOST-PROTOCOL.md"><div class="t">GO GHOST → APPEAR AS X</div><div class="b">A personal privacy &amp; identity-compartmentalization protocol.</div><div class="p">docs/security/GO-GHOST-PROTOCOL.md</div></a>
+<a class="card" href="../../docs/security/SUPABASE-ADVISORS-2026-06-15.md"><div class="t">Supabase Security Audit — 2026-06-15</div><div class="b">Read-only advisor scan of the production project (`uapxakmlwnpfsftfeezx`).</div><div class="p">docs/security/SUPABASE-ADVISORS-2026-06-15.md</div></a>
+<a class="card" href="../../docs/security/X-NODE-DEFINITION.md"><div class="t">X = AIXMOS — the one public node</div><div class="b">Pillar 5 of [`GO-GHOST-PROTOCOL.md`](./GO-GHOST-PROTOCOL.md), made concrete.</div><div class="p">docs/security/X-NODE-DEFINITION.md</div></a>
+<a class="card" href="../../docs/sops/CREDIT-GUIDANCE-SOP.md"><div class="t">Credit Guidance SOP (AIXMOS)</div><div class="b">—</div><div class="p">docs/sops/CREDIT-GUIDANCE-SOP.md</div></a>
+<a class="card" href="../../docs/sops/FUNDING-HANDOFF-SOP.md"><div class="t">Business funding handoff SOP</div><div class="b">—</div><div class="p">docs/sops/FUNDING-HANDOFF-SOP.md</div></a>
+<a class="card" href="../../docs/sops/OPERATOR-NETWORK-SOP.md"><div class="t">TMMT Operators Network — recruitment &amp; assignment</div><div class="b">—</div><div class="p">docs/sops/OPERATOR-NETWORK-SOP.md</div></a>
+</div></details>
+<div class="foot">
+Source of truth = the markdown files (LLM-native, git-diffable). This page is generated:
+<code>bash scripts/wiki build</code> · last built 2026-06-20 01:18.<br>
+Method: docs/WIKI-DROPDOWN-METHOD.md · Cockpit: tools/hologram-cockpit/index.html
+</div>
+<script>
+function filt(v){v=v.toLowerCase();document.querySelectorAll('.card').forEach(c=>{
+ c.classList.toggle('hide',!c.innerText.toLowerCase().includes(v));});
+ document.querySelectorAll('details').forEach(d=>{ if(v) d.open=true; });}
+</script>
+</body></html>
