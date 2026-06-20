@@ -65,6 +65,12 @@ export async function POST(request: Request) {
     return err(429, "Slow down a moment, then try again.");
   }
 
+  // 3b. If the brain isn't configured, fail BEFORE spending a token (keeps the
+  // ledger clean — no spurious spend+refund pair in the audit trail).
+  if (!process.env.POCKET_BRAIN_URL) {
+    return err(503, "The coach is warming up — check back shortly.");
+  }
+
   // 4. Resolve the member's org (the token account lives per-org).
   const service = createServiceRoleClient();
   const orgId = await resolveOrgIdByEmail(service, email);
