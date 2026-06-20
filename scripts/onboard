@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# onboard — provision a new TMMT operator in one command.
+#
+#   onboard <email> "<Full Name>" <location-slug> [rev-share%] [fee-cents]
+#
+#   Examples:
+#     onboard isaac@dmv.com "Isaac Scott" dmv
+#     onboard nashon@gmail.com "Nashon Harris" nova 30 9700
+#
+# What it does:
+#   1. Creates an org (name = Full Name + location)
+#   2. Creates operator_profile (candidate, $97/mo default)
+#   3. Grants 500 tokens (first month complimentary)
+#   4. Sends invite email via Supabase auth
+#   5. Logs the action to .aixmos/operators/
+#   6. Prints iMessage script to send welcome text
+#
+set -uo pipefail
+G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; B=$'\e[1m'; X=$'\e[0m'
+ok()   { printf '%s✓%s %s\n' "$G" "$X" "$*"; }
+warn() { printf '%s!%s %s\n' "$Y" "$X" "$*"; }
+err()  { printf '%s✗%s %s\n' "$R" "$X" "$*" >&2; exit 1; }
+say()  { printf '\n%s%s%s\n' "$B" "$*" "$X"; }
+
+# ── args ────────────────────────────────────────────────────────────────────────
+EMAIL="${1:-}"
+NAME="${2:-}"
+LOCATION="${3:-}"
+REV_SHARE="${4:-30}"
+FEE_CENTS="${5:-9700}"
+
+[ -z "$EMAIL" ] || [ -z "$NAME" ] || [ -z "$LOCATION" ] && {
+  echo ""
+  echo "  Usage: onboard <email> \"<Full Name>\" <location-slug> [rev-share%] [fee-cents]"
+  echo ""
+  echo "  onboard isaac@dmv.com \"Isaac Scott\" dmv"
+  echo "  onboard nashon@gmail.com \"Nashon Harris\" nova 30 9700"
+  echo ""
+  exit 1
+}
+
+R_DIR="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Projects/TMMT")"
+
+# ── load env ────────────────────────────────────────────────────────────────────
+ENV_FILE="$R_DIR/.env.local"
+[ -f "$ENV_FILE" ] || ENV_FILE="$HOME/.config/tmmt/supabase.env"
+[ -f "$ENV_FILE" ] || err "No env file found. Expected $R_DIR/.env.local"
+
+# source key=value pairs (skip comments/blanks)
+while IFS='=' read -r k v; do
+  [[ "$k" =~ ^#|^$ ]] && continue
+  v="${v%\"}" v="${v#\"}" v="${v%\'}" v="${v#\'}"
+  export "$k=$v"
+done < "$ENV_FILE"
+
+SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-}"
+SERVICE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
+[ -z "$SUPABASE_URL" ] || [ -z "$SERVICE_KEY" ] && err "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env file."
+
+say "  TMMT OPERATOR ONBOARDING — PROJECT X HAILMARY"
+echo "  Email    : $EMAIL"
+echo "  Name     : $NAME"
+echo "  Location : $LOCATION"
+echo "  Rev share: ${REV_SHARE}%"
+echo "  Monthly  : \$$(echo "scale=0; $FEE_CENTS/100" | bc)"
+echo ""
+
+# ── helper: POST to Supabase REST ───────────────────────────────────────────────
+sb_sql() {
+  local query="$1"
+  curl -sf \
+    -H "apikey: $SERVICE_KEY" \
+    -H "Authorization: Bearer $SERVICE_KEY" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    --data-raw "{\"query\": $(printf '%s' "$query" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}" \
+    "$SUPABASE_URL/rest/v1/rpc/execute_sql" 2>/dev/null \
+  || echo "{}"
+}
+
+sb_post() {
+  local table="$1" body="$2"
+  curl -sf \
+    -X POST \
+    -H "apikey: $SERVICE_KEY" \
+    -H "Authorization: Bearer $SERVICE_KEY" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    -d "$body" \
+    "$SUPABASE_URL/rest/v1/$table"
+}
+
+sb_patch() {
+  local table="$1" filter="$2" body="$3"
+  curl -sf \
+    -X PATCH \
+    -H "apikey: $SERVICE_KEY" \
+    -H "Authorization: Bearer $SERVICE_KEY" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    "$SUPABASE_URL/rest/v1/$table?$filter" \
+    -d "$body"
+}
+
+# ── 1. Create org ────────────────────────────────────────────────────────────────
+printf '  [1/5] Creating org "%s"...' "$NAME"
+ORG_RESP=$(sb_post "organizations" "{
+  \"name\":\"$NAME\",
+  \"kind\":\"partner\",
+  \"vertical\":\"rental\",
+  \"plan_tier\":\"starter\",
+  \"billing_status\":\"trialing\",
+  \"agent_name\":\"Riley\"
+}")
+ORG_ID=$(echo "$ORG_RESP" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d[0]["id"] if isinstance(d,list) else d.get("id",""))' 2>/dev/null || echo "")
+[ -z "$ORG_ID" ] && { echo ""; warn "Could not create org — may already exist. Continuing..."; ORG_ID=""; }
+[ -n "$ORG_ID" ] && ok " org $ORG_ID"
+
+# ── 2. Create operator_profile ───────────────────────────────────────────────────
+printf '  [2/5] Creating operator profile...'
+PROFILE_BODY="{
+  \"customer_email\":\"$EMAIL\",
+  \"level\":\"candidate\",
+  \"rubric_score\":0,
+  \"revenue_share_pct\":$REV_SHARE,
+  \"license_fee_cents\":$FEE_CENTS,
+  \"ghl_pipeline_stage\":\"Activated\"
+  $([ -n "$ORG_ID" ] && echo ",\"org_id\":\"$ORG_ID\"")
+}"
+PROFILE_RESP=$(sb_post "operator_profiles" "$PROFILE_BODY")
+PROFILE_ID=$(echo "$PROFILE_RESP" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d[0]["id"] if isinstance(d,list) else d.get("id",""))' 2>/dev/null || echo "")
+[ -n "$PROFILE_ID" ] && ok " profile $PROFILE_ID" || warn " profile insert may have failed"
+
+# ── 3. Grant 500 tokens ──────────────────────────────────────────────────────────
+if [ -n "$ORG_ID" ]; then
+  printf '  [3/5] Granting 500 tokens...'
+  DEDUPE="onboard-${LOCATION}-$(date +%Y%m%d)"
+  TOKEN_RESP=$(curl -sf -X POST \
+    -H "apikey: $SERVICE_KEY" \
+    -H "Authorization: Bearer $SERVICE_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"p_org\":\"$ORG_ID\",\"p_amount\":500,\"p_reason\":\"Operator onboarding — first month complimentary\",\"p_dedupe\":\"$DEDUPE\",\"p_set_allotment\":500,\"p_tier\":\"starter\"}" \
+    "$SUPABASE_URL/rest/v1/rpc/tmmt_token_grant" 2>/dev/null || echo "{}")
+  echo "$TOKEN_RESP" | grep -q '"granted":true' && ok " 500 tokens granted" || warn " token grant uncertain — check Supabase"
+else
+  printf '  [3/5] Skipping tokens (no org_id)\n'
+fi
+
+# ── 4. Send invite email via Supabase Admin ───────────────────────────────────────
+printf '  [4/5] Sending invite email to %s...' "$EMAIL"
+INVITE_RESP=$(curl -sf -X POST \
+  -H "apikey: $SERVICE_KEY" \
+  -H "Authorization: Bearer $SERVICE_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"data\":{\"operator_name\":\"$NAME\",\"location\":\"$LOCATION\"}}" \
+  "$SUPABASE_URL/auth/v1/admin/invite" 2>/dev/null || echo "{}")
+echo "$INVITE_RESP" | grep -q '"email"' && ok " invite sent" || warn " invite may have failed — send manually via Supabase dashboard"
+
+# ── 5. Log to .aixmos/operators/ ─────────────────────────────────────────────────
+printf '  [5/5] Logging operator record...'
+LOG_DIR="$R_DIR/.aixmos/operators"
+mkdir -p "$LOG_DIR"
+SLUG="$(echo "$NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+LOG_FILE="$LOG_DIR/${SLUG}-$(date +%Y%m%d).md"
+cat > "$LOG_FILE" << EOF
+# Operator — $NAME
+email: $EMAIL
+location: $LOCATION
+org_id: ${ORG_ID:-unknown}
+profile_id: ${PROFILE_ID:-unknown}
+rev_share: ${REV_SHARE}%
+monthly_fee: \$$(echo "scale=0; $FEE_CENTS/100" | bc)
+tokens_granted: 500
+status: candidate
+provisioned_at: $(date -u +%FT%TZ)
+provisioned_by: X
+EOF
+ok " $LOG_FILE"
+
+# ── Done — print iMessage welcome script ─────────────────────────────────────────
+echo ""
+say "  ✓ DONE — $NAME is provisioned as a TMMT Operator"
+echo ""
+printf '%s  iMessage script (send from carry Mac):%s\n' "$C" "$X"
+cat << MSG
+
+  To: $EMAIL (look up their number first)
+  ---
+  Hey $NAME — you're in. Welcome to the TMMT Operator network.
+
+  You now have access to the platform + 500 tokens to get started,
+  on me for the first month. After that it's \$97/mo through the system.
+
+  Log in at: https://tmmt-ops.vercel.app
+  Use this email: $EMAIL
+
+  Any questions, I got you. Let's build.
+
+  — X
+MSG
+
+echo ""
+say "  NEXT STEPS FOR $NAME:"
+echo "  1. Send them the iMessage above"
+echo "  2. Share login link: https://tmmt-ops.vercel.app"
+echo "  3. Once they log in → flip ghl_pipeline_stage to 'Onboarding'"
+echo "  4. Assign their Traptop device when ready: bash scripts/traptop-seal.sh seal"
+echo ""
