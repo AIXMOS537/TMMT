@@ -91,7 +91,7 @@ export function referralDedupeKey(
 
 export type ReferralRecordOutcome =
   | { recorded: true; commission: number }
-  | { recorded: false; reason: "unknown_code" | "no_amount" | "duplicate" | "error" };
+  | { recorded: false; reason: "unknown_code" | "no_amount" | "duplicate" | "error" | "self_referral" };
 
 /**
  * Record a COLLECTED referral sale → the referrer's commission. Idempotent on
@@ -114,10 +114,17 @@ export async function recordCollectedReferral(
   // The code must belong to a real member.
   const { data: codeRow } = await supabase
     .from("pocket_referral_codes")
-    .select("code")
+    .select("code, owner_email")
     .eq("code", code)
     .limit(1);
   if (!codeRow?.[0]) return { recorded: false, reason: "unknown_code" };
+
+  // No self-dealing: a code never earns on its own owner's purchase.
+  const ownerEmail = String((codeRow[0] as { owner_email?: string }).owner_email ?? "").trim().toLowerCase();
+  const buyer = (args.referredEmail ?? "").trim().toLowerCase();
+  if (ownerEmail && buyer && ownerEmail === buyer) {
+    return { recorded: false, reason: "self_referral" };
+  }
 
   const commission = commissionFor(args.saleAmount, args.rate);
   const { error } = await supabase.from("pocket_referral_earnings").insert({
