@@ -1,5 +1,24 @@
-import { describe, it, expect } from "vitest";
-import { commissionFor, deriveReferralCode, referralDedupeKey, REFERRAL_RATE } from "@/lib/referrals";
+import { describe, it, expect, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  commissionFor,
+  deriveReferralCode,
+  referralDedupeKey,
+  recordCollectedReferral,
+  REFERRAL_RATE,
+} from "@/lib/referrals";
+
+// Stub: code lookup returns the given owner_email; insert is captured.
+function refStub(ownerEmail: string) {
+  const insert = vi.fn().mockResolvedValue({ error: null });
+  const limit = vi.fn().mockResolvedValue({ data: [{ code: "ABC", owner_email: ownerEmail }], error: null });
+  const eq = vi.fn().mockReturnValue({ limit });
+  const select = vi.fn().mockReturnValue({ eq });
+  const from = vi.fn().mockImplementation((t: string) =>
+    t === "pocket_referral_codes" ? { select } : { insert }
+  );
+  return { client: { from } as unknown as SupabaseClient, insert };
+}
 
 describe("referral commission (collected sales only)", () => {
   it("computes a 2-dp commission at the default rate", () => {
@@ -27,6 +46,30 @@ describe("referral code derivation", () => {
     const b = deriveReferralCode("bob@x.com");
     expect(a).not.toBe(b);
     expect(a).toMatch(/^[0-9A-Z]{6,7}$/);
+  });
+});
+
+describe("recordCollectedReferral self-dealing guard", () => {
+  it("refuses to pay a code on its own owner's purchase", async () => {
+    const { client, insert } = refStub("owner@x.com");
+    const r = await recordCollectedReferral(client, {
+      code: "ABC",
+      referredEmail: "OWNER@X.com",
+      saleAmount: 97,
+    });
+    expect(r).toEqual({ recorded: false, reason: "self_referral" });
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("pays when the buyer is a different person", async () => {
+    const { client, insert } = refStub("owner@x.com");
+    const r = await recordCollectedReferral(client, {
+      code: "ABC",
+      referredEmail: "buyer@y.com",
+      saleAmount: 97,
+    });
+    expect(r.recorded).toBe(true);
+    expect(insert).toHaveBeenCalledTimes(1);
   });
 });
 

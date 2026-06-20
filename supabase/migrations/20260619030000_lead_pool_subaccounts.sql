@@ -64,15 +64,19 @@ drop policy if exists lead_routes_read on public.lead_routes;
 create policy lead_routes_read on public.lead_routes
   for select using (public.is_staff());
 
--- An operator (child) or the agency (parent) sees that agency's pool; a claimer
--- sees its own claimed leads. Siblings never see each other's claimed leads.
+-- An operator (child) sees only AVAILABLE leads for its agency + its OWN claims —
+-- never a sibling's claimed/assigned lead. The agency main account sees its whole
+-- pool. Staff bypass. This fence protects every operator's book from siblings.
 drop policy if exists lead_pool_read on public.lead_pool;
 create policy lead_pool_read on public.lead_pool
   for select using (
     public.is_staff()
-    or agency_org_id = public.lp_caller_org()
-    or agency_org_id = (select parent_org_id from public.organizations where id = public.lp_caller_org())
-    or claimed_by_org_id = public.lp_caller_org()
+    or agency_org_id = public.lp_caller_org()              -- agency main account: whole pool
+    or claimed_by_org_id = public.lp_caller_org()          -- the operator's own claimed/assigned
+    or (
+      status = 'available'                                 -- child operator: AVAILABLE only
+      and agency_org_id = (select parent_org_id from public.organizations where id = public.lp_caller_org())
+    )
   );
 
 -- Let a user read their own org + its parent + their own children (additive to
