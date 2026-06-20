@@ -26,9 +26,15 @@ stop *living* in Obsidian and live in this instead.
 
 | Piece | What | Where |
 |---|---|---|
-| **Wiki page** | Offline HTML home base — collapsible dropdowns of every doc, with search | `tools/wiki/index.html` |
-| **Generator** | Rebuilds the page from `docs/` in one command | `scripts/wiki` |
+| **Wiki reader** | Offline HTML home base — a sidebar of every doc + the **full rendered content inline** (headings, tables, code, dropdowns) + full-text search. A complete reader; **Obsidian not needed for anything.** | `tools/wiki/index.html` |
+| **Renderer** | Node build that converts every markdown doc → HTML and embeds it (no deps, no internet, no fetch) | `tools/wiki/build.mjs` |
+| **Generator** | Rebuilds the reader from `docs/` in one command | `scripts/wiki` |
 | **Cockpit link** | The 3D cockpit and the wiki link to each other | both `tools/` pages |
+
+**Why it fully replaces Obsidian:** it *renders* the markdown (not just links to
+it) — read everything in the browser, search the full text, follow links, expand
+`<details>`. The markdown files stay the editable source (any text editor / VS
+Code); the reader is the view. No vault, no plugins, no app.
 
 ## Use it
 
