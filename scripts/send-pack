@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# send-pack — assemble a ready-to-AirDrop welcome pack for family / friends /
+# operators. Gathers the right guides + the one-shot setup file into a folder on
+# your Desktop, drops a plain WELCOME.txt in with it, and opens it in Finder so
+# you just AirDrop (or drag into Messages/Mail).
+#
+#   bash scripts/send-pack family       inner-circle welcome (Project X HAILMARY)
+#   bash scripts/send-pack operator     operator seat onboarding ($97/mo)
+#   bash scripts/send-pack newmac       set up a fresh Mac from near-zero
+#   bash scripts/send-pack phone        phone wallpapers / quick guides
+#
+# Nothing secret is included. Access (Tailscale invite, GitHub access, license)
+# is granted by YOU from the admin consoles — see the printed steps.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CHEAT="$ROOT/docs/cheatsheets"
+ROLE="${1:-}"
+DEST_BASE="${HOME}/Desktop"
+
+[ -n "$ROLE" ] || { echo "usage: send-pack [family|operator|newmac|phone]"; exit 1; }
+
+pick(){ # copy a file if it exists
+  local src="$1" dst="$2"
+  [ -f "$src" ] && cp "$src" "$dst/" && echo "  + $(basename "$src")"
+}
+
+OUT="$DEST_BASE/TMMT-Welcome-$ROLE-$(date +%Y%m%d)"
+mkdir -p "$OUT"
+echo "Assembling the '$ROLE' pack → $OUT"
+
+case "$ROLE" in
+  family)
+    pick "$CHEAT/FOUNDER-WELCOME.pdf" "$OUT"
+    pick "$CHEAT/HAILMARY-GUIDE.pdf" "$OUT"
+    pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
+    pick "$CHEAT/HAILMARY-PHONE.png" "$OUT"
+    pick "$ROOT/scripts/setup-mac.command" "$OUT"
+    MSG="Welcome to the family side of what we're building (Project X HAILMARY). Open FOUNDER-WELCOME.pdf first — it explains everything. When you're ready to set up your Mac, double-click setup-mac.command and follow it. I'll send you your access link separately. — X"
+    ;;
+  operator)
+    pick "$CHEAT/TMMT-CHEAT-SHEET.pdf" "$OUT"
+    pick "$CHEAT/POCKET-CARD.png" "$OUT"
+    pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
+    pick "$ROOT/scripts/setup-mac.command" "$OUT"
+    MSG="You're getting set up as an operator. Open TMMT-CHEAT-SHEET.pdf and the POCKET-CARD first. To set up your machine, double-click setup-mac.command and follow it. Your seat + access link come from me separately. Credit is GUIDANCE, never 'repair.' — X"
+    ;;
+  newmac)
+    pick "$CHEAT/TMMT-NEW-MAC.png" "$OUT"
+    pick "$ROOT/scripts/setup-mac.command" "$OUT"
+    MSG="Fresh Mac setup: open TMMT-NEW-MAC.png for the picture steps, then double-click setup-mac.command and follow the prompts. Ping me if anything turns red. — X"
+    ;;
+  phone)
+    pick "$CHEAT/TMMT-PHONE.png" "$OUT"
+    pick "$CHEAT/HAILMARY-PHONE.png" "$OUT"
+    pick "$CHEAT/HAILMARY-ANDROID.png" "$OUT"
+    MSG="Phone quick-guides + wallpapers. Save the one for your phone (iPhone = HAILMARY-PHONE, Android = HAILMARY-ANDROID) as your lock screen so the key steps are always with you. — X"
+    ;;
+  *) echo "unknown role '$ROLE' — use: family | operator | newmac | phone"; rm -rf "$OUT"; exit 1;;
+esac
+
+# Drop the message + instructions in the folder so files + words travel together.
+cat > "$OUT/WELCOME.txt" <<TXT
+$MSG
+
+----------------------------------------------------------------
+HOW TO USE WHAT'S IN THIS FOLDER
+1. Open the PDF / PNG guides first — they explain it in plain steps.
+2. If there's a setup-mac.command file: double-click it, then follow along.
+   (If macOS warns it's from an unidentified developer: right-click it →
+    Open → Open. It only sets up tools + joins our private network.)
+3. You'll get your personal ACCESS LINK from X directly — that's what
+   actually lets your device in. Keep it private; never share it.
+----------------------------------------------------------------
+Questions? Text X. We move together.
+TXT
+echo "  + WELCOME.txt (your message + instructions)"
+
+# Open it so you can AirDrop / drag-to-Messages right away.
+command -v open >/dev/null 2>&1 && open "$OUT"
+
+cat <<DONE
+
+✓ Pack ready: $OUT  (opened in Finder)
+
+SEND IT (from the carry Mac):
+  • AirDrop  — select the files → right-click → Share → AirDrop → pick them
+  • Messages — drag the folder's files into the chat
+  • Mail     — drag the files into a new email
+
+THEN GRANT ACCESS (only you can — keeps it fenced & legit):
+  • Tailscale → admin console → invite their device (tag:family for inner circle,
+    or the operator path). This is the access link they need.
+  • Operators also: issue a named license →
+      scripts/partner-deploy/owner/issue-license.sh
+  • Revoke anytime → scripts/partner-deploy/owner/kill-partner.sh
+
+The pack has NO secrets. Access is the link you send — that stays in your control.
+DONE
