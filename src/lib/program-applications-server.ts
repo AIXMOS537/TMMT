@@ -114,15 +114,6 @@ export async function createProgramApplicationFromGhl(input: {
     status: "onboarding",
   });
 
-  const state: AppState = {
-    currentUser: {
-      ...seed.currentUser,
-      email: input.email,
-      name: app.clientName,
-    },
-    application: app,
-  };
-
   const { data, error } = await supabase
     .from("program_applications")
     .insert({
