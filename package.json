@@ -17,6 +17,7 @@
     "clickup:check": "node scripts/clickup-check.mjs",
     "onboard:vendor": "node scripts/onboard-preferred-vendor.mjs",
     "db:apply-workflow": "node scripts/apply-workflow-migration.mjs",
+    "db:finish-tenancy": "node scripts/apply-tenancy-finish.mjs",
     "create-partner-test-user": "node scripts/create-partner-test-user.mjs",
     "provision-operators": "node scripts/provision-operators.mjs",
     "go-live": "node scripts/go-live.mjs",
@@ -71,6 +72,7 @@
     "eslint-config-next": "16.1.6",
     "jsdom": "^25.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^3.2.6"
   }
