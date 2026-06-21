@@ -1,0 +1,110 @@
+#!/usr/bin/env node
+/**
+ * issue-family — mint free, never-expiring keys for a whole roster in one run.
+ *
+ * Reads names from --names "a,b,c" OR a file (--file roster.txt, one name/line),
+ * mints a family key for each (records the installation), and prints a clean
+ * handout list. Owner keys too: prefix a name with "owner:" (e.g. owner:taha).
+ *
+ * Needs the same env as bin/issue-key:
+ *   LICENSE_SIGNING_SECRET, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *
+ * Usage:
+ *   source ~/.hailmary/keys.env
+ *   bin/issue-family --names "owner:taha,mom,brother,bestfriend"
+ *   bin/issue-family --file ~/family.txt
+ *   ... --hw-each   # also prompt-bind each to a machine id (advanced; off by default)
+ */
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+
+function arg(name) {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return undefined;
+  const v = process.argv[i + 1];
+  return v && !v.startsWith("--") ? v : true;
+}
+
+const secret = process.env.LICENSE_SIGNING_SECRET;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const srk = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!secret) {
+  console.error("ERROR: set LICENSE_SIGNING_SECRET.");
+  process.exit(1);
+}
+
+let names = [];
+const namesArg = arg("names");
+const fileArg = arg("file");
+if (typeof namesArg === "string") {
+  names = namesArg.split(",").map((s) => s.trim()).filter(Boolean);
+} else if (typeof fileArg === "string") {
+  names = fs
+    .readFileSync(fileArg, "utf8")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s && !s.startsWith("#"));
+}
+if (names.length === 0) {
+  console.error('ERROR: give --names "a,b,c" or --file roster.txt');
+  process.exit(1);
+}
+
+const b64url = (x) => Buffer.from(x).toString("base64url");
+
+function mint(sub, role) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { sub, hw: "*", tier: role, role, iat: now, exp: 0 };
+  const body = b64url(JSON.stringify(payload));
+  const sig = b64url(crypto.createHmac("sha256", secret).update(body).digest());
+  return `HM1.${body}.${sig}`;
+}
+
+async function record(sub, role, key) {
+  if (!url || !srk) return false;
+  const res = await fetch(`${url}/rest/v1/installations`, {
+    method: "POST",
+    headers: {
+      apikey: srk,
+      Authorization: `Bearer ${srk}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      tier: role,
+      status: "active",
+      license_key: key,
+      paid_at: new Date().toISOString(),
+      notes: `family batch · ${sub} · role=${role}`,
+      metadata: { role, exp: 0 },
+    }),
+  });
+  return res.ok;
+}
+
+(async () => {
+  const out = [];
+  for (const raw of names) {
+    const isOwner = raw.toLowerCase().startsWith("owner:");
+    const sub = isOwner ? raw.slice(6).trim() : raw;
+    const role = isOwner ? "owner" : "family";
+    const key = mint(sub, role);
+    const saved = await record(sub, role, key);
+    out.push({ sub, role, key, saved });
+  }
+
+  console.log("\n" + "=".repeat(64));
+  console.log("  HAILMARY family keys — hand each person their key + docs/ONE.md");
+  console.log("=".repeat(64));
+  for (const r of out) {
+    const flag = r.saved ? "" : "  (NOT saved to DB — set Supabase env to make it valid)";
+    console.log(`\n  ${r.sub}  [${r.role}]${flag}`);
+    console.log(`  ${r.key}`);
+  }
+  console.log("\n" + "=".repeat(64));
+  if (!url || !srk) {
+    console.error("! No Supabase env — keys printed but not recorded. The app rejects");
+    console.error("! unrecorded keys. Re-run with NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY.");
+  }
+  console.log("");
+})();

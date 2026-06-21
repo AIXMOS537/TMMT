@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# cheat — PROJECT X HAILMARY command reference. One word, instant recall.
+export TERM="${TERM:-xterm-256color}"
+B=$'\e[1m'; D=$'\e[2m'; N=$'\e[0m'
+PU=$'\e[35m'; TE=$'\e[36m'; CO=$'\e[31m'; BL=$'\e[34m'; AM=$'\e[33m'; GR=$'\e[32m'; PK=$'\e[95m'
+
+sec() { printf '\n%s%s━━ %s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$B" "$1" "$2" "$N"; }
+row() { printf '  %s%-32s%s %s\n' "$1" "$2" "$N" "$3"; }
+
+clear
+printf '\n%s  PROJECT X HAILMARY — COMMAND CHEAT SHEET%s\n' "$B" "$N"
+printf '%s  ══════════════════════════════════════════════════════════%s\n' "$D" "$N"
+
+sec "$BL" "BOOT & ENGINE"
+row "$BL" "base / booyah / unison"      "Boot engine, sync repo, open menu"
+row "$BL" "menu"                        "Interactive command menu — start here"
+row "$BL" "health"                      "Full stack health check"
+row "$BL" "watchtower"                  "Carry Mac command center"
+row "$BL" "map"                         "Live mesh node map"
+row "$BL" "secure"                      "Secrets scan + pre-flight check"
+
+sec "$CO" "ACCESS CONTROL"
+row "$CO" "enforce"                     "Audit + cut everyone unpaid/suspended"
+row "$CO" "enforce --dry-run"           "Preview cuts — touch nothing"
+row "$CO" "enforce --report"            "Full roster, no action"
+row "$CO" "enforce --cut <email>"       "Cut one person instantly"
+row "$TE" "enforce --restore <email>"   "Restore access (owner seal required)"
+
+sec "$GR" "OPERATOR MANAGEMENT"
+row "$GR" "op-add <email> <name> <loc>" "Provision operator — org + tokens + invite"
+row "$GR" "op-add isaac@dmv.com \"Isaac Scott\" dmv" "Example: Isaac, DMV, 30%, \$97/mo"
+row "$PU" "aixmos"                      "Full operator roster"
+row "$PU" "onboard"                     "Run operator onboarding interview"
+
+sec "$AM" "TRAPTOP — DEVICE CONTROL"
+row "$AM" "seal"                        "Set 3–5 passphrases + encrypt engine"
+row "$TE" "wake"                        "Speak keys → decrypt + start engine"
+row "$AM" "dark"                        "Re-encrypt + go dormant instantly"
+row "$BL" "traptop"                     "Status check: DORMANT or LIVE"
+row "$AM" "bash scripts/traptop-install.sh" "Universal installer (macOS/Linux/Pi)"
+row "$AM" "TRAPTOP-WAKE.cmd"            "Windows: double-click activation ritual"
+
+sec "$PU" "OWNER ONLY"
+row "$PU" "fatherbox"                   "BRAINIAC-7 control plane (Windows hub)"
+row "$PU" "motherbox"                   "Flash-deploy a new mesh node"
+row "$PU" "vault"                       "Secrets vault (owner seal required)"
+row "$PU" "ceo"                         "CEO ops dashboard"
+row "$PU" "deal"                        "New deal / contract intake"
+row "$PU" "golive"                      "Ship all 5 Vercel apps"
+row "$PK" "hailmary"                    "Hailmary tier status (family + friends)"
+row "$CO" "dark / light"                "Kill switch — block / lift all boots"
+
+printf '\n%s  TIPS%s\n' "$B" "$N"
+printf '  %sCommand not found?%s    Run %sbase%s once — re-injects all aliases.\n'      "$D" "$N" "$BL" "$N"
+printf '  %senforce offline?%s      Add key: %s~/.config/tmmt/cyborg-vault.env%s\n'    "$D" "$N" "$AM" "$N"
+printf '  %sPush to all nodes:%s    %sbash scripts/mesh/mesh-broadcast.sh "enforce"%s\n' "$D" "$N" "$TE" "$N"
+printf '  %sSeal a Traptop:%s       %sseal pack%s → %sseal seal%s → ship → operator runs %swake%s\n' "$D" "$N" "$AM" "$N" "$AM" "$N" "$TE" "$N"
+printf '  %sThis sheet:%s           %scheat%s\n' "$D" "$N" "$GR" "$N"
+printf '\n'
