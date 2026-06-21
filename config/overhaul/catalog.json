@@ -1,0 +1,183 @@
+{
+  "$schema": "./catalog.schema.json",
+  "name": "OVERHAUL Parts Catalog",
+  "version": "0.2.0",
+  "updated": "2026-06-21",
+  "tagline": "Tear it down, build it back better — like a car. Earn the pink slip.",
+  "notes": "Every part maps to a REAL asset in the repo/mesh. The Garage UI (tools/garage) and the flash-deployer (scripts/overhaul-deploy.sh) both read this file. Add a part = add an entry here + a case arm in overhaul-deploy.sh.",
+
+  "categories": [
+    { "id": "chassis",   "label": "Chassis (base node)",        "order": 1 },
+    { "id": "engine",    "label": "Engine (the brain)",          "order": 2 },
+    { "id": "trans",     "label": "Transmission (agents)",       "order": 3 },
+    { "id": "dash",      "label": "Dashboard & UI",              "order": 4 },
+    { "id": "voice",     "label": "Voice & input",               "order": 5 },
+    { "id": "security",  "label": "Security & locks",            "order": 6 },
+    { "id": "telemetry", "label": "Telemetry (watch)",           "order": 7 },
+    { "id": "sync",      "label": "Sync & multi-business",       "order": 8 },
+    { "id": "vertical",  "label": "Vertical packs (DLC)",        "order": 9 },
+    { "id": "provider",  "label": "AI providers (keys)",         "order": 10 }
+  ],
+
+  "parts": [
+    {
+      "id": "node-bootstrap", "category": "chassis", "label": "Node bootstrap (OPK)",
+      "desc": "Turns any Mac/Windows box into a mesh node. Role-aware install.",
+      "maps_to": ["scripts/setup-mac.command", "docs/superpowers/specs/2026-05-26-operator-portable-kit-design.md"],
+      "required": true, "tier_min": "taste"
+    },
+    {
+      "id": "mesh-join", "category": "chassis", "label": "Tailscale mesh join",
+      "desc": "Private, owner/family-only network. No public IP, no funnel.",
+      "maps_to": ["scripts/swarm-join.sh", "docs/BRAIN-TAILSCALE-ACL.md"],
+      "required": true, "tier_min": "taste"
+    },
+
+    {
+      "id": "local-llm", "category": "engine", "label": "Local LLM (RAM-sized)",
+      "desc": "Your first private LLM. setup-llm.sh picks the model by RAM (3b/8b/14b/32b).",
+      "maps_to": ["scripts/setup-llm.sh"], "required": true, "tier_min": "taste"
+    },
+    {
+      "id": "brain-db", "category": "engine", "label": "Brain DB (Postgres + pgvector)",
+      "desc": "Local memory fabric. 127.0.0.1 only. Stands up + loads schema.",
+      "maps_to": ["scripts/seal-brain-local.sh", "scripts/brain-bootstrap-supabase-shim.sql"], "tier_min": "host"
+    },
+    {
+      "id": "brain-backup", "category": "engine", "label": "Nightly brain backup",
+      "desc": "launchd 3AM gzipped pg_dump; local now, NAS over Tailscale at home.",
+      "maps_to": ["scripts/brain-backup.sh"], "tier_min": "host"
+    },
+
+    {
+      "id": "aixmos-agents", "category": "trans", "label": "AIXMOS agents",
+      "desc": "The operative agents that run the verticals (CAPTAIN, dispatch, sales).",
+      "maps_to": ["docs/AIXMOS-CHARTER.md"], "tier_min": "helper"
+    },
+    {
+      "id": "hailmary-proxy", "category": "trans", "label": "HAILMARY owner-proxy (always-on)",
+      "desc": "Owner-only always-on agent. APEX tier ($100K) — Owner only.",
+      "maps_to": ["bin/cyborg-go", "scripts/hailmary-daemon.sh", "docs/HAILMARY-CHARTER.md"],
+      "tier_min": "apex", "owner_only": true
+    },
+
+    {
+      "id": "tmmt-admin", "category": "dash", "label": "TMMT Admin dashboard",
+      "desc": "The production admin platform (Next.js).",
+      "maps_to": ["src/app"], "tier_min": "taste"
+    },
+    {
+      "id": "mission-control", "category": "dash", "label": "Mission Control launcher",
+      "desc": "Holographic front door + desktop app icons.",
+      "maps_to": ["tools/launcher/index.html", "docs/MISSION-CONTROL.md"], "tier_min": "helper"
+    },
+    {
+      "id": "clean-ui", "category": "dash", "label": "Clean UI / dashboard (Legacy find)",
+      "desc": "The cleaner dashboard/UI found on MoeLegacy — to be universalized.",
+      "maps_to": ["docs/OVERHAUL-CONFIGURATOR-BLUEPRINT.md#legacy-finds"], "status": "to-port", "tier_min": "helper"
+    },
+
+    {
+      "id": "superwhisper", "category": "voice", "label": "SuperWhisper voice input (Legacy find)",
+      "desc": "Local voice dictation → drives brain-dump + commands hands-free.",
+      "maps_to": ["docs/OVERHAUL-CONFIGURATOR-BLUEPRINT.md#legacy-finds"], "status": "to-port", "tier_min": "helper"
+    },
+    {
+      "id": "openclaw", "category": "voice", "label": "OpenClaw / OpenClaude (Legacy find)",
+      "desc": "Open agent tooling set up on MoeLegacy — wrap as a portable module.",
+      "maps_to": ["docs/OVERHAUL-CONFIGURATOR-BLUEPRINT.md#legacy-finds"], "status": "to-port", "tier_min": "host"
+    },
+
+    {
+      "id": "filevault", "category": "security", "label": "Disk encryption (FileVault/BitLocker)",
+      "desc": "Encrypt at rest. Verified, never auto-toggled without owner yes.",
+      "maps_to": ["docs/SECURITY-HARDENING-PLAYBOOK.md"], "required": true, "tier_min": "taste"
+    },
+    {
+      "id": "secret-guard", "category": "security", "label": "Secret-guard git hooks",
+      "desc": "Pre-commit/push block .env/keys/service-role/Stripe/GHL.",
+      "maps_to": ["scripts/hooks/pre-commit", "scripts/hooks/pre-push"], "required": true, "tier_min": "taste"
+    },
+    {
+      "id": "godark", "category": "security", "label": "DARK kill-switch",
+      "desc": "Anyone can stop; only the Owner Seal lifts. dark hard = tailscale down.",
+      "maps_to": ["scripts/godark", "auth/OWNER.seal"], "tier_min": "host"
+    },
+
+    {
+      "id": "watchtower", "category": "telemetry", "label": "Watchtower health",
+      "desc": "League roster + live vertical health pings.",
+      "maps_to": ["scripts/watchtower", "scripts/health.sh"], "tier_min": "helper"
+    },
+    {
+      "id": "sentry", "category": "telemetry", "label": "Error monitoring (Sentry)",
+      "desc": "Inactive until NEXT_PUBLIC_SENTRY_DSN set.",
+      "maps_to": ["docs/SENTRY-SETUP.md"], "tier_min": "host"
+    },
+
+    {
+      "id": "mesh-sync", "category": "sync", "label": "Mesh sync (git coordination)",
+      "desc": "Keep every node + business in sync via git. Safe N-machine sync.",
+      "maps_to": ["scripts/sync-machine.sh", "scripts/swarm.sh", "docs/MESH-SWARM.md"], "tier_min": "helper"
+    },
+    {
+      "id": "shared-brain", "category": "sync", "label": "Shared brain (cross-business memory)",
+      "desc": "TMMT + MoeLegacy write to one memory fabric so both stay in sync.",
+      "maps_to": ["supabase/migrations/20260616000000_memory_fabric.sql", "scripts/seal-brain-local.sh"], "tier_min": "host"
+    },
+    {
+      "id": "ghl-bridge", "category": "sync", "label": "GHL bridge (per-business)",
+      "desc": "Each business keeps its OWN GHL; bridge syncs leads/pipeline across orgs.",
+      "maps_to": ["scripts/ghl-sync-vercel-env.mjs", "scripts/ghl-activation-check.mjs", "docs/GHL-WEBHOOK-SETUP.md"], "tier_min": "agency"
+    },
+    {
+      "id": "cross-org", "category": "sync", "label": "Cross-org tenancy (TMMT + MoeLegacy)",
+      "desc": "Org-scoped roles/reads so two businesses share the mesh, fenced apart.",
+      "maps_to": ["supabase/migrations/20260616500000_multitenant_hardening.sql", "supabase/migrations/20260616600000_org_scoped_reads.sql"], "tier_min": "agency"
+    },
+
+    {
+      "id": "vp-rentals", "category": "vertical", "label": "🚗 Car-rental vertical",
+      "desc": "Fleet, contracts, dispatch, AIXMOS Agents of Chaos for rentals.",
+      "maps_to": ["docs/DISPATCH-CORE.md", "supabase/migrations/20260530120000_rescue_dispatch_core.sql"], "tier_min": "agency"
+    },
+    {
+      "id": "vp-credit", "category": "vertical", "label": "📈 Credit guidance + funding",
+      "desc": "Credit GUIDANCE (never repair) + business-funding network.",
+      "maps_to": ["docs/kits/REDHOOD-KIT.md", "supabase/migrations/20260608120000_credit_funding_sessions.sql"], "tier_min": "inner"
+    },
+    {
+      "id": "vp-overdrive", "category": "vertical", "label": "🚑 Operation Overdrive (courier → ER fleet)",
+      "desc": "Mission-critical A→B logistics. Start: economy medical-courier → grow to sports/utility emergency-response fleet, drivers who don't fold. Built on dispatch-core.",
+      "maps_to": ["docs/OPERATION-OVERDRIVE.md", "docs/DISPATCH-CORE.md", "supabase/migrations/20260530120000_rescue_dispatch_core.sql"],
+      "status": "planned", "tier_min": "allverticals"
+    },
+    {
+      "id": "vp-ecom", "category": "vertical", "label": "🛒 E-commerce (managed)",
+      "desc": "Store managed on their behalf, inventory included (enterprise).",
+      "maps_to": ["docs/OFFER-STACK.md"], "tier_min": "enterprise"
+    },
+
+    {
+      "id": "provider-ollama", "category": "provider", "label": "Local Ollama (free, default)",
+      "desc": "Free, unlimited, local. Default provider for every node.",
+      "maps_to": ["scripts/setup-llm.sh"], "required": true, "tier_min": "taste"
+    },
+    {
+      "id": "provider-byok", "category": "provider", "label": "Bring-your-own key (scoped)",
+      "desc": "Owner-provisioned, scoped, rotatable cloud keys. NEVER reuse found keys.",
+      "maps_to": ["docs/security/SUPABASE-ADVISORS-2026-06-15.md"], "tier_min": "host"
+    }
+  ],
+
+  "tiers": [
+    { "id": "taste",      "label": "Taste",            "price": "$1,875", "ram": "8 GB",    "level": 1 },
+    { "id": "helper",     "label": "Helper",           "price": "$3,750", "ram": "16/24 GB","level": 2 },
+    { "id": "host",       "label": "Full local host",  "price": "$7,500", "ram": "32 GB",   "level": 3 },
+    { "id": "agency",     "label": "Agency + rentals", "price": "$15K",   "ram": "32 GB",   "level": 4 },
+    { "id": "inner",      "label": "Inner circle",     "price": "$25K",   "ram": "32 GB",   "level": 5 },
+    { "id": "allverticals","label": "All verticals",   "price": "$35K",   "ram": "combined","level": 6 },
+    { "id": "enterprise", "label": "Enterprise DFY",   "price": "$45–50K","ram": "full",    "level": 7 },
+    { "id": "apex",       "label": "Apex (HAILMARY)",  "price": "$100K",  "ram": "apex",    "level": 8, "owner_only": true }
+  ]
+}
