@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# cyborg-remote — from the CARRY Mac, take control of the home M1 over Tailscale
+# (SSH) and run the one-shot bring-up THERE. Requires Remote Login (SSH) enabled
+# on the M1 (System Settings → General → Sharing → Remote Login).
+#
+# Usage (on the carry Mac):
+#   bash bin/cyborg-remote --host <m1-tailscale-name-or-ip> --user <m1-username> \
+#     --brain-url https://<m1>.<tailnet>.ts.net/api/memory \
+#     --token <MEMORY_API_TOKEN> --cron-secret <CRON_SECRET> \
+#     [--repo ~/Projects/TMMT]
+set -uo pipefail
+
+HOST=""; RUSER=""; REPO=""; BRAIN_URL=""; TOKEN=""; CRON_SECRET=""
+BRANCH="claude/text-number-current-setup-mfmn1f"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --host) HOST="${2:-}"; shift 2;;
+    --user) RUSER="${2:-}"; shift 2;;
+    --repo) REPO="${2:-}"; shift 2;;
+    --brain-url) BRAIN_URL="${2:-}"; shift 2;;
+    --token) TOKEN="${2:-}"; shift 2;;
+    --cron-secret) CRON_SECRET="${2:-}"; shift 2;;
+    --branch) BRANCH="${2:-}"; shift 2;;
+    *) echo "unknown arg: $1" >&2; shift;;
+  esac
+done
+
+[ -n "$HOST" ] || { echo "Need --host (the M1's Tailscale name or IP, e.g. home-m1 or 100.x.x.x)"; exit 1; }
+[ -n "$RUSER" ] || { echo "Need --user (the M1 login username)"; exit 1; }
+[ -n "$BRAIN_URL" ] || { echo "Need --brain-url"; exit 1; }
+[ -n "$TOKEN" ] || { echo "Need --token (MEMORY_API_TOKEN)"; exit 1; }
+
+echo "▸ Connecting to $RUSER@$HOST over Tailscale and running the one-shot there…"
+
+# Remote bring-up: locate the repo, grab the latest bin+scripts (no merge — avoids
+# divergent-history issues), then run cyborg-go.
+REMOTE_CMD=$(cat <<REMOTE
+set -e
+REPO="${REPO}"
+if [ -z "\$REPO" ]; then
+  REPO="\$( [ -d "\$HOME/Projects/TMMT" ] && echo "\$HOME/Projects/TMMT" || ( [ -d "\$HOME/TMMT" ] && echo "\$HOME/TMMT" || find "\$HOME" -maxdepth 4 -type d -name TMMT -not -path '*/node_modules/*' 2>/dev/null | head -1 ) )"
+fi
+[ -n "\$REPO" ] && [ -d "\$REPO" ] || { echo "Could not find the TMMT repo on the M1 — pass --repo"; exit 1; }
+cd "\$REPO"
+echo "repo: \$REPO"
+git fetch origin "${BRANCH}"
+git checkout FETCH_HEAD -- bin scripts
+chmod +x bin/cyborg-go bin/hailmary scripts/*.sh 2>/dev/null || true
+bash bin/cyborg-go --brain-url "${BRAIN_URL}" --token "${TOKEN}" --cron-secret "${CRON_SECRET}"
+REMOTE
+)
+
+ssh -t "${RUSER}@${HOST}" "bash -lc '$REMOTE_CMD'"
+echo "✓ Remote bring-up finished. The M1 is HAILMARY-as-you, always-on."
