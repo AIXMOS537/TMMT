@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# ship — local-first Vercel deploy via the CLI (no git auto-deploy needed).
+#
+# Builds locally and uploads the prebuilt output → ONE controlled deployment,
+# never a per-push storm. This is how we deploy now (git auto-deploy is limited
+# to the production branch via scripts/vercel-ignore-build.sh).
+#
+# Usage:
+#   ship              # preview deploy of the current dir's linked project
+#   ship prod         # production deploy
+#   ship prod tmmt-command-center   # (optional) target a project by name/scope
+#
+# Prereqs (one-time): npm i -g vercel ; vercel login ; vercel link  (in the
+# project dir — this repo feeds multiple Vercel projects, so link each).
+set -euo pipefail
+
+MODE="${1:-preview}"
+command -v vercel >/dev/null 2>&1 || { echo "Install the Vercel CLI: npm i -g vercel" >&2; exit 1; }
+
+if [ "$MODE" = "prod" ] || [ "$MODE" = "production" ]; then
+  echo "▸ Pull production env"; vercel pull --yes --environment=production
+  echo "▸ Build (prod)";        vercel build --prod
+  echo "▸ Deploy prebuilt → PRODUCTION"; vercel deploy --prebuilt --prod
+else
+  echo "▸ Pull preview env"; vercel pull --yes --environment=preview
+  echo "▸ Build (preview)";  vercel build
+  echo "▸ Deploy prebuilt → preview"; vercel deploy --prebuilt
+fi
