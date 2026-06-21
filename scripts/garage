@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# garage — open the OVERHAUL configurator (The Garage). ONE SHOT from anywhere.
+set -euo pipefail
+LIB="$(cd "$(dirname "$0")/lib" && pwd)"
+# shellcheck source=lib/repo-root.sh
+. "$LIB/repo-root.sh"
+REPO="$TMMT_REPO"
+[ -d "$REPO/tools/garage" ] || { echo "✗ OVERHAUL Garage not found in $REPO"; exit 1; }
+PORT="${GARAGE_PORT:-8088}"
+URL="http://127.0.0.1:${PORT}/tools/garage/index.html"
+echo "▸ OVERHAUL Garage → $URL   (Ctrl-C to stop)"
+( sleep 1; (open "$URL" 2>/dev/null || xdg-open "$URL" 2>/dev/null || true) ) &
+cd "$REPO"
+exec python3 -m http.server "$PORT" --bind 127.0.0.1
