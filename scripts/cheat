@@ -12,7 +12,7 @@ printf '\n%s  PROJECT X HAILMARY — COMMAND CHEAT SHEET%s\n' "$B" "$N"
 printf '%s  ══════════════════════════════════════════════════════════%s\n' "$D" "$N"
 
 sec "$BL" "BOOT & ENGINE"
-row "$BL" "base / booyah / unison"      "Boot engine, sync repo, open menu"
+row "$BL" "booyah"                      "Boot engine, sync repo, open menu — THE word"
 row "$BL" "menu"                        "Interactive command menu — start here"
 row "$BL" "health"                      "Full stack health check"
 row "$BL" "watchtower"                  "Carry Mac command center"
@@ -51,7 +51,7 @@ row "$PK" "hailmary"                    "Hailmary tier status (family + friends)
 row "$CO" "dark / light"                "Kill switch — block / lift all boots"
 
 printf '\n%s  TIPS%s\n' "$B" "$N"
-printf '  %sCommand not found?%s    Run %sbase%s once — re-injects all aliases.\n'      "$D" "$N" "$BL" "$N"
+printf '  %sCommand not found?%s    Run %sbooyah%s once — re-injects all aliases.\n'    "$D" "$N" "$BL" "$N"
 printf '  %senforce offline?%s      Add key: %s~/.config/tmmt/cyborg-vault.env%s\n'    "$D" "$N" "$AM" "$N"
 printf '  %sPush to all nodes:%s    %sbash scripts/mesh/mesh-broadcast.sh "enforce"%s\n' "$D" "$N" "$TE" "$N"
 printf '  %sSeal a Traptop:%s       %sseal pack%s → %sseal seal%s → ship → operator runs %swake%s\n' "$D" "$N" "$AM" "$N" "$AM" "$N" "$TE" "$N"
