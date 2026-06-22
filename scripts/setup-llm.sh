@@ -22,6 +22,7 @@ RAM="$(ram_gb)"; [ "$RAM" -gt 0 ] 2>/dev/null || RAM=8
 MODE="auto"
 case "${1:-}" in
   serve|share)   MODE="serve" ;;
+  router|proxy)  exec bash "$(dirname "$0")/brain-router.sh" ;;
   --coder|coder) MODE="coder"; shift || true ;;
 esac
 
