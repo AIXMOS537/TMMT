@@ -68,6 +68,7 @@ case "$v" in
   operator|onboard-op) exec bash "$ROOT/scripts/onboard-op" "$@";;
   new-operator|stamp|stamp-operator) exec bash "$ROOT/scripts/new-operator" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
+  seat|operator-seat|provision-seat|king) exec bash "$ROOT/scripts/seat.sh" "$@";;
   env|restore-env|pull-env) exec bash "$ROOT/scripts/restore-env.sh";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
