@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { inferVertical, claimLead, routeLead, crossReferLead, routeIncomingLead } from "@/lib/lead-pool";
+import {
+  inferVertical,
+  claimLead,
+  routeLead,
+  crossReferLead,
+  routeIncomingLead,
+  canClaimFromAgency,
+} from "@/lib/lead-pool";
 
 describe("inferVertical", () => {
   it("classifies funding signals", () => {
@@ -64,6 +71,24 @@ describe("rpc wrappers map params correctly", () => {
     const rpc = vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } });
     const client = { rpc } as unknown as SupabaseClient;
     await expect(claimLead(client, { poolId: 1, orgId: "o", userId: "u" })).rejects.toThrow(/lead_claim failed: boom/);
+  });
+});
+
+describe("canClaimFromAgency (claim authorization)", () => {
+  it("lets the agency main account claim its own leads", () => {
+    expect(canClaimFromAgency({ callerOrgId: "moe", callerParentOrgId: null, agencyOrgId: "moe", isStaff: false })).toBe(true);
+  });
+  it("lets a child operator claim its agency's leads", () => {
+    expect(canClaimFromAgency({ callerOrgId: "op1", callerParentOrgId: "moe", agencyOrgId: "moe", isStaff: false })).toBe(true);
+  });
+  it("blocks a sibling/other-agency operator", () => {
+    expect(canClaimFromAgency({ callerOrgId: "op2", callerParentOrgId: "tmmt", agencyOrgId: "moe", isStaff: false })).toBe(false);
+  });
+  it("blocks when the caller has no org", () => {
+    expect(canClaimFromAgency({ callerOrgId: null, callerParentOrgId: null, agencyOrgId: "moe", isStaff: false })).toBe(false);
+  });
+  it("staff bypass everything", () => {
+    expect(canClaimFromAgency({ callerOrgId: null, callerParentOrgId: null, agencyOrgId: "moe", isStaff: true })).toBe(true);
   });
 });
 

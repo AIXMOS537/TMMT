@@ -29,6 +29,36 @@ async function countWhere(table: string, col: string, val: string): Promise<numb
   return c ?? 0;
 }
 
+/* ──────────── Lead pool feed (operator UI) ──────────── */
+export type LeadPoolRow = {
+  pool_id: number;
+  lead_id: string;
+  vertical: string;
+  agency_org_id: string;
+  status: string;
+  origin: string | null;
+  created_at: string;
+  claimed_at: string | null;
+  contact_name: string | null;
+  phone: string | null;
+  email: string | null;
+  source: string | null;
+  campaign: string | null;
+  [key: string]: unknown;
+};
+
+async function leadPoolFeed(scope: "available" | "mine"): Promise<LeadPoolRow[]> {
+  const { data, error } = await supabase.rpc("lead_pool_feed", { p_scope: scope });
+  if (error) {
+    console.error(`[lead_pool_feed ${scope}]`, error.message);
+    return [];
+  }
+  return (data ?? []) as LeadPoolRow[];
+}
+
+export const getAvailableLeads = () => leadPoolFeed("available");
+export const getMyLeads = () => leadPoolFeed("mine");
+
 /* ──────────── Dashboard data ──────────── */
 export async function getDashboardData() {
   const [
