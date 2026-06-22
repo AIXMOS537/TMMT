@@ -62,6 +62,7 @@ case "$v" in
   engineer|manage|ops) exec bash "$ROOT/scripts/engineer" "$@";;
   invite|text|message) exec bash "$ROOT/scripts/invite" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
+  env|restore-env|pull-env) exec bash "$ROOT/scripts/restore-env.sh";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
@@ -75,5 +76,5 @@ case "$v" in
   local|localhost|run-local) exec bash "$ROOT/scripts/local-up.sh" "${1:-up}" "${@:2}";;
   garage) exec bash "$ROOT/scripts/garage" "$@";;
   overhaul) [ -x "$ROOT/scripts/overhaul-deploy.sh" ] && exec bash "$ROOT/scripts/overhaul-deploy.sh" "$@" || { echo "overhaul-deploy.sh not installed yet"; exit 1; };;
-  *) printf 'tmmt words: up | unison [up|status|down] | booyah | garage | local | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
+  *) printf 'tmmt words: up | unison | booyah | env | garage | local | onboard | aixmos | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac
