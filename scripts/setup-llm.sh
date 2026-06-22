@@ -30,18 +30,24 @@ esac
 if [ "$MODE" = "serve" ]; then
   echo "  🧠  SHARING THE BRAIN ON THE MESH (tailnet-only)"
   command -v ollama >/dev/null 2>&1 || { echo "  ✗ install the brain first: bash scripts/setup-llm.sh"; exit 1; }
-  ( OLLAMA_HOST=0.0.0.0:11434 ollama serve >/dev/null 2>&1 & ) 2>/dev/null || true
-  if command -v tailscale >/dev/null 2>&1; then
-    host="$(tailscale status --json 2>/dev/null | grep -o '"DNSName":"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/\.$//')"
+  # CONTAINMENT: bind to the Tailscale IP if up, else 127.0.0.1. NEVER 0.0.0.0 —
+  # the brain must not listen on all interfaces / face the public internet.
+  BIND="127.0.0.1"; host=""; ip=""
+  if command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1; then
     ip="$(tailscale ip -4 2>/dev/null | head -1)"
-    echo "  ✓ brain reachable across the mesh:"
-    [ -n "$host" ] && echo "      http://${host}:11434/v1/chat/completions"
-    [ -n "$ip" ]   && echo "      http://${ip}:11434/v1/chat/completions"
-    echo "  point devices/agents at it:  POCKET_BRAIN_URL=http://${ip:-<tailnet-ip>}:11434/v1/chat/completions"
-  else
-    echo "  • install Tailscale to share; locally: http://127.0.0.1:11434/v1/chat/completions"
+    host="$(tailscale status --json 2>/dev/null | grep -o '"DNSName":"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/\.$//')"
+    [ -n "$ip" ] && BIND="$ip"
   fi
-  echo "  ⚠ tailnet-only — NEVER expose port 11434 to the public internet."
+  ( OLLAMA_HOST="${BIND}:11434" ollama serve >/dev/null 2>&1 & ) 2>/dev/null || true
+  echo "  ✓ brain bound to ${BIND}:11434 (never 0.0.0.0 — won't face the public net)"
+  if [ "$BIND" = "127.0.0.1" ]; then
+    echo "  • Tailscale not up — LOCAL ONLY. Bring it up to share: tailscale up --ssh, then re-run."
+  else
+    [ -n "$host" ] && echo "      http://${host}:11434/v1/chat/completions"
+    echo "      http://${ip}:11434/v1/chat/completions"
+    echo "  point devices/agents at it:  POCKET_BRAIN_URL=http://${ip}:11434/v1/chat/completions"
+  fi
+  echo "  ⚠ tailnet-only by binding — port 11434 is not exposed to the public internet."
   exit 0
 fi
 
