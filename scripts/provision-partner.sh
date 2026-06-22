@@ -18,6 +18,7 @@ fi
 SLUG="$1"
 NAME="$2"
 TIER="$3"
+SLUG_ENV="$(printf '%s' "$SLUG" | tr '[:lower:]-' '[:upper:]_')"   # bash 3.2-safe (macOS)
 DB="${SUPABASE_DB_URL:?SUPABASE_DB_URL required (postgres://... connection string)}"
 
 OUT_DIR="$HOME/Documents/Business/flash-kits/$SLUG/_onetime"
@@ -65,6 +66,6 @@ echo ""
 echo "Next manual steps (per docs/runbooks/MASTER_OPERATOR_RUNBOOK.md):"
 echo "  1. Have $NAME register their Twilio 10DLC campaign (1-4 weeks)"
 echo "  2. After Twilio approved: psql \"\$SUPABASE_DB_URL\" -c \"UPDATE organizations SET twilio_inbound_number='+1XXXXXXXXXX' WHERE id='$ORG_ID'\""
-echo "  3. Have $NAME create Stripe Payment Links per SKU; store webhook secret as STRIPE_WEBHOOK_SECRET_${SLUG^^/-/_}"
-echo "  4. Have $NAME set up Cal.com event; store webhook secret as CAL_WEBHOOK_SECRET_${SLUG^^/-/_}"
+echo "  3. Have $NAME create Stripe Payment Links per SKU; store webhook secret as STRIPE_WEBHOOK_SECRET_${SLUG_ENV}"
+echo "  4. Have $NAME set up Cal.com event; store webhook secret as CAL_WEBHOOK_SECRET_${SLUG_ENV}"
 echo "  5. When flash drive ready: copy ~/Projects/TMMT/flash-drive-source/ + $OUT_DIR/ contents to USB"
