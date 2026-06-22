@@ -13,17 +13,51 @@ if [[ -n "$tracked_secrets" ]]; then
   exit 1
 fi
 
-# 2) gitleaks over ONLY the commits being pushed (not full history).
+# Capture the ref list from stdin ONCE — both the force-push guard and the
+# gitleaks loop below need it (stdin can only be read a single time).
+refs_input="$(cat)"
+ZERO="0000000000000000000000000000000000000000"
+
+# 2) Protect master/main from force-pushes and deletes — this is what silently
+#    wiped already-merged work. A rewrite of shared history is almost never
+#    intended; require a loud, explicit override for the rare true emergency:
+#      ALLOW_FORCE_MASTER=1 git push ...      (owner, deliberate recovery only)
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [[ -z "${remote_ref:-}" ]] && continue
+  case "$remote_ref" in
+    refs/heads/master|refs/heads/main)
+      # Delete of the protected branch (local side is all-zeros).
+      if [[ "$local_sha" == "$ZERO" ]]; then
+        red "BLOCKED: refusing to DELETE $remote_ref. Protected branch."
+        exit 1
+      fi
+      # Force / non-fast-forward: remote tip is NOT an ancestor of what we push.
+      if [[ "$remote_sha" != "$ZERO" ]] \
+         && ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        if [[ "${ALLOW_FORCE_MASTER:-}" == "1" ]]; then
+          red "WARNING: force-push to $remote_ref allowed via ALLOW_FORCE_MASTER=1."
+        else
+          red "BLOCKED: refusing to FORCE-PUSH $remote_ref (non-fast-forward)."
+          red "This rewrites shared history and silently deletes merged work."
+          red "If you truly must, re-run with:  ALLOW_FORCE_MASTER=1 git push ..."
+          exit 1
+        fi
+      fi
+      ;;
+  esac
+done <<< "$refs_input"
+
+# 3) gitleaks over ONLY the commits being pushed (not full history).
 if command -v gitleaks >/dev/null 2>&1; then
-  while read local_ref local_sha remote_ref remote_sha; do
-    [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
-    if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    [[ "$local_sha" == "$ZERO" ]] && continue
+    if [[ "$remote_sha" == "$ZERO" ]]; then
       range="$local_sha"
     else
       range="$remote_sha..$local_sha"
     fi
     gitleaks detect --no-banner --redact --log-opts="$range" 2>/dev/null \
       || { red "BLOCKED push by gitleaks (secret in NEW commits being pushed)."; exit 1; }
-  done
+  done <<< "$refs_input"
 fi
 exit 0
