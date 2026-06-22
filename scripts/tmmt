@@ -44,6 +44,8 @@ case "$v" in
   deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
   join) exec bash "$ROOT/scripts/join" "${1:-}";;
   one-shot|oneshot|setup|setup-device|anyone) exec bash "$ROOT/scripts/one-shot.sh" "${1:-}";;
+  verify|check|gate) exec bash "$ROOT/scripts/verify.sh";;
+  ship|deploy-live|golive-prod) exec bash "$ROOT/scripts/ship.sh" "${1:-}";;
   mesh-map|map) exec bash "$ROOT/scripts/mesh-map.sh";;
   secure|launch-check|launch) exec bash "$ROOT/scripts/launch-check.sh";;
   motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;

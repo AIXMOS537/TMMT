@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# Pre-push backstop: refuse to push if any secret file is tracked in the repo,
-# and (if gitleaks is present) scan the commits being pushed.
-set -euo pipefail
+# Pre-push backstop:
+#   1) refuse to push if any secret file is tracked,
+#   2) (if gitleaks present) scan the commits being pushed for secrets,
+#   3) LOCAL-FIRST GATE: refuse to push BROKEN app code (lint/test/build).
+set -uo pipefail
 red() { printf '\e[31m%s\e[0m\n' "$*" >&2; }
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+
+# Read the ref list from stdin ONCE (git feeds: <local_ref> <local_sha> <remote_ref> <remote_sha>).
+PUSH_REFS="$(cat)"
 
 # 1) No tracked env/key files anywhere in the index (catches an earlier mistake).
 tracked_secrets="$(git ls-files | grep -Ei '(^|/)\.env(\.|$)|\.pem$|\.p12$|\.pfx$|(^|/)id_(rsa|ed25519|dsa)$' | grep -v '\.example$' || true)"
@@ -15,15 +21,37 @@ fi
 
 # 2) gitleaks over ONLY the commits being pushed (not full history).
 if command -v gitleaks >/dev/null 2>&1; then
-  while read local_ref local_sha remote_ref remote_sha; do
-    [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
-    if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
-      range="$local_sha"
-    else
-      range="$remote_sha..$local_sha"
-    fi
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    [[ -z "${local_sha:-}" ]] && continue
+    [[ "$local_sha" =~ ^0+$ ]] && continue
+    if [[ "$remote_sha" =~ ^0+$ ]]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
     gitleaks detect --no-banner --redact --log-opts="$range" 2>/dev/null \
       || { red "BLOCKED push by gitleaks (secret in NEW commits being pushed)."; exit 1; }
-  done
+  done <<< "$PUSH_REFS"
 fi
+
+# 3) Local-first gate: refuse to push BROKEN app code. Scoped to commits that
+# touch app paths so docs/scripts pushes stay fast. Emergency escape hatch
+# (use sparingly, and own it): SKIP_VERIFY=1 git push ...
+APP_PATHS='^(src/|public/|packages/|package\.json|package-lock\.json|next\.config\.|middleware\.ts|tsconfig\.json|postcss\.config\.|sentry\.|instrumentation\.ts|vercel\.json)'
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [[ -z "${local_sha:-}" ]] && continue
+  [[ "$local_sha" =~ ^0+$ ]] && continue
+  if [[ "$remote_sha" =~ ^0+$ ]]; then range_files="$(git diff --name-only "$local_sha" 2>/dev/null || true)"
+  else range_files="$(git diff --name-only "$remote_sha..$local_sha" 2>/dev/null || true)"; fi
+  if printf '%s\n' "$range_files" | grep -qE "$APP_PATHS"; then
+    if [[ "${SKIP_VERIFY:-}" == "1" ]]; then
+      red "SKIP_VERIFY=1 set — bypassing the local build/test gate (emergency only)."
+    else
+      printf '\e[1mApp code changed — running the local-first gate before push…\e[0m\n' >&2
+      if ! bash "$REPO_ROOT/scripts/verify.sh" >&2; then
+        red "BLOCKED push: local checks failed. Nothing reaches master/live until this is green."
+        red "Fix it, or (emergency only): SKIP_VERIFY=1 git push ..."
+        exit 1
+      fi
+    fi
+    break
+  fi
+done <<< "$PUSH_REFS"
+
 exit 0
