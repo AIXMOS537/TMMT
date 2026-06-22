@@ -57,6 +57,8 @@ case "$v" in
   memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
   member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
   send-pack|sendpack|pack) exec bash "$ROOT/scripts/send-pack" "${1:-}";;
+  collect|bundle|handoff) exec bash "$ROOT/scripts/collect" "$@";;
+  intake|absorb-op|pull-work) exec bash "$ROOT/scripts/intake" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
