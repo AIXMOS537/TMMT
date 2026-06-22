@@ -1,0 +1,52 @@
+// Tailscale ACL — lock the M1 / brain so ONLY the owner's personal devices reach it,
+// from anywhere. Single-user tailnet (AIXMOS537@), so trust is enforced with TAGS, not
+// device IPs or location. Paste into: Tailscale admin → Access Controls.
+//
+// BEFORE APPLYING (or you could fence yourself out — though the admin console can always
+// re-edit the ACL, so it's recoverable):
+//   1. Tag ONLY your personal devices as tag:owner  (e.g. macbook-pro-2, iphone171, and
+//      your M1 if it's your daily driver). Admin → Machines → ⋯ → Edit ACL tags.
+//   2. Tag the M1 / brain node as tag:brain.
+//   3. Tag the Windows desktops + "fleet" as tag:fleet (operator/worker boxes — NOT trusted
+//      near the brain). Any UNTAGGED device is denied by default.
+//
+// Effect:
+//   * Owner devices  → everything (you are never the one locked out).
+//   * Brain          → reachable ONLY by owner devices; pushes back only to owner devices.
+//   * Fleet/worker   → isolated to itself; CANNOT reach the brain or owner devices.
+{
+  "tagOwners": {
+    "tag:owner": ["autogroup:admin"],
+    "tag:brain": ["autogroup:admin"],
+    "tag:fleet": ["autogroup:admin"]
+  },
+
+  "acls": [
+    // Owner's personal devices reach everything — anywhere, any port.
+    { "action": "accept", "src": ["tag:owner"], "dst": ["*:*"] },
+
+    // Brain may initiate back to owner devices only (e.g. memory-sync push). Never to fleet.
+    { "action": "accept", "src": ["tag:brain"], "dst": ["tag:owner:*"] },
+
+    // Worker/operator boxes talk only among themselves. No path to brain or owner.
+    { "action": "accept", "src": ["tag:fleet"], "dst": ["tag:fleet:*"] }
+
+    // DEFAULT DENY: fleet→brain, fleet→owner, and any untagged device are all blocked.
+  ],
+
+  "ssh": [
+    // Only owner devices may Tailscale-SSH, and only into owner/brain machines.
+    {
+      "action": "accept",
+      "src": ["tag:owner"],
+      "dst": ["tag:owner", "tag:brain"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ],
+
+  "tests": [
+    { "src": "tag:owner", "accept": ["tag:brain:22", "tag:brain:443"] },
+    { "src": "tag:fleet", "deny":   ["tag:brain:22", "tag:brain:443"] },
+    { "src": "tag:fleet", "deny":   ["tag:owner:22"] }
+  ]
+}

@@ -1,0 +1,8 @@
+Bill Name,Entity,Owner,Category,Vendor,Amount USD,Due Day,Frequency,Autopay,Payment Account,Status,Priority Tier,Decision,Next Action,Notes
+Example — Rent,Personal,Taha,Housing,Landlord,0,1,Monthly,No,Personal Checking,Due,3 — Family,,,
+Example — GHL Agency,AIXMOS / All In One,Taha,Software,GoHighLevel,297,15,Monthly,Yes,Business Checking,Active,4 — Business,,,Confirm actual plan tier
+Example — Vercel Pro,AIXMOS,Taha,Hosting,Vercel,20,1,Monthly,Yes,Business Checking,Active,4 — Business,,,5 projects — one team billing
+Example — Supabase,TMMT,Taha,Database,Supabase,0,1,Monthly,Yes,Business Checking,Active,4 — Business,,,Free tier until MAU warning
+Example — Claude Max,Personal,Taha,Dev Tools,Anthropic,200,1,Monthly,Yes,Personal Card,Active,2 — Self,,,Dev seat — not app cost
+Example — Mother utilities,Family,Taha,Utilities,Utility Co,0,10,Monthly,No,Personal Checking,Due,3 — Family,,,
+Example — Moe Legacy tools,Moe Legacy (client),Umar lane,Software,,0,1,Monthly,No,Separate account,Review,4 — Business,,,Fenced — client reimburses or separate entity

@@ -1,0 +1,150 @@
+# Dual Setup Sync — universal registry (COPY → .local.yaml, never commit real numbers)
+#
+#   cp config/dual-sync.registry.example.yaml config/dual-sync.registry.local.yaml
+#
+# schema_version: bump when format changes → run scripts/dual-sync/upgrade.py
+
+schema_version: 1
+
+# ── Principals (owner first; operators added when they pay) ───────────────────
+
+principals:
+  taha:
+    display_name: "Muhammad Taha"
+    tier: owner                    # owner | founding_operator | operator | agency_owner
+    org_slug: aixmos
+    brain_mesh: brainiac-mac
+    mobile_meshes: [carry-mac]
+    modules:
+      mesh_inbox: { enabled: true, version: 1 }
+      brother_layer: { enabled: true, version: 1 }
+      command_router: { enabled: true, version: 1 }
+      voice_cards: { enabled: true, version: 1 }
+      memory_vault: { enabled: true, version: 1 }
+    voice_ladder_default: draft
+
+  moe-legacy:
+    display_name: "Muhammad Umar"
+    tier: founding_operator        # fenced; founding terms in OFFER-STACK
+    org_slug: moe-legacy
+    brain_mesh: brainiac-mac       # hosted on owner spine until own brain paid
+    mobile_meshes: [moe-legacy]
+    modules:
+      mesh_inbox: { enabled: true, version: 1 }
+      brother_layer: { enabled: false, version: 1 }   # owner-only module
+      command_router: { enabled: true, version: 1 }
+      voice_cards: { enabled: true, version: 1 }
+      operator_portal: { enabled: true, version: 1 }
+    voice_ladder_default: draft
+
+# ── Devices (add any machine — phones pair via forward rules) ─────────────────
+
+devices:
+  brainiac-mac:
+    role: home_brain
+    always_on: true
+    principal_id: taha
+    os: macos
+    channels: [imessage, telegram]
+    sync_store: "nas:/AIXMOS/sync/"
+
+  carry-mac:
+    role: mobile_command
+    always_on: false
+    principal_id: taha
+    os: macos
+    channels: [imessage, telegram, slack]
+
+  moe-legacy:
+    role: mobile_command
+    always_on: false
+    principal_id: moe-legacy
+    os: macos
+    channels: [imessage]
+    fenced: true
+
+# ── Phone numbers (E.164 in .local.yaml only) ─────────────────────────────────
+
+phone_numbers:
+  home_intake:
+    e164: "+1XXXXXXXXXX"           # brain line — replace in .local.yaml
+    device_mesh: brainiac-mac
+    principal_id: taha
+    forward_labels: [personal, business]
+    intake: true
+
+  # personal_mobile:
+  #   e164: "+1XXXXXXXXXX"
+  #   forward_to: home_intake
+  #   principal_id: taha
+
+# ── Dual sync pairs ───────────────────────────────────────────────────────────
+
+sync_pairs:
+  taha-primary:
+    principal_id: taha
+    mobile_mesh: carry-mac
+    brain_mesh: brainiac-mac
+    sync_modules: [mesh_inbox, brother_layer, voice_cards, memory_vault]
+
+  moe-legacy-primary:
+    principal_id: moe-legacy
+    mobile_mesh: moe-legacy
+    brain_mesh: brainiac-mac       # hosted until operator buys own brain rung
+    sync_modules: [mesh_inbox, voice_cards, operator_portal]
+
+# ── Module catalog (what operators can buy) ───────────────────────────────────
+
+modules_catalog:
+  mesh_inbox:
+    description: Universal capture + shared inbox
+    owner_included: true
+    operator_build_rung: 1875
+    operator_run_monthly: 0
+
+  brother_layer:
+    description: Learn voice, draft-first, send-as-you ladder
+    owner_included: true
+    operator_build_rung: null      # not sold to operators
+    operator_run_monthly: null
+
+  command_router:
+    description: TMMT agent / ops commands from phone
+    owner_included: true
+    operator_build_rung: 3750
+    operator_run_monthly: 97
+
+  voice_cards:
+    description: Per-contact codeswitch profiles + learn ladder
+    owner_included: true
+    operator_build_rung: 3750
+    operator_run_monthly: 0
+
+  operator_portal:
+    description: Branded login + org-scoped portal
+    owner_included: false
+    operator_build_rung: 15000
+    operator_run_monthly: 97
+
+  memory_vault:
+    description: Obsidian / HAILMARY memory loop
+    owner_included: true
+    operator_build_rung: 45000
+    operator_run_monthly: 7500
+
+# ── Commercial policy ─────────────────────────────────────────────────────────
+
+commercial:
+  policy: fair_fixed               # list price stands unless price_match applies
+  non_negotiable_default: true
+  price_match:
+    enabled: true
+    requires: written_competitor_quote
+    same_scope_required: true
+    max_discount_pct: 10
+    owner_approval_required: true
+    excluded_modules: [brother_layer, memory_vault]
+    excluded_tiers: [owner, apex_hailmary]
+  founding_operators:
+    - principal_id: moe-legacy
+      note: "Brain deferred until $50K collected — see OFFER-STACK.md"

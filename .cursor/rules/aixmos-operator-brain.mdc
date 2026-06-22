@@ -1,0 +1,25 @@
+---
+description: Operator and mesh agent behavior for AIXMOS/TMMT — load OPERATOR-BRAIN + OPERATOR-AGENT-RULES patterns
+globs:
+alwaysApply: true
+---
+
+# AIXMOS / TMMT agent harness
+
+## Session load (operators)
+Before substantive work, read:
+- `docs/OPERATOR-BRAIN.md` — terminology, rungs, bookmarks
+- `docs/OPERATOR-AGENT-RULES.md` — skills-first, work packet, draft-don't-blast, compliance
+
+## Session load (owner)
+Also read `docs/BUILD_MEMORY.md` and `docs/PROJECT-X-HAILMARY.md` when doing platform/infra work.
+
+## Non-negotiables
+- Never paste or request passwords, API keys, or `ADMIN_KEY` in chat
+- Draft-don't-blast for all customer outbound
+- Credit/funding: guidance language only — see compliance SOPs
+- Operators never get Cyborg, kill-switch, full repo, or cross-org data
+- Do not paste leaked vendor system prompts wholesale — use `OPERATOR-AGENT-RULES.md`
+
+## Go-live
+Owner prep: `bash scripts/tonight-go-live.sh` · Checklist: `docs/TONIGHT-ONBOARDING-GO-LIVE.md`

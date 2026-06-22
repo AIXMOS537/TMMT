@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1500" viewBox="0 0 1000 1500" font-family="Verdana, Arial, sans-serif">
+  <rect width="1000" height="1500" fill="#0A1628"/>
+  <!-- Title -->
+  <rect x="50" y="40" width="900" height="150" rx="26" fill="#1440C4"/>
+  <text x="500" y="105" text-anchor="middle" fill="#fff" font-size="50" font-weight="bold">⭐ THE STANDARD ⭐</text>
+  <text x="500" y="155" text-anchor="middle" fill="#cfe0ff" font-size="28">what it means to be SOLID here · permanent</text>
+
+  <!-- THE DEAL -->
+  <rect x="50" y="215" width="900" height="120" rx="20" fill="#11223d" stroke="#2563EB" stroke-width="3"/>
+  <text x="80" y="270" fill="#fff" font-size="30" font-weight="bold">🎯 THE DEAL</text>
+  <text x="80" y="310" fill="#cdd8ee" font-size="24">Here to help TMMT + AIXMOS GROW — not just yourself. Accept the mission, or you're not on the team.</text>
+
+  <!-- PHONE RULE header -->
+  <text x="500" y="395" text-anchor="middle" fill="#fff" font-size="34" font-weight="bold">📵 THE PHONE RULE — don't blow up the boss's phone</text>
+
+  <!-- RED -->
+  <rect x="50" y="420" width="900" height="120" rx="18" fill="#3a1414" stroke="#C0392B" stroke-width="4"/>
+  <text x="80" y="468" fill="#ff6b5e" font-size="30" font-weight="bold">🔴 CALL NOW</text>
+  <text x="80" y="508" fill="#f3c9c4" font-size="23">money at risk · security breach · system down · client emergency · safety/legal</text>
+
+  <!-- YELLOW -->
+  <rect x="50" y="555" width="900" height="120" rx="18" fill="#3a3214" stroke="#D97706" stroke-width="4"/>
+  <text x="80" y="603" fill="#ffce6b" font-size="30" font-weight="bold">🟡 MESSAGE (batched)</text>
+  <text x="80" y="643" fill="#f0e0c0" font-size="23">a decision only the boss can make · a blocker you truly can't solve</text>
+
+  <!-- GREEN -->
+  <rect x="50" y="690" width="900" height="120" rx="18" fill="#10331f" stroke="#1D9E75" stroke-width="4"/>
+  <text x="80" y="738" fill="#5fe0a5" font-size="30" font-weight="bold">🟢 DON'T MESSAGE</text>
+  <text x="80" y="778" fill="#c0ead8" font-size="23">routine questions · status · anything you can figure out or that can wait → daily update</text>
+
+  <!-- 4 question check -->
+  <rect x="50" y="830" width="900" height="180" rx="20" fill="#11223d" stroke="#2563EB" stroke-width="3"/>
+  <text x="80" y="878" fill="#fff" font-size="28" font-weight="bold">✋ before you text the boss, ask:</text>
+  <text x="80" y="918" fill="#cdd8ee" font-size="23">1. Did I try to solve it myself first?</text>
+  <text x="80" y="950" fill="#cdd8ee" font-size="23">2. Is it truly 🔴 — or can it wait for my daily update?</text>
+  <text x="80" y="982" fill="#cdd8ee" font-size="23">3. Do I have a RECOMMENDATION — not just a question?</text>
+  <text x="510" y="918" fill="#cdd8ee" font-size="23">4. Can I BATCH it</text>
+  <text x="510" y="950" fill="#cdd8ee" font-size="23">instead of pinging</text>
+  <text x="510" y="982" fill="#cdd8ee" font-size="23">one-by-one?</text>
+
+  <!-- The bar -->
+  <rect x="50" y="1030" width="430" height="230" rx="20" fill="#10331f" stroke="#1D9E75" stroke-width="3"/>
+  <text x="80" y="1078" fill="#5fe0a5" font-size="28" font-weight="bold">✅ BE THIS</text>
+  <text x="80" y="1120" fill="#c0ead8" font-size="22">• Take work OFF his plate</text>
+  <text x="80" y="1152" fill="#c0ead8" font-size="22">• Bring solutions, not problems</text>
+  <text x="80" y="1184" fill="#c0ead8" font-size="22">• Tell the truth — always</text>
+  <text x="80" y="1216" fill="#c0ead8" font-size="22">• Do what you say</text>
+  <text x="80" y="1248" fill="#c0ead8" font-size="22">• Mission first</text>
+
+  <rect x="520" y="1030" width="430" height="230" rx="20" fill="#3a1414" stroke="#C0392B" stroke-width="3"/>
+  <text x="550" y="1078" fill="#ff6b5e" font-size="28" font-weight="bold">🚫 REMOVED FOR</text>
+  <text x="550" y="1120" fill="#f3c9c4" font-size="22">• Lying to the owner</text>
+  <text x="550" y="1152" fill="#f3c9c4" font-size="22">• Working only for yourself</text>
+  <text x="550" y="1184" fill="#f3c9c4" font-size="22">• Ignoring the mission</text>
+  <text x="550" y="1216" fill="#f3c9c4" font-size="22">• Blowing up the phone</text>
+  <text x="550" y="1248" fill="#f3c9c4" font-size="22">• Adding weight, not lifting it</text>
+
+  <!-- Footer -->
+  <rect x="50" y="1290" width="900" height="160" rx="24" fill="#1440C4"/>
+  <text x="500" y="1345" text-anchor="middle" fill="#fff" font-size="30" font-weight="bold">Hand the boss a thing → he forgets about it → it's handled.</text>
+  <text x="500" y="1390" text-anchor="middle" fill="#cfe0ff" font-size="26">Be that, and there's no ceiling here. You RISE. 👑</text>
+  <text x="500" y="1428" text-anchor="middle" fill="#9fb6ff" font-size="22">For the people, by the people — but only the ones who mean it.</text>
+</svg>

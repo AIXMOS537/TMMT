@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# member — AIXMOS public "LEARN · EARN · CHURN" membership engine (the $50K Stretch).
+# $97/mo entry: a member picks their venture + role, gets a starter resource map,
+# and a level-up path with DLC upgrades — like a video game. Local-first, owner-run.
+#
+# THIS IS THE PUBLIC PROGRAM (Project X AIXMOS). It is NOT Project X HAILMARY,
+# which is invite-only (Muhammad Taha + family + friends). See docs/LEARN-EARN-CHURN.md
+#
+#   bash scripts/member catalog          ventures · roles · DLC upgrades (the store)
+#   bash scripts/member join [name]      enroll: pick venture/role → get the path
+#   bash scripts/member journey [name]   where they are + what's unlocked / locked
+#   bash scripts/member roster           everyone enrolled (local only)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MEMDIR="$ROOT/.hailmary/members"   # gitignored, owner-local
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; M=$'\e[35m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; C=; M=; W=; D=; BD=; X=; fi
+ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+say(){ printf '%s\n' "$*"; }
+slug(){ printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-'; }
+
+# DARK kill-switch: no enrollment while blacked out (catalog/journey are read-only).
+if [ -f "$ROOT/.swarm/DARK" ]; then
+  case "${1:-}" in catalog|journey|roster|""|"?") : ;;
+    *) echo "⛔ DARK — enrollment paused. Lift: bash scripts/godark lift"; exit 1;; esac
+fi
+
+VENTURES="rentals|🚗 Car Rentals
+credit-guidance|📈 Credit Guidance (never \"repair\")
+funding|💰 Business Funding
+marketing|📣 Marketing / Agency
+ecommerce|🛒 E-commerce
+creator|🎬 Content / Creator"
+
+ROLES="setter|Setter — book appointments, start conversations
+closer|Closer — turn conversations into deposits
+operator-in-training|Operator-in-Training — learn the whole vertical
+operator|Operator — run the vertical yourself
+builder|Builder — build funnels/automations/sites
+affiliate|Affiliate — refer + earn recurring"
+
+# DLC / upgrades (the video-game store) — mapped to docs/OFFER-STACK.md
+DLC="L1|\$97/mo|MEMBER — taste of the ecosystem + leads/funnels set to convert + your learning path
+A|\$1,875|STARTER BUILD — basic business setup + GoHighLevel basic
+B|\$3,750|AUTOMATIONS — upgraded AIXMOS helper + GHL automations + Airtable workflows
+C|\$7,500|OWN BRAIN — 32GB laptop that runs & hosts everything locally
+D|\$15K|VERTICAL PACK — front-end/design + AIXMOS Agents for your vertical
+E|\$25K|FULL VERTICAL — credit + funding + rentals stack, agents + everything
+F|\$35K|COMBINED + CAR — everything combined (+ economy car option)
+G|\$45-50K|DONE-FOR-YOU — flash-deploy full integration, backend team runs it
+APEX|\$100K|OPERATOR APEX — full agentic business incl. HAILMARY-tier brain"
+
+cmd_catalog() {
+  printf '\n%s%s   AIXMOS · LEARN · EARN · CHURN — the $50K Stretch%s\n' "$C" "$BD" "$X"
+  printf '%s   $97/mo to start. Pick a venture + role. Level up with DLC.%s\n\n' "$D" "$X"
+  printf '%s   VENTURES (pick one to pursue)%s\n' "$Y$BD" "$X"
+  printf '%s\n' "$VENTURES" | while IFS='|' read -r k v; do printf '     • %s\n' "$v"; done
+  printf '\n%s   ROLES (how you play)%s\n' "$Y$BD" "$X"
+  printf '%s\n' "$ROLES" | while IFS='|' read -r k v; do printf '     • %s\n' "$v"; done
+  printf '\n%s   THE LEVELS / DLC (upgrade as you go — like a game)%s\n' "$M$BD" "$X"
+  printf '%s\n' "$DLC" | while IFS='|' read -r k p v; do printf '     %s%-7s%s %s%-9s%s %s\n' "$BD" "$k" "$X" "$D" "$p" "$X" "$v"; done
+  printf '\n%s   join:  bash scripts/member join%s\n\n' "$D" "$X"
+}
+
+cmd_join() {
+  mkdir -p "$MEMDIR"
+  local name="${1:-}"
+  [[ -n "$name" ]] || { printf '  Your name: '; IFS= read -r name || true; }
+  [[ -n "$name" ]] || { echo "  (no name — nothing enrolled)"; exit 0; }
+  printf '  Email: '; IFS= read -r email || true
+  echo; printf '%s  Pick your VENTURE:%s\n' "$BD" "$X"
+  local i=1; local vkeys=()
+  while IFS='|' read -r k v; do vkeys+=("$k"); printf '   %s) %s\n' "$i" "$v"; i=$((i+1)); done <<< "$VENTURES"
+  printf '  > '; IFS= read -r vn || true; local venture="${vkeys[$((${vn:-1}-1))]:-rentals}"
+  echo; printf '%s  Pick your ROLE:%s\n' "$BD" "$X"
+  i=1; local rkeys=()
+  while IFS='|' read -r k v; do rkeys+=("$k"); printf '   %s) %s\n' "$i" "$v"; i=$((i+1)); done <<< "$ROLES"
+  printf '  > '; IFS= read -r rn || true; local role="${rkeys[$((${rn:-1}-1))]:-operator-in-training}"
+
+  local f="$MEMDIR/$(slug "$name").txt"
+  {
+    echo "name: $name"
+    echo "email: ${email:-}"
+    echo "venture: $venture"
+    echo "role: $role"
+    echo "level: L1"
+    echo "plan: \$97/mo"
+    echo "joined_utc: $(date -u +%FT%TZ)"
+    echo "program: AIXMOS Learn-Earn-Churn (\$50K Stretch)"
+  } > "$f"
+  echo
+  ok "enrolled: $name → $venture / $role @ \$97/mo (Level L1)"
+  say "$D   saved local: .hailmary/members/$(basename "$f")$X"
+  _show_path "$venture" "$role"
+}
+
+_show_path() {
+  local venture="$1" role="$2"
+  cat <<EOF
+
+${G}${BD}   YOUR STARTER PATH (Level L1)${X}
+     1. ${BD}Learn${X}  — your venture playbook + role training (delivered as the build rolls out)
+     2. ${BD}Earn${X}   — leads + funnels set to convert from day one (GoHighLevel)
+     3. ${BD}Churn${X}  — work the playbook daily; climb toward Operator
+
+${M}${BD}   UNLOCK NEXT (DLC — upgrade when ready)${X}
+     ${BD}A \$1,875${X} Starter Build  →  ${BD}B \$3,750${X} Automations  →  ${BD}C \$7,500${X} Own Brain
+     …all the way to ${BD}APEX \$100K${X}. See: bash scripts/member catalog
+
+${D}   pricing source of truth: docs/OFFER-STACK.md · become a full operator over time${X}
+EOF
+}
+
+cmd_journey() {
+  local name="${1:-}"; local f
+  if [[ -n "$name" ]]; then f="$MEMDIR/$(slug "$name").txt"; else f="$(ls -t "$MEMDIR"/*.txt 2>/dev/null | head -1)"; fi
+  [[ -f "$f" ]] || { echo "  no member found. enroll: bash scripts/member join"; exit 0; }
+  printf '\n%s   MEMBER JOURNEY%s\n' "$C$BD" "$X"
+  sed 's/^/   /' "$f"
+  local venture role; venture="$(grep '^venture:' "$f" | cut -d' ' -f2-)"; role="$(grep '^role:' "$f" | cut -d' ' -f2-)"
+  _show_path "$venture" "$role"
+}
+
+cmd_roster() {
+  [[ -d "$MEMDIR" ]] || { echo "  no members yet. enroll: bash scripts/member join"; exit 0; }
+  printf '\n%s   AIXMOS MEMBERS (local)%s\n\n' "$C$BD" "$X"
+  local n=0
+  for f in "$MEMDIR"/*.txt; do [[ -f "$f" ]] || continue; n=$((n+1))
+    printf '   • %s%s%s — %s / %s [%s]\n' "$BD" "$(grep '^name:' "$f"|cut -d' ' -f2-)" "$X" \
+      "$(grep '^venture:' "$f"|cut -d' ' -f2-)" "$(grep '^role:' "$f"|cut -d' ' -f2-)" "$(grep '^level:' "$f"|cut -d' ' -f2-)"
+  done
+  [[ $n -eq 0 ]] && echo "   (none yet)"; echo
+}
+
+case "${1:-catalog}" in
+  catalog|store|menu) cmd_catalog;;
+  join|enroll)        shift || true; cmd_join "${1:-}";;
+  journey|me|status)  shift || true; cmd_journey "${1:-}";;
+  roster|list)        cmd_roster;;
+  *) echo "member words:  catalog | join [name] | journey [name] | roster";;
+esac

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1450" viewBox="0 0 1000 1450" font-family="Verdana, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef4ff"/><stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="1450" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <rect x="60" y="40" width="880" height="140" rx="28" fill="#1440C4"/>
+  <text x="500" y="105" text-anchor="middle" fill="#fff" font-size="52" font-weight="bold">TONIGHT: 2 FRIENDS JOIN 🤝</text>
+  <text x="500" y="155" text-anchor="middle" fill="#cfe0ff" font-size="30">you send 1 little file to each. that’s it.</text>
+
+  <!-- MOE card -->
+  <rect x="60" y="210" width="430" height="360" rx="28" fill="#e7f8ef" stroke="#1D9E75" stroke-width="4"/>
+  <text x="275" y="285" text-anchor="middle" font-size="100">🍎💻</text>
+  <text x="275" y="345" text-anchor="middle" font-size="40" font-weight="bold" fill="#0A1628">MOE</text>
+  <text x="275" y="390" text-anchor="middle" font-size="28" fill="#0A1628">has the Apple laptop</text>
+  <rect x="95" y="420" width="360" height="110" rx="18" fill="#1D9E75"/>
+  <text x="275" y="465" text-anchor="middle" font-size="26" fill="#fff">send him this file 👇</text>
+  <text x="275" y="505" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff">onboard.command</text>
+
+  <!-- AYYAN card -->
+  <rect x="510" y="210" width="430" height="360" rx="28" fill="#e8f0ff" stroke="#1440C4" stroke-width="4"/>
+  <text x="725" y="285" text-anchor="middle" font-size="100">🪟💻</text>
+  <text x="725" y="345" text-anchor="middle" font-size="40" font-weight="bold" fill="#0A1628">AYYAN</text>
+  <text x="725" y="390" text-anchor="middle" font-size="28" fill="#0A1628">has the Windows Dell</text>
+  <rect x="545" y="420" width="360" height="110" rx="18" fill="#1440C4"/>
+  <text x="725" y="465" text-anchor="middle" font-size="26" fill="#fff">send him this file 👇</text>
+  <text x="725" y="505" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff">onboard.ps1</text>
+
+  <!-- Steps title -->
+  <text x="500" y="650" text-anchor="middle" font-size="38" font-weight="bold" fill="#1440C4">then they do 1-2-3 👇</text>
+
+  <!-- Step 1 -->
+  <rect x="60" y="690" width="880" height="150" rx="24" fill="#fff" stroke="#D97706" stroke-width="4"/>
+  <circle cx="150" cy="765" r="46" fill="#D97706"/><text x="150" y="782" text-anchor="middle" font-size="48" font-weight="bold" fill="#fff">1</text>
+  <text x="225" y="755" font-size="34" font-weight="bold" fill="#0A1628">👆 they TAP the file to open it</text>
+  <text x="225" y="800" font-size="26" fill="#444">a friendly screen says hello</text>
+
+  <!-- Step 2 -->
+  <rect x="60" y="860" width="880" height="150" rx="24" fill="#fff" stroke="#1D9E75" stroke-width="4"/>
+  <circle cx="150" cy="935" r="46" fill="#1D9E75"/><text x="150" y="952" text-anchor="middle" font-size="48" font-weight="bold" fill="#fff">2</text>
+  <text x="225" y="925" font-size="34" font-weight="bold" fill="#0A1628">🎤 they type: I ACCEPT THE MISSION</text>
+  <text x="225" y="970" font-size="26" fill="#444">then answer a few tiny questions</text>
+
+  <!-- Step 3 -->
+  <rect x="60" y="1030" width="880" height="150" rx="24" fill="#fff" stroke="#1440C4" stroke-width="4"/>
+  <circle cx="150" cy="1105" r="46" fill="#1440C4"/><text x="150" y="1122" text-anchor="middle" font-size="48" font-weight="bold" fill="#fff">3</text>
+  <text x="225" y="1095" font-size="34" font-weight="bold" fill="#0A1628">🪪 a card pops out → they SEND it back to you</text>
+  <text x="225" y="1140" font-size="26" fill="#444">text / email / AirDrop the card to you</text>
+
+  <!-- You -->
+  <rect x="60" y="1210" width="880" height="170" rx="28" fill="#0A1628"/>
+  <text x="500" y="1275" text-anchor="middle" font-size="40" font-weight="bold" fill="#fff">👑 YOU get the card → you tap ✅ YES</text>
+  <text x="500" y="1325" text-anchor="middle" font-size="28" fill="#9fb6ff">now they’re in. nobody gets in without your YES.</text>
+  <text x="500" y="1362" text-anchor="middle" font-size="24" fill="#7f93cc">one step at a time. you got this. 🔒</text>
+</svg>

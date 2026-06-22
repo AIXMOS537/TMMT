@@ -1,0 +1,40 @@
+{
+  "$comment": "Copy to <your-slug>.json — white-label tenant shell. No secrets here.",
+  "id": "your-tenant-id",
+  "slug": "your-slug",
+  "aliases": [],
+  "displayName": "Your Brand",
+  "legalName": "Your Legal Entity LLC",
+  "tagline": "One line that sells the brand.",
+  "locale": { "default": "en-US", "currency": "USD", "timezone": "America/New_York" },
+  "region": { "primary": "US", "compliancePack": "us-general" },
+  "theme": {
+    "mode": "dark",
+    "primary": "#7fffd4",
+    "accent": "#6366f1",
+    "background": "#0a0a0a",
+    "foreground": "#ffffff",
+    "logoPath": "/brands/your-slug/logo.svg",
+    "faviconPath": "/brands/your-slug/favicon.ico"
+  },
+  "domains": {
+    "marketing": "yourbrand.com",
+    "app": "yourbrand.vercel.app"
+  },
+  "contact": {
+    "supportEmail": "support@yourbrand.com",
+    "salesPhone": "+1-000-000-0000"
+  },
+  "agent": {
+    "name": "Riley",
+    "persona": "Helpful, compliant, never guarantees outcomes."
+  },
+  "offers": {
+    "skus": ["lead-magnet", "intro-97", "training", "rental-in-a-box", "flagship"]
+  },
+  "whiteLabel": {
+    "licenseTier": "tenant",
+    "parentPlatformId": "aixmos-platform",
+    "customizable": ["displayName", "tagline", "theme", "domains", "agent.name", "contact"]
+  }
+}

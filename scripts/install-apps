@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# install-apps — drop double-click APP icons on the Desktop that open the
+# holographic Mission Control, the 3D Cockpit, and the Wiki FULLSCREEN (browser
+# "app mode" — no tabs, no address bar), like native apps. Plug and play.
+#
+#   bash scripts/install-apps          (macOS Desktop .command icons)
+#
+# Windows: see docs/MISSION-CONTROL.md for the one-line Edge --app shortcut.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DESK="$HOME/Desktop"
+[ -d "$DESK" ] || { echo "no Desktop folder found"; exit 0; }
+
+mkapp(){ # name | html-relative-path
+  local name="$1" rel="$2" f="$DESK/$1.command"
+  cat > "$f" <<EOF
+#!/usr/bin/env bash
+# AIXMOS app launcher — opens fullscreen in browser app mode.
+url="file://$ROOT/$rel"
+open -na "Google Chrome"  --args --app="\$url" 2>/dev/null && exit
+open -na "Microsoft Edge" --args --app="\$url" 2>/dev/null && exit
+open -na "Brave Browser"  --args --app="\$url" 2>/dev/null && exit
+open "\$url"
+EOF
+  chmod +x "$f"; echo "✓ $name"
+}
+
+echo "Installing AIXMOS app icons → $DESK"
+mkapp "AIXMOS Mission Control" "tools/launcher/index.html"
+mkapp "AIXMOS Cockpit"         "tools/hologram-cockpit/index.html"
+mkapp "AIXMOS Wiki"            "tools/wiki/index.html"
+cat <<DONE
+
+Done. Three icons are on your Desktop.
+• Double-click any one — it opens FULLSCREEN like a real app (no browser tabs).
+• First time only: right-click → Open (macOS Gatekeeper asks once).
+• Drag them to your Dock to pin them.
+
+Tip: run  bash scripts/wiki build  after editing docs so the Wiki app stays current.
+DONE
