@@ -23,7 +23,7 @@ const Body = z.object({
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.SYNC_WEBHOOK_SECRET;
-  if (secret && req.headers.get("x-sync-secret") !== secret) {
+  if (!secret || req.headers.get("x-sync-secret") !== secret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

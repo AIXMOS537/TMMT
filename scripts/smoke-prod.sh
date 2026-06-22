@@ -28,7 +28,7 @@ check_redirect_login() {
   loc=$(curl -sS -o /dev/null -w "%{redirect_url}" "$BASE$path" 2>/dev/null || true)
   code=$(curl -sS -o /dev/null -w "%{http_code}" "$BASE$path" 2>/dev/null || echo "000")
   if [[ "$code" == "307" || "$code" == "308" ]] && [[ "$loc" == *"/login"* ]]; then
-    echo "  OK  [$code→login] $name"
+    echo "  OK  [$code->login] $name"
     PASS=$((PASS + 1))
   else
     echo "  FAIL [$code] $name (redirect=$loc)"

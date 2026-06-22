@@ -34,7 +34,7 @@ const Body = z.discriminatedUnion("action", [OpenBody, VoteBody, GetBody]);
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.AGENT_WEBHOOK_SECRET;
-  if (secret && req.headers.get("x-agent-secret") !== secret) {
+  if (!secret || req.headers.get("x-agent-secret") !== secret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

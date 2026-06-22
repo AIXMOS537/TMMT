@@ -73,4 +73,7 @@ if [[ "$any" -eq 0 ]]; then
   log "No target flash volumes mounted."
 fi
 
+# Desktop kits (mac-brain, imessage-hands, TAHA-HQ) — no secrets
+bash "${REPO_ROOT}/scripts/sync-desktop-kits-to-flash.sh" || log "WARNING: desktop-kits sync failed"
+
 log "=== sync-all complete ==="

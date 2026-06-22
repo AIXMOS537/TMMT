@@ -1,9 +1,12 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 /**
  * Service-role client. BYPASSES RLS. Use only on the server, and only when
  * absolutely necessary (e.g. anonymous /api/intake POSTs, admin scripts).
- * Never import this from a client component.
+ * Never import this from a client component — the `server-only` import above
+ * makes any accidental client-side import fail the build (prevents leaking
+ * the service-role key into client JS).
  */
 export function createSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

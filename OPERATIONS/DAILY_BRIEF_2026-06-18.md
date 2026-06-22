@@ -1,14 +1,14 @@
 # Daily Command Center Brief – TMMT Rentals
 
-**Date:** Friday, June 05, 2026
-**Generated:** 2026-06-05 07:00
+**Date:** Thursday, June 18, 2026
+**Generated:** 2026-06-18 07:00
 **Data Source:** Supabase (live)
 
 ---
 
 ## Top 3 Priorities
 
-1. 💰 Collect 17 overdue/unpaid customer payment(s)
+1. 💰 Collect 19 overdue/unpaid customer payment(s)
 2. 🔧 Complete 2 overdue maintenance appointment(s)
 3. 📋 Assign owners to critical SOPs (Fleet, Finance, Customers)
 
@@ -73,16 +73,6 @@ reached multiple times
 
 ## Customer Payments – Exceptions
 
-- Boris Farmer  Amount: $438  Past due: $$438  ⚠️
-- Charrisse Witherspoon  Amount: $427  Past due: $$814  ⚠️
-- Keiara Allen  Amount: $317.75  Due: 2026-04-24  ⚠️ OVERDUE  [Overdue]
-- Patrick Holiday  Amount: $400  Due: 2026-01-23  ⚠️ OVERDUE  Past due: $$500  ⚠️  [Overdue]
-- Dominique  Hott  Amount: $368  Due: 2026-02-07  ⚠️ OVERDUE  [Overdue]
-- D'Andrea Carter  Amount: $400  Due: 2026-02-25  ⚠️ OVERDUE  [Overdue]
-- Yasin Oda  Amount: $219.42  Due: 2026-04-18  ⚠️ OVERDUE  [Overdue]
-- Fa-eez Gomda  Amount: $386.4  [Overdue]
-- Rolland Ngwayang  Amount: $215  [Overdue]
-- Delano Hall  Amount: $443  Due: 2026-04-17  ⚠️ OVERDUE  [Overdue]
 - Tyler Cox  Amount: $360  Due: 2026-04-18  ⚠️ OVERDUE  Past due: $$620  ⚠️  [Overdue]
 - James Brown  Amount: $350  [Overdue]
 - Nia (Antionette) Green  Amount: $470  Due: 2025-11-03  ⚠️ OVERDUE  [Overdue]
@@ -92,7 +82,17 @@ reached multiple times
 - Leatha Graham  Amount: $419  Due: 2026-04-21  ⚠️ OVERDUE  [Overdue]
 - Maquela Bell  Due: 2026-03-11  ⚠️ OVERDUE  [Overdue]
 - Jennifer Dalton  Amount: $437  Due: 2026-02-21  ⚠️ OVERDUE  Past due: $$437  ⚠️  [Overdue]
+- Boris Farmer  Amount: $438  Past due: $$438  ⚠️
 - Rodrigue Nzesso Wanko  Amount: $195  Past due: $$848.11  ⚠️
+- Patrice Sumler  Amount: $469  Due: 2026-04-23  ⚠️ OVERDUE  Past due: $$400  ⚠️  [Overdue]
+- Corey Epps  Amount: $165  Due: 2026-04-20  ⚠️ OVERDUE  Past due: $$165  ⚠️  [Overdue]
+- Marlon Ramsey  Amount: $533  Due: 2026-04-20  ⚠️ OVERDUE  Past due: $$533  ⚠️  [Overdue]
+- James Braden   Amount: $360  Due: 2026-04-22  ⚠️ OVERDUE  Past due: $$237  ⚠️  [Overdue]
+- Charrisse Witherspoon  Amount: $427  Past due: $$814  ⚠️
+- Marvin Valentine  Amount: $225  Due: 2026-04-20  ⚠️ OVERDUE  Past due: $$535  ⚠️  [Overdue]
+- Keiara Allen  Amount: $317.75  Due: 2026-04-24  ⚠️ OVERDUE  [Overdue]
+- Patrick Holiday  Amount: $400  Due: 2026-01-23  ⚠️ OVERDUE  Past due: $$500  ⚠️  [Overdue]
+- Dominique  Hott  Amount: $368  Due: 2026-02-07  ⚠️ OVERDUE  [Overdue]
 
 ---
 
@@ -111,6 +111,39 @@ reached multiple times
 
 ## Open Tickets
 
+- [Open]   Type: Others  – I66IB PLAZA: 260 Lane 12,23,23,23,23
+Date: 10/3/25
+10/7/25
+10/8/25
+10/9/25
+10/14
+- [Open] Muhammed  Type: Tolls
+- [Open] Jimmy Edme  Type: Others  – DriveEzMD
+2019 Nissan Versa
+License Plate: VA TAP9096
+Trip Number: B153114496350  $27.86
+- [Open]   Type: Others  – I66IB PLAZA 
+DATE: 9/4/25
+          9/5/25
+          9/9/25
+          9/10/25
+Am
+- [Open]   Type: Others  – Baltimore City I-95 Fort McHenry Tunnel
+Date: 10/27/25
+License plate: TFK9830
+TO
+- [Open]   Type: Others  – Dulles toll road
+Total amount due: $27.30
+Response due date: 11/25/2025
+- [Open] Aayan  Type: Tolls  $6
+- [Open] Aayan  Type: Tolls  $723.89
+- [Open] Muhammed umar  Type: Tolls
+- [Open]   Type: Others  – Location exit: Main line, west
+Sully Rd, East
+Main Line, East
+
+Date: 9/23/25
+Lic
 - [Open]   Type: Others  – Montgomery County Intercounty Connector/MD 200
 License plate number: VA/TFK9830
 
@@ -124,44 +157,18 @@ Date of transaction: 8/31/25
 Toll violation date: 10/15/25
 
 - [Open] Aayan   Type: Tolls  $12.8
-- [Open]   Type: Others  – Baltimore city I-895 Baltimore Harbor Tunnel
-Date: 9/26/2025
-License plate: TBU1
-- [Open] Aayan  Type: Tolls  $37
-- [Open]   Type: Others  – 13- I-278/ Eliz/ Goethals/ Verrazano 
-Date: 8/2/25
-License plate: TFR4241
-- [Open]   Type: Others  – Dulles Toll Road
-Invoice issue date: 10/24/25
-License plate: TGZ1189
-Toll fee 
-- [Open]   Type: Others  – 4- Woodbury/S.Camden/NJ Aquariam
-1- Delaware Memorial Br
-Date: 10/17/25
-Total am
-- [Open]   Type: Speeding  – 2100 Block K Street NW, Washington D.C.
-Date: 12 September 2025
-Violation Type: 
-- [Open]   Type: Others  – DMB- Delaware Memorial Br
-Date: 10/17/25
-License plate: TBB4289
-TOLL FEE
-- [Open] Aayan Khan  Type: Tolls  $6
-- [Open] Aayan  Type: Tolls  $70.45
-- [Open]   Type: Others  – Prince George's County Intercounty Connector/MD 200
-License plate number: VA/TFK
 
 **Do Not Rent List:**
-- 🚫 Shonell Johnson  – Out of radius 
 - 🚫 Cory Poindexter
-- 🚫 Maquela Bell  – repo
 - 🚫 Takia Proctor  – Not good with payments & vehicle maintenance.
 
-- 🚫 Quantane Higginbotham  – repo
 - 🚫 William Nathan 
+- 🚫 Kazim Ali 
+- 🚫 Shonell Johnson  – Out of radius 
+- 🚫 Maquela Bell  – repo
+- 🚫 Quantane Higginbotham  – repo
 - 🚫 Patrice Blake
 - 🚫 TOWANDA COLE  – Out of radius 
-- 🚫 Kazim Ali 
 - 🚫 TRACIE PHILLIPS  – Out of radius 
 - 🚫 Cory Clarke
 - 🚫 Crystal Crothers  – repo

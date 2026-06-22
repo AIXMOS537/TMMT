@@ -31,4 +31,8 @@ TMMT_FORCE_FLASH_PULL=1 bash "${REPO_ROOT}/scripts/pull-from-flash-drives.sh" ||
 TMMT_FORCE_DOCK_SYNC=1 bash "${REPO_ROOT}/scripts/sync-all-flash-drives.sh" || true
 
 echo ""
+echo "=== Reload FDA-dependent agents ==="
+bash "${REPO_ROOT}/scripts/reload-blocked-agents.sh" || true
+
+echo ""
 bash "${REPO_ROOT}/scripts/verify-office-services.sh"
