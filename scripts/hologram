@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# hologram — open the AIXMOS 3D Architect's Cockpit in your browser.
+# The whole empire in 3D: drag to orbit, scroll to zoom, click a node to dissect it.
+#   bash scripts/hologram        (or, once aliased:  hologram)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+FILE="$ROOT/tools/hologram-cockpit/index.html"
+[ -f "$FILE" ] || { echo "✗ cockpit not found: $FILE"; exit 1; }
+
+echo "◆ AIXMOS Architect's Cockpit → $FILE"
+if   command -v open     >/dev/null 2>&1; then open "$FILE"            # macOS
+elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$FILE"        # Linux
+elif command -v start    >/dev/null 2>&1; then start "" "$FILE"        # Windows (Git Bash)
+else echo "Open this file in any browser:"; echo "  $FILE"; fi
+echo "Needs internet (loads three.js from a CDN). Drag = orbit · scroll = zoom · click = dissect."

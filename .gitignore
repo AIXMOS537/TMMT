@@ -70,6 +70,12 @@ scripts/phase9-notify/.env.notify
 
 # HAILMARY: local runtime state + absorbed memory snapshots (owner-local only)
 .hailmary/
+config/hailmary-brother.local.yaml
+config/dual-sync.registry.local.yaml
+config/voice-cards/*.local.yaml
+
+# MEMORIAL: private, sacred, owner-local only — never pushed, never shared
+.memorial/
 
 # Python bytecode cruft
 __pycache__/

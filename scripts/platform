@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# platform — universal white-label SaaS shell (one word, any directory).
+#
+#   platform status     platform + apex owner + tenants
+#   platform list       all brand shells
+#   platform show <slug>  one tenant JSON summary
+#   platform init       seed local device config (~/.platform/device.json)
+#   platform preview    open visual brand shell in browser
+#   platform bootstrap  full device setup (platform + one-shot + X profile)
+set -euo pipefail
+
+LIB="$(cd "$(dirname "$0")/lib" && pwd)"
+# shellcheck source=lib/repo-root.sh
+. "$LIB/repo-root.sh"
+[ -n "${TMMT_REPO:-}" ] || { echo "✗ TMMT repo not found"; exit 1; }
+
+MANIFEST="$TMMT_REPO/config/platform/manifest.json"
+TENANTS="$TMMT_REPO/config/platform/tenants"
+DEVICE_CFG="$HOME/.platform/device.json"
+PORT="${PLATFORM_PORT:-8099}"
+
+say() { printf '\033[1;36m▸ %s\033[0m\n' "$*"; }
+ok()  { printf '  ✓ %s\n' "$*"; }
+
+cmd="${1:-status}"; shift || true
+
+status() {
+  say "AIXMOS Platform — white-label shell"
+  python3 - "$MANIFEST" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1]))
+o = m["apexOwner"]
+print(f"  platform : {m['platformName']} ({m['platformId']}) v{m['version']}")
+print(f"  apex     : {o['name']} — {o['title']}")
+print(f"  global   : {m.get('global', {}).get('defaultLocale', 'en-US')} · {m.get('global', {}).get('defaultCurrency', 'USD')}")
+print(f"  tiers    : {', '.join(t['id'] for t in m.get('licenseTiers', []))}")
+PY
+  echo
+  say "Tenants"
+  for f in "$TENANTS"/*.json; do
+    [[ "$(basename "$f")" == _* ]] && continue
+    python3 - "$f" <<'PY'
+import json, sys
+s = json.load(open(sys.argv[1]))
+print(f"  · {s['displayName']} ({s['slug']}) — {s.get('whiteLabel', {}).get('licenseTier', '?')}")
+PY
+  done
+  if [ -f "$DEVICE_CFG" ]; then
+    echo
+    ok "device config: $DEVICE_CFG"
+  else
+    echo
+    printf '  ! run: platform init\n'
+  fi
+}
+
+list_tenants() {
+  for f in "$TENANTS"/*.json; do
+    [[ "$(basename "$f")" == _* ]] && continue
+    basename "$f" .json
+  done
+}
+
+show() {
+  local slug="${1:-aixmos}"
+  local file=""
+  for f in "$TENANTS"/*.json; do
+    [[ "$(basename "$f")" == _* ]] && continue
+    if python3 - "$f" "$slug" <<'PY'
+import json, sys
+s = json.load(open(sys.argv[1]))
+keys = {s["slug"], s["id"], *s.get("aliases", [])}
+sys.exit(0 if sys.argv[2] in keys else 1)
+PY
+    then file="$f"; break; fi
+  done
+  [ -n "$file" ] || { echo "✗ no tenant for slug: $slug"; exit 1; }
+  python3 -m json.tool "$file"
+}
+
+init_device() {
+  mkdir -p "$(dirname "$DEVICE_CFG")"
+  local machine tenant
+  machine="$(hostname -s 2>/dev/null || echo device)"
+  tenant="${PLATFORM_TENANT:-aixmos}"
+  cat > "$DEVICE_CFG" <<EOF
+{
+  "device": "$machine",
+  "platformId": "aixmos-platform",
+  "defaultTenant": "$tenant",
+  "locale": "en-US",
+  "owner": "Muhammad Taha",
+  "initializedAt": "$(date -u +%FT%TZ)"
+}
+EOF
+  chmod 600 "$DEVICE_CFG"
+  ok "wrote $DEVICE_CFG (defaultTenant=$tenant)"
+  ok "edit PLATFORM_TENANT before init to set a different default"
+}
+
+preview() {
+  local url="http://127.0.0.1:${PORT}/tools/platform-shell/index.html"
+  say "Platform shell → $url"
+  ( sleep 1; open "$url" 2>/dev/null || true ) &
+  cd "$TMMT_REPO"
+  exec python3 -m http.server "$PORT" --bind 127.0.0.1
+}
+
+bootstrap() {
+  say "Platform bootstrap — clean · universal · white-label"
+  init_device
+  bash "$TMMT_REPO/scripts/lib/install-oneshot-bin.sh" 2>/dev/null || true
+  if [ -f "$TMMT_REPO/scripts/lib/x-profile.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$TMMT_REPO/scripts/lib/x-profile.sh"
+    seed_x_profile_if_missing
+    sync_x_profile_lib 2>/dev/null || true
+    ok "X profile ready"
+  fi
+  ok "one-shot commands: platform · garage · base · booyah · hailmary"
+  say "Next: platform preview · edit config/platform/tenants/*.json"
+}
+
+case "$cmd" in
+  status|who) status;;
+  list|ls) list_tenants;;
+  show|get) show "${1:-aixmos}";;
+  init|seed) init_device;;
+  preview|open|ui) preview;;
+  bootstrap|setup|onboard) bootstrap;;
+  *)
+    echo "platform — universal white-label SaaS shell"
+    echo "  platform status | list | show <slug> | init | preview | bootstrap"
+    ;;
+esac

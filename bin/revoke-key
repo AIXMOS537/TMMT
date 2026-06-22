@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+/**
+ * revoke-key — kill a license key in one command.
+ *
+ * Flips the installations row to status=revoked (or --suspend for a temporary
+ * hold). /api/license/verify checks the DB, so the key stops working immediately
+ * — even though it was validly signed. Reverse a suspend with --restore.
+ *
+ * Usage:
+ *   NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… bin/revoke-key --key HM1.xxxxx
+ *   ... --suspend            # temporary hold instead of permanent revoke
+ *   ... --restore            # set status back to active
+ *   ... --list               # list all keys + status (no change)
+ */
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const srk = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !srk) {
+  console.error("ERROR: set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  process.exit(1);
+}
+
+function arg(name) {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return undefined;
+  const v = process.argv[i + 1];
+  return v && !v.startsWith("--") ? v : true;
+}
+
+const H = {
+  apikey: srk,
+  Authorization: `Bearer ${srk}`,
+  "Content-Type": "application/json",
+};
+
+async function list() {
+  const res = await fetch(
+    `${url}/rest/v1/installations?select=tier,status,notes,paid_at,license_key&order=created_at.desc`,
+    { headers: H },
+  );
+  const rows = await res.json();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    console.log("No installations yet.");
+    return;
+  }
+  console.log("\nstatus     tier                notes");
+  console.log("-".repeat(70));
+  for (const r of rows) {
+    const tail = String(r.license_key || "").slice(-8);
+    console.log(
+      `${String(r.status).padEnd(10)} ${String(r.tier).padEnd(19)} ${r.notes || ""}  …${tail}`,
+    );
+  }
+  console.log("");
+}
+
+async function setStatus(key, status) {
+  const res = await fetch(
+    `${url}/rest/v1/installations?license_key=eq.${encodeURIComponent(key)}`,
+    {
+      method: "PATCH",
+      headers: { ...H, Prefer: "return=representation" },
+      body: JSON.stringify({ status }),
+    },
+  );
+  const out = await res.json();
+  if (!res.ok) {
+    console.error(`Failed (${res.status}): ${JSON.stringify(out)}`);
+    process.exit(1);
+  }
+  if (!Array.isArray(out) || out.length === 0) {
+    console.error("No matching key found.");
+    process.exit(1);
+  }
+  console.log(`✓ key set to status=${status}`);
+}
+
+(async () => {
+  if (arg("list")) return list();
+  const key = arg("key");
+  if (!key || key === true) {
+    console.error("ERROR: --key HM1.xxxxx required (or use --list).");
+    process.exit(1);
+  }
+  const status = arg("restore") ? "active" : arg("suspend") ? "suspended" : "revoked";
+  await setStatus(key, status);
+})();

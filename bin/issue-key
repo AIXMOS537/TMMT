@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+/**
+ * issue-key — owner mints a license key by hand (no payment rail needed).
+ *
+ * Use for: the $50k installs, and FREE keys for family/friends. It signs the key
+ * with LICENSE_SIGNING_SECRET (same secret the app verifies with) and, if Supabase
+ * env is present, records the installations row so the key works and can be revoked.
+ *
+ * Signing is identical to src/lib/license.ts (HM1.<payload>.<hmac>), kept in plain
+ * Node so this runs anywhere with zero install.
+ *
+ * Usage:
+ *   LICENSE_SIGNING_SECRET=... bin/issue-key --sub alice@fam --role family
+ *   LICENSE_SIGNING_SECRET=... bin/issue-key --sub acme-org --role customer --tier full_install_50k
+ *   ... --hw <machine-uuid>   bind to one machine (default "*" = any)
+ *   ... --days 365            expiry (default: never)
+ *   ... --no-db               just print the key, don't touch Supabase
+ *
+ * Roles: owner | family (free, never expire) | customer (paid).
+ */
+const crypto = require("node:crypto");
+
+function arg(name, def) {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return def;
+  const v = process.argv[i + 1];
+  return v && !v.startsWith("--") ? v : true;
+}
+
+const secret = process.env.LICENSE_SIGNING_SECRET;
+if (!secret) {
+  console.error("ERROR: set LICENSE_SIGNING_SECRET (the same secret the app uses).");
+  process.exit(1);
+}
+
+const sub = arg("sub");
+if (!sub) {
+  console.error("ERROR: --sub required (org id, email, or family member name).");
+  process.exit(1);
+}
+const role = String(arg("role", "family"));
+const tier = String(arg("tier", role === "family" ? "family" : role === "owner" ? "owner" : "tier_basic"));
+const hw = String(arg("hw", "*"));
+const daysArg = arg("days");
+const noDb = arg("no-db", false) === true;
+
+const now = Math.floor(Date.now() / 1000);
+// family + owner never expire; customers default to none unless --days given.
+const exp = daysArg ? now + Number(daysArg) * 86400 : 0;
+
+const b64url = (x) => Buffer.from(x).toString("base64url");
+const payload = { sub, hw, tier, role, iat: now, exp };
+const body = b64url(JSON.stringify(payload));
+const sig = b64url(crypto.createHmac("sha256", secret).update(body).digest());
+const key = `HM1.${body}.${sig}`;
+
+async function recordInstallation() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const srk = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !srk) {
+    console.error("\n! No Supabase env — printed key only. The app rejects keys with no");
+    console.error("! installations row. Run with NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY,");
+    console.error("! or add the row in the admin, to make this key valid. (Or use --no-db on purpose.)");
+    return;
+  }
+  const res = await fetch(`${url}/rest/v1/installations`, {
+    method: "POST",
+    headers: {
+      apikey: srk,
+      Authorization: `Bearer ${srk}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      hardware_uuid: hw === "*" ? null : hw,
+      tier,
+      status: "active",
+      license_key: key,
+      paid_at: new Date().toISOString(),
+      notes: `manual issue · ${sub} · role=${role}`,
+      metadata: { role, exp },
+    }),
+  });
+  if (!res.ok) {
+    console.error(`\n! Supabase insert failed (${res.status}): ${await res.text()}`);
+    process.exit(1);
+  }
+  console.error("✓ installation recorded (key is live; revoke by setting status=revoked).");
+}
+
+(async () => {
+  if (!noDb) await recordInstallation();
+  console.log("\n" + "=".repeat(60));
+  console.log(`  role=${role}  tier=${tier}  hw=${hw}  exp=${exp ? new Date(exp * 1000).toISOString() : "never"}`);
+  console.log("  LICENSE KEY (give this to the recipient):\n");
+  console.log("  " + key);
+  console.log("=".repeat(60) + "\n");
+})();

@@ -1,0 +1,31 @@
+{
+  "build_id": "car-rental-starter",
+  "label": "\ud83d\ude97 Car Rental \u2014 Agency build",
+  "model": "vp-rentals",
+  "tier": "agency",
+  "based_on": "catalog.json@0.2.0",
+  "owner_avatar": {
+    "callsign": "",
+    "level": 4,
+    "unlocked_dlc": [
+      "vp-rentals"
+    ],
+    "notes": "Earn the pink slip: complete onboarding + first 10 closed rentals to level up."
+  },
+  "parts": [
+    "node-bootstrap",
+    "mesh-join",
+    "local-llm",
+    "brain-db",
+    "brain-backup",
+    "aixmos-agents",
+    "tmmt-admin",
+    "mission-control",
+    "filevault",
+    "secret-guard",
+    "watchtower",
+    "vp-rentals",
+    "provider-ollama"
+  ],
+  "run_plan": "Mid \u2014 Fleet Management ($3,750/mo)"
+}

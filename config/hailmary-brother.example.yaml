@@ -1,0 +1,59 @@
+# HAILMARY Brother Layer — local config (COPY, do not commit secrets)
+#
+#   cp config/hailmary-brother.example.yaml config/hailmary-brother.local.yaml
+#
+# Real phone numbers live ONLY in hailmary-brother.local.yaml (gitignored).
+# Set HAILMARY_HOME_E164 in .env to match the Mac's Messages line.
+
+owner:
+  # Your handles (E.164). Used to detect "brother mode" when YOU text home.
+  handles:
+    - "+1XXXXXXXXXX"   # personal
+    - "+1XXXXXXXXXX"   # business (if different)
+  display_name: "Taha"
+
+home_line:
+  # The number on the Brainiac Mac / SIM — intake line for forwarded texts
+  e164: "+1XXXXXXXXXX"
+  # Apple ID / Messages identity on brainiac-mac (notes only)
+  messages_identity: "brainiac-mac"
+
+defaults:
+  ladder: draft          # observe | draft | auto
+  notify_owner: true     # ping owner on new inbound
+  notify_channel: imessage  # imessage | telegram
+
+contacts:
+  _ignore:
+    - "spam sender name"
+  _default:
+    mode: draft
+    register: business
+
+  # Example — replace with real people after copy to .local.yaml
+  # umar:
+  #   relationship: brother
+  #   register: direct          # plain, no corporate
+  #   ladder: draft
+  #   topics_ok: [moe-legacy, business, personal]
+  #   never_say: ["free stack", "guaranteed funding"]
+
+  # client_lead:
+  #   relationship: client
+  #   register: compliant
+  #   ladder: observe           # learn first
+  #   topics_ok: [credit-guidance, intake]
+
+ladder_rules:
+  auto_min_approved_drafts: 5   # unchanged drafts you approved before auto allowed
+  never_auto_categories:
+    - money
+    - legal
+    - access_grant
+    - deploy
+    - kill_switch
+
+home_business:
+  # First business starts at home — back-burner sync
+  weekly_review_day: sunday
+  vault_note: "Home/Ops/Back-burner.md"

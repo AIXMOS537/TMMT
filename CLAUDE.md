@@ -163,6 +163,15 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 
 ### Vercel (deployment)
 
+**LOCAL-FIRST, ALWAYS (non-negotiable):** verify locally (`npm run build` + `lint`
++ `test`) before merging, and the live site only redeploys when **app code**
+changes. Docs, shell scripts, markdown, `tools/`, and the agent system **never**
+trigger a deploy — enforced by `vercel.json` `ignoreCommand` →
+`scripts/vercel-ignore.sh` (builds only when `src/`, `packages/`, or app config
+changed). This is what stops the free-tier daily build quota
+(`api-deployments-free-per-day`, ~100/day) from being burned by rapid shipping.
+If a real deploy is ever needed, change an app file or trigger it manually.
+
 Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
 
 - `tmmt-ops` → TMMT Ops (TMMT OS proper) at https://tmmt-ops.vercel.app
@@ -255,6 +264,16 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
 - `docs/MESH-SWARM.md` — the mesh/swarm system: setup, daily flow, security model
 - `docs/security/SUPABASE-ADVISORS-2026-06-15.md` — security audit + key-rotation runbook
+- `docs/security/GO-GHOST-PROTOCOL.md` — personal privacy / identity-compartmentalization protocol (GHOST = the real you; X = the one public node). Companions: `GHOST-EVERYDAY-DEFAULTS.md` (daily-driver stack), `FOOTPRINT-CLEANUP-TRACKER.md` (working tracker), `X-NODE-DEFINITION.md` (**X = AIXMOS**)
+- `docs/FLEET-ROSTER.md` — canonical device map (mesh node + ghost endpoint per machine); brain = M1 `brainiac-mac` (primary) + Windows `brainiac-win` (compute/backup)
+- `docs/BRAINIAC-MAC-SETUP.md` — one-page runbook to stand up the M1 as the always-on assistant the carry Mac talks to/texts. One-shots: `scripts/setup-home-brain.command` (M1) + `scripts/setup-home-brain.ps1` (Windows backup) — family-member-runnable, remote access via Tailscale+SSH
+- `docs/BRAINIAC-RESILIENCE.md` — make the brain never let you down: UPS/power, tower failover, heartbeat tripwire, encrypted offsite backup (`scripts/mesh/vault-backup.sh`), owner-only `tag:brain` ACL
+- `docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md` — owner intent: home HQ → office expansion; per-operator subaccount + one-shot device seats ($97/mo); tier pricing as stated, with a flagged reconciliation vs `OFFER-STACK.md` (monthly vs one-time)
+- `docs/ARCHITECT-COCKPIT.md` — the 3D "go virtual" cockpit (`bash scripts/hologram` → `tools/hologram-cockpit/index.html`): orbit/zoom/click-to-dissect the whole empire; WebXR/Vision-Pro + live-data upgrade path; cross-operator learning-brain vision
+- `docs/MISSION-CONTROL.md` — the holographic front door (`bash scripts/home` → `tools/launcher/index.html`) + plug-and-play Desktop app icons (`bash scripts/install-apps`): launch Cockpit/Wiki fullscreen like native apps + copy flash-deploy commands. Hub loops Mission Control ↔ Cockpit ↔ Wiki
+- `docs/WIKI-DROPDOWN-METHOD.md` — the Karpathy-style home base (replaces Obsidian entirely): plain-markdown source + a generated offline **full reader** that renders every doc inline (`tools/wiki/build.mjs` node renderer, no deps). `WIKI.md` (markdown home) + `scripts/wiki` (`build`/`open` → `tools/wiki/index.html`); cockpit ↔ wiki cross-linked
+- `docs/ACCESS-GOVERNANCE.md` — authorize fast, revoke hard: X = Muhammad Taha (owner); least-privilege "clear path for owner, fenced for others"; owner-sealed flash deploy; unauthorized-access response (DARK → trace grantor → `kill-partner`). Defense + revocation only — no traps/sabotage (keeps the ghost legit)
+- `docs/DMV-CLUBHOUSE-OFFICE.md` — the Virginia office buildout: the Ultimate Clubhouse (Traphouse) for TMMT Rentals + DMV operators; systems/network blueprint (same tailnet, fenced seats, office brain node, MRR tie-in)
 - `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
 - `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
 - `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
