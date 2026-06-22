@@ -1,0 +1,37 @@
+# LiteLLM router — local models PRIMARY, one legit cloud key as OPTIONAL overflow.
+# This is the legit "many models behind one endpoint" — NOT a pool of free keys.
+# Run with: bash scripts/tmmt brain router   (→ scripts/brain-router.sh)
+# Then point agents/app at:  http://<brain-tailnet-ip>:4000/v1/chat/completions
+#
+# Names agents/POCKET_BRAIN_MODEL ask for: "code" (agents) and "chat" (Pocket).
+model_list:
+  # ── LOCAL, FREE, PRIVATE (does the volume) ──────────────────────────────
+  - model_name: code
+    litellm_params:
+      model: ollama/qwen2.5-coder:14b
+      api_base: http://127.0.0.1:11434
+  - model_name: chat
+    litellm_params:
+      model: ollama/qwen2.5:14b
+      api_base: http://127.0.0.1:11434
+
+  # ── OPTIONAL OVERFLOW: ONE legitimate cloud key (uncomment to enable) ─────
+  # Used only when local is busy/insufficient. This is a single real key from a
+  # real account — never a rotation of many free keys.
+  # - model_name: code
+  #   litellm_params:
+  #     model: anthropic/<your-current-claude-model>
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+  # - model_name: chat
+  #   litellm_params:
+  #     model: anthropic/<your-current-claude-model>
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+
+router_settings:
+  routing_strategy: simple-shuffle   # spread across entries with the same model_name
+  num_retries: 1                     # local first; fall through to overflow on failure
+  timeout: 120
+
+litellm_settings:
+  drop_params: true                  # tolerate client params a local model doesn't take
+  # set_verbose: false
