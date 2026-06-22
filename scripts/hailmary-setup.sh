@@ -100,8 +100,8 @@ Discipline (every task):
 3. REMEMBER what you did AFTER (`hailmary remember` / memory `remember`).
 
 Hard rules:
-- NEVER contact the owner's personal line (+1 571-351-9690). It is do_not_contact.
-- Reach the owner only on the work cell (+1 571-326-5611) during working hours.
+- NEVER contact the owner's personal line. It is do_not_contact (value in vault, never here).
+- Reach the owner only on the work cell (from the vault) during working hours.
 - Quo is the customer-support + vendor line; GHL is campaigns/ads/leads.
 - All nodes (work Mac, carry Mac, iPhone) share one brain — leave notes for the
   others with `hailmary note <node> "…"`; read yours with `hailmary inbox`.

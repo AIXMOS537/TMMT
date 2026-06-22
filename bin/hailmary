@@ -64,7 +64,10 @@ pretty() {
 }
 
 # Operative system prompt (PROJECTX-HAILMARY), concise for the CLI.
-OP_SYS="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Lock onto the objective and FINISH it; economy of force; keep a fallback tree; total recall. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell (+15713265611) in working hours; protect client data; flag risky/irreversible moves."
+# Contact numbers are PII — never hardcode them. They load at runtime from the
+# owner-local profile / vault (HAILMARY_WORK_CELL, gitignored ~/.hailmary), never
+# from this committed file. See config/identity.config.json → private_routing.
+OP_SYS="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Lock onto the objective and FINISH it; economy of force; keep a fallback tree; total recall. Guardrails: legal/ethical only; never use the owner's personal line; reach the owner only on the work cell (from the vault, working hours); protect client data; flag risky/irreversible moves."
 
 hailmary_sys() {
   if type x_profile_sys >/dev/null 2>&1; then x_profile_sys "$OP_SYS"; else printf '%s' "$OP_SYS"; fi
