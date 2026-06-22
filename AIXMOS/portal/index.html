@@ -407,14 +407,19 @@
      Primary: /data/users.json (Airtable → npm run sync:aixmos-people)
      Fallback: USERS_FALLBACK (local dev before first sync)
      Roles: admin | executive | operator | member
+
+     SECURITY: Never commit real passwords here — this file ships to the browser.
+     The fallback uses non-functional placeholders; real credentials come ONLY
+     from the synced /data/users.json. Any password previously committed here is
+     considered compromised and must be rotated.
   ══════════════════════════════════ */
   const USERS_FALLBACK = [
-    { email: 'muhammad@aixmos.com',  password: 'AIXMOSadmin2025!',  name: 'Muhammad Taha',    role: 'admin' },
-    { email: 'exec1@aixmos.com',     password: 'Exec2025secure',     name: 'Executive 1',      role: 'executive' },
-    { email: 'exec2@aixmos.com',     password: 'Exec2025secure2',    name: 'Executive 2',      role: 'executive' },
-    { email: 'exec3@aixmos.com',     password: 'Exec2025secure3',    name: 'Executive 3',      role: 'executive' },
-    { email: 'operator@aixmos.com',  password: 'Operator2025!',      name: 'AIXMOS Operator',  role: 'operator' },
-    { email: 'member@aixmos.com',    password: 'Member2025!',        name: 'AIXMOS Member',    role: 'member' },
+    { email: 'admin@aixmos.com',     password: 'SET_VIA_users.json',  name: 'AIXMOS Admin',     role: 'admin' },
+    { email: 'exec1@aixmos.com',     password: 'SET_VIA_users.json',  name: 'Executive 1',      role: 'executive' },
+    { email: 'exec2@aixmos.com',     password: 'SET_VIA_users.json',  name: 'Executive 2',      role: 'executive' },
+    { email: 'exec3@aixmos.com',     password: 'SET_VIA_users.json',  name: 'Executive 3',      role: 'executive' },
+    { email: 'operator@aixmos.com',  password: 'SET_VIA_users.json',  name: 'AIXMOS Operator',  role: 'operator' },
+    { email: 'member@aixmos.com',    password: 'SET_VIA_users.json',  name: 'AIXMOS Member',    role: 'member' },
   ];
   let USERS = [];
   let usersReady = false;
