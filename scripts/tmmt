@@ -55,6 +55,7 @@ case "$v" in
   brief|moe-brief)  exec bash "$ROOT/scripts/moe-brief";;
   hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
   playbook|closekit|scripts) { f="$ROOT/docs/MOE-LEGACY-CLOSING-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  ads|market|marketing) { f="$ROOT/docs/MARKETING-ADS-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
   memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
   member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
   send-pack|sendpack|pack) exec bash "$ROOT/scripts/send-pack" "${1:-}";;
