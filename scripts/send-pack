@@ -30,12 +30,13 @@ echo "Assembling the '$ROLE' pack → $OUT"
 
 case "$ROLE" in
   family)
+    pick "$CHEAT/WELCOME-FAMILY.md" "$OUT"
     pick "$CHEAT/FOUNDER-WELCOME.pdf" "$OUT"
     pick "$CHEAT/HAILMARY-GUIDE.pdf" "$OUT"
     pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
     pick "$CHEAT/HAILMARY-PHONE.png" "$OUT"
     pick "$ROOT/scripts/setup-mac.command" "$OUT"
-    MSG="Welcome to the family side of what we're building (Project X HAILMARY). Open FOUNDER-WELCOME.pdf first — it explains everything. When you're ready to set up your Mac, double-click setup-mac.command and follow it. I'll send you your access link separately. — X"
+    MSG="Welcome to the family side of what we're building (Project X HAILMARY). Open WELCOME-FAMILY first — it's the dead-simple start (read in 30 seconds). Then double-click setup-mac.command and follow it — pick 'MY OWN' so you get your own private network. I'll send your access link separately. — X"
     ;;
   operator)
     pick "$CHEAT/TMMT-CHEAT-SHEET.pdf" "$OUT"
