@@ -49,16 +49,31 @@ tmmt one-shot carry
 6. Owner machines are gated by the **Owner Seal** (`auth/OWNER.seal`); operator
    machines are fenced and can never escalate to owner.
 
-## Bare/fresh machine?
+## Fresh machine?
 
-`one-shot.sh` assumes the repo is already cloned. For a brand-new Mac with
-nothing installed, run the from-scratch installer first (it installs Homebrew,
-git, Node, the Claude CLI, clones the repo, pulls `.env`), then `one-shot.sh`
-finalizes:
+`one-shot.sh` self-heals: if **Node** is missing it installs Homebrew + Node for
+you (macOS) or tells you exactly how (Linux), then continues. So on a Mac that
+already has the repo, the one command above is genuinely all you run — even if
+Node was never installed.
 
-- Owner Macs (carry / M1): `scripts/setup-mac.command` (double-click or
-  `bash scripts/setup-mac.command`).
-- Moe Legacy: `scripts/umar-setup.command`.
+The only thing it can't bootstrap from literally nothing is **git + the repo
+itself** (chicken-and-egg — you need git to clone). For a brand-new machine with
+nothing on it, run the from-scratch installer once (installs Xcode tools,
+Homebrew, git, Node, the Claude CLI, clones the repo, pulls `.env`), then the
+one-shot finalizes:
+
+- Owner Macs (carry / M1): `scripts/setup-mac.command` — double-click it, or
+  `bash ~/Downloads/setup-mac.command`.
+- **Our guest — Moe Legacy:** `scripts/umar-setup.command` — the warm Red Hood
+  installer (fenced, never owner). After it clones the repo, `one-shot.sh moe`
+  (or just `moe`) is the re-runnable daily entry.
+
+### Guest-friendly by design
+Guest machines (`moe`, and `own` for family/friends) **never need the owner's
+seal or secrets**. The operator path is fenced and least-privilege; the `own`
+path stands up a fully isolated private mesh on the guest's own Tailscale login
+that cannot touch anyone else's network. Nothing here can lock a guest out or
+demand owner credentials.
 
 See also: `docs/FLEET-ROSTER.md` (device map), `docs/MESH-SWARM.md` (the mesh),
 `docs/BRAINIAC-MAC-SETUP.md` (M1 always-on details).
