@@ -1,0 +1,38 @@
+{
+  "build_id": "credit-guidance-inner",
+  "label": "\ud83d\udcc8 Credit Guidance + Funding \u2014 Inner-circle build",
+  "model": "vp-credit",
+  "tier": "inner",
+  "based_on": "catalog.json@0.2.0",
+  "owner_avatar": {
+    "callsign": "",
+    "level": 5,
+    "unlocked_dlc": [
+      "vp-rentals",
+      "vp-credit"
+    ],
+    "notes": "Compliance lock: credit GUIDANCE only, never 'repair'. No guaranteed outcomes."
+  },
+  "parts": [
+    "node-bootstrap",
+    "mesh-join",
+    "local-llm",
+    "brain-db",
+    "brain-backup",
+    "aixmos-agents",
+    "tmmt-admin",
+    "mission-control",
+    "clean-ui",
+    "superwhisper",
+    "filevault",
+    "secret-guard",
+    "godark",
+    "watchtower",
+    "sentry",
+    "vp-rentals",
+    "vp-credit",
+    "provider-ollama",
+    "provider-byok"
+  ],
+  "run_plan": "Credit Guidance \u2014 Basic ($1,875/mo) + Operator Seats ($97/seat)"
+}

@@ -37,6 +37,9 @@ fi
 MEM_DIR="$ROOT/.hailmary/memory"          # gitignored, owner-local
 STATE="$ROOT/.hailmary/state"             # online/standby marker
 CHARTER="$ROOT/docs/HAILMARY-CHARTER.md"
+# shellcheck source=lib/x-profile.sh
+. "$ROOT/scripts/lib/x-profile.sh"
+sync_x_profile_lib 2>/dev/null || true
 
 banner() {
   cat <<'EOF'
@@ -75,6 +78,8 @@ absorb() {
     else
       echo "  (tailscale not present on this host)"
     fi
+    echo
+    x_profile_absorb_section
   } > "$out"
   # Belt-and-suspenders: scrub anything that smells like a live secret.
   if grep -nEi 'eyJ[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|pat[A-Za-z0-9]{14,}|service_role' "$out" >/dev/null 2>&1; then
@@ -99,24 +104,26 @@ booyah() {
   # 1. Code check — he refuses to boot without his charter.
   if [[ -f "$CHARTER" ]]; then ok "charter loaded — owner-only, local-first, never-sold"
   else warn "charter missing ($CHARTER) — booting in caretaker mode"; fi
-  # 2. Identity — who's home base.
+  # 2. Owner identity — GHOST / X / HAILMARY (who you are in both worlds).
+  load_x_profile || true
+  # 3. Host identity — who's home base.
   ok "host: $(swarm_machine)"
-  # 3. Readiness + security (his honor: hit hard, hurt no one).
+  # 4. Readiness + security (his honor: hit hard, hurt no one).
   if [[ -x "$ROOT/scripts/swarm-doctor.sh" ]]; then
     info "running readiness + security audit…"
     bash "$ROOT/scripts/swarm-doctor.sh" 2>/dev/null | tail -6 | sed 's/^/    /' \
       || warn "doctor reported issues — review with: bash scripts/tmmt fix"
   fi
-  # 4. Stay online 24/7 on macOS (LaunchAgent), else just mark the session.
+  # 5. Stay online 24/7 on macOS (LaunchAgent), else just mark the session.
   if [[ "$(uname -s)" == "Darwin" && -x "$ROOT/scripts/mesh/install-launchagent.sh" ]]; then
     info "installing always-on presence (LaunchAgent)…"
     bash "$ROOT/scripts/mesh/install-launchagent.sh" install owner 180 >/dev/null 2>&1 \
       && ok "always-on: he stays connected even with the lid down" \
       || warn "always-on install skipped"
   fi
-  # 5. Touch & absorb the current context into memory.
+  # 6. Touch & absorb the current context into memory.
   absorb "$ROOT"
-  # 6. Mark online.
+  # 7. Mark online.
   mkdir -p "$(dirname "$STATE")"; echo "online $(date -u +%FT%TZ) $(swarm_machine)" > "$STATE"
   say
   ok "HAILMARY is LIVE. Say the word again anytime. 🤖⚡"
@@ -128,9 +135,13 @@ status() {
   banner
   if [[ -f "$STATE" ]]; then ok "state: $(cat "$STATE")"; else warn "state: standby (run: hailmary booyah)"; fi
   [[ -f "$CHARTER" ]] && ok "charter: present" || warn "charter: MISSING"
+  x_profile_present && ok "X profile: present ($(basename "$X_PROFILE"))" \
+    || warn "X profile: missing ($X_PROFILE)"
   if [[ -d "$MEM_DIR" ]]; then
-    local n; n="$(find "$MEM_DIR" -name 'absorb-*.md' 2>/dev/null | wc -l | tr -d ' ')"
-    ok "memory snapshots: $n  (latest: $(ls -t "$MEM_DIR"/absorb-*.md 2>/dev/null | head -1 | xargs -r basename))"
+    local n latest; n="$(find "$MEM_DIR" -name 'absorb-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    latest="$(ls -t "$MEM_DIR"/absorb-*.md 2>/dev/null | head -1)"
+    latest="${latest##*/}"
+    ok "memory snapshots: $n  (latest: ${latest:-none})"
   else warn "memory: none yet (run: hailmary absorb)"; fi
 }
 

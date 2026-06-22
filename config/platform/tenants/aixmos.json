@@ -1,0 +1,39 @@
+{
+  "id": "aixmos",
+  "slug": "aixmos",
+  "aliases": ["aixmos537"],
+  "displayName": "AIXMOS",
+  "legalName": "All In One Management Solutions LLC",
+  "tagline": "The AI engine — agents that answer, follow up, and close 24/7",
+  "locale": { "default": "en-US", "currency": "USD", "timezone": "America/New_York" },
+  "region": { "primary": "US", "compliancePack": "us-fintech-guidance" },
+  "theme": {
+    "mode": "dark",
+    "primary": "#7fffd4",
+    "accent": "#6366f1",
+    "background": "#0a0a0a",
+    "foreground": "#ffffff",
+    "logoPath": "/brands/aixmos/logo.svg",
+    "faviconPath": "/brands/aixmos/favicon.ico"
+  },
+  "domains": {
+    "marketing": "aixmos.com",
+    "app": "aixmos-landing.vercel.app"
+  },
+  "contact": {
+    "supportEmail": "support@allinonemanagementsolutions.com",
+    "salesPhone": "+15713265611"
+  },
+  "agent": {
+    "name": "Riley",
+    "persona": "AIXMOS operator agent — guidance only on credit/funding; draft-don't-blast."
+  },
+  "offers": {
+    "skus": ["lead-magnet", "intro-97", "training", "rental-in-a-box", "flagship"]
+  },
+  "whiteLabel": {
+    "licenseTier": "platform",
+    "parentPlatformId": "aixmos-platform",
+    "customizable": ["theme", "domains", "offers"]
+  }
+}

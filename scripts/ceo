@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# ceo — the Owner's executive cockpit. One screen: what's live, what needs you,
+# and the moves to make today. Aggregates REAL local signals (mesh, health, swarm,
+# pipeline, memory) — it never invents numbers. Owner-oriented, local-first.
+#
+#   bash scripts/ceo            the cockpit (status + today's CEO moves)
+#   bash scripts/ceo brief      same, compact
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/scripts/lib/swarm-common.sh" ]]; then source "$ROOT/scripts/lib/swarm-common.sh" 2>/dev/null || true; fi
+set +e
+type swarm_machine >/dev/null 2>&1 || swarm_machine(){ hostname -s 2>/dev/null || echo device; }
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; M=$'\e[35m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; R=; C=; M=; W=; D=; BD=; X=; fi
+
+DATE="$(date '+%A, %B %-d, %Y · %-I:%M %p')"
+
+# --- live reads (all real, all local) ---------------------------------------
+DARK="${G}● clear${X}"; [ -f "$ROOT/.swarm/DARK" ] && DARK="${R}${BD}● DARK${X}"
+SEAL="${Y}unsealed${X}"; [ -f "$ROOT/auth/OWNER.seal" ] && SEAL="${G}sealed${X}"
+HM="${D}standby${X}"; grep -q '^online' "$ROOT/.hailmary/state" 2>/dev/null && HM="${G}online${X}"
+ALWAYS="${D}off${X}"; launchctl list 2>/dev/null | grep -q com.tmmt.presence && ALWAYS="${G}on (24/7)${X}"
+MEMN="$(find "$ROOT/.hailmary/memory" -name 'absorb-*.md' 2>/dev/null | wc -l | tr -d ' ')"; [ -z "$MEMN" ] && MEMN=0
+MEMLOOP="${Y}local only (set HAILMARY_VAULT)${X}"; [ -n "${HAILMARY_VAULT:-}" ] && MEMLOOP="${G}streaming → vault${X}"
+BRAINW="${Y}not detected${X}"; command -v ollama >/dev/null 2>&1 && BRAINW="${G}local LLM ready${X}"
+MESHN="$(bash "$ROOT/scripts/swarm.sh" mesh 2>/dev/null | grep -cE 'online|offline')"; [ -z "$MESHN" ] && MESHN=0
+MEMBERS="$(find "$ROOT/.hailmary/members" -name '*.txt' 2>/dev/null | wc -l | tr -d ' ')"; [ -z "$MEMBERS" ] && MEMBERS=0
+DEALS="$(find "$ROOT/.hailmary/deals" -maxdepth 1 -type d 2>/dev/null | tail -n +2 | wc -l | tr -d ' ')"; [ -z "$DEALS" ] && DEALS=0
+CLIENTS="$(find "$ROOT/.hailmary/clients" -name '*.*' 2>/dev/null | wc -l | tr -d ' ')"; [ -z "$CLIENTS" ] && CLIENTS=0
+
+cat <<EOF
+
+${C}${BD}   ╔══════════════════════════════════════════════════════════╗${X}
+${C}${BD}   ║${W}   👑  C E O   C O C K P I T   ·   PROJECT X                 ${C}║${X}
+${C}${BD}   ╚══════════════════════════════════════════════════════════╝${X}
+   ${D}$DATE · $(swarm_machine)${X}
+
+${BD}   THE BASE${X}
+     blackout: ${DARK}    owner gate: ${SEAL}    HAILMARY: ${HM}
+     always-on: ${ALWAYS}    local brain: ${BRAINW}
+     memory: ${W}${MEMN}${X} snapshots · ${MEMLOOP}    mesh devices: ${W}${MESHN}${X}
+
+${BD}   THE BUSINESS (local pipeline)${X}
+     AIXMOS members: ${W}${MEMBERS}${X}    open deals: ${W}${DEALS}${X}    clients decoded: ${W}${CLIENTS}${X}
+EOF
+
+printf '\n%s   VERTICALS (live health)%s\n' "$BD" "$X"
+bash "$ROOT/scripts/health.sh" --compact 2>/dev/null | sed 's/^/   /' || echo "   (run: health)"
+
+cat <<EOF
+
+${M}${BD}   TODAY — CEO MOVES (decide · delegate · monitor)${X}
+     ${BD}1. Decide${X}   — what only you can: approvals, offers, hires, spend
+     ${BD}2. Delegate${X} — push work to the swarm:   ${W}hit 2${X}   (AIXMOS dispatches agents)
+     ${BD}3. Grow${X}     — onboard a client/member:  ${W}onboard${X} · ${W}member join${X} · ${W}deal "Name" 25000${X}
+     ${BD}4. Watch${X}    — full board + every vertical: ${W}watchtower${X} · ${W}health${X}
+     ${BD}5. Capture${X}  — feed the brain so it learns: ${W}wake${X} (HAILMARY absorb)
+
+${D}   one source of truth: master · keep devices in lockstep: sync
+   blacked out? lift with your word + phone code: light${X}
+
+EOF

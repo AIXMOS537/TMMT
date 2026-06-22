@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# wiki — the Karpathy-style dropdown wiki + full offline reader. Plain markdown
+# is the source of truth (LLM-native, git-synced); this renders EVERY doc inline
+# into one offline html home page — your home base, instead of Obsidian.
+#
+#   bash scripts/wiki build     (re)generate tools/wiki/index.html from docs/
+#   bash scripts/wiki open      build + open it in the browser
+#   bash scripts/wiki           same as open
+#
+# No internet, no deps beyond node (already in this repo's toolchain). Method:
+# docs/WIKI-DROPDOWN-METHOD.md
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OUT="$ROOT/tools/wiki/index.html"
+
+build(){
+  if command -v node >/dev/null 2>&1; then
+    node "$ROOT/tools/wiki/build.mjs"
+  else
+    echo "✗ node not found — install Node (brew install node) to build the full reader."; exit 1
+  fi
+}
+
+open_it(){
+  if   command -v open     >/dev/null 2>&1; then open "$OUT"
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$OUT"
+  elif command -v start    >/dev/null 2>&1; then start "" "$OUT"
+  else echo "Open in a browser: $OUT"; fi
+}
+
+case "${1:-open}" in
+  build) build ;;
+  open|"") build && open_it ;;
+  *) echo "usage: wiki [build|open]"; exit 1 ;;
+esac
+

@@ -11,6 +11,8 @@
 {
   "tagOwners": {
     "tag:owner":       ["autogroup:admin"],   // your carry/work devices
+    "tag:brain":       ["autogroup:admin"],   // home brains: brainiac-mac (M1) + brainiac-win — owner-only
+    "tag:family":      ["autogroup:admin"],   // trusted family device that ran the one-shot (least-privilege)
     "tag:hub":         ["autogroup:admin"],   // carry-Mac Ollama brain hub (qwen2.5:14b)
     "tag:nas":         ["autogroup:admin"],   // UGREEN NAS file tier
     "tag:secrets":     ["autogroup:admin"],   // secrets broker / vault host
@@ -28,8 +30,15 @@
   },
 
   "acls": [
-    // 1. Owner: full reach across the mesh.
+    // 1. Owner: full reach across the mesh (includes the home brains).
     { "action": "accept", "src": ["group:owner", "tag:owner"], "dst": ["*:*"] },
+
+    // 1b. The home brains (tag:brain = brainiac-mac + brainiac-win) are reachable
+    //     ONLY by the owner. No other rule grants access to tag:brain, so every
+    //     non-owner device — including offshore — is denied by default. The
+    //     family device that ran the one-shot is tag:family and gets NOTHING here
+    //     (it set the brain up; it doesn't need to reach it).
+    { "action": "accept", "src": ["group:owner", "tag:owner"], "dst": ["tag:brain:22", "tag:brain:3000", "tag:brain:11434"] },
 
     // 2. Offshore PK/PH: SUPPORT surfaces only.
     //    - app/support host on web + RustDesk control port (over tailnet)
@@ -50,11 +59,13 @@
 
   // Belt-and-suspenders: explicit deny if you later add broad rules above.
   "ssh": [
-    // SSH only owner → owner. No offshore SSH to anything.
+    // SSH only owner → owner + the home brains. No offshore SSH to anything.
+    // (This governs Tailscale SSH, used by brainiac-mac. brainiac-win uses native
+    //  Windows OpenSSH on :22, gated by the network ACL rule 1b above + Windows auth.)
     {
       "action": "accept",
       "src": ["group:owner"],
-      "dst": ["tag:owner", "tag:hub", "tag:nas", "tag:db"],
+      "dst": ["tag:owner", "tag:brain", "tag:hub", "tag:nas", "tag:db"],
       "users": ["autogroup:nonroot", "muhammad"]
     }
   ],
@@ -72,11 +83,16 @@
     {
       "src": "ph-eng-1@tmmtrentals.com",
       "accept": ["tag:support:443"],
-      "deny":   ["tag:hub:11434", "tag:secrets:443", "tag:db:5432"]
+      "deny":   ["tag:hub:11434", "tag:secrets:443", "tag:db:5432", "tag:brain:22"]
     },
     {
       "src": "you@tmmtrentals.com",
-      "accept": ["tag:hub:11434", "tag:db:5432", "tag:secrets:443"]
+      "accept": ["tag:hub:11434", "tag:db:5432", "tag:secrets:443", "tag:brain:22"]
+    },
+    // The home brains are owner-only: offshore is denied SSH to them.
+    {
+      "src": "pk-eng-1@tmmtrentals.com",
+      "deny": ["tag:brain:22", "tag:brain:3000"]
     }
   ]
 }
