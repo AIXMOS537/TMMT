@@ -14,6 +14,20 @@
   - **service_role key** (`SUPABASE_SERVICE_ROLE_KEY`) → **a real secret** → **ROTATE NOW**, then scrub.
 - I did **not** decode/extract the token (and the platform blocks it). **Classifying it is a human call** — do it locally.
 
+## ⭐ RECOMMENDED PATH (when you don't want to classify it): rotate first
+
+Rotating the key **neutralizes the leak regardless of type** and converts this from an
+emergency into routine cleanup. Do this when in doubt:
+
+1. **Roll the keys** (2 min, dashboard — harmless if it was only the anon key):
+   - Supabase → Project → **API → roll `service_role`** (and note the new anon if shown).
+   - Tailscale admin → **revoke** any recent `tskey-…` auth keys.
+2. **Update where they're used:** `vercel env` (prod) → re-pull `.env` → redeploy.
+3. **Now the history value is dead**, so unblock the push the easy way: allowlist the
+   (now-worthless) value in `.gitleaks.toml`, or scrub history at your leisure (Step 2B).
+
+After rotation, there is **no live secret anywhere** — the rest is housekeeping.
+
 ## Step 1 — identify it (run on your Mac; gitleaks is installed there)
 
 ```bash
