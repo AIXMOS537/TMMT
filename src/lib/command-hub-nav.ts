@@ -108,6 +108,13 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         icon: Handshake,
         badge: "Federation",
       },
+      {
+        href: "/operators",
+        label: "Operators",
+        description: "Provision operator sub-accounts under an agency and fund their tokens",
+        icon: Users,
+        badge: "Network",
+      },
     ],
   },
   {
