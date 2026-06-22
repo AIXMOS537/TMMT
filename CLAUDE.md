@@ -163,16 +163,29 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
   (Supabase → API Keys) + `GHL_WEBHOOK_SECRET` (GHL), update Vercel, redeploy,
   re-pull. Runbook in `docs/security/SUPABASE-ADVISORS-2026-06-15.md`.
 
-### Vercel (deployment)
+### Deploy safety — LOCAL-FIRST IS ENFORCED (non-negotiable)
 
-**LOCAL-FIRST, ALWAYS (non-negotiable):** verify locally (`npm run build` + `lint`
-+ `test`) before merging, and the live site only redeploys when **app code**
-changes. Docs, shell scripts, markdown, `tools/`, and the agent system **never**
-trigger a deploy — enforced by `vercel.json` `ignoreCommand` →
-`scripts/vercel-ignore.sh` (builds only when `src/`, `packages/`, or app config
-changed). This is what stops the free-tier daily build quota
-(`api-deployments-free-per-day`, ~100/day) from being burned by rapid shipping.
-If a real deploy is ever needed, change an app file or trigger it manually.
+**Nothing goes live until it passes local checks first.** This is no longer a
+convention — it is gated in three places (belt + suspenders), so a broken build
+can't embarrass us in front of the team, investors, or clients again:
+
+1. **One local gate:** `npm run verify` (`scripts/verify.sh`) = lint → test →
+   production build. Exit 0 = safe to ship. No `.env` needed.
+2. **Can't push broken app code:** `scripts/hooks/pre-push` runs `verify` when
+   commits touch app paths (`src/`, `packages/`, app config) and **blocks the
+   push** on failure. Emergency escape hatch (own it): `SKIP_VERIFY=1 git push`.
+3. **Can't merge broken code:** `.github/workflows/verify.yml` runs lint+test+build
+   on every PR + push to `master`. **Make it a required status check on `master`**
+   (branch protection) → broken code can never land, so any deploy from `master`
+   is inherently safe.
+4. **The only blessed deploy:** `npm run ship` (`scripts/ship.sh`) verifies first,
+   refuses to deploy on any failure, confirms, then `vercel --prod`. `tmmt ship`.
+
+Quota/skip rules still apply: the live site only redeploys when **app code**
+changes — docs, shell scripts, markdown, `tools/`, and the agent system **never**
+trigger a deploy (enforced by `vercel.json` `ignoreCommand` →
+`scripts/vercel-ignore.sh`). Vercel git auto-deploy is **off**
+(`deploymentEnabled: false`); production ships only via the gated `ship` path.
 
 Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
 
