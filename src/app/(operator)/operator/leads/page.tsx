@@ -11,7 +11,6 @@ import {
   ErrorBanner,
   StatusBadge,
   FormField,
-  inputClass,
   selectClass,
   type Column,
 } from "@/components/ui";
@@ -21,7 +20,10 @@ import {
   assignLeadAction,
   crossReferLeadAction,
   viewerContext,
+  listOrgsForAssign,
 } from "./actions";
+
+type OrgOpt = { id: string; name: string };
 
 type Tab = "available" | "mine";
 
@@ -189,6 +191,18 @@ function LeadDetailModal({
   const [assignOrg, setAssignOrg] = useState("");
   const [referAgency, setReferAgency] = useState("");
   const [referVertical, setReferVertical] = useState<"rentals" | "funding">("funding");
+  const [operators, setOperators] = useState<OrgOpt[]>([]);
+  const [agencies, setAgencies] = useState<OrgOpt[]>([]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    listOrgsForAssign()
+      .then((o) => {
+        setOperators(o.operators);
+        setAgencies(o.agencies.filter((a) => a.id !== row.agency_org_id));
+      })
+      .catch(() => {});
+  }, [canManage, row.agency_org_id]);
 
   async function run(fn: () => Promise<{ success: boolean; error?: string }>, ok: string) {
     setErr(null);
@@ -221,32 +235,36 @@ function LeadDetailModal({
             </p>
 
             <div className="space-y-2">
-              <FormField label="Assign to operator (org ID)">
-                <input
-                  className={inputClass}
-                  value={assignOrg}
-                  onChange={(e) => setAssignOrg(e.target.value)}
-                  placeholder="operator organization id"
-                />
+              <FormField label="Assign to operator">
+                <select className={selectClass} value={assignOrg} onChange={(e) => setAssignOrg(e.target.value)}>
+                  <option value="">Select an operator…</option>
+                  {operators.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
               </FormField>
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={saving || !assignOrg.trim()}
-                onClick={() => run(() => assignLeadAction(row.pool_id, assignOrg.trim()), "Lead assigned.")}
+                disabled={saving || !assignOrg}
+                onClick={() => run(() => assignLeadAction(row.pool_id, assignOrg), "Lead assigned.")}
               >
                 Assign
               </Button>
             </div>
 
             <div className="space-y-2">
-              <FormField label="Refer to other agency (org ID)">
-                <input
-                  className={inputClass}
-                  value={referAgency}
-                  onChange={(e) => setReferAgency(e.target.value)}
-                  placeholder="target agency organization id"
-                />
+              <FormField label="Refer to other agency">
+                <select className={selectClass} value={referAgency} onChange={(e) => setReferAgency(e.target.value)}>
+                  <option value="">Select an agency…</option>
+                  {agencies.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
               </FormField>
               <FormField label="Their vertical">
                 <select
@@ -261,10 +279,10 @@ function LeadDetailModal({
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={saving || !referAgency.trim()}
+                disabled={saving || !referAgency}
                 onClick={() =>
                   run(
-                    () => crossReferLeadAction(row.pool_id, referAgency.trim(), referVertical),
+                    () => crossReferLeadAction(row.pool_id, referAgency, referVertical),
                     "Lead referred."
                   )
                 }
