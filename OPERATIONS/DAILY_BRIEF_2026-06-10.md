@@ -1,7 +1,7 @@
 # Daily Command Center Brief – TMMT Rentals
 
-**Date:** Friday, June 05, 2026
-**Generated:** 2026-06-05 07:00
+**Date:** Wednesday, June 10, 2026
+**Generated:** 2026-06-10 07:00
 **Data Source:** Supabase (live)
 
 ---

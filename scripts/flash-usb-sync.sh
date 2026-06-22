@@ -106,7 +106,7 @@ run_sync() {
   FLASH_VOL_ROOT="$FLASH_VOL" bash "${REPO_ROOT}/scripts/sync-flash-operator-kit.sh" "${FLASH_VOL}/TMMT MANAGEMENT" \
     || log "WARNING: operator-kit failed (EPERM? run: bash ${REPO_ROOT}/scripts/open-full-disk-access-settings.sh)"
 
-  if [[ -z "${TMMT_SKIP_FLASH_TYPECHECK:-}" ]] && command -v npm >/dev/null 2>&1 && [[ -f "${FLASH_OS}/package.json" ]]; then
+  if [[ -z "${TMMT_SKIP_FLASH_TYPECHECK:-}" ]] && command -v npm >/dev/null 2>&1 && [[ -f "${FLASH_OS}/package.json" ]] && [[ -d "${FLASH_OS}/node_modules" ]]; then
     log "Flash typecheck"
     (cd "$FLASH_OS" && CI=1 npm run typecheck) || log "WARNING: flash typecheck failed"
   elif [[ -n "${TMMT_SKIP_FLASH_TYPECHECK:-}" ]]; then

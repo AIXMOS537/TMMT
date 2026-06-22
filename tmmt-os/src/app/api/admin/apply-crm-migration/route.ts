@@ -7,11 +7,10 @@ import { createClient } from "@supabase/supabase-js";
  * POST with header: X-Migration-Secret: <INTAKE_WEBHOOK_SECRET or MIGRATION_SECRET>
  */
 export async function POST(req: NextRequest) {
-  const secret =
-    process.env.MIGRATION_SECRET ??
-    process.env.INTAKE_WEBHOOK_SECRET ??
-    process.env.GHL_WEBHOOK_SECRET;
-  if (secret && req.headers.get("x-migration-secret") !== secret) {
+  // Admin endpoint: require a dedicated MIGRATION_SECRET and fail closed.
+  // Do not fall back to webhook secrets — admin routes must not share secrets.
+  const secret = process.env.MIGRATION_SECRET;
+  if (!secret || req.headers.get("x-migration-secret") !== secret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

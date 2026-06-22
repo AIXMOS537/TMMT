@@ -61,3 +61,7 @@ supabase/.temp/
 OPERATIONS/VA_LEAD_DRAFTS/
 .DS_Store
 **/.DS_Store
+
+# Binary archives / accidental blobs — never commit (added 2026-06-07 shield audit)
+*.zip
+ziKcON7Q
