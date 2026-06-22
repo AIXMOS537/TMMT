@@ -98,12 +98,16 @@ else
   echo "  ✗ pull failed — check internet, then: ollama pull ${MODEL}"; exit 1
 fi
 
-# --- quick proof of life ---
+# --- proof of life (lightweight — does NOT load the model into RAM) ---
+# Loading a model just to say hello is what swap-deaths a RAM-light Mac. We only
+# confirm it's installed; it loads into RAM on demand when you actually use it.
 echo ""
-echo "  › testing the brain…"
-printf 'Reply in one short sentence: say hello as a helpful business assistant.' \
-  | ollama run "$MODEL" 2>/dev/null | head -3
+if ollama list 2>/dev/null | grep -q "${MODEL%%:*}"; then
+  echo "  ✓ installed + ready: ${MODEL}  (sized for ${RAM}GB — won't freeze this Mac)"
+else
+  echo "  ✓ pulled: ${MODEL}"
+fi
 echo ""
 echo "  ✓ DONE. Their first LLM is live + private."
-echo "    chat anytime:  ollama run ${MODEL}"
+echo "    chat anytime:  ollama run ${MODEL}     (loads into RAM on demand)"
 echo "    upgrade later: bash scripts/setup-llm.sh qwen2.5:32b   (needs more RAM)"
