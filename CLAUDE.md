@@ -132,7 +132,8 @@ npm test         # Vitest unit tests (run once); npm run test:watch for watch mo
 npm run test:e2e # Playwright E2E smoke tests (requires dev server or uses webServer config)
 
 # Mesh / multi-machine ops (see docs/MESH-SWARM.md)
-bash scripts/setup-mac.command   # fresh-Mac one-shot installer (tools, repo, .env via Vercel, join, audit)
+bash scripts/one-shot.sh carry   # ACROSS-THE-BOARD one-shot: carry|brain|moe|own (docs/ONE-SHOT-ACROSS-THE-BOARD.md)
+bash scripts/setup-mac.command   # fresh-Mac installer for a BARE machine (tools, repo, .env via Vercel, join, audit)
 bash scripts/swarm-join.sh       # onboard THIS machine to the mesh (unique name, per-account git id, hooks)
 bash scripts/tmmt up|who|help|go|sync|fix|notify   # simple owner verbs
 bash scripts/tmmt fix            # = swarm-doctor: readiness + security audit (PASS/WARN/FAIL)
@@ -152,11 +153,12 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
 - Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
 - **Secret transport (2026-06-15): Vercel is the source of truth.** Pull `.env`
-  on any machine with `vercel env pull .env --environment=production`. The old
-  **key flashdrive is deprecated/lost** — `scripts/bootstrap-carry-mac.sh` and
-  `CONTINUE-ON-CARRY-MAC.md` describe the retired flow. Note: `npm run build`,
-  `test`, `lint`, and the agent swarm all run **without** `.env` (env is read
-  lazily at request time) — `.env` is only needed to run the live app.
+  on any machine with `vercel env pull .env --environment=production` (this is
+  what `swarm-join.sh` does automatically when `.env` is missing). The old
+  **key flashdrive is retired** — its bootstrap script was removed; the legacy
+  flow lives only in `docs/CONTINUE-ON-CARRY-MAC.md` for reference. Note:
+  `npm run build`, `test`, `lint`, and the agent swarm all run **without** `.env`
+  (env is read lazily at request time) — `.env` is only needed to run the live app.
 - **If the flashdrive is unaccounted for: rotate** `SUPABASE_SERVICE_ROLE_KEY`
   (Supabase → API Keys) + `GHL_WEBHOOK_SECRET` (GHL), update Vercel, redeploy,
   re-pull. Runbook in `docs/security/SUPABASE-ADVISORS-2026-06-15.md`.
@@ -262,6 +264,7 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 ## Docs
 
 - `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
+- `docs/ONE-SHOT-ACROSS-THE-BOARD.md` — the single per-machine one-shot (`scripts/one-shot.sh carry|brain|moe|own`) for the carry M5, M1 brain, and Moe Legacy operator Mac
 - `docs/MESH-SWARM.md` — the mesh/swarm system: setup, daily flow, security model
 - `docs/security/SUPABASE-ADVISORS-2026-06-15.md` — security audit + key-rotation runbook
 - `docs/security/GO-GHOST-PROTOCOL.md` — personal privacy / identity-compartmentalization protocol (GHOST = the real you; X = the one public node). Companions: `GHOST-EVERYDAY-DEFAULTS.md` (daily-driver stack), `FOOTPRINT-CLEANUP-TRACKER.md` (working tracker), `X-NODE-DEFINITION.md` (**X = AIXMOS**)

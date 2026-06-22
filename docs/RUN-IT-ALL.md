@@ -38,9 +38,9 @@ build something — and get paid for helping them.**
 - **Offline:** if you lose signal, the app stays installed and shows a friendly
   "you're offline" screen instead of breaking. (Deeper offline — capturing work
   with no signal and uploading it when you're back — is the next phase; see §8.)
-- **Owner machines (carry Mac, etc.):** the flashdrive-as-key setup —
-  `scripts/bootstrap-carry-mac.sh` — sets up a full machine in one command. See
-  `docs/CONTINUE-ON-CARRY-MAC.md`.
+- **Every machine (carry M5, M1 brain, Moe Legacy):** one command per machine —
+  `bash scripts/one-shot.sh carry` (or `brain` / `moe`). `.env` is pulled from
+  Vercel automatically. See `docs/ONE-SHOT-ACROSS-THE-BOARD.md`.
 
 ## 4. Who logs in, and what they see
 
