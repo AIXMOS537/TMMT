@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# everything — THE one shot. Sets up this device for whoever it's for, then
+# leaves them standing at the holographic front door (Mission Control), with the
+# Wiki + Cockpit + app icons ready. Plug and play — anything and everything.
+#
+#   bash scripts/everything            # asks who it's for, then does it all
+#   bash scripts/everything mine       # the Owner's device (your mesh, sealed)
+#   bash scripts/everything own        # family/friend: their own sovereign mesh
+#
+# It COMPOSES what already exists (never replaces it), best-effort — one failed
+# step never aborts the rest:
+#   one-shot.sh (device + sovereign tenant isolation)
+#     → wiki build (offline home base)
+#     → install-apps (Desktop app icons, macOS)
+#     → home (open Mission Control)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+step(){ printf '\n\033[1;36m== %s ==\033[0m\n' "$*"; }
+ok(){ printf '\033[32m✓\033[0m %s\n' "$*"; }
+warn(){ printf '\033[33m!\033[0m %s\n' "$*" >&2; }
+run(){ local desc="$1"; shift; if "$@"; then ok "$desc"; else warn "$desc — skipped"; fi; }
+
+cat <<'B'
+
+   ╔══════════════════════════════════════════════╗
+   ║  AIXMOS · ONE SHOT — ANYTHING & EVERYTHING  ⚡ ║
+   ╚══════════════════════════════════════════════╝
+B
+
+# 1) Universal installer: device + role + sovereign tenant isolation.
+step "1/4 · Device setup (universal installer)"
+if [ -f "$ROOT/scripts/one-shot.sh" ]; then
+  bash "$ROOT/scripts/one-shot.sh" "${1:-}" || warn "installer returned nonzero (continuing)"
+elif [ -f "$ROOT/scripts/deploy" ]; then
+  warn "one-shot.sh missing — using base deploy"; bash "$ROOT/scripts/deploy" "${1:-}" || true
+else
+  warn "no installer found — skipping device step"
+fi
+
+# 2) Build the offline Wiki reader (the home base).
+step "2/4 · Build the Wiki (offline home base)"
+run "wiki built" bash "$ROOT/scripts/wiki" build
+
+# 3) Install the holographic Desktop app icons (macOS).
+step "3/4 · Desktop app icons (Mission Control · Cockpit · Wiki)"
+if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+  run "app icons on the Desktop" bash "$ROOT/scripts/install-apps"
+else
+  warn "app icons are macOS-only — on Windows see docs/MISSION-CONTROL.md"
+fi
+
+# 4) Open Mission Control — the front door.
+step "4/4 · Launch Mission Control"
+run "opened Mission Control" bash "$ROOT/scripts/home"
+
+cat <<DONE
+
+✓ DONE — anything & everything is set up on this device.
+
+  Front door : double-click "AIXMOS Mission Control" on the Desktop
+  Or run     : bash scripts/home
+  Cockpit    : bash scripts/hologram        Wiki: bash scripts/wiki
+  Send a kit : bash scripts/send-pack family   (or: operator)
+
+DONE
