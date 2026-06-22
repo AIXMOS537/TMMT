@@ -1,0 +1,42 @@
+{
+  "$schema": "./manifest.schema.json",
+  "platformId": "aixmos-platform",
+  "platformName": "AIXMOS Platform",
+  "platformTagline": "Build once. Clone infinitely. White-label forever.",
+  "version": "1.0.0",
+  "apexOwner": {
+    "name": "Muhammad Taha",
+    "title": "Founder & Apex Owner",
+    "publicNode": "X",
+    "entity": "All In One Management Solutions LLC",
+    "workEmail": "muhammad@allinonemanagementsolutions.com",
+    "doNotContact": "+15713519690"
+  },
+  "missionFile": "config/mission.md",
+  "architecture": {
+    "layers": [
+      { "id": "brain", "name": "AIXMOS Brain", "role": "AI agents + command desk" },
+      { "id": "engine", "name": "TMMT OS", "role": "Operations platform" },
+      { "id": "funnel", "name": "Public Funnel", "role": "Offers, checkout, intake" }
+    ],
+    "apps": [
+      { "id": "tmmt-ops", "url": "https://tmmt-ops.vercel.app", "audience": "staff" },
+      { "id": "tmmt-command-center", "url": "https://tmmt-command-center.vercel.app", "audience": "owner" },
+      { "id": "aixmos-landing", "url": "https://aixmos-landing.vercel.app", "audience": "public" }
+    ]
+  },
+  "licenseTiers": [
+    { "id": "apex", "label": "Apex Owner", "who": "Muhammad Taha — full platform control" },
+    { "id": "platform", "label": "Platform", "who": "AIXMOS core — never sold, owner-held" },
+    { "id": "tenant", "label": "Tenant", "who": "White-label instance (TMMT, Moe Legacy, partner)" },
+    { "id": "operator", "label": "Operator", "who": "Fenced seat — runs one vertical, no cross-org" },
+    { "id": "member", "label": "Member", "who": "Paying customer / cohort" },
+    { "id": "public", "label": "Public", "who": "Anonymous funnel visitor" }
+  ],
+  "global": {
+    "defaultLocale": "en-US",
+    "supportedLocales": ["en-US", "en-GB", "en-CA"],
+    "defaultCurrency": "USD",
+    "defaultTimezone": "America/New_York"
+  }
+}

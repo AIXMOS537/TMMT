@@ -54,6 +54,15 @@ bash scripts/setup-mac-imessage-bridge.sh
 Now the local assistant can **read + send real texts** through Messages.
 Details/troubleshooting: [`MAC-IMESSAGE-BRIDGE.md`](./MAC-IMESSAGE-BRIDGE.md).
 
+**3b. Brother layer (forwarded texts → HAILMARY, draft-first)**
+```bash
+cp config/hailmary-brother.example.yaml config/hailmary-brother.local.yaml
+# Edit .local.yaml with your handles + home line (never commit real numbers)
+python3 scripts/hailmary-brother/schema.py
+# iPhone: Settings → Messages → Text Message Forwarding → this Mac ON
+```
+Full blueprint: [`HAILMARY-BROTHER-LAYER.md`](./HAILMARY-BROTHER-LAYER.md). Inbox watcher ships next; until then use `TMMT …` commands via `tmmt-agent-channel`.
+
 **4. Make the carry Mac able to reach it (Tailscale SSH)**
 ```bash
 # on the M1:
