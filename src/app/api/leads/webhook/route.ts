@@ -10,6 +10,7 @@ import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 import { isRateLimited } from '@/lib/rate-limit'
+import { routeIncomingLead } from '@/lib/lead-pool'
 
 const SKU_PRICE_CENTS: Record<string, number> = {
   'lead-magnet': 0,
@@ -133,6 +134,18 @@ export async function POST(req: Request): Promise<NextResponse> {
     ip: req.headers.get('x-forwarded-for') ?? null,
     payload: { lead_id: leadId, sku, phone_e164, utm_source: body.utm_source, utm_campaign: body.utm_campaign },
   })
+
+  // Capture → shared lead pool (fail-open: never blocks intake; no-ops until the
+  // lead_pool migration is applied + routes exist). See src/lib/lead-pool.ts.
+  try {
+    await routeIncomingLead(db, {
+      leadId,
+      capturingOrgId: org.id,
+      utmCampaign: body.utm_campaign ?? null,
+      utmSource: body.utm_source ?? null,
+      signals: [body.source, body.utm_medium, body.utm_content, body.utm_term, sku],
+    })
+  } catch { /* fail-open — lead is already saved + audited */ }
 
   return NextResponse.json({ ok: true, lead_id: leadId })
 }
