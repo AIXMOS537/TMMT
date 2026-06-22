@@ -408,14 +408,12 @@
      Fallback: USERS_FALLBACK (local dev before first sync)
      Roles: admin | executive | operator | member
   ══════════════════════════════════ */
-  const USERS_FALLBACK = [
-    { email: 'muhammad@aixmos.com',  password: 'AIXMOSadmin2025!',  name: 'Muhammad Taha',    role: 'admin' },
-    { email: 'exec1@aixmos.com',     password: 'Exec2025secure',     name: 'Executive 1',      role: 'executive' },
-    { email: 'exec2@aixmos.com',     password: 'Exec2025secure2',    name: 'Executive 2',      role: 'executive' },
-    { email: 'exec3@aixmos.com',     password: 'Exec2025secure3',    name: 'Executive 3',      role: 'executive' },
-    { email: 'operator@aixmos.com',  password: 'Operator2025!',      name: 'AIXMOS Operator',  role: 'operator' },
-    { email: 'member@aixmos.com',    password: 'Member2025!',        name: 'AIXMOS Member',    role: 'member' },
-  ];
+  // SECURITY: never commit credentials. Real users load from /data/users.json
+  // (Airtable → npm run sync:aixmos-people). This fallback is intentionally
+  // EMPTY so there are no hardcoded passwords in the repo — before first sync,
+  // no one can log in (secure default), which is correct for a public file.
+  // For local dev, drop a gitignored /data/users.json instead of editing this.
+  const USERS_FALLBACK = [];
   let USERS = [];
   let usersReady = false;
 
