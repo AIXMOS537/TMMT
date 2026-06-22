@@ -1,3 +1,3 @@
 # id	status	machine	branch	task
 1	DOING	brainiac-mac	swarm/brainiac-mac/1	a task
-2	TODO	-	-	a task
+2	CLAIMED	carry-mac	swarm/carry-mac/2	a task
