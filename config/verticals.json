@@ -16,6 +16,6 @@
     "learn": { "appRole": "operator", "orgRole": "viewer", "revenueSharePct": 0, "level": "student", "certified": false },
     "earn": { "appRole": "operator", "orgRole": "dispatcher", "revenueSharePct": 70, "level": "certified", "certified": true },
     "admin": { "appRole": "operator", "orgRole": "tenant_admin", "revenueSharePct": 70, "level": "certified", "certified": true },
-    "graduate": { "appRole": "partner", "orgRole": "tenant_admin", "revenueSharePct": 85, "level": "agency_owner", "certified": true }
+    "graduate": { "appRole": "partner", "orgRole": "tenant_admin", "revenueSharePct": 85, "level": "master", "certified": true }
   }
 }
