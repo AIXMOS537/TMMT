@@ -111,6 +111,23 @@ behind the `config/credit-compliance.json → pre_sale_gate` (counsel sign-off).
 | Compliance | `src/lib/compliance.ts` + `scripts/compliance-check.mjs` |
 | UI kit | `src/components/ui.tsx` |
 
+## Deploy safely (don't burn the Vercel free-tier daily cap)
+
+Vercel's free tier caps deployments at **100/day**, counted **per project**. If several
+projects watch one repo, every push multiplies. To never get rate-limited:
+
+- In Moe Legacy's `vercel.json`, disable git auto-deploy:
+  ```json
+  "git": { "deploymentEnabled": false }
+  ```
+  Then deploy **manually** when you choose: `vercel --prod`. (Set it to
+  `{ "master": true }` instead if you want production-only auto-deploy.)
+- Develop **local-first**: `next build && next start` (reachable over Tailscale if you're
+  on the mesh) — see TMMT's `docs/ops/LOCAL-FIRST-NO-DEPLOY-LIMIT.md` and
+  `scripts/local-up.sh` for the pattern to copy.
+- Keep the number of Vercel projects watching the repo minimal; or upgrade to Pro to lift
+  the cap.
+
 ## The gates (must pass after each change)
 
 ```bash
