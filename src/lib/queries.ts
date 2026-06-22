@@ -435,3 +435,6 @@ export async function getInvestorUpdates() {
   }
   return data ?? [];
 }
+
+// ─── Credit & Funding Sessions (Phase 9) ────────────────────────────────────
+export const getCreditFundingSessions = () => fetchTable("credit_funding_sessions", "*", "created_at");
