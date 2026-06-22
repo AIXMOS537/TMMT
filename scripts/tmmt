@@ -69,6 +69,7 @@ case "$v" in
   iphone|phone|pocket|ask|talk) exec bash "$ROOT/scripts/mesh/iphone-remote.sh" "${v}" "$@";;
   local|localhost|run-local) exec bash "$ROOT/scripts/local-up.sh" "${1:-up}" "${@:2}";;
   parity|sync-prod|mirror) exec bash "$ROOT/scripts/parity.sh" "${1:-status}" "${@:2}";;
+  handoff|ceo-handoff) exec bash "$ROOT/scripts/ceo-handoff.sh" "$@";;
   garage) exec bash "$ROOT/scripts/garage" "$@";;
   overhaul) [ -x "$ROOT/scripts/overhaul-deploy.sh" ] && exec bash "$ROOT/scripts/overhaul-deploy.sh" "$@" || { echo "overhaul-deploy.sh not installed yet"; exit 1; };;
   *) printf 'tmmt words: up | unison [up|status|down] | booyah | garage | local | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
