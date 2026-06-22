@@ -1,0 +1,14 @@
+name: PII Guard
+on: [push, pull_request]
+jobs:
+  pii-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PII exposure scan
+        env:
+          # Set repo secret PII_DENYLIST (newline-separated PII values). Never commit PII.
+          PII_DENYLIST: ${{ secrets.PII_DENYLIST }}
+        run: |
+          chmod +x ./ultimatrix.sh
+          ./ultimatrix.sh scan
