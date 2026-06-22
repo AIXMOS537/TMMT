@@ -23,8 +23,8 @@
 | **Carry Mac (M5)** | `carry-mac` | **Apple M5** · macOS | **Owner** | Mobile command — travels with you; the main device that talks to + texts the home brain remotely | No (with you) |
 | **Moe Legacy Mac** | `moe-legacy` | **Apple M5 Pro** · macOS | **Umar / Red Hood** (MoeLegacy) | 📈 Credit Guidance partner node — **fenced / least-privilege** | When working |
 | **Surface Pro 4** | `surface` | Microsoft Surface Pro 4 · Windows | **Owner** | Windows swarm node (best run via Linux/WSL) | No |
-| **Other Windows device #1** | `win-________` | _Windows (confirm)_ | _confirm_ | _confirm role_ | No |
-| **Other Windows device #2** | `win-________` | _Windows (confirm)_ | _confirm_ | _confirm role_ | No |
+| **Windows rig #1** | `win-rig-1` | _Windows · make/serial (confirm)_ | **Owner** | ⚡ **Swarm worker node** — compute pool; `fanout` target (run `tmmt serve` once to enable) | No |
+| **Windows rig #2** | `win-rig-2` | _Windows · make/serial (confirm)_ | **Owner** | ⚡ **Swarm worker node** — compute pool; `fanout` target (run `tmmt serve` once to enable) | No |
 
 > **Fill in the last two rows** with the other Windows devices you've mentioned
 > before — tell me the make/role and I'll name and slot them. I left them blank
@@ -65,7 +65,8 @@ baseline. Check each off per device.
 | `carry-mac` | ☐ FileVault | ☐ | ☐ | ☐ | ☐ |
 | `moe-legacy` | ☐ FileVault | ☐ | ☐ | ☐ (fenced) | ☐ |
 | `surface` | ☐ BitLocker | ☐ | ☐ | ☐ | ☐ |
-| `win-____` | ☐ BitLocker | ☐ | ☐ | ☐ | ☐ |
+| `win-rig-1` | ☐ BitLocker | ☐ | ☐ | ☐ | ☐ |
+| `win-rig-2` | ☐ BitLocker | ☐ | ☐ | ☐ | ☐ |
 
 - **Disk encryption** = FileVault (Mac) / BitLocker (Windows). A lost laptop with
   no encryption is the whole ghost undone in one afternoon — this is the floor.
