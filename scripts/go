@@ -105,6 +105,7 @@ install_words() {
       echo "alias intake='bash \"$R/scripts/intake\"'             # TMMT_WORDS"
       echo "alias invite='bash \"$R/scripts/invite\"'             # TMMT_WORDS ← message to send people"
       echo "alias operator='bash \"$R/scripts/onboard-op\"'       # TMMT_WORDS ← onboard an operator, one shot"
+      echo "alias new-operator='bash \"$R/scripts/new-operator\"' # TMMT_WORDS ← stamp a protected operator"
     else
       # operator: work + sync + reach the owner; compass for well-being. No owner agents.
       echo "alias work='bash \"$R/scripts/tmmt\" go 2'          # TMMT_WORDS"
