@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# one-shot — the universal installer for ANY device, for ANYONE.
+# one-shot — THE single across-the-board installer. Run the SAME command on every
+# machine; it figures out (or you tell it) which device this is and provisions it.
 #
-# One question decides everything:
-#   • MINE    — PROJECT X HAILMARY's own device → joins HIS mesh (owner, sealed).
-#   • MY OWN  — family / friend / anyone → stands up THEIR OWN private mesh on
-#               THEIR OWN Tailscale login, fully isolated. It CANNOT touch or
-#               hurt the Owner's network, secrets, or seal.
+# The fleet (docs/FLEET-ROSTER.md):
+#   • carry     — the Owner's carry Mac (M5) → owner kit, mobile command   [carry-mac]
+#   • brain     — the Owner's M1 Mac → owner kit + always-on home brain     [brainiac-mac]
+#   • moe       — Moe Legacy / Umar's Mac → fenced operator (Red Hood)      [moe-legacy]
+#   • own       — family / friend → THEIR OWN private mesh, fully isolated
 #
-# Why it's safe: isolation is at the Tailscale-ACCOUNT level. Each person logs
-# into THEIR OWN Tailscale account → their own tailnet → zero overlap with yours.
-# Bridging two meshes only ever happens later by explicit node-share (your OK).
+#   bash scripts/one-shot.sh            # asks which machine this is
+#   bash scripts/one-shot.sh carry      # the Owner's carry M5
+#   bash scripts/one-shot.sh brain      # the Owner's M1 (also sets up always-on)
+#   bash scripts/one-shot.sh moe        # Moe Legacy operator (fenced)
+#   bash scripts/one-shot.sh own        # someone's own sovereign mesh
+#   bash scripts/one-shot.sh --help
 #
-#   bash scripts/one-shot.sh            # asks who it's for
-#   bash scripts/one-shot.sh mine       # the Owner's device
-#   bash scripts/one-shot.sh own        # a family/friend's own sovereign mesh
+# Idempotent and safe to re-run. Owner roles delegate to scripts/deploy (mesh
+# onboard + secret-guard + one-word commands); the brain adds the always-on
+# home-brain setup; the operator path is fenced (never owner). Isolation for
+# 'own' is at the Tailscale-account level — it cannot touch the Owner's mesh.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd 2>/dev/null || echo "$PWD")"
 if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; R=; C=; W=; D=; BD=; X=; fi
@@ -23,28 +28,81 @@ warn(){ printf '%s  ! %s%s\n' "$Y" "$*" "$X" >&2; }
 say(){ printf '%s\n' "$*"; }
 osname(){ case "$(uname -s 2>/dev/null)" in Darwin) echo macos;; Linux) echo linux;; *) echo other;; esac; }
 
-TENANT="${1:-}"
-if [ -z "$TENANT" ]; then
+usage(){ sed -n '2,28p' "$0"; exit 0; }
+
+# Canonical mesh name for a known role (docs/FLEET-ROSTER.md). Set into
+# .swarm/machine only if this device has no name yet — never clobber a chosen one.
+set_machine_name(){
+  local want="$1"; local f="$ROOT/.swarm/machine"
+  mkdir -p "$ROOT/.swarm"
+  if [ ! -s "$f" ]; then printf '%s' "$want" > "$f"; ok "mesh name set: $want"; fi
+}
+
+ROLE="${1:-}"
+case "$ROLE" in
+  -h|--help|help) usage;;
+esac
+
+# Back-compat + synonyms.
+case "$ROLE" in
+  mine) ROLE=carry;;                         # old "MINE" = the Owner's device
+  carry-mac|carry) ROLE=carry;;
+  brainiac-mac|brain|m1) ROLE=brain;;
+  moe-legacy|moe|umar|operator|red-hood) ROLE=moe;;
+  own|sovereign|family|friend) ROLE=own;;
+esac
+
+if [ -z "$ROLE" ]; then
   say
-  say "  ${BD}Who is this device for?${X}"
-  say "   [1] ${BD}MINE${X}    — PROJECT X HAILMARY's own device (joins your mesh)"
-  say "   [2] ${BD}MY OWN${X}  — family / friend: your own private network"
+  say "  ${BD}Which machine is this?${X}"
+  say "   [1] ${BD}carry${X}  — the Owner's carry Mac (M5)"
+  say "   [2] ${BD}brain${X}  — the Owner's M1 Mac (always-on home brain)"
+  say "   [3] ${BD}moe${X}    — Moe Legacy / Umar's Mac (fenced operator)"
+  say "   [4] ${BD}own${X}    — someone else's own private mesh"
   printf '  > '; IFS= read -r p || true
-  [ "$p" = "1" ] && TENANT=mine || TENANT=own
+  case "${p:-}" in 1) ROLE=carry;; 2) ROLE=brain;; 3) ROLE=moe;; 4) ROLE=own;; *) ROLE=carry;; esac
 fi
 
-say
-say "  ┌────────────────────────────────────────────────┐"
-say "  │  ONE-SHOT · $( [ "$TENANT" = mine ] && echo "OWNER (your mesh)" || echo "SOVEREIGN (their own mesh)" )"
-say "  └────────────────────────────────────────────────┘"
+banner(){ say; say "  ┌────────────────────────────────────────────────┐"; say "  │  ONE-SHOT · $1"; say "  └────────────────────────────────────────────────┘"; }
 
-# ============================================================ MINE (the Owner)
-if [ "$TENANT" = "mine" ]; then
-  info "this is the Owner's device → joining your mesh as owner (sealed)."
+# ===================================================== carry — Owner's carry M5
+if [ "$ROLE" = "carry" ]; then
+  banner "CARRY (Owner · mobile command)"
+  set_machine_name "carry-mac"
   exec bash "$ROOT/scripts/deploy" owner
 fi
 
-# ====================================================== MY OWN (sovereign node)
+# ============================================== brain — Owner's M1 (always-on)
+if [ "$ROLE" = "brain" ]; then
+  banner "BRAIN (Owner · M1 · always-on)"
+  set_machine_name "brainiac-mac"
+  info "provisioning owner kit…"
+  bash "$ROOT/scripts/deploy" owner || warn "deploy had warnings (continuing)"
+  if [ "$(osname)" = "macos" ] && [ -f "$ROOT/scripts/setup-home-brain.command" ]; then
+    say
+    printf '  Make this Mac the always-on home brain now (SSH + Tailscale + never-sleep)? [y/N] '
+    IFS= read -r yn || true
+    case "${yn:-}" in y|Y) bash "$ROOT/scripts/setup-home-brain.command" || warn "home-brain setup had warnings";;
+      *) say "$D   skipped — run later: bash scripts/setup-home-brain.command$X";; esac
+  else
+    say "$D   (always-on home-brain step is macOS-only: scripts/setup-home-brain.command)$X"
+  fi
+  [ -x "$ROOT/scripts/swarm-doctor.sh" ] && bash "$ROOT/scripts/swarm-doctor.sh" --quick 2>/dev/null || true
+  ok "BRAIN ready."
+  exit 0
+fi
+
+# ================================================ moe — Moe Legacy (fenced op)
+if [ "$ROLE" = "moe" ]; then
+  banner "MOE LEGACY (Operator · fenced · Red Hood)"
+  set_machine_name "moe-legacy"
+  # Fenced provision. The full Red Hood kit (credit-guidance tools, banners) is
+  # scripts/umar-setup.command for a from-scratch machine; deploy operator is the
+  # idempotent re-runnable core (onboard + secret-guard + operator commands).
+  exec bash "$ROOT/scripts/deploy" operator
+fi
+
+# ====================================================== own — sovereign node
 # A family member / friend becomes the OWNER OF THEIR OWN private mesh. Nothing
 # here reads, copies, or joins the real Owner's tailnet/secrets/seal.
 say
