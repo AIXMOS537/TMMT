@@ -1,0 +1,32 @@
+{
+  "_comment": "Public-facing source of truth. NEVER store PII (legal name, personal/work cell, personal email, home address).",
+  "identity_stack": {
+    "primary_surface": "AIXMOS",
+    "holding_entity": "TMMT",
+    "agency_entity_legal_name": "All In One Management LLC",
+    "operator_persona": "<TBD: clear handle + domain + trademark>",
+    "ghost": "NOT STORED"
+  },
+  "public_contact": {
+    "phone": "<GHL_NUMBER — public line, forwards to work cell>",
+    "email": "<ALIAS_EMAIL e.g. support@aixmos.com>",
+    "address": "<VIRTUAL_STREET_ADDRESS — not a PO box, not home>"
+  },
+  "private_routing": { "_note": "values live in vault, not here", "sms_voice_forward_target": "VAULT://work_cell" },
+  "channels": {
+    "sms": { "provider": "GHL / LC Phone",
+      "a2p_10dlc": { "brand_type": "standard", "registering_entity_legal_name": "All In One Management LLC",
+        "ein_on_file": true, "po_box_allowed": false, "per_sub_account": true } }
+  },
+  "compliance": {
+    "sms_restricted_verticals": ["credit_repair","funding","debt_relief","lending"],
+    "sms_restricted_policy": "NO promotional SMS. Transactional-only or off-channel.",
+    "owner_approval_gate": "required for all customer-facing and financial actions"
+  },
+  "feature_flags": {
+    "credit_repair": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
+    "funding": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
+    "sms_marketing_credit_funding": { "enabled": false, "hard_locked": true,
+      "reason": "A2P 10DLC carrier prohibition on lending/credit/debt promotional SMS + CROA" }
+  }
+}

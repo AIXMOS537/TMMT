@@ -1,0 +1,62 @@
+{
+  "configVersion": "1.1.0",
+  "note": "Single source of truth for AIXMOS build pages, RECONCILED against the live Claude Code repo (aixmos-packet / aixmos-core.ts / shared compliance gates). The embedded CONFIG block in index.html mirrors this. Keep module keys and flags identical to the platform schema.",
+  "reconciledAgainst": [
+    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner/umar)",
+    "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse (real enforcement)",
+    "aixmos-core.ts ascension ladder: Operator $97 -> Builder $297 -> Node $997 -> Partner $5K-$50K",
+    "aixmos-parts.ts (car-mod parts registry — modules should map to registered parts)",
+    "workstreams: 1 aixmos-core, 2 credit-funding, 3 operator-network; shared/"
+  ],
+  "modules": [
+    { "key": "fleet_engine",    "name": "Fleet Engine",   "blurb": "Vehicle lifecycle, bookings, payments. Wheels to revenue.", "categories": ["Revenue Ops", "Service"], "maps_to": "workstream-1 · Fleet Economics Command Center" },
+    { "key": "intake_gate",     "name": "Intake Gate",    "blurb": "Every lead triaged at zero cost. Nothing slips.",          "categories": ["Automation", "Revenue Ops"], "maps_to": "AIXMOS Intake & Triage Gate (n8n) — credit-funding category routes to Moe Legacy" },
+    { "key": "ai_brain",        "name": "AI Brain",       "blurb": "Local agent swarm. Your data never leaves the floor.",     "categories": ["Automation", "Network"], "maps_to": "Ollama local inference + Cloudflare Workers tiered routing" },
+    { "key": "dropnet",         "name": "DropNet",        "blurb": "NAS drop zone. Every file routed, filed, backed up over the tailnet.", "categories": ["Automation", "Compliance"], "maps_to": "AIXMOS DropNet (UGREEN NAS file tier, Tailscale)" },
+    {
+      "key": "credit_to_keys",  "name": "Credit-to-Keys", "blurb": "Five-rung funding ladder. Credit becomes keys.",
+      "categories": ["Revenue Ops", "Compliance"],
+      "gated": true,
+      "flags": ["credit_repair", "funding"],
+      "approvers": ["owner", "umar"],
+      "maps_to": "workstream-2 credit-funding vertical (intake -> dispute engine -> tradeline tracker -> funding desk)",
+      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."
+    },
+    { "key": "operator_network","name": "Operator Net",   "blurb": "Plug in nodes. Every operator runs your playbook.",         "categories": ["Network"], "maps_to": "workstream-3 operator network ($97/mo, operator portal, commission engine, covenant)" },
+    {
+      "key": "dispatch",        "name": "Dispatch",       "blurb": "Overdrive routing for couriers and emergency runs.",
+      "categories": ["Service", "Network"],
+      "gated": true,
+      "flags": ["dispatch_overdrive"],
+      "approvers": ["owner"],
+      "maps_to": "Operation Overdrive (emergency dispatch / medical courier, grant track)",
+      "gateReason": "Operational gate, NOT part of the credit/funding legal pair. Grant only once dispatch, courier, and insurance requirements are cleared.",
+      "CONFIRM": "dispatch_overdrive flag name is provisional — confirm against the real repo; Operation Overdrive may be gated by licensing config rather than a feature flag."
+    },
+    { "key": "detail_bay",      "name": "Detail Bay",     "blurb": "Service ops, scheduling, upsells. The finish.",             "categories": ["Service", "Revenue Ops"], "maps_to": "TMMT Auto Detail" }
+  ],
+  "tiers": [
+    { "key": "operator", "name": "Operator", "desc": "Runs the whole floor on your playbook.", "scope": "Full Floor" },
+    { "key": "partner",  "name": "Partner",  "desc": "Owns a vertical inside your build.",     "scope": "Vertical" },
+    { "key": "crew",     "name": "Crew",     "desc": "Works the bays you assign them.",        "scope": "Assigned Bays" },
+    { "key": "client",   "name": "Client",   "desc": "Their own room. Their own keys.",        "scope": "Private Room" }
+  ],
+  "tiersNote": "These are build-page access roles. The real 4-tier product access model in the repo is: Public / Operator-Owner / Employee-Vendor / Full $50K. Operator archetype classes (Closer, Mechanic, Financier, Operator) are a separate axis. Reconcile if you want the roster to mirror one of these exactly.",
+  "pricing": [
+    { "tier": "Operator", "rate": "$97/mo",    "rule": "1-3 modules, none gated" },
+    { "tier": "Builder",  "rate": "$297/mo",   "rule": "4-5 modules, none gated" },
+    { "tier": "Node",     "rate": "$997/mo",   "rule": "6+ modules, none gated" },
+    { "tier": "Partner",  "rate": "$5K–$50K",  "rule": "any gated module installed" }
+  ],
+  "pricingNote": "RECONCILED to the real ascension ladder (Operator $97 / Builder $297 / Node $997 / Partner $5K-$50K). True tier is driven by earn-gates/entitlements in aixmos-core.ts — the build-size mapping here is a display proxy only.",
+  "complianceGate": {
+    "file": "shared/compliance-gates/gates.config.json",
+    "legalFlags": ["credit_repair", "funding"],
+    "approvers": ["owner", "umar"],
+    "enforcement": "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse hook (CLAUDE.md is context, NOT enforcement)",
+    "a2pSmsRestriction": "credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.",
+    "boundary": "The build-page gate records an approver for provenance. It is NOT legal sign-off. Real CROA / VA credit-services / dispatch licensing / insurance clearance stays in the actual compliance flow. Never auto-unlock."
+  },
+  "capabilityCategories": ["Automation", "Revenue Ops", "Compliance", "Network", "Service"],
+  "partsDoctrine": "Per aixmos-parts.ts: capabilities are REGISTERED as parts (with dependencies, conflicts, stage gates, legal gates) — new mods are registered, never coded into core. The build-page modules should map onto registered parts, not become a second source of truth."
+}
