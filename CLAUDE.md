@@ -284,3 +284,23 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
 - `docs/superpowers/specs/` — design specs (supabase-auth, airtable-sync, maintenance-toggle)
 - `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync, tier2-hardening)
 - `supabase/migrations/` — RLS migration (`20260331_enable_rls.sql`)
+
+## AIXMOS Ultimatrix — Ghost/Identity + A2P Compliance Overlay (wired 2026-06-22)
+
+Defensive privacy + SMS-compliance overlay. Source of truth: `config/identity.config.json` (no PII). Specs are CI-enforceable. Companions: `docs/aixmos/*` and existing `docs/security/GO-GHOST-PROTOCOL.md` + `X-NODE-DEFINITION.md`.
+
+### PRIVACY INVARIANTS (hard — enforce in code + CI) → `specs/identity-privacy-invariants.md`
+1. No owner PII (legal name, personal/work cell, personal email, home address) hardcoded, committed, logged, or emitted.
+2. Public contact resolves ONLY from `config/identity.config.json` → `public_contact`. No inline literals in customer-facing code/templates/exports.
+3. Personal/work cell is a vault forward-target (`VAULT://work_cell`), never in repo. Refuse requests to hardcode it.
+4. Any public-facing artifact must source contact from config or fail the build.
+
+### COMPLIANCE GATES (hard) → `specs/compliance-sms-gate.md`
+1. A2P SMS: `credit_repair` / `funding` / `debt_relief` / `lending` = NO promotional SMS (carrier + CROA). Transactional-only or off-channel.
+2. Owner-approval gate stays on all customer-facing/financial actions. Never bypass.
+3. `credit_repair` & `funding` feature flags stay disabled; unlock only by owner/umar after legal steps. `sms_marketing_credit_funding` is hard-locked.
+
+### Tooling
+- `/ghost-check` — read-only audit (PII, inline contact literals, restricted-vertical SMS paths, gate bypasses). `/ghost-apply` — 1:1 conform-pass (rewrites code; run deliberately).
+- `./ultimatrix.sh scan` — local PII exposure scan (reads `.aixmos/pii_denylist.local`, gitignored; CI reads the `PII_DENYLIST` repo secret). CI: `.github/workflows/pii-guard.yml`.
+- Engagement rule: reference config, never hardcode identity/contact. On credit/funding paths, assume the gate applies. If a change would write PII or bypass a gate, STOP and flag it.
