@@ -44,3 +44,26 @@ supabase/.temp/
 
 # AIXMOS portal logins (generated from Airtable — never commit)
 AIXMOS/portal/data/users.json
+
+# Runtime state — never commit
+.hailmary/
+.swarm/
+.aixmos-backups/
+CLAUDE.md.bak-*
+
+# Local config overrides (not for repo)
+config/*.local.yaml
+config/voice-cards/*.local.yaml
+config/dual-sync.registry.local.yaml
+config/hailmary-brother.local.yaml
+
+# Encrypted vault
+tools/project-x-hailmary/master/vault.enc
+
+# Aria build artifacts
+aria/.next/
+aria/node_modules/
+aria/.env
+
+# .aixmos local runtime (pii denylist, face models, backups)
+.aixmos/
