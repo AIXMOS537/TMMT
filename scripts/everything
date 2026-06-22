@@ -56,12 +56,13 @@ run "opened Mission Control" bash "$ROOT/scripts/home"
 # Owner? Go all the way: full no-prompt bring-up + the cockpit + every action.
 ROLE="${1:-}"; [ "$ROLE" != "mine" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
 if [ "$ROLE" = "mine" ] || [ "$ROLE" = "owner" ]; then
-  step "5/5 · Full bring-up (owner)"
-  if [ -f "$ROOT/scripts/m1-allin.sh" ]; then
-    bash "$ROOT/scripts/m1-allin.sh" || warn "all-in had skips (credentials are human-gated on purpose)"
-  else
-    run "booted the base" bash "$ROOT/scripts/go"
-  fi
+  step "5/5 · Boot the base (owner)"
+  # LIGHT + SAFE by default: identity, aliases, HAILMARY booyah, always-on, cockpit.
+  # We do NOT auto-pull/run a local LLM or a stress test here — those load the model
+  # into RAM and can freeze a RAM-light Mac. They stay OPT-IN:
+  #   heavy ritual (brain + stress + fleet):  tmmt allin        (only on a capable box)
+  #   just the local brain, RAM-checked:      tmmt brain
+  run "booted the base" bash "$ROOT/scripts/go"
   [ -f "$ROOT/scripts/ceo" ] && bash "$ROOT/scripts/ceo" 2>/dev/null || true
   cat <<'DONE'
 
@@ -71,6 +72,7 @@ if [ "$ROLE" = "mine" ] || [ "$ROLE" = "owner" ]; then
    RUN              ceo · watchtower · health · member · onboard
    PROTECT          dark · light · secure · vault · seal
    GROW             send-pack all · garage · vertical "Name"
+   HEAVY (opt-in)   tmmt brain (local LLM, RAM-checked) · tmmt allin (full ritual)
    front door: bash scripts/home   ·   run it all again: booyah
 DONE
 else
