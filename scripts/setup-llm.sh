@@ -18,12 +18,46 @@ ram_gb() {
 }
 RAM="$(ram_gb)"; [ "$RAM" -gt 0 ] 2>/dev/null || RAM=8
 
-# --- choose model by RAM (override with arg) ---
+# --- mode: auto (general/Pocket) | --coder (coding agents) | serve (share on mesh) ---
+MODE="auto"
+case "${1:-}" in
+  serve|share)   MODE="serve" ;;
+  --coder|coder) MODE="coder"; shift || true ;;
+esac
+
+# --- SERVE: expose the local brain to the whole mesh over Tailscale ---
+if [ "$MODE" = "serve" ]; then
+  echo "  🧠  SHARING THE BRAIN ON THE MESH (tailnet-only)"
+  command -v ollama >/dev/null 2>&1 || { echo "  ✗ install the brain first: bash scripts/setup-llm.sh"; exit 1; }
+  ( OLLAMA_HOST=0.0.0.0:11434 ollama serve >/dev/null 2>&1 & ) 2>/dev/null || true
+  if command -v tailscale >/dev/null 2>&1; then
+    host="$(tailscale status --json 2>/dev/null | grep -o '"DNSName":"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/\.$//')"
+    ip="$(tailscale ip -4 2>/dev/null | head -1)"
+    echo "  ✓ brain reachable across the mesh:"
+    [ -n "$host" ] && echo "      http://${host}:11434/v1/chat/completions"
+    [ -n "$ip" ]   && echo "      http://${ip}:11434/v1/chat/completions"
+    echo "  point devices/agents at it:  POCKET_BRAIN_URL=http://${ip:-<tailnet-ip>}:11434/v1/chat/completions"
+  else
+    echo "  • install Tailscale to share; locally: http://127.0.0.1:11434/v1/chat/completions"
+  fi
+  echo "  ⚠ tailnet-only — NEVER expose port 11434 to the public internet."
+  exit 0
+fi
+
+# --- choose model by RAM (override with a model tag arg) ---
 pick() {
-  if   [ "$RAM" -lt 12 ]; then echo "llama3.2:3b";    # 8GB  — a taste
-  elif [ "$RAM" -lt 28 ]; then echo "llama3.1:8b";    # 16/24GB — real helper
-  elif [ "$RAM" -lt 56 ]; then echo "qwen2.5:14b";    # 32GB — hosts everything
-  else                          echo "qwen2.5:32b";   # 64GB — full power
+  if [ "$MODE" = "coder" ]; then           # coding agents (the swarm) — code-tuned
+    if   [ "$RAM" -lt 12 ]; then echo "qwen2.5-coder:3b";
+    elif [ "$RAM" -lt 28 ]; then echo "qwen2.5-coder:7b";
+    elif [ "$RAM" -lt 56 ]; then echo "qwen2.5-coder:14b";
+    else                          echo "qwen2.5-coder:32b";
+    fi
+  else                                      # general / Pocket assistant
+    if   [ "$RAM" -lt 12 ]; then echo "llama3.2:3b";    # 8GB  — a taste
+    elif [ "$RAM" -lt 28 ]; then echo "llama3.1:8b";    # 16/24GB — real helper
+    elif [ "$RAM" -lt 56 ]; then echo "qwen2.5:14b";    # 32GB — hosts everything
+    else                          echo "qwen2.5:32b";   # 64GB — full power
+    fi
   fi
 }
 MODEL="${1:-$(pick)}"
