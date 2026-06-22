@@ -163,6 +163,15 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 
 ### Vercel (deployment)
 
+**LOCAL-FIRST, ALWAYS (non-negotiable):** verify locally (`npm run build` + `lint`
++ `test`) before merging, and the live site only redeploys when **app code**
+changes. Docs, shell scripts, markdown, `tools/`, and the agent system **never**
+trigger a deploy — enforced by `vercel.json` `ignoreCommand` →
+`scripts/vercel-ignore.sh` (builds only when `src/`, `packages/`, or app config
+changed). This is what stops the free-tier daily build quota
+(`api-deployments-free-per-day`, ~100/day) from being burned by rapid shipping.
+If a real deploy is ever needed, change an app file or trigger it manually.
+
 Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
 
 - `tmmt-ops` → TMMT Ops (TMMT OS proper) at https://tmmt-ops.vercel.app
