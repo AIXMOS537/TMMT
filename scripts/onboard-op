@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# onboard-op — ONE shot to onboard an operator from the Owner's Mac:
+#   1) builds their invite + copies it to your clipboard
+#   2) opens Messages so you just paste (Cmd+V) and send
+#   3) pre-registers them in the engineer console (if you pass their host)
+#   4) prints the exact follow-up so the rest is two words
+#
+#   bash scripts/onboard-op "<Agency>" "<Name>" [user@host]
+#   e.g. bash scripts/onboard-op "Moe Legacy" Umar
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -t 1 ]]; then G=$'\e[32m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; C=; W=; D=; BD=; X=; fi
+ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+say(){ printf '%s\n' "$*"; }
+
+AGENCY="${1:-}"; NAME="${2:-}"; HOST="${3:-}"
+[ -n "$AGENCY" ] && [ -n "$NAME" ] || { echo "usage: onboard-op \"<Agency>\" \"<Name>\" [user@host]"; exit 1; }
+NAME_LC="$(printf '%s' "$NAME" | tr '[:upper:]' '[:lower:]')"
+
+printf '\n%s%s   ONBOARD OPERATOR — %s (%s)%s\n\n' "$C" "$BD" "$AGENCY" "$NAME" "$X"
+
+# 1) Invite (prints + copies to clipboard via the invite script).
+say "  1) building the invite + copying it to your clipboard…"
+bash "$ROOT/scripts/invite" operator "$NAME" | sed 's/^/     /'
+
+# 2) Open Messages so you can paste + send.
+if [ "$(uname -s)" = "Darwin" ]; then
+  open -a Messages 2>/dev/null && ok "Messages opened — paste with Cmd+V and send to $NAME"
+fi
+
+# 3) Pre-register in the engineer console (so 'status' works once they share).
+if [ -n "$HOST" ]; then
+  bash "$ROOT/scripts/engineer" add "$AGENCY" "$HOST" >/dev/null 2>&1 && ok "registered $AGENCY → $HOST in your engineer console"
+fi
+
+# 4) The rest, in two words once they're set up.
+cat <<EOF
+
+${BD}   NEXT (after ${NAME} texts you "done"):${X}
+     ${W}engineer add "$AGENCY" ${NAME_LC}@<their-tailscale-name>${X}   ${D}(if not pre-registered)${X}
+     ${W}engineer status "$AGENCY"${X}        ${D}→ ● reachable${X}
+     ${W}engineer pull "$AGENCY" ~/Desktop/work${X}   ${D}→ pulls their work in${X}
+
+${D}   that's it — operator live, work in, ready to build their vertical.${X}
+
+EOF
