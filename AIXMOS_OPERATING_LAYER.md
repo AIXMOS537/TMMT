@@ -60,13 +60,15 @@ TMMT OS (this repo)
 
 Source: `~/Projects/aixmos-gateway/src/index.js` — `COST` and `TIERS` constants.
 
-### 3.2 Per-Role Daily Caps (enforce in gateway)
+### 3.2 Per-Role Caps (enforce in gateway)
 
-| Role | Max tier allowed | Monthly token budget |
-|------|-----------------|----------------------|
-| Employee / VA | `haiku` | 300 tokens |
-| Operator (white-label tenant) | `sonnet` | 1,000 tokens |
-| Owner (PROJECT X HAILMARY) | `opus` | unlimited |
+| Role | Max tier allowed | Monthly token budget | Rationale |
+|------|-----------------|----------------------|-----------|
+| Employee / VA | `haiku` | 200 tokens/mo | Auto-drops to free lane when exhausted. Keeps cloud spend near zero for staff. |
+| Operator (white-label tenant) | `sonnet` | 600 tokens/mo | One starter pack equivalent. Operators fund their own usage beyond this via token purchase. |
+| Owner (PROJECT X HAILMARY) | `opus` | Unlimited | Owner pays the bill; owner's strategic work is never throttled. |
+
+**Cost protection:** an employee burning 200 haiku tokens costs ~$0.20/mo at current rates. An operator at 600 sonnet tokens costs ~$3/mo. Both are negligible. Opus calls (owner only) are the only meaningful spend — monitor via the gateway `/usage` endpoint monthly.
 
 When a user exhausts their token balance they auto-drop to the `free` lane — they are never cut off entirely.
 
