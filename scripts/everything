@@ -53,13 +53,31 @@ fi
 step "4/4 · Launch Mission Control"
 run "opened Mission Control" bash "$ROOT/scripts/home"
 
-cat <<DONE
+# Owner? Go all the way: full no-prompt bring-up + the cockpit + every action.
+ROLE="${1:-}"; [ "$ROLE" != "mine" ] && [ -f "$ROOT/.swarm/role" ] && ROLE="$(tr -d '[:space:]' < "$ROOT/.swarm/role")"
+if [ "$ROLE" = "mine" ] || [ "$ROLE" = "owner" ]; then
+  step "5/5 · Full bring-up (owner)"
+  if [ -f "$ROOT/scripts/m1-allin.sh" ]; then
+    bash "$ROOT/scripts/m1-allin.sh" || warn "all-in had skips (credentials are human-gated on purpose)"
+  else
+    run "booted the base" bash "$ROOT/scripts/go"
+  fi
+  [ -f "$ROOT/scripts/ceo" ] && bash "$ROOT/scripts/ceo" 2>/dev/null || true
+  cat <<'DONE'
 
-✓ DONE — anything & everything is set up on this device.
-
-  Front door : double-click "AIXMOS Mission Control" on the Desktop
-  Or run     : bash scripts/home
-  Cockpit    : bash scripts/hologram        Wiki: bash scripts/wiki
-  Send a kit : bash scripts/send-pack family   (or: operator)
-
+✓ EVERYTHING IS UP (owner). One word each, from here:
+   MONEY/OPERATORS  new-operator "Name" "Agency" "vertical"  ·  invite operator "Name" email
+                    playbook  ·  engineer add "Agency"  ·  deal "Name" 97
+   RUN              ceo · watchtower · health · member · onboard
+   PROTECT          dark · light · secure · vault · seal
+   GROW             send-pack all · garage · vertical "Name"
+   front door: bash scripts/home   ·   run it all again: booyah
 DONE
+else
+  cat <<'DONE'
+
+✓ DONE — your device is set up. Open a new Terminal and type:  menu
+   your words: menu · compass · work · sync · brief · hot
+   front door: double-click "AIXMOS Mission Control" (or: bash scripts/home)
+DONE
+fi
