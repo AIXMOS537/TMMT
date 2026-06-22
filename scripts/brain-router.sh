@@ -11,7 +11,12 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT" || exit 1
 CFG="${BRAIN_ROUTER_CONFIG:-$ROOT/tools/brain/litellm.config.yaml}"
 PORT="${BRAIN_ROUTER_PORT:-4000}"
-HOST="${BRAIN_ROUTER_HOST:-0.0.0.0}"   # tailnet-reachable; keep 11434/4000 off the public net
+# CONTAINMENT: bind to the Tailscale IP if up, else 127.0.0.1. Never 0.0.0.0 — the
+# router must not listen on all interfaces / face the public internet.
+if [ -n "${BRAIN_ROUTER_HOST:-}" ]; then HOST="$BRAIN_ROUTER_HOST"
+elif command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1; then
+  HOST="$(tailscale ip -4 2>/dev/null | head -1)"; HOST="${HOST:-127.0.0.1}"
+else HOST="127.0.0.1"; fi
 
 [ -f "$ROOT/.swarm/DARK" ] && { echo "⛔ DARK — router blocked. Lift: bash scripts/godark lift"; exit 1; }
 [ -f "$CFG" ] || { echo "✗ config not found: $CFG"; exit 1; }

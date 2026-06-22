@@ -25,8 +25,8 @@ Project: **`uapxakmlwnpfsftfeezx`** (TMMT live).
 Paste both into `.env.local` at the repo root (already git-ignored — never commit it):
 
 ```bash
-SUPABASE_ACCESS_TOKEN=sbp_xxxxxxxxxxxxxxxx
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...   # the real one, not the placeholder
+SUPABASE_ACCESS_TOKEN=sbp_<paste-your-token-here>
+SUPABASE_SERVICE_ROLE_KEY=<paste-your-service-role-key>   # the real one, not the placeholder
 ```
 
 ---

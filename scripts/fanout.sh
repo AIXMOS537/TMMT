@@ -34,6 +34,11 @@ if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; C=$'\e[36m'; M=$'\e[3
 # DARK kill-switch
 [ -f "$ROOT/.swarm/DARK" ] && { printf '%s⛔ DARK — fanout is stopped. Lift: bash scripts/godark lift%s\n' "$R" "$X"; exit 1; }
 
+# BARN DOOR: brace containment before unleashing the fleet (skip on dry roll-call).
+if [ "$DRY" = 0 ] && [ -x "$ROOT/scripts/containment.sh" ]; then
+  bash "$ROOT/scripts/containment.sh" --gate || { printf '%s⛔ containment failed — fanout blocked. Run: bash scripts/tmmt barn%s\n' "$R" "$X"; exit 1; }
+fi
+
 cat <<EOF
 ${M}${BD}
    ╔══════════════════════════════════════════════════════════╗
