@@ -59,6 +59,21 @@ export async function resolveAgency(
   return null;
 }
 
+/**
+ * Can this caller claim a lead in the given agency? True if staff, the caller IS
+ * the agency, or the caller is a child (operator) of the agency. Pure — unit-tested.
+ */
+export function canClaimFromAgency(args: {
+  callerOrgId: string | null;
+  callerParentOrgId: string | null;
+  agencyOrgId: string;
+  isStaff: boolean;
+}): boolean {
+  if (args.isStaff) return true;
+  if (!args.callerOrgId) return false;
+  return args.callerOrgId === args.agencyOrgId || args.callerParentOrgId === args.agencyOrgId;
+}
+
 // ── RPC return shapes (mirror the SQL functions) ────────────────────────────
 export type RouteResult = { routed: boolean; pool_id?: number; reason?: string };
 export type ClaimResult = { claimed: boolean; pool_id?: number; reason?: string };
