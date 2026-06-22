@@ -89,7 +89,7 @@ init_device() {
   "platformId": "aixmos-platform",
   "defaultTenant": "$tenant",
   "locale": "en-US",
-  "owner": "Muhammad Taha",
+  "owner": "PROJECT X HAILMARY",
   "initializedAt": "$(date -u +%FT%TZ)"
 }
 EOF

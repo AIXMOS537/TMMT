@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-20 · **Scope:** everything built this session (AIXMOS Pocket, the
 TMMT-token metering integration, referrals, and the lead-pool/sub-account Phase 1).
-**Posture:** protect X (Muhammad Taha), the owners, and the family/friends in the
+**Posture:** protect X (PROJECT X HAILMARY), the owners, and the family/friends in the
 network — financially, legally, and in their data. Nothing ships to prod here; this is
 the inspection before the owner ships.
 

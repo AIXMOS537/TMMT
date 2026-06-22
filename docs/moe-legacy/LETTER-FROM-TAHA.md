@@ -24,4 +24,4 @@ If not — we say that clean. No hard feelings. I fence access. We stay brothers
 
 Talk to me straight.
 
-— Muhammad Taha
+— PROJECT X HAILMARY

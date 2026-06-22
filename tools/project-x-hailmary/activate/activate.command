@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # PROJECT X HAILMARY — OPERATOR ACTIVATION
-# Run by Muhammad Taha ONLY when onboarding a new operator.
+# Run by PROJECT X HAILMARY ONLY when onboarding a new operator.
 # Requires: master passphrase + operator details + internet.
 # ============================================================
 
@@ -28,7 +28,7 @@ header() {
   echo "  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   "
   echo -e "${RESET}"
   echo -e "${BOLD}         PROJECT X — OPERATOR ACTIVATION TERMINAL${RESET}"
-  echo -e "         ${CYAN}Watchtower controlled by Muhammad Taha / AIXMOS${RESET}"
+  echo -e "         ${CYAN}Watchtower controlled by PROJECT X HAILMARY / AIXMOS${RESET}"
   echo
 }
 
@@ -41,7 +41,7 @@ warn() { echo -e "${RED}⚠ $1${RESET}"; }
 header
 step "MASTER AUTHENTICATION"
 echo "  This activation requires the AIXMOS master passphrase."
-echo "  Only Muhammad Taha knows this. Do not share."
+echo "  Only PROJECT X HAILMARY knows this. Do not share."
 echo
 read -s -p "  Enter master passphrase: " MASTER_PASS
 echo
@@ -269,6 +269,6 @@ echo -e "  Tier:        ${BOLD}$TIER_LABEL${RESET}"
 echo -e "  License ID:  ${CYAN}$LICENSE_ID${RESET}"
 echo
 echo "  This machine is now under AIXMOS watchtower."
-echo "  Muhammad Taha can suspend or revoke at any time."
+echo "  PROJECT X HAILMARY can suspend or revoke at any time."
 echo
 read -p "  Press ENTER to close."

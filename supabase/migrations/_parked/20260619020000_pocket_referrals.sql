@@ -1,6 +1,6 @@
 -- AIXMOS Pocket — referral codes + earnings (the "earn" half of learn-earn-churn).
 --
--- PROTECTIVE STRUCTURE (owner = Muhammad Taha):
+-- PROTECTIVE STRUCTURE (owner = PROJECT X HAILMARY):
 --   - SINGLE-TIER only (no recruiting-on-recruiting / no MLM depth).
 --   - Commission is recorded ONLY on COLLECTED sales (status='collected'); a
 --     refund/chargeback writes a compensating 'clawed_back' row.

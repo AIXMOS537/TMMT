@@ -10,7 +10,7 @@ schema_version: 1
 
 principals:
   taha:
-    display_name: "Muhammad Taha"
+    display_name: "PROJECT X HAILMARY"
     tier: owner                    # owner | founding_operator | operator | agency_owner
     org_slug: aixmos
     brain_mesh: brainiac-mac

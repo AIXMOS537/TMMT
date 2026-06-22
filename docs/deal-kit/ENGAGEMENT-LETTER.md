@@ -82,4 +82,4 @@ liability is limited to fees paid in the prior {{LIABILITY_MONTHS}} months.
 
 Client: ________________________  ({{CLIENT}})   Date: __________
 
-Provider: ______________________  (Muhammad Taha, TMMT/AIXMOS)   Date: __________
+Provider: ______________________  (PROJECT X HAILMARY, TMMT/AIXMOS)   Date: __________
