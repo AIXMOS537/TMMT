@@ -1,0 +1,39 @@
+{
+  "id": "tmmt",
+  "slug": "tmmt_property",
+  "aliases": ["tmmt", "tmmt-rentals", "tmmt_property"],
+  "displayName": "TMMT",
+  "legalName": "TMMT Rentals",
+  "tagline": "The car rental agency that teaches you to run your own fleet",
+  "locale": { "default": "en-US", "currency": "USD", "timezone": "America/New_York" },
+  "region": { "primary": "US", "compliancePack": "us-rental" },
+  "theme": {
+    "mode": "dark",
+    "primary": "#a78bfa",
+    "accent": "#7c3aed",
+    "background": "#0a0a0a",
+    "foreground": "#ffffff",
+    "logoPath": "/brands/tmmt/logo.svg",
+    "faviconPath": "/brands/tmmt/favicon.ico"
+  },
+  "domains": {
+    "marketing": "tmmtrentals.com",
+    "app": "tmmt-ops.vercel.app"
+  },
+  "contact": {
+    "supportEmail": "support@tmmtrentals.com",
+    "salesPhone": "[phone removed]"
+  },
+  "agent": {
+    "name": "Dispatch",
+    "persona": "Fleet and rental ops — fast, accurate, no promises on availability until confirmed."
+  },
+  "offers": {
+    "skus": ["training", "rental-in-a-box"]
+  },
+  "whiteLabel": {
+    "licenseTier": "tenant",
+    "parentPlatformId": "aixmos-platform",
+    "customizable": ["displayName", "tagline", "theme", "domains", "agent.name"]
+  }
+}

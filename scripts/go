@@ -59,6 +59,8 @@ install_words() {
     echo "alias watchtower='bash \"$R/scripts/watchtower\"'    # TMMT_WORDS"
     echo "alias health='bash \"$R/scripts/health.sh\"'         # TMMT_WORDS"
     echo "alias map='bash \"$R/scripts/mesh-map.sh\"'          # TMMT_WORDS"
+    echo "alias garage='bash \"$R/scripts/garage\"'           # TMMT_WORDS ← OVERHAUL configurator"
+    [ -x "$R/scripts/overhaul-deploy.sh" ] && echo "alias overhaul='bash \"$R/scripts/overhaul-deploy.sh\"' # TMMT_WORDS"
     echo "alias secure='bash \"$R/scripts/launch-check.sh\"'   # TMMT_WORDS"
     echo "alias enforce='bash \"$R/scripts/enforce\"'          # TMMT_WORDS ← cut unpaid"
     echo "alias dark='bash \"$R/scripts/godark\"'              # TMMT_WORDS"
@@ -70,7 +72,7 @@ install_words() {
       echo "alias wake='bash \"$R/scripts/traptop-wake.sh\" wake'  # TMMT_WORDS ← traptop activation"
       echo "alias traptop='bash \"$R/scripts/traptop-wake.sh\" status' # TMMT_WORDS"
       echo "alias seal='bash \"$R/scripts/traptop-seal.sh\"'   # TMMT_WORDS ← seal before ship"
-      echo "alias hailmary='bash \"$R/scripts/hailmary\" status' # TMMT_WORDS"
+      echo "alias hailmary='$HOME/.local/bin/hailmary'         # TMMT_WORDS ← operative CLI"
       echo "alias onboard='bash \"$R/scripts/aixmos\" onboard'   # TMMT_WORDS"
       echo "alias aixmos='bash \"$R/scripts/aixmos\" roster'     # TMMT_WORDS"
       echo "alias fatherbox='bash \"$R/scripts/fatherbox\"'      # TMMT_WORDS"
@@ -78,6 +80,8 @@ install_words() {
       echo "alias workstation='bash \"$R/scripts/workstation\"'  # TMMT_WORDS"
       echo "alias vertical='bash \"$R/scripts/new-vertical.sh\"' # TMMT_WORDS"
       echo "alias map='bash \"$R/scripts/mesh-map.sh\"'          # TMMT_WORDS"
+    echo "alias garage='bash \"$R/scripts/garage\"'           # TMMT_WORDS ← OVERHAUL configurator"
+    [ -x "$R/scripts/overhaul-deploy.sh" ] && echo "alias overhaul='bash \"$R/scripts/overhaul-deploy.sh\"' # TMMT_WORDS"
       echo "alias secure='bash \"$R/scripts/launch-check.sh\"'   # TMMT_WORDS"
       echo "alias golive='bash \"$R/scripts/golive.sh\"'         # TMMT_WORDS"
       echo "alias deal='bash \"$R/scripts/new-deal.sh\"'         # TMMT_WORDS"
@@ -100,6 +104,7 @@ install_words() {
   mv "$tmp" "$rc"
 }
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do install_words "$rc"; done
+bash "$R/scripts/lib/install-oneshot-bin.sh" 2>/dev/null || true
 echo "› role: $ROLE — one-word commands ready (open a new terminal, type: menu)"
 
 bash "$R/scripts/menu" || true

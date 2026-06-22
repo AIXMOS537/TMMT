@@ -32,8 +32,13 @@ case "$ROLE" in work|carry|home) ;; *) echo "--role must be 'work', 'carry', or 
 [ -n "$NODE" ] || NODE="${ROLE}-mac"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/x-profile.sh
+. "$REPO_ROOT/scripts/lib/x-profile.sh"
 say() { printf '\033[1;36m▸ %s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33m! %s\033[0m\n' "$*"; }
+
+seed_x_profile_if_missing
+sync_x_profile_lib 2>/dev/null || true
 
 # ---- 1. Homebrew + base tools -------------------------------------------------
 if ! command -v brew >/dev/null 2>&1; then
@@ -66,6 +71,7 @@ MEMORY_API_URL="${BRAIN_URL:-${MEMORY_API_URL:-}}"
 MEMORY_API_TOKEN="${TOKEN:-${MEMORY_API_TOKEN:-}}"
 HAILMARY_NODE="${NODE}"
 HAILMARY_ROLE="${ROLE}"
+HAILMARY_X_PROFILE="${HOME}/.hailmary/X-PROFILE.md"
 # Local-first AI (free, unlimited). Point at the Brainiac Ollama over Tailscale.
 # 'hailmary do' uses this first and only falls back to Claude if it's unreachable.
 OLLAMA_URL="${OLLAMA_URL:-http://brainiac:11434}"
@@ -99,23 +105,30 @@ Hard rules:
 - Quo is the customer-support + vendor line; GHL is campaigns/ads/leads.
 - All nodes (work Mac, carry Mac, iPhone) share one brain — leave notes for the
   others with `hailmary note <node> "…"`; read yours with `hailmary inbox`.
+
+Identity:
+- Read ~/.hailmary/X-PROFILE.md on every session (GHOST/X/HAILMARY, missions,
+  guardrails). Update missions weekly; HAILMARY absorbs it on every booyah.
 EOF
 say "Wrote ~/.hailmary/HAILMARY.md"
 
-# ---- 5. Install the hailmary CLI ---------------------------------------------
-DEST="/usr/local/bin/hailmary"
-if [ -w "$(dirname "$DEST")" ]; then
-  cp "$REPO_ROOT/bin/hailmary" "$DEST" && chmod +x "$DEST"
-else
-  sudo cp "$REPO_ROOT/bin/hailmary" "$DEST" && sudo chmod +x "$DEST"
-fi
-say "Installed: $DEST"
+# ---- 5. Install the hailmary CLI + stable daemon copy ------------------------
+mkdir -p "$HOME/.local/bin" "$HOME/.hailmary/bin"
+cp "$REPO_ROOT/bin/hailmary" "$HOME/.local/bin/hailmary" && chmod +x "$HOME/.local/bin/hailmary"
+cp "$REPO_ROOT/scripts/hailmary-daemon.sh" "$HOME/.hailmary/bin/hailmary-daemon.sh" 2>/dev/null \
+  && chmod +x "$HOME/.hailmary/bin/hailmary-daemon.sh" || true
+say "Installed: $HOME/.local/bin/hailmary (+ stable daemon copy)"
+
+bash "$REPO_ROOT/scripts/lib/install-oneshot-bin.sh" 2>/dev/null \
+  || warn "one-shot bin install skipped (run: bash scripts/lib/install-oneshot-bin.sh)"
 
 # ---- 6. Register MCP servers for local Claude Code ---------------------------
 if command -v claude >/dev/null 2>&1; then
   say "Registering memory MCP bridge…"
   claude mcp add hailmary-memory \
-    --env MEMORY_API_URL="${BRAIN_URL}" --env MEMORY_API_TOKEN="${TOKEN}" \
+    --env MEMORY_API_URL="${BRAIN_URL:-${MEMORY_API_URL:-}}" \
+    --env MEMORY_API_TOKEN="${TOKEN:-${MEMORY_API_TOKEN:-}}" \
+    --env HAILMARY_X_PROFILE="$HOME/.hailmary/X-PROFILE.md" \
     -- node "$REPO_ROOT/scripts/memory-mcp-server.mjs" 2>/dev/null \
     || warn "memory MCP may already be registered (claude mcp list)"
 

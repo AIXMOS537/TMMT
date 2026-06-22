@@ -1,0 +1,22 @@
+# priority	category	name	url	pw_reset	in_vault	mfa	notes
+1	email	Primary email	https://mail.google.com	no	no	no	MASTER KEY — resets flow here. Do FIRST.
+1	email	Business email	-	no	no	no	strong unique pw + MFA/passkey
+2	vault	Password manager (Dashlane/iCloud/Bitwarden)	-	no	n/a	no	master pw MEMORIZED, never stored digitally; MFA on
+2	identity	Apple ID	https://appleid.apple.com	no	no	no	unlocks iCloud + devices
+2	identity	Google account	https://myaccount.google.com	no	no	no	unlocks a lot — passkey it
+3	phone	Mobile carrier (SIM)	-	no	no	no	set a port-out / SIM PIN (stops SIM-swap)
+4	bank-personal	Personal bank	-	no	no	no	app-based MFA not SMS; consider a credit freeze
+4	bank-business	Business bank	-	no	no	no	app MFA; separate from personal
+5	payments	Stripe / PayPal / Cash	-	no	no	no	app MFA; review linked accounts
+6	infra	GitHub	https://github.com/settings/security	no	no	no	revoke old PATs; passkey
+6	infra	Vercel	https://vercel.com/account/tokens	no	no	no	rotate tokens
+6	infra	Supabase	https://supabase.com/dashboard/account/security	no	no	no	roll service_role + DB pw
+6	infra	Airtable	https://airtable.com/create/tokens	no	no	no	REVOKE leaked PAT pat8mah6… (do now)
+6	infra	GoHighLevel	-	no	no	no	rotate API key + webhook secrets
+6	infra	Domain/DNS registrar	-	no	no	no	enable registrar lock + transfer-lock
+7	social	Instagram	-	no	no	no	unique pw + MFA
+7	social	X / Twitter	-	no	no	no	unique pw + MFA
+7	social	Facebook / Meta	-	no	no	no	unique pw + MFA
+7	social	TikTok / YouTube	-	no	no	no	unique pw + MFA
+8	subs-work	Work subscriptions	-	no	no	no	unique pw; cancel unused = less attack surface
+8	subs-personal	Personal subscriptions	-	no	no	no	unique pw; cancel unused

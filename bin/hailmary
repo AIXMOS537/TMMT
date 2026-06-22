@@ -31,6 +31,19 @@ CONFIG="${HAILMARY_CONFIG:-$HOME/.hailmary/config.env}"
 MEMORY_API_URL="${MEMORY_API_URL:-}"
 MEMORY_API_TOKEN="${MEMORY_API_TOKEN:-}"
 HAILMARY_NODE="${HAILMARY_NODE:-$(hostname 2>/dev/null || echo device)}"
+_REPO="$(cd "$(dirname "$0")/.." && pwd)"
+if [ ! -f "$_REPO/scripts/lib/x-profile.sh" ]; then
+  for d in "$HOME/Projects/TMMT" "$HOME/projects/TMMT" "$HOME/TMMT"; do
+    [ -f "$d/scripts/lib/x-profile.sh" ] && { _REPO="$d"; break; }
+  done
+fi
+if [ -f "$_REPO/scripts/lib/x-profile.sh" ]; then
+  # shellcheck source=../scripts/lib/x-profile.sh
+  . "$_REPO/scripts/lib/x-profile.sh"
+elif [ -f "$HOME/.hailmary/lib/x-profile.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$HOME/.hailmary/lib/x-profile.sh"
+fi
 
 die() { echo "hailmary: $*" >&2; exit 1; }
 
@@ -52,6 +65,10 @@ pretty() {
 
 # Operative system prompt (PROJECTX-HAILMARY), concise for the CLI.
 OP_SYS="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Lock onto the objective and FINISH it; economy of force; keep a fallback tree; total recall. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell ([phone removed]) in working hours; protect client data; flag risky/irreversible moves."
+
+hailmary_sys() {
+  if type x_profile_sys >/dev/null 2>&1; then x_profile_sys "$OP_SYS"; else printf '%s' "$OP_SYS"; fi
+}
 
 # local-first LLM: llm "<system>" "<prompt>" -> plan text on stdout ("" if none).
 llm() {
@@ -107,7 +124,9 @@ case "$cmd" in
     [ $# -gt 0 ] || die "usage: hailmary do \"<task>\""
     task="$*"
     ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$task"),\"limit\":12}")"
-    sysmsg="You are HAILMARY in operative mode (PROJECTX-HAILMARY): investigative, resourceful, relentless, calm, LEGAL and safe. Method: (1) define the TRUE objective, (2) use the recalled brain context + question assumptions, (3) inventory resources and what can be repurposed (rubber-band-in-a-stripped-screw ingenuity), (4) give 3 angles incl. one unconventional, prefer cheap/reversible first, (5) calibrate force & name each failure mode + a bail tripwire, (6) hold two truths: it CAN fail AND it MUST get done, keep a fallback tree. Guardrails: legal/ethical only; never the personal line (+15713519690); reach the owner on the work cell ([phone removed]) in working hours; protect client data; flag risky/irreversible moves first. Output a short numbered plan with a primary path and at least one fallback."
+    sysmsg="$(hailmary_sys)
+
+Method for this task: (1) define the TRUE objective, (2) use the recalled brain context + question assumptions, (3) inventory resources and what can be repurposed (rubber-band-in-a-stripped-screw ingenuity), (4) give 3 angles incl. one unconventional, prefer cheap/reversible first, (5) calibrate force & name each failure mode + a bail tripwire, (6) hold two truths: it CAN fail AND it MUST get done, keep a fallback tree. Output a short numbered plan with a primary path and at least one fallback."
     plan=""; backend=""
     # 1) LOCAL FIRST — Ollama on Brainiac (free, unlimited). No token cost.
     ourl="${OLLAMA_URL:-http://localhost:11434}"; omodel="${OLLAMA_MODEL:-qwen2.5:14b}"
@@ -154,7 +173,7 @@ except Exception: print("")' 2>/dev/null)"
     subj="$*"
     ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$subj"),\"limit\":25}")"
     prompt="$(printf 'SUBJECT: %s\n\nProduce a tight, lawful operative intel brief from the recalled data: (1) what we know, (2) gaps/unknowns, (3) non-obvious connections, (4) recommended next moves (primary + fallback). Use ONLY the data provided; mark anything inferred.\n\nBRAIN CONTEXT (JSON):\n%s' "$subj" "$ctx")"
-    out="$(llm "$OP_SYS" "$prompt")"
+    out="$(llm "$(hailmary_sys)" "$prompt")"
     if [ -n "$out" ]; then
       printf '%s\n' "$out"
       api "{\"op\":\"remember\",\"action\":\"recon_brief\",\"source\":\"agent\",\"actorKind\":\"owner\",\"actorLabel\":$(jstr "HAILMARY@$HAILMARY_NODE"),\"summary\":$(jstr "Recon: $subj"),\"details\":{\"subject\":$(jstr "$subj"),\"brief\":$(jstr "$out")}}" >/dev/null
@@ -166,7 +185,7 @@ except Exception: print("")' 2>/dev/null)"
     q="${*:-recent priorities support assignment escalation}"
     ctx="$(api "{\"op\":\"recall\",\"query\":$(jstr "$q"),\"limit\":25}")"
     prompt="$(printf 'Give the owner a short operative situation brief: the top 3-5 priorities right now and the single next move for each, based ONLY on the recalled data.\n\nBRAIN CONTEXT (JSON):\n%s' "$ctx")"
-    out="$(llm "$OP_SYS" "$prompt")"
+    out="$(llm "$(hailmary_sys)" "$prompt")"
     if [ -n "$out" ]; then printf '%s\n' "$out"; else printf '%s\n' "$ctx" | pretty; fi
     ;;
   note)
@@ -188,6 +207,8 @@ except Exception: print("")' 2>/dev/null)"
     echo "node:  $HAILMARY_NODE"
     echo "brain: ${MEMORY_API_URL:-<unset>}"
     echo "config: $CONFIG"
+    echo "x-profile: ${X_PROFILE:-$HOME/.hailmary/X-PROFILE.md}$([ -f "${X_PROFILE:-$HOME/.hailmary/X-PROFILE.md}" ] && echo ' (loaded)' || echo ' (missing)')"
+    type x_callsign >/dev/null 2>&1 && x_callsign 2>/dev/null && echo "callsign: $(x_callsign)"
     ;;
   help|*)
     sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
