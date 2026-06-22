@@ -76,12 +76,18 @@ Re-running this branch (merging it again after a reset) produces zero new change
 
 ---
 
-## Ambiguous items — decisions needed
+## Decisions resolved (2026-06-22)
 
-| Item | Question |
-|------|----------|
-| Per-role daily caps (§3.2) | I defined caps as 300/1,000/unlimited tokens. These are reasonable defaults from the gateway code but were never formally set. Confirm or adjust before treating them as policy. |
-| N in A5 lease-qualified check | Flow-05 says "N consecutive on-time weeks (suggested 8–12)." The actual N has never been defined. Set it before enabling this flow. |
-| `kb/` directory | New `kb/` folder was created for importable KB copies. If you prefer a different path (e.g. `docs/kb/`), rename before merging — it's not wired into any code yet. |
-| n8n flow JSON exports | `docs/n8n/flows/` folder is empty — flow specs are documented here but actual JSONs live in BRAINIAC's n8n. Export them when convenient. |
-| `AIXMOS_MASTER_PROJECT.md §10` open items | I copied open items from the June 2026 session digest. Some may be resolved. Strike them from §10 once verified. |
+| Item | Decision | Rationale |
+|------|----------|-----------|
+| Per-role token caps | **Employee/VA: 200 tokens/mo · Operator: 600 tokens/mo · Owner: unlimited** | Employee cloud cost ≈ $0.20/mo; operator ≈ $3/mo — negligible. Owner's strategic work is never throttled. Both non-owner tiers auto-drop to free (Ollama) when exhausted — nobody gets cut off. |
+| N for A5 lease-qualified | **12 consecutive weeks (3 months)** | 3 months of on-time proof before LTO offer. Protects owner against early default on lease-to-own. Safer than 8 weeks. |
+| `kb/` directory | **Keep `kb/` at repo root** — clean, fast to reference in agent context (`@kb/section-6-kpis.md`). Not wired into code. |
+| CLAUDE.md pointer | **Added above the `<!-- AIXMOS-LAUNCH-RULES:START -->` block** (lines 1–67 are not hook-managed). Pointer auto-loads on every agent session without triggering the hook. |
+
+## Still open (owner action needed)
+
+| Item | Action needed |
+|------|--------------|
+| n8n flow JSON exports | Export actual flows from BRAINIAC n8n → `docs/n8n/flows/`. No agent can do this; requires BRAINIAC access. |
+| `AIXMOS_MASTER_PROJECT.md §10` open items | Strike each item once verified resolved. |
