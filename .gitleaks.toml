@@ -22,4 +22,8 @@ regexes = [
   '''AIRTABLE_PAT=pat[a-zA-Z0-9.]+''',
   # curl basic-auth using an env var (no literal secret)
   '''-u "\$[A-Z_]+:?"''',
+  # FALSE POSITIVE: Airtable BASE ID (not a credential) hardcoded as an env fallback
+  # in tmmt-os/scripts/airtable-to-supabase-migrate.mjs. Base IDs (app…) are database
+  # identifiers — data access still requires the PAT (correctly env-only). Not a secret.
+  '''appcenWUju039rD7b''',
 ]
