@@ -23,7 +23,19 @@ _scrub(){
   find "$d" -type d \( -name '.git' -o -name 'node_modules' -o -name '.cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
 }
 
-SRC="${1:-}"; [ -n "$SRC" ] || die "usage: intake <folder-or-zip> [name]   |   intake mesh <host:path> [name]"
+SRC="${1:-}"
+# ONE SHOT: with no argument, auto-find the newest handoff someone sent you.
+if [ -z "$SRC" ]; then
+  SRC="$(ls -dt "$HOME"/Downloads/HANDOFF-* "$HOME"/Desktop/HANDOFF-* \
+        "$HOME"/Downloads/HANDOFF-*.zip "$HOME"/Desktop/HANDOFF-*.zip 2>/dev/null | head -1)"
+  if [ -n "$SRC" ]; then
+    ok "found handoff: $SRC"
+  else
+    die "no handoff found on your Desktop/Downloads.
+   Have them run  collect  on their machine and AirDrop it to you,
+   or pass a path:  intake <folder>   ·   or pull over mesh:  intake mesh <host:path>"
+  fi
+fi
 
 # --- mesh mode: pull over Tailscale SSH/rsync -------------------------------
 if [ "$SRC" = "mesh" ]; then
