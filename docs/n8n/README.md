@@ -76,7 +76,7 @@ See `AIXMOS-COMMAND/REMOTE-BRAINIAC.md` for full access runbook.
 ### FLOW-05 — A5: Lease-Qualified Check
 **Trigger:** daily cron (or on payment recorded in Supabase `rental_ledger`).
 **What it does:**
-1. Queries Supabase `rental_ledger` / `customer_payments` for consecutive on-time payments ≥ N weeks (N = define per fleet policy; suggested 8–12).
+1. Queries Supabase `rental_ledger` / `customer_payments` for consecutive on-time payments ≥ **12 weeks** (3 months of proof; protects against early LTO defaults).
 2. If threshold met and no active delinquency → tags `lease-qualified` in GHL.
 3. Moves contact into TMMT LTO pipeline.
 4. Creates `lto_agreements` draft.
