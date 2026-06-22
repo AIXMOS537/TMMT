@@ -17,7 +17,15 @@ CHEAT="$ROOT/docs/cheatsheets"
 ROLE="${1:-}"
 DEST_BASE="${HOME}/Desktop"
 
-[ -n "$ROLE" ] || { echo "usage: send-pack [immediate|extended|friends|operator|newmac|phone]"; exit 1; }
+[ -n "$ROLE" ] || { echo "usage: send-pack [all|immediate|extended|friends|operator|newmac|phone]"; exit 1; }
+
+# ONE SHOT: build every circle's pack to the Desktop in one go.
+if [ "$ROLE" = "all" ]; then
+  for t in immediate extended friends; do bash "$0" "$t"; done
+  command -v open >/dev/null 2>&1 && open "$HOME/Desktop" 2>/dev/null || true
+  echo "✓ ALL packs are on your Desktop: immediate · extended · friends"
+  exit 0
+fi
 
 pick(){ # copy a file if it exists
   local src="$1" dst="$2"
