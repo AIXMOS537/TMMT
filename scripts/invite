@@ -11,25 +11,26 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd 2>/dev/null || echo "$PWD")"
 WHO="${1:-}"; NAME="${2:-}"
 SETUP1='curl -fsSL https://raw.githubusercontent.com/AIXMOS537/TMMT/master/scripts/setup-mac.command -o ~/Downloads/setup.command && bash ~/Downloads/setup.command'
+OP_START='curl -fsSL https://raw.githubusercontent.com/AIXMOS537/TMMT/master/scripts/operator-start.sh | bash'
 
 msg_operator(){ cat <<EOF
 ${NAME:+$NAME — }You're my first operator. This makes MoeLegacy 100% YOURS — your own
-system, your own private network, your own everything. Takes ~5 minutes:
+system, your own private network, your own everything. ~5 minutes, basically one paste:
 
-1) On your Mac, open Terminal (press Cmd+Space, type Terminal, Enter) and paste this:
+1) On your Mac (your carry M5), open Terminal (Cmd+Space → type Terminal → Enter).
 
-   $SETUP1
+2) Paste this ONE line and press Enter — it does everything:
 
-2) When it asks who the device is for, pick:  MY OWN
-   (this gives YOU your own private network — nobody else's, fully yours)
+   $OP_START
 
-3) Make your OWN Tailscale account when it prompts (your own login/email).
+3) It'll ask you to name your Mac and to log in with YOUR OWN Tailscale account
+   (a browser opens — use your own email). Just follow what it says.
 
-4) So I can help you as your systems engineer (only when you want it):
-   open the Tailscale app → Share your machine to my account → turn on "Tailscale SSH".
-   You can switch that off anytime — you stay in full control.
+4) At the end it shows your machine name and ONE last tap: in the Tailscale app,
+   Share your machine to me + turn on "Tailscale SSH". You can un-share anytime.
 
-Then text me "done" and I'll get you fully live. Welcome to MoeLegacy. 🐦‍⬛
+Then text me "done" with your machine name and I'll get you fully live.
+Welcome to MoeLegacy. 🐦‍⬛
 — Taha
 EOF
 }
