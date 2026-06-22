@@ -13,8 +13,17 @@ if [[ -n "$tracked_secrets" ]]; then
   exit 1
 fi
 
-# 2) gitleaks over the full history (fast on small repos; skipped if absent).
+# 2) gitleaks over ONLY the commits being pushed (not full history).
 if command -v gitleaks >/dev/null 2>&1; then
-  gitleaks detect --no-banner --redact 2>/dev/null || { red "BLOCKED push by gitleaks (secret in history)."; exit 1; }
+  while read local_ref local_sha remote_ref remote_sha; do
+    [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
+    if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+      range="$local_sha"
+    else
+      range="$remote_sha..$local_sha"
+    fi
+    gitleaks detect --no-banner --redact --log-opts="$range" 2>/dev/null \
+      || { red "BLOCKED push by gitleaks (secret in NEW commits being pushed)."; exit 1; }
+  done
 fi
 exit 0
