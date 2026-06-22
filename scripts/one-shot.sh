@@ -28,6 +28,33 @@ warn(){ printf '%s  ! %s%s\n' "$Y" "$*" "$X" >&2; }
 say(){ printf '%s\n' "$*"; }
 osname(){ case "$(uname -s 2>/dev/null)" in Darwin) echo macos;; Linux) echo linux;; *) echo other;; esac; }
 
+# Fresh-machine preflight — make 'one command on any machine' literally true.
+# You already have git + the repo (you're running this from it), so the only
+# gap on a near-fresh Mac is Node. Non-fatal everywhere: if we can't install it,
+# we say how and keep going (build/test/swarm still warn-but-continue).
+ensure_tools(){
+  command -v git >/dev/null 2>&1 || warn "git not found — install Xcode Command Line Tools: xcode-select --install"
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    ok "node + npm present"; return 0
+  fi
+  info "Node.js not found — setting it up so this machine is ready…"
+  if [ "$(osname)" = "macos" ]; then
+    if ! command -v brew >/dev/null 2>&1; then
+      say "  Installing Homebrew (you may be asked for your Mac password)…"
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || warn "Homebrew install hit a snag"
+      [ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+      [ -x /usr/local/bin/brew ]   && eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    if command -v brew >/dev/null 2>&1; then brew install node 2>/dev/null || warn "couldn't brew install node"; fi
+  elif [ "$(osname)" = "linux" ]; then
+    say "  Install Node.js LTS, then re-run:  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs"
+    say "  (or use nvm: https://github.com/nvm-sh/nvm)"
+  else
+    say "  Install Node.js LTS from https://nodejs.org, then re-run."
+  fi
+  command -v node >/dev/null 2>&1 && ok "node ready" || warn "node still missing — install it (above), then re-run. Continuing setup anyway."
+}
+
 usage(){ sed -n '2,28p' "$0"; exit 0; }
 
 # Canonical mesh name for a known role (docs/FLEET-ROSTER.md). Set into
@@ -48,7 +75,7 @@ case "$ROLE" in
   mine) ROLE=carry;;                         # old "MINE" = the Owner's device
   carry-mac|carry) ROLE=carry;;
   brainiac-mac|brain|m1) ROLE=brain;;
-  moe-legacy|moe|umar|operator|red-hood) ROLE=moe;;
+  moe-legacy|moe|umar|operator|red-hood|guest|partner) ROLE=moe;;
   own|sovereign|family|friend) ROLE=own;;
 esac
 
@@ -64,6 +91,9 @@ if [ -z "$ROLE" ]; then
 fi
 
 banner(){ say; say "  ┌────────────────────────────────────────────────┐"; say "  │  ONE-SHOT · $1"; say "  └────────────────────────────────────────────────┘"; }
+
+# Make sure this machine can actually run, fresh or not (non-fatal).
+ensure_tools
 
 # ===================================================== carry — Owner's carry M5
 if [ "$ROLE" = "carry" ]; then
@@ -96,10 +126,22 @@ fi
 if [ "$ROLE" = "moe" ]; then
   banner "MOE LEGACY (Operator · fenced · Red Hood)"
   set_machine_name "moe-legacy"
+  say
+  ok  "Welcome, Moe Legacy. 🐦‍⬛  You're set up as a fenced operator."
+  say "$D   You never need the owner's keys or seal. Your access is least-privilege"
+  say "   and isolated — your data stays yours; you can't reach owner-only systems.$X"
   # Fenced provision. The full Red Hood kit (credit-guidance tools, banners) is
   # scripts/umar-setup.command for a from-scratch machine; deploy operator is the
   # idempotent re-runnable core (onboard + secret-guard + operator commands).
-  exec bash "$ROOT/scripts/deploy" operator
+  bash "$ROOT/scripts/deploy" operator || warn "deploy had warnings (continuing)"
+  say
+  ok "You're ready."
+  say "   Open a new terminal, then:"
+  say "     ${BD}moe${X}     — your daily control board (credit guidance)"
+  say "     ${BD}menu${X}    — all your one-word commands"
+  say "     ${BD}sync${X}    — pull/push your work safely"
+  say "$D   Stuck? you're never on your own — run:  tmmt help \"what's wrong\"$X"
+  exit 0
 fi
 
 # ====================================================== own — sovereign node
