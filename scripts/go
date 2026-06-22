@@ -33,9 +33,20 @@ fi
 
 # Update (never blocked by local edits, never fatal when offline).
 git stash push -u -m "auto $(date -u +%FT%TZ)" >/dev/null 2>&1 || true
-git fetch origin "$BRANCH" >/dev/null 2>&1 || git fetch origin >/dev/null 2>&1 || true
-git checkout "$BRANCH" >/dev/null 2>&1 || true
-git pull origin "$BRANCH" >/dev/null 2>&1 || echo "! offline — booting on-disk code"
+# Self-heal the network: if the remote is unreachable, try bringing Tailscale up,
+# then retry the pull a few times before falling back to on-disk code.
+if ! git ls-remote origin >/dev/null 2>&1; then
+  command -v tailscale >/dev/null 2>&1 && tailscale up </dev/null >/dev/null 2>&1 || true
+fi
+_pulled=""
+for _i in 1 2 3; do
+  if git fetch origin "$BRANCH" >/dev/null 2>&1 || git fetch origin >/dev/null 2>&1; then
+    git checkout "$BRANCH" >/dev/null 2>&1 || true
+    git pull origin "$BRANCH" >/dev/null 2>&1 && { _pulled=1; break; }
+  fi
+  sleep 2
+done
+[ -n "$_pulled" ] || echo "! offline/unreachable — booting on-disk code"
 
 # Self-heal: make tools runnable + install the secret-guard hooks.
 chmod +x "$R"/scripts/go "$R"/scripts/tmmt "$R"/scripts/hailmary \
