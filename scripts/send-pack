@@ -17,7 +17,15 @@ CHEAT="$ROOT/docs/cheatsheets"
 ROLE="${1:-}"
 DEST_BASE="${HOME}/Desktop"
 
-[ -n "$ROLE" ] || { echo "usage: send-pack [family|operator|newmac|phone]"; exit 1; }
+[ -n "$ROLE" ] || { echo "usage: send-pack [all|immediate|extended|friends|operator|newmac|phone]"; exit 1; }
+
+# ONE SHOT: build every circle's pack to the Desktop in one go.
+if [ "$ROLE" = "all" ]; then
+  for t in immediate extended friends; do bash "$0" "$t"; done
+  command -v open >/dev/null 2>&1 && open "$HOME/Desktop" 2>/dev/null || true
+  echo "✓ ALL packs are on your Desktop: immediate · extended · friends"
+  exit 0
+fi
 
 pick(){ # copy a file if it exists
   local src="$1" dst="$2"
@@ -29,13 +37,29 @@ mkdir -p "$OUT"
 echo "Assembling the '$ROLE' pack → $OUT"
 
 case "$ROLE" in
-  family)
+  immediate|family)
+    pick "$CHEAT/WELCOME-IMMEDIATE.md" "$OUT"
     pick "$CHEAT/FOUNDER-WELCOME.pdf" "$OUT"
     pick "$CHEAT/HAILMARY-GUIDE.pdf" "$OUT"
     pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
     pick "$CHEAT/HAILMARY-PHONE.png" "$OUT"
     pick "$ROOT/scripts/setup-mac.command" "$OUT"
-    MSG="Welcome to the family side of what we're building (Project X HAILMARY). Open FOUNDER-WELCOME.pdf first — it explains everything. When you're ready to set up your Mac, double-click setup-mac.command and follow it. I'll send you your access link separately. — X"
+    MSG="You're my inner circle. Open WELCOME-IMMEDIATE first (30-second read). Then double-click setup-mac.command and follow it — pick 'MY OWN' so you get your own private network. Full access, you're family. I'll send your link separately. — X"
+    ;;
+  extended)
+    pick "$CHEAT/WELCOME-EXTENDED.md" "$OUT"
+    pick "$CHEAT/HAILMARY-GUIDE.pdf" "$OUT"
+    pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
+    pick "$CHEAT/HAILMARY-PHONE.png" "$OUT"
+    pick "$ROOT/scripts/setup-mac.command" "$OUT"
+    MSG="Family is family — this is for you. Open WELCOME-EXTENDED first (30-second read). Then double-click setup-mac.command and pick 'MY OWN' for your own private network. I'll send your link separately. — X"
+    ;;
+  friends|friend)
+    pick "$CHEAT/WELCOME-FRIENDS.md" "$OUT"
+    pick "$CHEAT/HAILMARY-GUIDE.pdf" "$OUT"
+    pick "$CHEAT/GLOBAL-MESH-JOIN.pdf" "$OUT"
+    pick "$ROOT/scripts/setup-mac.command" "$OUT"
+    MSG="Real ones only — that's why you're getting this. Open WELCOME-FRIENDS first (30-second read). Then double-click setup-mac.command and pick 'MY OWN' for your own private network. Want to build a business? type 'member'. I'll send your link separately. — X"
     ;;
   operator)
     pick "$CHEAT/TMMT-CHEAT-SHEET.pdf" "$OUT"
@@ -55,7 +79,7 @@ case "$ROLE" in
     pick "$CHEAT/HAILMARY-ANDROID.png" "$OUT"
     MSG="Phone quick-guides + wallpapers. Save the one for your phone (iPhone = HAILMARY-PHONE, Android = HAILMARY-ANDROID) as your lock screen so the key steps are always with you. — X"
     ;;
-  *) echo "unknown role '$ROLE' — use: family | operator | newmac | phone"; rm -rf "$OUT"; exit 1;;
+  *) echo "unknown role '$ROLE' — use: immediate | extended | friends | operator | newmac | phone"; rm -rf "$OUT"; exit 1;;
 esac
 
 # Drop the message + instructions in the folder so files + words travel together.

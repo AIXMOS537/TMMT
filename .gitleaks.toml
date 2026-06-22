@@ -4,11 +4,12 @@
 [extend]
 useDefault = true
 
-# KNOWN FINDING (handled): an Airtable PAT was committed in an early planning doc
+# KNOWN FINDING (RESOLVED): an Airtable PAT was committed in an early planning doc
 # and later redacted (HEAD is clean). The value lingers in ~80 historical commits.
-# It is allowlisted here so the guard stops blocking — BUT the real remediation is
-# REVOCATION at airtable.com/create/tokens (rotate it; git scrubbing ≠ revoking).
-# Tracked in docs/security/. Remove this allowlist after a full history scrub.
+# VERIFIED DEAD 2026-06-22: tested the historical token against Airtable
+# /v0/meta/whoami → HTTP 401 UNAUTHORIZED. It is the only token in history and it
+# grants nothing — exposure is closed. Allowlisted so the guard stops blocking on
+# the inert value. (A history scrub is now cosmetic; the secret is already useless.)
 [allowlist]
 description = "Known/redacted Airtable PAT in early-history airtable-sync plan (revoke at source)"
 paths = [
@@ -22,4 +23,8 @@ regexes = [
   '''AIRTABLE_PAT=pat[a-zA-Z0-9.]+''',
   # curl basic-auth using an env var (no literal secret)
   '''-u "\$[A-Z_]+:?"''',
+  # FALSE POSITIVE: Airtable BASE ID (not a credential) hardcoded as an env fallback
+  # in tmmt-os/scripts/airtable-to-supabase-migrate.mjs. Base IDs (app…) are database
+  # identifiers — data access still requires the PAT (correctly env-only). Not a secret.
+  '''appcenWUju039rD7b''',
 ]

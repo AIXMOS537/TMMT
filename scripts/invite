@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# invite — hand me the exact message to send someone, ready to paste. Copies it
+# to your clipboard (macOS) so you just paste into Messages/WhatsApp/Mail.
+# No more asking Claude to "write the message."
+#
+#   invite operator [Name]    sovereign operator onboarding (e.g. Moe Legacy / Umar)
+#   invite immediate          inner-circle family welcome
+#   invite extended           extended-family welcome
+#   invite friends            friends welcome
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd 2>/dev/null || echo "$PWD")"
+WHO="${1:-}"; NAME="${2:-}"
+SETUP1='curl -fsSL https://raw.githubusercontent.com/AIXMOS537/TMMT/master/scripts/setup-mac.command -o ~/Downloads/setup.command && bash ~/Downloads/setup.command'
+
+msg_operator(){ cat <<EOF
+${NAME:+$NAME — }You're my first operator. This makes MoeLegacy 100% YOURS — your own
+system, your own private network, your own everything. Takes ~5 minutes:
+
+1) On your Mac, open Terminal (press Cmd+Space, type Terminal, Enter) and paste this:
+
+   $SETUP1
+
+2) When it asks who the device is for, pick:  MY OWN
+   (this gives YOU your own private network — nobody else's, fully yours)
+
+3) Make your OWN Tailscale account when it prompts (your own login/email).
+
+4) So I can help you as your systems engineer (only when you want it):
+   open the Tailscale app → Share your machine to my account → turn on "Tailscale SSH".
+   You can switch that off anytime — you stay in full control.
+
+Then text me "done" and I'll get you fully live. Welcome to MoeLegacy. 🐦‍⬛
+— Taha
+EOF
+}
+msg_immediate(){ cat <<EOF
+You're my inner circle, so you're the first I'm bringing in. This is yours —
+your own private helper on your own computer. ~5 min:
+
+1) Open Terminal (Cmd+Space → type Terminal → Enter) and paste:
+   $SETUP1
+2) When it asks who it's for, pick:  MY OWN  (keeps it 100% yours)
+3) Open a new Terminal and type:  menu
+
+That's it. You can't break it. Anything you need, call me. 💛 — Taha
+EOF
+}
+msg_extended(){ cat <<EOF
+Family is family — this is for you. Your own private helper, on your own machine. ~5 min:
+
+1) Open Terminal (Cmd+Space → type Terminal → Enter) and paste:
+   $SETUP1
+2) When it asks who it's for, pick:  MY OWN
+3) Open a new Terminal and type:  menu
+
+Play with it, you can't break it. Stuck? Text me. 🧡 — Taha
+EOF
+}
+msg_friends(){ cat <<EOF
+Real ones only — that's why you're getting this. Your own private helper, on your
+own machine, free. ~5 min:
+
+1) Open Terminal (Cmd+Space → type Terminal → Enter) and paste:
+   $SETUP1
+2) When it asks who it's for, pick:  MY OWN
+3) Open a new Terminal and type:  menu   (want to build a business? type: member)
+
+Hit me up if you get stuck. 💙 — Taha
+EOF
+}
+
+case "$WHO" in
+  operator|op|moe|umar) OUT="$(msg_operator)";;
+  immediate|family)     OUT="$(msg_immediate)";;
+  extended)             OUT="$(msg_extended)";;
+  friends|friend)       OUT="$(msg_friends)";;
+  *) echo "invite: operator [Name] | immediate | extended | friends"; exit 0;;
+esac
+
+printf '\n%s\n' "$OUT"
+if command -v pbcopy >/dev/null 2>&1; then
+  printf '%s' "$OUT" | pbcopy && printf '\n\033[32m✓ copied to your clipboard — just paste it to them.\033[0m\n\n'
+else
+  printf '\n(copy the text above and send it.)\n\n'
+fi
