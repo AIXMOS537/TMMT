@@ -79,6 +79,7 @@ case "$v" in
   fanout|crossover|morph|allhands) exec bash "$ROOT/scripts/fanout.sh" "$@";;
   allin|all-in|m1|fullsend) exec bash "$ROOT/scripts/m1-allin.sh" "$@";;
   selftest|stress|prove) exec bash "$ROOT/scripts/selftest.sh" "$@";;
+  barn|containment|airtight) exec bash "$ROOT/scripts/containment.sh" "$@";;
   garage) exec bash "$ROOT/scripts/garage" "$@";;
   overhaul) [ -x "$ROOT/scripts/overhaul-deploy.sh" ] && exec bash "$ROOT/scripts/overhaul-deploy.sh" "$@" || { echo "overhaul-deploy.sh not installed yet"; exit 1; };;
   *) printf 'tmmt words: up | unison [up|status|down] | booyah | garage | local | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;

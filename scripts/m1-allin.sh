@@ -30,6 +30,13 @@ ${C}${BD}
    $( [[ "$(uname -s)" == Darwin ]] && echo "macOS detected" || echo "${Y}not macOS — running the portable subset${X}" )
 EOF
 
+# 0) BARN DOOR — containment interlock before any power flows
+step "0/9  Containment (barn door)"
+if [ -x "$ROOT/scripts/containment.sh" ]; then
+  bash "$ROOT/scripts/containment.sh" --gate && ok "sealed — no leaks/exposure" \
+    || { printf '   %s⛔ containment FAIL — aborting. Run: bash scripts/tmmt barn%s\n' "$R" "$X"; exit 1; }
+fi
+
 # 1) machine identity + secret-guard hooks (non-interactive equivalents of swarm-join)
 step "1/9  Identity + secret-guard hooks"
 mkdir -p "$ROOT/.swarm" 2>/dev/null
