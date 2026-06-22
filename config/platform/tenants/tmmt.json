@@ -22,7 +22,7 @@
   },
   "contact": {
     "supportEmail": "support@tmmtrentals.com",
-    "salesPhone": "[phone removed]"
+    "salesPhone": "VAULT://public_line"
   },
   "agent": {
     "name": "Dispatch",

@@ -22,7 +22,7 @@
   },
   "contact": {
     "supportEmail": "support@molegacy.com",
-    "salesPhone": "[phone removed]"
+    "salesPhone": "VAULT://public_line"
   },
   "agent": {
     "name": "Riley",
