@@ -16,7 +16,7 @@ SEAL="(none)"; [ -f "$ROOT/auth/OWNER.seal" ] && SEAL="set"
 DARK="${G}clear${X}"; [ -f "$ROOT/.swarm/DARK" ] && DARK="${R}${BD}DARK${X}"
 TS="$(tailscale status 2>/dev/null | awk 'NR==1{print $1" "$2}')"; [ -z "$TS" ] && TS="(tailscale not up)"
 
-if [ "$ROLE" = "owner" ]; then RC="$G"; badge="🟢 OWNER"; else RC="$Y"; badge="🟡 ${ROLE^^}"; fi
+if [ "$ROLE" = "owner" ]; then RC="$G"; badge="🟢 OWNER"; else RC="$Y"; badge="🟡 $(printf '%s' "$ROLE" | tr '[:lower:]' '[:upper:]')"; fi
 
 printf '\n  %s%s  this device%s\n' "$C$BD" "" "$X"
 printf '  ────────────────────────────\n'
