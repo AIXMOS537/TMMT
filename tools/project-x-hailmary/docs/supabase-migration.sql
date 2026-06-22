@@ -43,7 +43,7 @@ ALTER TABLE hailmary_licenses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "no_public_access" ON hailmary_licenses
   FOR ALL TO public USING (false);
 
--- Watchtower view for Muhammad Taha's dashboard
+-- Watchtower view for PROJECT X HAILMARY's dashboard
 CREATE OR REPLACE VIEW v_operator_watchtower AS
 SELECT
   license_id,

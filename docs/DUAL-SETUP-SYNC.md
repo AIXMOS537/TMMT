@@ -1,6 +1,6 @@
 # Dual Setup Sync — universal spine (you first, operators later)
 
-**Owner:** Muhammad Taha · **Status:** v1 spec + local registry + CLI  
+**Owner:** PROJECT X HAILMARY · **Status:** v1 spec + local registry + CLI  
 **Idea:** Every person on the network runs a **dual pair** — **mobile** (moves with them) + **brain** (always-on home/office node). One registry. Same pattern for you, Moe Legacy, and every paid operator after.
 
 Plain rule: **data syncs through the tailnet + shared store, not iCloud across Apple IDs.** Voice and messages sync through the **inbox + draft ladder**, not auto-blast.

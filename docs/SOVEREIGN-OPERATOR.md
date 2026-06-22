@@ -1,6 +1,6 @@
 # Sovereign Operator — the MoeLegacy model (Umar = operator #1)
 
-> How an operator owns their **own** everything, while the Owner (Muhammad Taha)
+> How an operator owns their **own** everything, while the Owner (PROJECT X HAILMARY)
 > serves as their **systems engineer by invitation**. First sovereign operator:
 > **Muhammad Umar / MoeLegacy** (credit guidance + funding). Companions:
 > `scripts/one-shot.sh` (sovereign setup), `scripts/engineer` (the support console),

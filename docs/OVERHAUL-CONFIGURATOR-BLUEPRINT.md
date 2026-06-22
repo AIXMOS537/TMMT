@@ -5,7 +5,7 @@
 > title/ownership) as you climb. Inspired by configurators like
 > [pinkslips.app](https://pinkslips.app/paul-h/solar-flare).
 
-**Status:** v0.2 scaffolded · **Owner:** Muhammad Taha · **Lead:** PROJECT X HAILMARY
+**Status:** v0.2 scaffolded · **Owner:** PROJECT X HAILMARY · **Lead:** PROJECT X HAILMARY
 **Front door:** `bash scripts/garage` → `tools/garage/index.html`
 **Data model:** `config/overhaul/catalog.json` (parts) + `config/overhaul/builds/*.json`
 **Deployer:** `scripts/overhaul-deploy.sh` (dry-run by default)

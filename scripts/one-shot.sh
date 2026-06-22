@@ -2,7 +2,7 @@
 # one-shot — the universal installer for ANY device, for ANYONE.
 #
 # One question decides everything:
-#   • MINE    — Muhammad Taha's own device → joins HIS mesh (owner, sealed).
+#   • MINE    — PROJECT X HAILMARY's own device → joins HIS mesh (owner, sealed).
 #   • MY OWN  — family / friend / anyone → stands up THEIR OWN private mesh on
 #               THEIR OWN Tailscale login, fully isolated. It CANNOT touch or
 #               hurt the Owner's network, secrets, or seal.
@@ -27,7 +27,7 @@ TENANT="${1:-}"
 if [ -z "$TENANT" ]; then
   say
   say "  ${BD}Who is this device for?${X}"
-  say "   [1] ${BD}MINE${X}    — Muhammad Taha's own device (joins your mesh)"
+  say "   [1] ${BD}MINE${X}    — PROJECT X HAILMARY's own device (joins your mesh)"
   say "   [2] ${BD}MY OWN${X}  — family / friend: your own private network"
   printf '  > '; IFS= read -r p || true
   [ "$p" = "1" ] && TENANT=mine || TENANT=own

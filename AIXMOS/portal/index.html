@@ -26,7 +26,7 @@
   /training/        ← operator training videos + PDFs
   /operator-sops/   ← SOPs, scripts, templates
   /member-resources/ ← client pathway resources
-  /admin-only/      ← Muhammad-only files
+  /admin-only/      ← Admin-only files
 
   USER ACCOUNTS (update the USERS object below):
   Add or remove users by editing the USERS constant.
@@ -749,7 +749,7 @@
     </div>
     <div class="card">
       <div class="card-title"><i class="ti ti-users card-title-icon" aria-hidden="true"></i> Operator Overview</div>
-      <p style="color:var(--muted);font-size:13px">No operators assigned yet. Muhammad will assign operators to your department once onboarding begins.</p>
+      <p style="color:var(--muted);font-size:13px">No operators assigned yet. The admin will assign operators to your department once onboarding begins.</p>
     </div>
     <div class="card">
       <div class="card-title"><i class="ti ti-alert-triangle card-title-icon" aria-hidden="true"></i> Escalations</div>
@@ -883,10 +883,10 @@
   ══════════════════════════════════ */
   function renderSOPs(role) {
     const sops = [
-      { title:'Communication Triage SOP', desc:'How inbound calls/emails get routed. Who handles what. What reaches Muhammad.', status:'Ready' },
+      { title:'Communication Triage SOP', desc:'How inbound calls/emails get routed. Who handles what. What reaches the admin.', status:'Ready' },
       { title:'Operator Onboarding SOP', desc:'First 30 days for a new operator. Calls, GHL setup, first clients.', status:'Ready' },
       { title:'Client Intake SOP', desc:'CHUMMO intake to operator assignment. Step by step.', status:'Ready' },
-      { title:'Escalation Protocol', desc:'4-level system. What gets escalated. What never reaches Muhammad.', status:'Ready' },
+      { title:'Escalation Protocol', desc:'4-level system. What gets escalated. What never reaches the admin.', status:'Ready' },
       { title:'Credit Guidance SOP', desc:'Vendor selection, client routing, turnaround tracking.', status:'In progress' },
       { title:'Car Rental Operations SOP', desc:'Daily, long-term, luxury rental playbook. Drivers, detailing, chauffeur.', status:'Coming soon' },
       { title:'GHL Automation SOP', desc:'Post-payment sequences, pipeline automation, reporting.', status:'Coming soon' },
