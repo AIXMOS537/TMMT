@@ -99,6 +99,11 @@ install_words() {
       echo "alias vault='bash \"$R/tools/project-x-hailmary/master/vault.sh\"' # TMMT_WORDS"
       echo "alias member='bash \"$R/scripts/member\"'             # TMMT_WORDS"
       echo "alias ceo='bash \"$R/scripts/ceo\"'                   # TMMT_WORDS"
+      echo "alias send-pack='bash \"$R/scripts/send-pack\"'       # TMMT_WORDS ← welcome packs"
+      echo "alias engineer='bash \"$R/scripts/engineer\"'         # TMMT_WORDS ← run operators' machines"
+      echo "alias collect='bash \"$R/scripts/collect\"'           # TMMT_WORDS"
+      echo "alias intake='bash \"$R/scripts/intake\"'             # TMMT_WORDS"
+      echo "alias invite='bash \"$R/scripts/invite\"'             # TMMT_WORDS ← message to send people"
     else
       # operator: work + sync + reach the owner; compass for well-being. No owner agents.
       echo "alias work='bash \"$R/scripts/tmmt\" go 2'          # TMMT_WORDS"
