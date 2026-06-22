@@ -74,7 +74,7 @@ your-machine · PROJECT X · HAILMARY
 1. _your mission here_
 
 ## Do-not-cross (hard)
-- Personal line +1 571-351-9690 — never contact.
+- Personal line +1 000-000-0000 — replace with YOUR real number locally; never contact.
 - No financial/legal/irreversible without explicit "yes, do it now."
 XEOF
   chmod 600 "$X_PROFILE"
