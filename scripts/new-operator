@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# new-operator — stamp a new operator in ONE command. Generates their filled
+# Platform License + Operator Agreement, Payment Schedule, and onboarding invite,
+# saved local (owner-only). Protect + get paid on EVERY operator as you scale
+# across Arizona and beyond. Templates are not legal advice — counsel reviews once.
+#
+#   bash scripts/new-operator "Name" "Agency" "vertical" [monthly$] [email]
+#   e.g. bash scripts/new-operator "Muhammad Umar" "MoeLegacy" "credit + funding" 0 info@moelegacy.com
+#   (word: new-operator)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+KIT="$ROOT/docs/deal-kit"
+if [[ -t 1 ]]; then G=$'\e[32m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; C=; W=; D=; BD=; X=; fi
+ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+say(){ printf '%s\n' "$*"; }
+
+OPERATOR="${1:-}"; AGENCY="${2:-}"; VERTICAL="${3:-credit + funding}"; MONTHLY="${4:-}"; EMAIL="${5:-}"
+if [ -z "$OPERATOR" ] || [ -z "$AGENCY" ]; then
+  say "  usage: new-operator \"Name\" \"Agency\" \"vertical\" [monthly\$] [email]"
+  say "  e.g.:  new-operator \"Muhammad Umar\" \"MoeLegacy\" \"credit + funding\" 0 info@moelegacy.com"
+  exit 1
+fi
+DATE="$(date +%Y-%m-%d)"
+slug="$(printf '%s' "$AGENCY" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+OUT="$ROOT/.hailmary/operators/$slug/paperwork"; mkdir -p "$OUT"
+MONTHLY_DISP="${MONTHLY:-TBD}"; [ "$MONTHLY" = "0" ] && MONTHLY_DISP="\$0 (founder — deferred to \$50K)"
+
+fill(){ # template -> stdout, placeholders replaced (sensible AZ-friendly defaults)
+  local c; c="$(cat "$1")"
+  c="${c//\{\{OPERATOR\}\}/$OPERATOR}"; c="${c//\{\{AGENCY\}\}/$AGENCY}"; c="${c//\{\{DATE\}\}/$DATE}"
+  c="${c//\{\{OWNER_LEGAL_NAME\}\}/[Owner legal name — fill at signing]}"
+  c="${c//\{\{STATE\}\}/Arizona}"
+  c="${c//\{\{TERM\}\}/12 months}"; c="${c//\{\{NOTICE_DAYS\}\}/30}"
+  c="${c//\{\{GRACE_DAYS\}\}/7}"; c="${c//\{\{CURE_DAYS\}\}/15}"; c="${c//\{\{EXPORT_DAYS\}\}/30}"
+  c="${c//\{\{LIABILITY_MONTHS\}\}/3}"; c="${c//\{\{PRICE_NOTICE_DAYS\}\}/30}"
+  c="${c//\{\{DISPUTE_VENUE_OR_ARBITRATION\}\}/binding arbitration in Arizona}"
+  c="${c//\{\{MONTHLY_FEE\}\}/$MONTHLY_DISP}"; c="${c//\{\{DUE_DAY\}\}/1st}"
+  c="${c//\{\{SETUP_FEE\}\}/per OFFER-STACK band}"; c="${c//\{\{BALANCE_TERMS\}\}/net 30}"
+  c="${c//\{\{REV_SHARE_PCT\}\}/[TBD]}"; c="${c//\{\{REV_BASE\}\}/collected revenue}"
+  c="${c//\{\{BAND\}\}/[choose band]}"; c="${c//\{\{PAYMENT_METHOD\}\}/Stripe (card/ACH on file, auto-charge)}"
+  c="${c//\{\{LATE_FEE\}\}/1.5%/mo}"; c="${c//\{\{FOUNDER_SETTLEMENT\}\}/hours / commission toward \$50K}"
+  printf '%s\n' "$c"
+}
+
+fill "$KIT/PLATFORM-LICENSE-AND-OPERATOR-AGREEMENT.md" > "$OUT/platform-license-operator-agreement.md"
+fill "$KIT/PAYMENT-SCHEDULE.md"                        > "$OUT/payment-schedule.md"
+NAME="$OPERATOR" bash "$ROOT/scripts/invite" operator "$OPERATOR" > "$OUT/invite-message.txt" 2>/dev/null || true
+
+cat > "$OUT/README.txt" <<EOF
+OPERATOR PACKET — $OPERATOR / $AGENCY  ($VERTICAL)   made $DATE   · State: Arizona
+
+  platform-license-operator-agreement.md  — you own the platform; they license it (revocable)
+  payment-schedule.md                      — how you get paid + suspend-on-nonpay
+  invite-message.txt                       — the one-paste onboarding to send them
+
+NEXT:
+  1) Counsel reviews the two agreements once (drafts ~80% done).
+  2) Both sign — your ownership + pay locked BEFORE you build their org.
+  3) Send the invite (or: invite operator "$OPERATOR" ${EMAIL:-their@email}).
+  4) engineer add "$AGENCY"  → pick their machine → pull their work → build their portal.
+
+  Not legal advice — have a licensed attorney finalize.
+EOF
+
+echo
+ok "operator packet stamped: .hailmary/operators/$slug/paperwork/"
+say "$D   license + payment (filled) + invite — all local, owner-only.$X"
+say "   ${W}next:${X} counsel review → sign → ${W}invite operator \"$OPERATOR\" ${EMAIL:-their@email}${X} → ${W}engineer add \"$AGENCY\"${X}"
+[ -n "$EMAIL" ] && say "   ${D}send now:  invite operator \"$OPERATOR\" $EMAIL  (opens Mail, written + addressed)${X}"
