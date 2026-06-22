@@ -2,7 +2,7 @@
 
 ### ❤️ Hey. You got something special.
 
-Someone who loves you (that's **Muhammad Taha**) is handing you a little piece of
+Someone who loves you (that's **PROJECT X HAILMARY**) is handing you a little piece of
 something big. It's **yours**. It's **private**. Nobody can take it.
 
 Think of it like getting your **own little robot helper** that lives on your own

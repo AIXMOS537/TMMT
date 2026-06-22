@@ -1,6 +1,6 @@
 # Campaign: "Watch The Genie Work" — Moe Legacy → TASTE Demo → $97 Door
 
-**For:** X (Muhammad Taha) · **Front:** Moe Legacy (markets + funds the ads) · **Date:** 2026-06-18
+**For:** X (PROJECT X HAILMARY) · **Front:** Moe Legacy (markets + funds the ads) · **Date:** 2026-06-18
 **Status:** ready to run · **Compliance:** CROA/FTC-safe framing (see §9 — read before publishing)
 
 ---

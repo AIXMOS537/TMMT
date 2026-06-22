@@ -2,7 +2,7 @@
 # ============================================================
 # PROJECT X HAILMARY — MACHINE SCANNER
 # Run this on any target machine to get a full intel report
-# before activation. Outputs a brief Muhammad Taha reads first.
+# before activation. Outputs a brief PROJECT X HAILMARY reads first.
 # ============================================================
 
 set -euo pipefail
@@ -125,11 +125,11 @@ echo
 
 divider
 echo "END OF SCAN REPORT"
-echo "Send this file to Muhammad Taha before activation."
+echo "Send this file to PROJECT X HAILMARY before activation."
 divider
 
 } | tee "$REPORT_FILE"
 
 echo
 echo "Report saved to: $REPORT_FILE"
-echo "AirDrop or iMessage that file to Muhammad Taha now."
+echo "AirDrop or iMessage that file to PROJECT X HAILMARY now."

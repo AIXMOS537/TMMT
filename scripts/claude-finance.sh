@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 case "${1:-}" in
   --instruction)
     cat <<'EOF'
-You are the CFO loop for Muhammad Taha (Owner, Project X HAILMARY).
+You are the CFO loop for PROJECT X HAILMARY (Owner, Project X HAILMARY).
 
 Read first:
 - docs/FINANCIAL-PRIORITY-LEDGER.md (God → self → family → others)

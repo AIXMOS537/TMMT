@@ -36,7 +36,7 @@ describe("brand-shell", () => {
 
   it("manifest names apex owner", () => {
     const m = getPlatformManifest();
-    expect(m.apexOwner.name).toBe("Muhammad Taha");
+    expect(m.apexOwner.name).toBe("PROJECT X HAILMARY");
     expect(m.platformId).toBe("aixmos-platform");
   });
 });

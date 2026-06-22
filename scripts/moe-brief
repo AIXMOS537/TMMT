@@ -50,4 +50,4 @@ printf '     3. guide         — credit-guidance score tiers + first-call check
 printf '     4. work          — start your assigned tasks\n'
 printf '     5. compass       — protect your peace; you first, then the work\n\n'
 
-printf '%s   Stuck on anything? %ssos "your question"%s%s reaches Muhammad Taha.%s\n\n' "$D" "$BD$W" "$X" "$D" "$X"
+printf '%s   Stuck on anything? %ssos "your question"%s%s reaches PROJECT X HAILMARY.%s\n\n' "$D" "$BD$W" "$X" "$D" "$X"

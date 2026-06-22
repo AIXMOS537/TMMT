@@ -9,7 +9,7 @@ clear
 echo -e "${GOLD}${BOLD}"
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║         PROJECT X — H A I L M A R Y            ║"
-echo "  ║         Powered by AIXMOS / Muhammad Taha        ║"
+echo "  ║         Powered by AIXMOS / PROJECT X HAILMARY        ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo -e "${RESET}"
 echo "  What do you need to do?"

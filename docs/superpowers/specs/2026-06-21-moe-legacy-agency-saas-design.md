@@ -1,6 +1,6 @@
 # Moe Legacy — Agency-SaaS Vertical & 1:1 Portal · Design Spec
 
-**Owner:** X (Muhammad Taha) · **Date:** 2026-06-21 · **Status:** spec for owner review — NOT built, NOT applied to prod
+**Owner:** X (PROJECT X HAILMARY) · **Date:** 2026-06-21 · **Status:** spec for owner review — NOT built, NOT applied to prod
 **Partner:** Moe Legacy (Muhammad Umar) — credit guidance + business funding, going SaaS-agency
 **Posture:** fenced, contract-gated, least-privilege. *Clear path for the owner, fenced for everyone else.*
 
