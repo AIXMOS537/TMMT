@@ -21,6 +21,22 @@ export async function viewerContext(): Promise<{ canManage: boolean }> {
   return { canManage: !!c && isStaffUser(c.user) };
 }
 
+/** Pickers for the agency tools: operator sub-accounts (assign) + agencies (refer). Staff only. */
+export async function listOrgsForAssign(): Promise<{
+  operators: Array<{ id: string; name: string }>;
+  agencies: Array<{ id: string; name: string }>;
+}> {
+  const c = await caller();
+  if (!c || !isStaffUser(c.user)) return { operators: [], agencies: [] };
+  const svc = createServiceRoleClient();
+  const { data } = await svc.from("organizations").select("id, name, org_kind").order("name", { ascending: true });
+  const rows = (data ?? []) as Array<{ id: string; name: string; org_kind: string | null }>;
+  return {
+    operators: rows.filter((o) => o.org_kind === "operator").map(({ id, name }) => ({ id, name })),
+    agencies: rows.filter((o) => o.org_kind !== "operator").map(({ id, name }) => ({ id, name })),
+  };
+}
+
 /** Resolve the signed-in user + their org (service-role writes are authorized here). */
 async function caller() {
   const ssr = await createSSRClient();
