@@ -126,7 +126,7 @@ export async function recordGhlPayment(
   supabase: SupabaseClient,
   body: Record<string, unknown>,
   tags: string[]
-): Promise<{ recorded: boolean; id?: string; reason?: string }> {
+): Promise<{ recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null }> {
   const email =
     (typeof body.email === "string" && body.email) ||
     (typeof body.contact_email === "string" && body.contact_email) ||
@@ -233,7 +233,7 @@ export async function recordGhlPayment(
     .select("id")
     .single();
 
-  if (error) return { recorded: false, reason: error.message };
+  if (error) return { recorded: false, reason: error.message, amount, affiliateRef };
   const paymentId = data.id as string;
 
   // For high-ticket deposits, also log the remaining balance as a Pending row so
@@ -253,5 +253,5 @@ export async function recordGhlPayment(
     });
   }
 
-  return { recorded: true, id: paymentId };
+  return { recorded: true, id: paymentId, amount, affiliateRef };
 }

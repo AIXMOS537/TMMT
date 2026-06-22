@@ -16,13 +16,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Spec: docs/superpowers/specs/2026-06-18-tmmt-token-ledger.md
  */
 
-// ── Owner-tunable economics (v0) ────────────────────────────────────────────
-// Flat 1 token per engine job to start (real per-job/per-model pricing later).
-export const COST_PER_JOB = 1;
+// ── Owner-tunable economics ─────────────────────────────────────────────────
+// Tunable LIVE via env (set in Vercel, no code change), with safe defaults.
+// Flat cost per engine job; raise it for heavier jobs later.
+export const COST_PER_JOB = (() => {
+  const n = Number(process.env.POCKET_COST_PER_JOB);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+})();
 
-// Monthly stack a $97 member receives. This is the per-member job cap for the
-// month and the lever that caps engine/API cost per paying user. Tune freely.
-export const MEMBER_97_MONTHLY_TOKENS = 500;
+// Monthly stack a $97 member receives — the per-member job cap for the month and
+// the lever that caps engine cost per paying user. Self-hosted brain = ~$0/token,
+// so this is generous by default; tune to taste.
+export const MEMBER_97_MONTHLY_TOKENS = (() => {
+  const n = Number(process.env.MEMBER_97_MONTHLY_TOKENS);
+  return Number.isInteger(n) && n > 0 ? n : 500;
+})();
 
 /** Which paid tags grant tokens, and how much. v0 = the $97 membership only. */
 type TokenGrantPlan = { tokens: number; tier: string; reason: string };
