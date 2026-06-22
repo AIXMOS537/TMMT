@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# intake — bring an operator's handoff INTO the system and catalog it.
+# Run on the Owner's machine. Everything lands LOCAL + gitignored under
+# .hailmary/intake/<name>/ — never pushed, never in git.
+#
+#   bash scripts/intake <folder-or-zip> [name]      from a received handoff
+#   bash scripts/intake mesh <host:path> [name]     pull over Tailscale (rsync)
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd 2>/dev/null || echo "$PWD")"
+INDIR="$ROOT/.hailmary/intake"
+if [[ -t 1 ]]; then G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; Y=; C=; W=; D=; BD=; X=; fi
+ok(){ printf '%s  ✓ %s%s\n' "$G" "$*" "$X"; }
+say(){ printf '%s\n' "$*"; }
+die(){ printf '  ✗ %s\n' "$*" >&2; exit 1; }
+slug(){ printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-'; }
+_sha(){ if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1"|awk '{print $1}'; elif command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"|awk '{print $1}'; else echo "nohash"; fi; }
+# Defensive: never let secrets enter the system, even if a bundle carried some.
+_scrub(){
+  local d="$1"
+  find "$d" -type f \( -name '.env' -o -name '.env.*' -o -name '*.key' -o -name '*.pem' \
+    -o -name 'id_rsa*' -o -name 'id_ed25519*' -o -name '*.enc' -o -name 'OWNER.seal' \
+    -o -name '.DS_Store' \) -delete 2>/dev/null || true
+  find "$d" -type d \( -name '.git' -o -name 'node_modules' -o -name '.cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
+}
+
+SRC="${1:-}"; [ -n "$SRC" ] || die "usage: intake <folder-or-zip> [name]   |   intake mesh <host:path> [name]"
+
+# --- mesh mode: pull over Tailscale SSH/rsync -------------------------------
+if [ "$SRC" = "mesh" ]; then
+  REMOTE="${2:-}"; NAME="${3:-}"; [ -n "$REMOTE" ] || die "usage: intake mesh <host:path> [name]"
+  [ -n "$NAME" ] || NAME="$(printf '%s' "$REMOTE" | cut -d: -f1)"
+  DEST="$INDIR/$(slug "$NAME")/raw"; mkdir -p "$DEST"
+  command -v rsync >/dev/null 2>&1 || die "rsync not found"
+  say "  pulling $REMOTE → .hailmary/intake/$(slug "$NAME")/raw …"
+  rsync -az "$REMOTE"/ "$DEST"/ || die "mesh pull failed (is the device on Tailscale + SSH on?)"
+else
+  # --- file mode: a received folder or zip ----------------------------------
+  [ -e "$SRC" ] || die "not found: $SRC"
+  NAME="${2:-}"; [ -n "$NAME" ] || NAME="$(basename "$SRC" | sed 's/^HANDOFF-//;s/-[0-9]\{8\}.*$//')"
+  [ -n "$NAME" ] || NAME="operator"
+  DEST="$INDIR/$(slug "$NAME")/raw"; mkdir -p "$DEST"
+  if printf '%s' "$SRC" | grep -qiE '\.zip$'; then
+    say "  unzipping → .hailmary/intake/$(slug "$NAME")/raw …"
+    unzip -o -q "$SRC" -d "$DEST" || die "unzip failed"
+  elif command -v rsync >/dev/null 2>&1; then
+    rsync -a "$SRC/" "$DEST/" 2>/dev/null || rsync -a "$SRC" "$DEST/" 2>/dev/null || cp -R "$SRC"/* "$DEST/" 2>/dev/null || true
+  else
+    cp -R "$SRC"/* "$DEST/" 2>/dev/null || cp -R "$SRC" "$DEST/" 2>/dev/null || true
+  fi
+fi
+
+# --- catalog: manifest + index ----------------------------------------------
+BASE="$INDIR/$(slug "$NAME")"
+_scrub "$BASE/raw"   # strip any secrets before they're catalogued/kept
+MAN="$BASE/manifest.tsv"
+printf 'sha256\ttype\tbytes\tpath\n' > "$MAN"
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  ext="${f##*.}"; lc="$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')"
+  case "$lc" in
+    pdf|doc|docx|pages|txt|md|rtf) t=doc;;
+    xls|xlsx|csv|numbers) t=sheet;;
+    jpg|jpeg|png|heic|webp|gif) t=image;;
+    mp4|mov|m4v) t=video;; m4a|mp3|wav|aac) t=audio;;
+    key|ppt|pptx) t=slides;; zip|gz|tar) t=archive;;
+    *) t=other;;
+  esac
+  b="$(wc -c < "$f" | tr -d ' ')"
+  printf '%s\t%s\t%s\t%s\n' "$(_sha "$f")" "$t" "$b" "${f#"$BASE"/}" >> "$MAN"
+done < <(find "$BASE/raw" -type f 2>/dev/null)
+
+N="$(($(grep -c . "$MAN" 2>/dev/null || echo 1) - 1))"; [ "$N" -lt 0 ] && N=0
+{
+  echo "# Intake — $NAME"
+  echo "_$(date -u +%FT%TZ) · LOCAL only (.hailmary/intake, gitignored)_"
+  echo; echo "Files: $N"; echo
+  echo "## By type"
+  awk -F'\t' 'NR>1{c[$2]++} END{for(k in c) printf "- %s: %d\n", k, c[k]}' "$MAN"
+} > "$BASE/INDEX.md"
+
+say
+ok "intake complete: $N file(s) → .hailmary/intake/$(slug "$NAME")/"
+say "  index: .hailmary/intake/$(slug "$NAME")/INDEX.md   (counts by type)"
+say "$D  it's in the system now, local + private. Next: build it into the program.$X"
