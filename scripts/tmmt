@@ -60,6 +60,7 @@ case "$v" in
   collect|bundle|handoff) exec bash "$ROOT/scripts/collect" "$@";;
   intake|absorb-op|pull-work) exec bash "$ROOT/scripts/intake" "$@";;
   engineer|manage|ops) exec bash "$ROOT/scripts/engineer" "$@";;
+  invite|text|message) exec bash "$ROOT/scripts/invite" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
