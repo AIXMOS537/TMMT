@@ -56,6 +56,7 @@ case "$v" in
   hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
   memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
   member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
+  send-pack|sendpack|pack) exec bash "$ROOT/scripts/send-pack" "${1:-}";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
