@@ -69,6 +69,7 @@ case "$v" in
   new-operator|stamp|stamp-operator) exec bash "$ROOT/scripts/new-operator" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
   env|restore-env|pull-env) exec bash "$ROOT/scripts/restore-env.sh";;
+  seat|operator-seat|provision-seat|king) exec bash "$ROOT/scripts/seat.sh" "$@";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
