@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# tmmt — one simple word does the thing. Run from the repo folder:
+#   bash scripts/tmmt up        turn on + go live on the mesh
+#   bash scripts/tmmt who       who's online right now
+#   bash scripts/tmmt help "engine won't start"   send an SOS to the owner
+#   bash scripts/tmmt go 2      start 2 agents working
+#   bash scripts/tmmt serve     let the owner reach this laptop
+#   bash scripts/tmmt assist field-mac   (owner) jump onto a laptop
+#   bash scripts/tmmt mesh      list every device
+#   bash scripts/tmmt sync      pull/push the latest
+#   bash scripts/tmmt fix       health + security check
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+v="${1:-?}"; shift || true
+# DARK kill-switch: while blacked out, only safe words run (compass/whoami/seal/dark).
+if [ -f "$ROOT/.swarm/DARK" ]; then
+  case "$v" in
+    compass|peace|whoami|me|seal|lock|dark|godark|light|lift|menu|watchtower|tower|league|roster|health|verticals|pulse|mesh-map|map|secure|launch-check|launch|vault|secret|keys|brief|moe-brief|hot|moe-hot|memorial|tribute|ceo|cockpit|exec) : ;;
+    *) printf '⛔ DARK — everything is stopped. Lift with the boss word: bash scripts/godark lift\n'; exit 1;;
+  esac
+fi
+case "$v" in
+  up)     exec bash "$ROOT/scripts/tmmt-up.command" "$@";;
+  who)    exec bash "$ROOT/scripts/mesh/link.sh" who;;
+  help|sos) exec bash "$ROOT/scripts/mesh/link.sh" request "$@";;
+  go)     exec bash "$ROOT/scripts/swarm.sh" up "${1:-2}";;
+  serve)  exec bash "$ROOT/scripts/mesh/link.sh" serve;;
+  assist) exec bash "$ROOT/scripts/mesh/link.sh" assist "$@";;
+  mesh|devices) exec bash "$ROOT/scripts/swarm.sh" mesh;;
+  sync)   exec bash "$ROOT/scripts/sync-machine.sh";;
+  fix|doctor) exec bash "$ROOT/scripts/swarm-doctor.sh";;
+  notify) exec bash "$ROOT/scripts/mesh/link.sh" notify-setup;;
+  notify-test|ping) exec bash "$ROOT/scripts/mesh/link.sh" notify-test;;
+  always) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" install "${1:-owner}" "${2:-180}";;
+  always-off) exec bash "$ROOT/scripts/mesh/install-launchagent.sh" uninstall;;
+  booyah|start) exec bash "$ROOT/scripts/mesh/unison.sh" up;;
+  wake|hailmary) exec bash "$ROOT/scripts/hailmary" "${1:-booyah}" "${@:2}";;
+  unison|base) exec bash "$ROOT/scripts/mesh/unison.sh" "${1:-up}" "${@:2}";;
+  onboard|client) exec bash "$ROOT/scripts/aixmos" onboard;;
+  aixmos) exec bash "$ROOT/scripts/aixmos" "${1:-roster}" "${@:2}";;
+  menu|help2|board) exec bash "$ROOT/scripts/menu";;
+  compass|peace) exec bash "$ROOT/scripts/compass" "${1:-now}" "${@:2}";;
+  desktop|icons) exec bash "$ROOT/scripts/install-desktop.sh";;
+  deploy|provision) exec bash "$ROOT/scripts/deploy" "${1:-}";;
+  join) exec bash "$ROOT/scripts/join" "${1:-}";;
+  one-shot|oneshot|setup-device|anyone) exec bash "$ROOT/scripts/one-shot.sh" "${1:-}";;
+  mesh-map|map) exec bash "$ROOT/scripts/mesh-map.sh";;
+  secure|launch-check|launch) exec bash "$ROOT/scripts/launch-check.sh";;
+  motherbox|flash) exec bash "$ROOT/scripts/motherbox" "${1:-}";;
+  workstation|super) exec bash "$ROOT/scripts/workstation";;
+  vertical|new-vertical) exec bash "$ROOT/scripts/new-vertical.sh" "$@";;
+  deal|close|contract) exec bash "$ROOT/scripts/new-deal.sh" "$@";;
+  golive|liftoff) exec bash "$ROOT/scripts/golive.sh" "${1:-}";;
+  vault|secret|keys) exec bash "$ROOT/tools/project-x-hailmary/master/vault.sh" "$@";;
+  brief|moe-brief)  exec bash "$ROOT/scripts/moe-brief";;
+  hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
+  playbook|closekit|scripts) { f="$ROOT/docs/MOE-LEGACY-CLOSING-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  ads|market|marketing) { f="$ROOT/docs/MARKETING-ADS-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  agency|funding|process) { f="$ROOT/docs/FUNDING-AGENCY-PLAYBOOK.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  org|team|roles) { f="$ROOT/docs/EXECUTIVES-ONLY.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
+  member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
+  send-pack|sendpack|pack) exec bash "$ROOT/scripts/send-pack" "${1:-}";;
+  collect|bundle|handoff) exec bash "$ROOT/scripts/collect" "$@";;
+  intake|absorb-op|pull-work) exec bash "$ROOT/scripts/intake" "$@";;
+  engineer|manage|ops) exec bash "$ROOT/scripts/engineer" "$@";;
+  invite|text|message) exec bash "$ROOT/scripts/invite" "$@";;
+  operator|onboard-op) exec bash "$ROOT/scripts/onboard-op" "$@";;
+  new-operator|stamp|stamp-operator) exec bash "$ROOT/scripts/new-operator" "$@";;
+  ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
+  seat|operator-seat|provision-seat|king) exec bash "$ROOT/scripts/seat.sh" "$@";;
+  env|restore-env|pull-env) exec bash "$ROOT/scripts/restore-env.sh";;
+  brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
+  fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
+  seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
+  whoami|me) exec bash "$ROOT/scripts/whoami-tmmt" "${1:-}";;
+  watchtower|tower|league|roster) exec bash "$ROOT/scripts/watchtower";;
+  health|verticals|pulse) exec bash "$ROOT/scripts/health.sh";;
+  dark|godark) exec bash "$ROOT/scripts/godark" "${1:-on}";;
+  light|lift) exec bash "$ROOT/scripts/godark" lift;;
+  memory|mem) exec bash "$ROOT/scripts/mesh/memory-sync.sh" "${1:-once}" "${@:2}";;
+  iphone|phone|pocket|ask|talk) exec bash "$ROOT/scripts/mesh/iphone-remote.sh" "${v}" "$@";;
+  local|localhost|run-local) exec bash "$ROOT/scripts/local-up.sh" "${1:-up}" "${@:2}";;
+  parity|sync-prod|mirror) exec bash "$ROOT/scripts/parity.sh" "${1:-status}" "${@:2}";;
+  ceo-handoff) exec bash "$ROOT/scripts/ceo-handoff.sh" "$@";;
+  cursor|rick|x|brain-cursor) exec bash "$ROOT/scripts/cursor-hailmary.sh" "$@";;
+  fanout|crossover|morph|allhands) exec bash "$ROOT/scripts/fanout.sh" "$@";;
+  allin|all-in|m1|fullsend) exec bash "$ROOT/scripts/m1-allin.sh" "$@";;
+  everything|all|doall|everythingnow) exec bash "$ROOT/scripts/everything" "$@";;
+  selftest|stress|prove) exec bash "$ROOT/scripts/selftest.sh" "$@";;
+  barn|containment|airtight) exec bash "$ROOT/scripts/containment.sh" "$@";;
+  autopilot|auto|cruise) exec bash "$ROOT/scripts/autopilot.sh" "${1:-cycle}" "${@:2}";;
+  ready|fleet-ready|wakeup) exec bash "$ROOT/scripts/fleet-ready.sh" "${1:-auto}" "${@:2}";;
+  remote|reach|into) exec bash "$ROOT/scripts/mesh/link.sh" assist "${1:-brainiac-mac}" "${@:2}";;
+  garage) exec bash "$ROOT/scripts/garage" "$@";;
+  overhaul) [ -x "$ROOT/scripts/overhaul-deploy.sh" ] && exec bash "$ROOT/scripts/overhaul-deploy.sh" "$@" || { echo "overhaul-deploy.sh not installed yet"; exit 1; };;
+  *) printf 'tmmt words: up | unison | booyah | env | garage | local | onboard | aixmos | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
+esac
