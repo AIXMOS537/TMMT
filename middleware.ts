@@ -43,6 +43,12 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   // Time clock is available to every signed-in employee, whatever their tier.
   if (pathname === "/clock" || pathname.startsWith("/clock/")) return true;
 
+  // AIXMOS Pocket — the member's pocket app + its API, available to every
+  // signed-in user whatever their tier (member, operator, owner). The API
+  // routes do their own auth + token metering. See docs/aixmos-pocket.
+  if (pathname === "/pocket" || pathname.startsWith("/pocket/")) return true;
+  if (pathname.startsWith("/api/pocket/")) return true;
+
   switch (tier) {
     case "owner":
       return true;
