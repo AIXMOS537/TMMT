@@ -65,6 +65,45 @@ export type ClaimResult = { claimed: boolean; pool_id?: number; reason?: string 
 export type AssignResult = { assigned: boolean; pool_id?: number; reason?: string };
 export type CrossReferResult = { referred: boolean; pool_id?: number; reason?: string };
 
+/**
+ * Capture → pool, FAIL-OPEN. Called from the lead webhook with a service-role
+ * client. Resolves the agency (explicit lead_routes rule first, else the
+ * capturing tenant) + vertical (route rule, else inferred), then routes.
+ *
+ * NEVER throws: if the migration isn't applied, no route matches, or the
+ * vertical can't be determined, it returns a skipped result and the lead intake
+ * proceeds untouched. Starts working automatically once the schema + routes exist.
+ */
+export async function routeIncomingLead(
+  supabase: SupabaseClient,
+  args: {
+    leadId: string;
+    capturingOrgId: string;
+    vertical?: Vertical | null;
+    utmCampaign?: string | null;
+    utmSource?: string | null;
+    signals?: Array<string | null | undefined>;
+  }
+): Promise<RouteResult & { skipped?: boolean }> {
+  try {
+    const inferred =
+      args.vertical ?? inferVertical(args.utmCampaign, args.utmSource, ...(args.signals ?? []));
+    const route = await resolveAgency(supabase, {
+      vertical: inferred,
+      utmCampaign: args.utmCampaign,
+      utmSource: args.utmSource,
+    });
+    const vertical = route?.vertical ?? inferred;
+    // Explicit route rule wins; otherwise route to the capturing tenant.
+    const agencyOrgId = route?.agencyOrgId ?? (vertical ? args.capturingOrgId : null);
+    if (!agencyOrgId || !vertical) return { routed: false, reason: "unresolved", skipped: true };
+    return await routeLead(supabase, { leadId: args.leadId, vertical, agencyOrgId });
+  } catch {
+    // Fail-open: never let pool routing break lead capture.
+    return { routed: false, reason: "error", skipped: true };
+  }
+}
+
 /** Route a captured lead into the pool for an agency. Service-role only. */
 export async function routeLead(
   supabase: SupabaseClient,
