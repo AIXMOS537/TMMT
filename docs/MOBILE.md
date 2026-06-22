@@ -1,5 +1,9 @@
 # HAILMARY in your pocket — iPhone & Android
 
+> **Want the full, turnkey iPhone build (two-way voice, one-tap Shortcuts, the
+> talking/learning/evolving loop)?** See **`docs/IPHONE-ULTIMATE.md`** — it uses the
+> base-side entrypoint `scripts/mesh/iphone-remote.sh`. This page is the short version.
+
 Yes — you can carry HAILMARY. The trick that keeps it **local and owner-only** is
 simple: your phone doesn't *become* the brain — it becomes a **secure window into
 your brain** (the always-on M1 at home) over your private Tailscale mesh. Nothing
