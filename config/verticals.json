@@ -1,0 +1,21 @@
+{
+  "verticals": [
+    {
+      "slug": "tmmt-rentals",
+      "orgName": "TMMT Rentals",
+      "loginUrl": "https://tmmt-ops.vercel.app/login"
+    },
+    {
+      "slug": "moe-legacy",
+      "orgName": "Moe Legacy",
+      "loginUrl": "https://tmmt-ops.vercel.app/login",
+      "foundingAdminEmails": ["umar47002@yahoo.com"]
+    }
+  ],
+  "stages": {
+    "learn": { "appRole": "operator", "orgRole": "viewer", "revenueSharePct": 0, "level": "student", "certified": false },
+    "earn": { "appRole": "operator", "orgRole": "dispatcher", "revenueSharePct": 70, "level": "certified", "certified": true },
+    "admin": { "appRole": "operator", "orgRole": "tenant_admin", "revenueSharePct": 70, "level": "certified", "certified": true },
+    "graduate": { "appRole": "partner", "orgRole": "tenant_admin", "revenueSharePct": 85, "level": "agency_owner", "certified": true }
+  }
+}

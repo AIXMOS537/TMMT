@@ -34,7 +34,10 @@
     "swarm:doctor": "bash scripts/swarm-doctor.sh",
     "swarm:mesh": "bash scripts/swarm.sh mesh",
     "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs",
-    "smoke:dispatch": "bash scripts/smoke-dispatch.sh"
+    "smoke:dispatch": "bash scripts/smoke-dispatch.sh",
+    "dual-sync:doctor": "bash scripts/dual-sync/doctor.sh",
+    "dual-sync:init": "bash scripts/dual-sync/init.sh owner",
+    "dual-sync:upgrade": "python3 scripts/dual-sync/upgrade.py"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

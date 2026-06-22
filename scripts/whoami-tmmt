@@ -30,6 +30,12 @@ if [ "$ROLE" != "owner" ]; then
   printf '  %sthis device is fenced — owner agents are locked.%s\n\n' "$D" "$X"
 fi
 
+# X profile (owner-local identity — HAILMARY reads on every boot).
+if [ -f "$HOME/.hailmary/X-PROFILE.md" ]; then
+  xp="$(grep -E '^[^#[:space:]].*·' "$HOME/.hailmary/X-PROFILE.md" 2>/dev/null | head -1 | sed 's/^[[:space:]-]*//')"
+  [ -n "$xp" ] && printf '   x       : %s%s%s\n\n' "$C" "$xp" "$X"
+fi
+
 if [ "${1:-}" = "mesh" ]; then
   printf '  %swhole mesh:%s\n' "$BD" "$X"
   bash "$ROOT/scripts/swarm.sh" mesh 2>/dev/null | sed 's/^/   /' || printf '   (mesh roster unavailable)\n'

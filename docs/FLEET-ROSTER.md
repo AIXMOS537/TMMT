@@ -9,6 +9,8 @@
 > This is the "secured map" Pillar 6 of the GO GHOST protocol asks for — **minus
 > secrets.** No passwords, keys, serials, or IPs live here; those stay in the
 > vault. This file just says *what exists and who holds it.*
+>
+> **Dual sync pairs** (mobile ↔ brain per person): [`DUAL-SETUP-SYNC.md`](./DUAL-SETUP-SYNC.md)
 
 ---
 
