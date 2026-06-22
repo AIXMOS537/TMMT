@@ -47,7 +47,8 @@ cmd_add(){
   mkdir -p "$REG"
   { printf 'NAME=%q\n' "$name"; printf 'HOST=%q\n' "$host"; printf 'added_utc=%q\n' "$(date -u +%FT%TZ)"; } > "$REG/$(slug "$name").env"
   ok "registered '$name' → $host"
-  say "$D   make sure THEY approved your device on Tailscale + have Tailscale SSH on.$X"
+  say "$D   sovereign operator? they SHARE one node to your Tailscale account +$X"
+  say "$D   enable Tailscale SSH on it; you accept the share. (docs/SOVEREIGN-OPERATOR.md)$X"
   say "   test it:  engineer status $name"
 }
 
