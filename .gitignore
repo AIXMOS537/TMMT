@@ -77,6 +77,9 @@ config/voice-cards/*.local.yaml
 # MEMORIAL: private, sacred, owner-local only — never pushed, never shared
 .memorial/
 
+# OWNER VOICE VAULT: Taha's private drafts — owner-local only, never pushed (see docs/OWNER-VOICE-VAULT.md)
+owner-voice/
+
 # Python bytecode cruft
 __pycache__/
 *.pyc
