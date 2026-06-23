@@ -7,19 +7,23 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Pick Moe Legacy's Day-1 legal start.** Moe = credit repair + business funding.
-The credit-repair core is **legally locked** (CROA/VDACS not cleared yet). But Moe
-can legally start *today* on the **un-gated funding path** (cards / LOC / SBA /
-equipment) + education + lead capture, Virginia only. Say the word and I package
-exactly that — clean, gates dark — for Moe's machine.
+**Confirm Moe's package = the agency layer (not a dispute engine).** Moe already
+runs credit repair on his own licensed stack (MyFreeScoreNow + DisputeFox). What
+Taha builds for him is the layer above: ads → **lead pool** → **students/operators**
+who close for **commission + recurring** → **Rick Sorkin** (DREAMA-faced AIXMOS) in
+their pocket. Say "build it" and I scope a clean `workstream-3` + Rick Sorkin
+package that **integrates** DisputeFox/MyFreeScoreNow/GHL — never rebuilds them.
 
 ---
 
 ## Company map (locked in)
 - **AIXMOS** = the GHL **agency** account (All In One Management). Taha owns it.
 - **TMMT Rentals** = a **sub-account**. Separate company. Taha owns it.
-- **Moe Legacy** = **credit repair + business funding** company. Its own thing. Gets
-  ONLY credit/funding tooling — never rentals, never the AIXMOS brain, never HAILMARY.
+- **Moe Legacy** = **credit repair + business funding**, already operating on
+  MyFreeScoreNow + DisputeFox. From Taha he gets the **agency/lead/commission layer**
+  + **Rick Sorkin** AI — never rentals, never HAILMARY/Project-X (face only).
+- **Rick Sorkin** = Moe's assistant. Face = DREAMA/AIXMOS; brain = Project X; master
+  = **X (Taha)** — keys always return to X. Spec: `docs/RICK-SORKIN.md` (owner-only).
 
 ---
 
@@ -27,8 +31,9 @@ exactly that — clean, gates dark — for Moe's machine.
 
 | What | State | Whose move |
 |---|---|---|
-| Moe's clean credit/funding package | Designed; builds **gates-dark** (legal). Not yet packaged. | Yours — say "build it" |
-| Credit-repair core (disputes, paid enrollment) | **Locked by law** until the 4 gate-flips below | Yours (legal steps) |
+| Moe's agency-layer package (WS3 + Rick Sorkin, integrates his tools) | Scoped. Not yet packaged. | Yours — say "build it" |
+| Credit-repair core | **Not ours** — Moe runs DisputeFox/MyFreeScoreNow (his licensed lane) | Moe's vendors |
+| Commission model guardrail | Pay on real collected sales only — never recruitment/"staying on" (anti-pyramid) | Watch on build |
 | Leak risk: old rental builder ships too much | Caught + stopped. Needs allowlist rebuild before ANY handoff. | Mine (on your go) |
 | PR #129 (Moe admin onboarding + voice vault) | CI passing, watched | Mine (merge on your say) |
 | moe-legacy-app deploy | Parked behind owner gate | Yours + Moe's keys |
