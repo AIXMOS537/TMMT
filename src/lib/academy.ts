@@ -57,7 +57,7 @@ export const ACADEMY_LESSONS: Lesson[] = [
         "and close them with the engine (PROJECT AIXMOS) in your pocket. You're paid a " +
         "single-tier commission on sales that are actually collected — never on hype.",
       "It's a plug-and-play business: the infrastructure, tools, and engine are set up for " +
-        "you once you join the mesh. Your job is to serve the person in front of you well.",
+        "you once you join the network. Your job is to serve the person in front of you well.",
     ],
   },
   {
