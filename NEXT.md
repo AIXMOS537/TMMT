@@ -38,6 +38,8 @@ package that **integrates** DisputeFox/MyFreeScoreNow/GHL — never rebuilds the
 | PR #129 (Moe admin onboarding + voice vault) | CI passing, watched | Mine (merge on your say) |
 | moe-legacy-app deploy | Parked behind owner gate | Yours + Moe's keys |
 | Owner Voice Vault | Built, dark, waiting | Yours, when ready |
+| $50K graduation gate + TMMT-token model | Defined: `docs/AIXMOS-LICENSE-AND-TOKENS.md` | Yours to confirm |
+| Pioneer marketing positioning | **DRAFT** ready for review: `docs/marketing/PIONEER-POSITIONING.md` | Yours — approve before any publish |
 
 ---
 
@@ -49,6 +51,13 @@ package that **integrates** DisputeFox/MyFreeScoreNow/GHL — never rebuilds the
 
 Permanent: `cpn_and_rented_tradelines_blocked` stays TRUE forever. VA-only until
 `multistate_matrix_cleared`.
+
+## Two tripwires I'm guarding for you
+1. **TMMT tokens stay closed-loop usage credits** (USD in → engine out; never cashable,
+   transferable, or "invest"). Cross that and it's money-transmission / securities. 🔒
+2. **White-label = license, not sale.** Moe takes the marketing credit; **you keep the
+   engine IP + master kill-switch**, even after $50K. A real IP/equity transfer is a
+   separate lawyered deal — never bundled in.
 
 ---
 
