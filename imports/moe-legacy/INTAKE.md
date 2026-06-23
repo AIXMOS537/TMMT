@@ -38,7 +38,6 @@ Transport options (pick whatever's easiest from Umar's machine):
 - ~~Onboard Umar into `org_roles`~~ — **DONE** (2026-06-22). `umar47002@yahoo.com`
   is `tenant_admin` on org `bbbbbbbb-…-bbbb`. He has not signed in yet
   (`last_sign_in_at` null) — send him the login link to confirm access.
-- **Decide role for `info@moelegacy.com`** — auth user exists (created 2026-06-22)
-  but has NO `org_roles` entry on the Moe Legacy org. If that's Moe's primary
-  login, grant it `tenant_admin`; otherwise leave it. Owner decision — not set on a guess.
+- ~~Decide role for `info@moelegacy.com`~~ — **DONE** (2026-06-23, owner-directed).
+  Granted `tenant_admin` on the Moe Legacy org. Not signed in yet — send login link.
 - Decide whether to push `master` (triggers prod deploy).
