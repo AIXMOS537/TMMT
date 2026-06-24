@@ -3,6 +3,7 @@ import {
   MOE_LEGACY,
   TMMT_RENTALS,
   VERTICALS,
+  a2pSmsClassForSlug,
   getVerticalByOrgName,
   getVerticalBySlug,
   seatPlanForStage,
@@ -30,6 +31,19 @@ describe("vertical registry", () => {
 
   it("Moe Legacy and TMMT Rentals do not share the same org name", () => {
     expect(MOE_LEGACY.orgName).not.toBe(TMMT_RENTALS.orgName);
+  });
+
+  it("maps the credit/funding vertical to a restricted A2P SMS class", () => {
+    // Must resolve to a class the SMS gate treats as restricted so promotional
+    // SMS is blocked for credit/funding.
+    expect(a2pSmsClassForSlug("moe-legacy")).toBe("credit_repair");
+    expect(MOE_LEGACY.a2pSmsClass).toBe("credit_repair");
+  });
+
+  it("defaults unknown/missing slugs to a non-restricted class", () => {
+    expect(a2pSmsClassForSlug("tmmt-rentals")).toBe("rentals");
+    expect(a2pSmsClassForSlug(null)).toBe("rentals");
+    expect(a2pSmsClassForSlug("does-not-exist")).toBe("rentals");
   });
 });
 

@@ -12,7 +12,7 @@ Last updated: 2026-06-03.
 
 ### Account setup (5 min, owner-side)
 
-1. Go to https://sentry.io/signup/ → use `tmmtautodetail@gmail.com`.
+1. Go to https://sentry.io/signup/ → use the project's ops alias (see `config/identity.config.json` → `public_contact.email`), not a personal inbox.
 2. Org name: `tmmt`. Plan: **Developer (Free)** — 5k errors/mo, 10k perf events/mo, 1 user. Enough for 100-user load.
 3. Create project: platform `Next.js`, project name `tmmt-os`.
 4. Copy the DSN (looks like `https://abc123@oXXX.ingest.sentry.io/YYY`).
@@ -75,7 +75,7 @@ After deploy:
 
 ### Account + zone setup (10 min, owner-side)
 
-1. https://dash.cloudflare.com/sign-up — use `tmmtautodetail@gmail.com`.
+1. https://dash.cloudflare.com/sign-up — use the project's ops alias (see `config/identity.config.json` → `public_contact.email`), not a personal inbox.
 2. Add the customer-facing domain(s) — the .com (rental funnel) and the .net (compliance), per [[project_aixmos_tmmt_funnel]].
 3. Cloudflare gives you 2 nameservers — update them at your registrar (Namecheap/GoDaddy/wherever the domains live).
 4. Wait for "active" status — typically 5–30 min.

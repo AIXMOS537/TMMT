@@ -20,6 +20,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"],
       "@aixmos/core": ["./packages/aixmos-core/src/index.ts"],
       "@aixmos/core/*": ["./packages/aixmos-core/src/*"]
     }

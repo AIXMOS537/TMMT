@@ -10,6 +10,9 @@ import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
+import { a2pSmsClassForSlug } from '@/lib/verticals/registry'
+import { evaluateSms } from '@shared/compliance-gates/sms-gate'
+import { createPendingAction } from '@shared/owner-approval-gate/approval'
 
 function twiml(body: string): string {
   if (!body) return '<Response/>'
@@ -123,14 +126,68 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
 
+    // Decide what (if anything) auto-sends back to the lead. Per CLAUDE.md §2,
+    // no customer-facing message may auto-send without explicit owner approval.
+    // The ONLY exception is the legally-required opt-out (STOP) confirmation,
+    // which is transactional and must go out immediately.
+    let replyToSend = ''
     if (result.outboundBody) {
-      await db.from('agent_messages').insert({
-        conversation_id: conv.id,
-        direction: 'out',
-        body: result.outboundBody,
-        compliance_flags: result.complianceFlags,
-        llm_assessment: result.llmAssessment ?? null,
-      })
+      const verticalClass = a2pSmsClassForSlug(org.partnerAppSlug)
+      const isOptOut = result.complianceFlags.includes('opt_out')
+
+      if (isOptOut) {
+        const gate = evaluateSms({ vertical: verticalClass, type: 'transactional' })
+        const allowed = gate.decision === 'ALLOW'
+        await db.from('agent_messages').insert({
+          conversation_id: conv.id,
+          direction: 'out',
+          body: result.outboundBody,
+          compliance_flags: [...result.complianceFlags, allowed ? 'auto_sent_transactional' : 'blocked'],
+          llm_assessment: result.llmAssessment ?? null,
+        })
+        if (allowed) replyToSend = result.outboundBody
+      } else {
+        // Any other agent reply is a customer-facing message → gate it.
+        const gate = evaluateSms({ vertical: verticalClass, type: 'marketing' })
+        if (gate.decision === 'BLOCK') {
+          // Prohibited (restricted credit/funding vertical). Never send or
+          // queue; record it blocked and surface to the owner for compliant,
+          // off-channel follow-up.
+          await db.from('agent_messages').insert({
+            conversation_id: conv.id,
+            direction: 'out',
+            body: result.outboundBody,
+            compliance_flags: [...result.complianceFlags, 'sms_blocked_restricted_vertical'],
+            llm_assessment: result.llmAssessment ?? null,
+          })
+        } else {
+          // HOLD — queue for owner approval instead of auto-sending (§2).
+          const pending = createPendingAction(
+            'customer_message',
+            { conversationId: conv.id, leadId: lead.id, to: from, body: result.outboundBody, vertical: verticalClass },
+            'sms-agent'
+          )
+          await db.from('agent_messages').insert({
+            conversation_id: conv.id,
+            direction: 'out',
+            body: result.outboundBody,
+            compliance_flags: [...result.complianceFlags, 'held_for_owner_approval', `approval:${pending.id}`],
+            llm_assessment: result.llmAssessment ?? null,
+          })
+          // Notify the owner queue (reuse the human-handoff notifier).
+          handoffToHuman({
+            org,
+            leadId: lead.id,
+            phone: from,
+            reason: 'pending_owner_approval',
+            recentMessages: [
+              ...recent,
+              { direction: 'in' as const, body },
+              { direction: 'out' as const, body: result.outboundBody },
+            ],
+          }).catch(() => undefined)
+        }
+      }
     }
 
     if (result.newState === 'HUMAN_HANDOFF') {
@@ -142,7 +199,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       }).catch(() => undefined)
     }
 
-    return xmlResp(twiml(result.outboundBody ?? ''))
+    // Only the transactional opt-out confirmation auto-sends; everything else
+    // is held for owner approval (replyToSend stays empty).
+    return xmlResp(twiml(replyToSend))
   } catch (e) {
     if (
       e instanceof LicenseDisabledError ||

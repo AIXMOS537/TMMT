@@ -9,7 +9,7 @@
       "slug": "moe-legacy",
       "orgName": "Moe Legacy",
       "loginUrl": "https://tmmt-ops.vercel.app/login",
-      "foundingAdminEmails": ["umar47002@yahoo.com"]
+      "_foundingAdminEmails": "PII — set via env MOE_LEGACY_FOUNDING_ADMINS, not in this file"
     }
   ],
   "stages": {

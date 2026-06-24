@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * AIXMOS Pocket referrals — the "earn" half of learn-earn-churn.
  *
- * PROTECTIVE STRUCTURE (owner = Muhammad Taha):
+ * PROTECTIVE STRUCTURE (owner — see config/identity.config.json):
  *  - SINGLE-TIER only — no recruiting-on-recruiting, no MLM depth.
  *  - Commission is recorded ONLY on COLLECTED sales. No guaranteed/passive income.
  *  - Internal earnings records — not a security, not crypto.

@@ -36,7 +36,26 @@ export type VerticalConfig = {
   monthlyTokenAllotment: number;
   /** Owner + founding tenant admins bypass the meter */
   foundingAdminEmails: string[];
+  /**
+   * Canonical A2P 10DLC SMS class for this vertical, matched against
+   * config/identity.config.json → compliance.sms_restricted_verticals by the
+   * SMS compliance gate. Credit/funding verticals MUST be a restricted class
+   * (e.g. "credit_repair") so promotional SMS is blocked. Defaults to
+   * non-restricted ("rentals") when omitted.
+   */
+  a2pSmsClass?: string;
 };
+
+/**
+ * Founding admin emails are PII — never hardcode them in source. Provide them
+ * at runtime via env (comma-separated), e.g. MOE_LEGACY_FOUNDING_ADMINS.
+ */
+function foundingAdminsFromEnv(envKey: string): string[] {
+  return (process.env[envKey] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export const TMMT_RENTALS_HOME_ORG_ID = "8e651b25-e7c8-4356-af64-1716a82053b0";
 
@@ -57,7 +76,8 @@ export const TMMT_RENTALS: VerticalConfig = {
   },
   revenueTags: ["member-97"],
   monthlyTokenAllotment: 500,
-  foundingAdminEmails: [],
+  foundingAdminEmails: foundingAdminsFromEnv("TMMT_RENTALS_FOUNDING_ADMINS"),
+  a2pSmsClass: "rentals",
 };
 
 export const MOE_LEGACY: VerticalConfig = {
@@ -90,7 +110,9 @@ export const MOE_LEGACY: VerticalConfig = {
   },
   revenueTags: ["member-97", "credit-guidance-active", "credit-consult-booked"],
   monthlyTokenAllotment: 500,
-  foundingAdminEmails: ["umar47002@yahoo.com"],
+  foundingAdminEmails: foundingAdminsFromEnv("MOE_LEGACY_FOUNDING_ADMINS"),
+  // Credit/funding vertical — A2P-restricted, so promotional SMS is blocked.
+  a2pSmsClass: "credit_repair",
 };
 
 /** All registered verticals in launch order */
@@ -145,4 +167,14 @@ export function seatPlanForStage(stage: VerticalSeatStage): {
 /** Default vertical when org cannot be resolved (TMMT home) */
 export function defaultVerticalBrand(): VerticalConfig {
   return TMMT_RENTALS;
+}
+
+/**
+ * Resolve the canonical A2P SMS class for an org slug, for the SMS compliance
+ * gate. Unknown/missing slugs fall back to the non-restricted default so we
+ * never silently treat a credit/funding org as unrestricted.
+ */
+export function a2pSmsClassForSlug(slug: string | null | undefined): string {
+  if (!slug) return "rentals";
+  return getVerticalBySlug(slug)?.a2pSmsClass ?? "rentals";
 }

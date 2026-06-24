@@ -3,7 +3,7 @@
 **Send AFTER the pre-install call and AFTER the USB is in the mail.**
 
 **To:** moe@moelegacy.example.com
-**From:** tmmtautodetail@gmail.com
+**From:** <project alias — config/identity.config.json → public_contact.email>
 **Subject:** Your AIXMOS Partner USB — shipped, what to expect, when we install
 
 ---
