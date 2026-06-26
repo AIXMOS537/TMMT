@@ -9,7 +9,7 @@ export default defineConfig({
     // Default to node; component tests opt into jsdom via a per-file
     // `// @vitest-environment jsdom` docblock (see *.test.tsx).
     environment: "node",
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts"],
     setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {

@@ -1,322 +1,159 @@
-# TMMT Rentals — Claude Code Context
+# CLAUDE.md — AIXMOS / TMMT
+> Repo-root memory. Auto-loaded every session. Keep this LEAN (<200 lines).
+> Full reference: `docs/AIXMOS_MASTER_PROJECT.md` — pull in on demand with
+> `@docs/AIXMOS_MASTER_PROJECT.md` when deep context is needed (it's large; don't
+> import it by default or it bloats every session).
 
-## Project
+## WHO / WHAT
+AIXMOS is the AI + automation spine for TMMT Auto Services LLC (Muhammad Taha, CEO).
+You are working inside the codebase that powers the platform. Owner is moving from
+operator to orchestrator — build for delegation, not hand-holding.
 
-TMMT Rentals is a **production-grade vehicle rental management system** built with Next.js 16 App Router, TypeScript, Tailwind CSS 4, and Supabase. It replaced an Airtable-based workflow. The goal is a fully production-ready admin platform.
+## NON-NEGOTIABLE RULES
+- **OWNER APPROVAL GATE.** Any code path that is customer-facing, financial, legal,
+  or production-bound must terminate at an owner-approval step. Never auto-execute
+  send/pay/sign/ship. (Enforcement note: this file is context, not a hard block —
+  the real gate is the **PreToolUse hook** in `.claude/hooks/`. Keep it installed.)
+- **LEGALLY GATED FEATURES STAY LOCKED.** Credit-repair and funding features ship
+  behind flags that ONLY Muhammad or Umar can unlock after the required legal steps.
+  Do not enable, default-on, or remove these flags. See COMPLIANCE below.
+- **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
+- **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls.
 
-**Repo:** https://github.com/Metavibez4L/TMMT
+## REPO CONVENTIONS
+- TypeScript + Python. Shared schemas are the contract — change schema first, then
+  both sides. Don't fork types.
+- Owner-approval primitives live in shared lib; reuse them, don't reinvent per feature.
+- Compliance gates are code, not comments — keep them in the gate modules.
+- Commit style: short imperative subject. Reference the stack touched (rental/credit/ecom).
 
-## Engineering Philosophy
+## ARCHITECTURE (nouns)
+- **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,
+  served tailnet-only), work Mac, brainiac (main compute — DEFINE), UGREEN NAS
+  (file tier), iPhone (Private LLM + Shortcuts), operator/employee laptops.
+- **Cloud hub:** Cloudflare Workers Gateway — role-scoped secrets, tiered model
+  routing (Ollama → Haiku → Sonnet → Opus), role-broker for team access.
+- **Backbone:** GHL · Airtable (`appcenWUju039rD7b`) · n8n · Supabase · Qdrant · Redis.
 
-- **Agentic workflows first** — use `superpowers:brainstorming` → `superpowers:writing-plans` → `superpowers:subagent-driven-development` for all non-trivial work
-- **Production quality, not prototype quality** — every feature ships with proper error handling, TypeScript correctness, and accessibility
-- **YAGNI + DRY** — build exactly what's needed, no speculative abstractions
-- **TDD where testable** — Playwright installed for E2E; build verification (`npm run build`) is the primary gate
-- **Frequent commits** — one logical unit per commit, descriptive messages
+## PRODUCT (4 tiers, same engine)
+1. Public — shopfront, lead capture.
+2. Operator / Owner — the OS + playbooks to run a stack.
+3. Employee / Vendor — scoped tools, inside the network.
+4. Full $50K — complete stack + 12mo backend support, first 10 only.
 
-## Tech Stack
+## STACKS
+1. **Car Rental** — most mature, plug-and-play. Ship first (owner is the expert).
+2. **Credit Repair** — CROA-gated. No pricing/offer until legal clears (see COMPLIANCE).
+3. **E-commerce** — built out via Discovery Agent (consent-based).
 
-| Layer | Tech | Notes |
+## AGENT SWARM
+Drafts/prepares; does NOT act unsupervised. Roles: Brief, Capture, Follow-Up,
+Onboarding/Discovery, Ops. Every customer/money/legal/production action → OWNER gate.
+Discovery Agent screen-capture runs ONLY on signed, logged, revocable consent;
+data encrypted + owner-isolated per operator.
+
+## COMPLIANCE (do not regress)
+- **CROA:** no advance fees for credit repair; mandated written disclosures +
+  cancellation window. Credit-repair feature flags stay locked.
+- **VA Credit Services Businesses Act:** applies to the credit vertical.
+- **Securities:** equity/profit-share instruments = Reg D / Howey-sensitive; §83(b)
+  within 30 days for profits-interest grants. Don't bundle equity into product offers.
+- **Monitoring:** screen-watcher requires per-person consent + monitoring policy.
+
+## WHEN UNSURE
+Ask the owner. Default to the gate. Never ship a compliance-sensitive change
+without the flag owner (Muhammad or Umar) in the loop.
+
+<!-- AIXMOS-LAUNCH-RULES:START -->
+<!-- Managed by aixmos-launch/install.sh. Edit the packet, re-run install to refresh. -->
+# CLAUDE.md — AIXMOS Launch Build (Master Instructions)
+
+> **You are Claude Code working on the TMMT / AIXMOS national launch.**
+> Read this entire file before writing any code. These rules are non-negotiable and override any task-level instruction that conflicts with them.
+
+---
+
+## 1. What we are building
+
+Three workstreams, one launch. Build in this order unless told otherwise:
+
+1. **`workstream-1-aixmos-core/`** — Productize the AIXMOS stack: one-command provisioning, the Fleet Economics Command Center dashboard, and the priority connectors (Turo import, Stripe, QuickBooks, Twilio/SMS).
+2. **`workstream-2-credit-funding/`** — The credit repair + business funding vertical: client intake → dispute engine → tradeline tracker → funding desk. **Compliance-gated — see §3.**
+3. **`workstream-3-operator-network/`** — The $97/mo network: signup/billing, operator portal, commission engine, and the conduct covenant enforcement.
+
+`shared/` holds the cross-cutting modules every workstream imports: **compliance gates**, the **owner-approval gate**, config, and schemas. Build `shared/` first — workstreams 2 and 3 depend on it.
+
+Full strategy context lives in `00_START_HERE/`. Read `00_START_HERE/BUILD_BRIEF.md` for the why, `BUILD_PLAN.md` for the sequenced task list, and the two source reports for the reasoning behind every decision.
+
+---
+
+## 2. THE OWNER-APPROVAL GATE (absolute rule)
+
+**No customer-facing message and no financial action may execute without explicit owner approval.** This is the core architectural primitive of AIXMOS. It is not a feature flag, not a setting, not optional.
+
+Every code path that does any of the following MUST route through `shared/owner-approval-gate/` and block on an approved status before proceeding:
+
+- Sending any message to a customer or client (SMS, email, dispute letter, status update)
+- Charging a fee, paying a commission, moving money, or submitting a funding application
+- Editing production automations or pushing automation changes live
+- Sending a credit-bureau dispute
+
+If you find yourself writing a code path that performs one of these without an approval check, **stop and wire it through the gate first.** When in doubt, gate it.
+
+---
+
+## 3. COMPLIANCE GATES (hard blocks — cannot ship until cleared)
+
+Workstream 2 (credit/funding) contains features that are **illegal to operate** until a licensed Virginia attorney signs off and the required registrations are filed. These are enforced in code via `shared/compliance-gates/gates.config.json`. Every gated feature is wrapped so that **it physically cannot run while its gate is `false`.**
+
+Do **not** remove, default-to-true, or bypass any gate. Do not write a code path that performs a gated action outside its `requireGate()` wrapper. The gates:
+
+| Gate key | Blocks until... | Legal basis |
 |---|---|---|
-| Framework | Next.js 16.1.6 (App Router, Turbopack) | |
-| Language | TypeScript 5 (strict mode) | |
-| Styling | Tailwind CSS 4 | Class-based dark mode via `html.dark`; no tailwind.config.js — all config in `globals.css` |
-| Database | Supabase PostgreSQL | 44 tables, 1,453 migrated records |
-| Auth | Supabase Auth + `@supabase/ssr` v0.9.0, `supabase-js` v2.97.0 | Email + password, middleware-protected |
-| Icons | lucide-react | |
-| Monitoring | @sentry/nextjs | Inactive until `NEXT_PUBLIC_SENTRY_DSN` set |
-| Testing | vitest + @playwright/test (dev) | Vitest unit tests (`src/lib/**/*.test.ts`); Playwright E2E smoke tests in `e2e/` |
-| Validation | zod | Server action input validation |
-| Utilities | date-fns, clsx, tailwind-merge | |
+| `croa_contracts_attorney_approved` | VA attorney approves the CROA contract + disclosure + 3-day cancellation suite | CROA 15 U.S.C. §1679 |
+| `vdacs_registered_bonded` | Credit services business registered w/ VDACS + surety bond posted | Va. Code §59.1-335.1 |
+| `no_advance_fee_billing_enforced` | Billing proven to never charge before services performed | CROA / TSR advance-fee ban |
+| `sbf_broker_registered` | Registered as VA sales-based financing broker w/ SCC ($1,000) | Va. Code §6.2-2228 |
+| `cpn_and_rented_tradelines_blocked` | Hard prohibition implemented + monitored (always keep true) | Federal fraud / FTC |
+| `securities_counsel_cleared_fund` | Securities counsel clears ANY pooled-capital vehicle | Howey / ’40 Act |
+| `multistate_matrix_cleared` | State-by-state licensing matrix cleared before non-VA launch | State CSB + commercial-financing laws |
 
-## Current Architecture
+**Default posture:** every gate ships `false` except `cpn_and_rented_tradelines_blocked` (which ships `true` and stays `true`). Launch in Virginia only. Build the features fully — but they stay dark behind the gate until the human flips it after sign-off.
 
-```
-middleware.ts                  — auth gate (getUser) + rate limiter for /forms POST
-src/app/
-  layout.tsx                   — sets metadata, injects blocking theme script (dark mode init), suppressHydrationWarning required
-  (admin)/                     — protected, requires auth
-    layout.tsx                 — renders Sidebar
-    actions.ts                 — signOut server action
-    admin-actions.ts           — adminUpsert() auth-gated write (table allowlist)
-    page.tsx                   — dashboard (StatCard metrics, getDashboardData)
-    [17 admin pages]
-  (auth)/
-    layout.tsx                 — centered, no sidebar
-    login/page.tsx + actions.ts
-  forms/
-    actions.ts                 — 8 zod-validated server actions for public forms
-    [8 public form pages]      — no auth required
-src/lib/
-  supabase.ts                  — browser anon client (singleton, read-only usage via queries.ts)
-  supabase-server.ts           — createSSRClient (async), createMiddlewareClient
-  rate-limit.ts                — in-memory rate limiter (5 req/hr per IP)
-  queries.ts                   — read fetchers only (writes go through server actions, not here)
-  utils.ts                     — cn(), formatCurrency(), formatDate(), formatDateTime(), statusColor()
-src/components/
-  Sidebar.tsx                  — nav + logout button ("use client")
-  ThemeToggle.tsx
-  ui.tsx                       — full UI component library
-```
+**CPN / rented-tradeline rule:** never write, suggest, or scaffold any code that generates, stores, uses, or brokers CPNs, "credit privacy numbers," bought/rented primary or authorized-user tradelines, or file-segregation. The intake and dispute engines must actively flag and reject these. This is criminal-exposure territory.
 
-## Critical Patterns
+---
 
-### Supabase SSR (Next.js 15+)
-- `cookies()` from `next/headers` returns a **Promise** — always `await` it
-- Use `createSSRClient()` in server actions (from `@/lib/supabase-server`)
-- Use `createMiddlewareClient(req, res)` in middleware
-- **Never** use `getSession()` for auth decisions — use `getUser()` (verified)
-- `supabase.ts` is imported by `"use client"` components — never add `next/headers` imports there
+## 4. Stack & conventions
 
-### Route Groups
-- `(admin)/` — all protected admin pages, gets Sidebar via layout
-- `(auth)/` — login page, minimal layout, no Sidebar
-- `forms/` — public, outside both route groups
+Build against the existing live stack — do not reinvent it:
 
-### Server Actions
-- Must have `"use server"` directive
-- Import `createSSRClient` from `@/lib/supabase-server`, not `@/lib/supabase`
-- `createSSRClient` is async — always `await createSSRClient()`
-- Public form writes: `src/app/forms/actions.ts` (zod-validated, anon insert)
-- Admin writes: `src/app/(admin)/admin-actions.ts` (auth-gated upsert with table allowlist)
-- Do NOT add writes to `queries.ts` — that file is read-only fetchers
+- **Orchestration:** n8n (automation backbone) · **DB:** Supabase (Postgres) · **Vectors:** Qdrant · **LLM:** Ollama (local default) + tiered cloud via the Cloudflare Workers gateway · **Cache/queue:** Redis
+- **System of record:** Airtable base `appcenWUju039rD7b` (Fleet `tblubnSDZkvsc9L6I`, Active Customers `tblFJIhonUvf631uM`, Customer Payments `tblsG1LCDNSeehiLf`, Incoming Leads `tbl4gndUYeiOUWYRR`)
+- **CRM/funnels:** GoHighLevel · **Billing:** Stripe · **Payroll:** Gusto · **Storage (sensitive/PII):** self-hosted UGREEN NAS over Tailscale — **PII never goes into a cloud LLM context; keep it on the NAS tier.**
+- **Repos:** GitHub `AIXMOS537`, private. **Frontends:** React. **Automation pkg:** AIXMOS Node (Python).
+- **Model routing:** default to local Ollama for anything touching client PII or high-volume tasks; use cloud models only through the gateway, and **the customer supplies their own API key (BYO-key)** for cloud calls — never bill uncapped tokens against a one-time license. (See pricing model in the brief.)
 
-## Dispatch Core (Subproject #1 of Rescue Dispatch SaaS) — SHIPPED
+Conventions: TypeScript for React/Node services, Python for the AIXMOS Node package and dispute/ML logic. Every secret comes from env — see `shared/config/.env.template`. Never commit secrets. Every workstream folder has its own `CLAUDE.md` and `TASKS.md`; read them before starting that workstream.
 
-Plan: `docs/superpowers/plans/2026-05-27-rescue-dispatch-core.md`
-Spec: `docs/superpowers/specs/2026-05-27-rescue-dispatch-core-design.md`
-Migration: `supabase/migrations/20260530120000_rescue_dispatch_core.sql`
-Routes: `/dispatch/*` under `(command)` (owner-only on .net)
-Tenancy: per-tenant via `org_roles` + new `is_org_dispatcher(org_id)` helper. `is_staff()` bypass preserved.
-Agents: CAPTAIN refinement via `captain_dispatch` prompt (JSON output) in `~/AIXMOS-AGENTS/agents/prompts.js`. Fail-open at 1.5s.
+---
 
-## Production Gaps (ordered by priority)
+## 5. How to work
 
-1. ~~**Row-Level Security (RLS)**~~ — **DONE**: RLS enabled on all 20 tables via `supabase/migrations/20260331_enable_rls.sql`. Public form tables allow anon INSERT; admin tables require authenticated.
-2. ~~**Input validation / server actions**~~ — **DONE**: All 8 public forms use zod-validated server actions (`src/app/forms/actions.ts`). All 17 admin pages use auth-gated server action (`src/app/(admin)/admin-actions.ts`).
-3. ~~**Error handling**~~ — **DONE**: ErrorBanner replaces all alert() calls. Error boundaries at root and admin level. `.catch()` on all data fetches.
-4. ~~**Rate limiting**~~ — **DONE**: In-memory rate limiter (5 req/hr per IP) in middleware for `/forms` POST.
-5. ~~**Security headers**~~ — **DONE**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy in `next.config.ts`.
-6. ~~**Error monitoring**~~ — **DONE**: Sentry SDK installed and configured. Set `NEXT_PUBLIC_SENTRY_DSN` in `.env` to activate.
-7. ~~**Maintenance show/no-show toggle**~~ — **DONE**: inline `StatusPill` in the maintenance table (`src/components/ui.tsx`) saves status immediately via auth-gated `adminUpsert()`; No-Show/Late auto-set `NO_SHOW_FEE`. Reconciled the approved spec (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`) with current hardening (server action + ErrorBanner, not direct client write + alert()).
-8. ~~**Password reset flow**~~ — **DONE**: self-service via Supabase Auth (PKCE). `/login/forgot` → `/api/auth/callback` (code exchange) → `/login/reset`. Enumeration-safe, relative-redirect guarded. "Forgot password?" link on login; `/api/auth/` is a public path in middleware.
-9. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
-10. **Email notifications** — no transactional email yet
-11. **Reporting / analytics** — **PARTIAL**: CSV export on all 19 admin DataTable pages (`ExportButton` + `src/lib/csv.ts`, exports the filtered view). Aggregate/analytics views still TODO.
-12. ~~**Testing infrastructure**~~ — **DONE (unit)**: Vitest installed (`vitest.config.ts`, `npm test`) with first suites for utils, csv, auth-roles, and the mission builder (`src/lib/**/*.test.ts`). Playwright E2E smoke tests still in `e2e/`. Component/DOM tests (jsdom) not yet added.
+1. Start with `shared/` (gates, approval gate, schemas, config). Nothing else compiles correctly without them.
+2. For each workstream, open its `CLAUDE.md` then work its `TASKS.md` top to bottom. Check tasks off as you go.
+3. Before any commit touching workstream 2 or 3, run the compliance check (`shared/compliance-gates/check.*`) and confirm no gated path is reachable while its gate is `false`.
+4. Keep the owner-approval gate on the critical path. If a test bypasses it, the test is wrong.
+5. When a task needs a human decision (legal sign-off, a credential, a pricing number), stop and surface it in that workstream's `TASKS.md` under "BLOCKED — needs human" rather than guessing.
 
-## Admin Page Pattern
+---
 
-Every admin page follows the same structure — respect it when adding new pages:
+## 6. Definition of "ready to launch"
 
-```tsx
-"use client"
-// 1. useEffect → fetch data → setState (with .catch() for error handling)
-// 2. useMemo → filter by search + status
-// 3. DataTable with columns config
-// 4. onRowClick → Modal → FormField inputs
-// 5. handleSave → setSaving(true) → adminUpsert("table_name", record) → setSaving(false) → reload
-// 6. ErrorBanner in Modal for inline error display
-// 7. Submit button: disabled={saving}, shows "Saving..." while in flight
-```
-
-## Commands
-
-```bash
-npm run check-env # validate `.env` + Supabase Auth/REST reachability (no secrets printed)
-npm run dev      # dev server on http://localhost:3000 (Turbopack — default in Next.js 16, no flag needed)
-npm run build    # production build — primary CI gate
-npm run start    # serve production build locally
-npm run lint     # ESLint
-npm test         # Vitest unit tests (run once); npm run test:watch for watch mode
-npm run test:e2e # Playwright E2E smoke tests (requires dev server or uses webServer config)
-
-# Mesh / multi-machine ops (see docs/MESH-SWARM.md)
-bash scripts/one-shot.sh carry   # ACROSS-THE-BOARD one-shot: carry|brain|moe|own (docs/ONE-SHOT-ACROSS-THE-BOARD.md)
-bash scripts/setup-mac.command   # fresh-Mac installer for a BARE machine (tools, repo, .env via Vercel, join, audit)
-bash scripts/swarm-join.sh       # onboard THIS machine to the mesh (unique name, per-account git id, hooks)
-bash scripts/tmmt up|who|help|go|sync|fix|notify   # simple owner verbs
-bash scripts/tmmt fix            # = swarm-doctor: readiness + security audit (PASS/WARN/FAIL)
-npm run swarm -- up 2            # claim 2 tasks + launch 2 parallel Claude agents (git worktrees)
-npm run sync:machine             # safe N-machine sync (stash → rebase → push)
-
-# Airtable → Supabase one-time sync
-node scripts/sync-airtable.mjs           # live run
-node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
-```
-
-## Env
-
-- `.env` at project root (gitignored via `.env*`)
-- Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- Optional: `NEXT_PUBLIC_SENTRY_DSN` — Sentry error monitoring (inactive when empty)
-- Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
-- Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
-- **Secret transport (2026-06-15): Vercel is the source of truth.** Pull `.env`
-  on any machine with `vercel env pull .env --environment=production` (this is
-  what `swarm-join.sh` does automatically when `.env` is missing). The old
-  **key flashdrive is retired** — its bootstrap script was removed; the legacy
-  flow lives only in `docs/CONTINUE-ON-CARRY-MAC.md` for reference. Note:
-  `npm run build`, `test`, `lint`, and the agent swarm all run **without** `.env`
-  (env is read lazily at request time) — `.env` is only needed to run the live app.
-- **If the flashdrive is unaccounted for: rotate** `SUPABASE_SERVICE_ROLE_KEY`
-  (Supabase → API Keys) + `GHL_WEBHOOK_SECRET` (GHL), update Vercel, redeploy,
-  re-pull. Runbook in `docs/security/SUPABASE-ADVISORS-2026-06-15.md`.
-
-### Deploy safety — LOCAL-FIRST IS ENFORCED (non-negotiable)
-
-**Nothing goes live until it passes local checks first.** This is no longer a
-convention — it is gated in three places (belt + suspenders), so a broken build
-can't embarrass us in front of the team, investors, or clients again:
-
-1. **One local gate:** `npm run verify` (`scripts/verify.sh`) = lint → test →
-   production build. Exit 0 = safe to ship. No `.env` needed.
-2. **Can't push broken app code:** `scripts/hooks/pre-push` runs `verify` when
-   commits touch app paths (`src/`, `packages/`, app config) and **blocks the
-   push** on failure. Emergency escape hatch (own it): `SKIP_VERIFY=1 git push`.
-3. **Can't merge broken code:** `.github/workflows/verify.yml` runs lint+test+build
-   on every PR + push to `master`. **Make it a required status check on `master`**
-   (branch protection) → broken code can never land, so any deploy from `master`
-   is inherently safe.
-4. **The only blessed deploy:** `npm run ship` (`scripts/ship.sh`) verifies first,
-   refuses to deploy on any failure, confirms, then `vercel --prod`. `tmmt ship`.
-
-Quota/skip rules still apply: the live site only redeploys when **app code**
-changes — docs, shell scripts, markdown, `tools/`, and the agent system **never**
-trigger a deploy (enforced by `vercel.json` `ignoreCommand` →
-`scripts/vercel-ignore.sh`). Vercel git auto-deploy is **off**
-(`deploymentEnabled: false`); production ships only via the gated `ship` path.
-
-Three separate apps on Vercel team `aixmos537` — see `docs/THREE-APP-ECOSYSTEM.md` for the canonical topology and `docs/DEPLOY.md` for env-var / DNS routine:
-
-- `tmmt-ops` → TMMT Ops (TMMT OS proper) at https://tmmt-ops.vercel.app
-- `tmmt-command-center` → owner + leadership portfolio hub at https://tmmt-command-center.vercel.app
-- `aixmos-landing` → AIXMOS public funnel at https://aixmos-landing.vercel.app
-
-Legacy `tmmt-c919` and `tmmt` projects are retired (`tmmt-c919.vercel.app` returns HTTP 404 as of 2026-06-08). Run `scripts/retire-vercel-duplicates.sh --apply` to delete the empty project shells from the Vercel team once env-var + domain pre-flight in `docs/THREE-APP-ECOSYSTEM.md` is signed off. Local `.vercel/project.json` should point at `tmmt-ops` (`prj_g80HsnBcQ34tukCFCGPxcP5cmQF1`) — not the old `tmmt-c919` ID.
-
-## Mesh Operations Layer (multi-machine + agent swarm) — SHIPPED 2026-06-15
-
-A git-coordinated layer so the owner runs the business from any machine (carry
-Mac, work Mac, a Surface — each on its own account) and a swarm of Claude agents
-works in parallel. **Git is the only coordination layer** (no server). Full guide:
-`docs/MESH-SWARM.md`.
-
-- **Swarm:** `scripts/swarm.sh` — shared task board on a remote-only `swarm-coord`
-  branch with **atomic claims**; each task runs in its own **git worktree** on
-  `swarm/<machine>/<id>`; agents launch in tmux (mac/linux/wsl) or a Windows
-  Terminal tab (Surface). `scripts/lib/swarm-common.sh` holds shared helpers.
-- **Sync:** `scripts/sync-machine.sh` (npm `sync:machine`) — stash → rebase →
-  push; never force-push, never merge; fails clean on conflict.
-- **Mesh presence + remote assist:** `scripts/mesh/presence.sh` (heartbeat + live
-  roster) and `scripts/mesh/link.sh` (operator `serve`/`request`, owner
-  `who`/`assist` over **Tailscale SSH**, SOS via Slack/Telegram `.env.notify`).
-- **Onboarding/security:** `scripts/swarm-join.sh` (idempotent per-device onboard,
-  per-account git identity), `scripts/swarm-doctor.sh` (readiness+security audit),
-  `scripts/hooks/{pre-commit,pre-push}` (secret guard via `core.hooksPath`,
-  installed by swarm-join — blocks `.env`/keys/service-role/GHL/Stripe/etc.),
-  `scripts/setup-mac.command` (fresh-Mac one-shot installer).
-- **Simple UX:** `scripts/tmmt` (one-word verbs), `TMMT-MENU.command` (double-click
-  → press a number), `docs/cheatsheets/*` (picture PDF + phone wallpaper +
-  new-Mac card, regenerate with `scripts/make-cheatsheet.py`).
-- **Machine identity:** `.swarm/machine` (gitignored); each machine MUST have a
-  unique name. Branches `swarm/<machine>/*` prevent cross-machine collision.
-- **Auth resilience:** `middleware.ts` **fails closed** — if Supabase is
-  unreachable/misconfigured (e.g. a preview deploy without env), it treats the
-  request as signed-out (redirect to /login) instead of a 500. Never fails open.
-
-## Agents: HAILMARY + AIXMOS + Unison — SHIPPED 2026-06-16
-
-The owner-only agent layer. Both agents are **owner-only (PROJECT X HAILMARY),
-local-first, never-sold**, share the same guardrails, and the same memory of
-record (git + Obsidian vault on BRAINIAC). Charters are the law:
-
-- **HAILMARY** (`docs/HAILMARY-CHARTER.md`) — the Owner's personal "big-play /
-  break-glass" agent. **Activation word: `booyah`.** `scripts/hailmary`:
-  `booyah` (boot + self-audit + absorb + macOS always-on), `absorb` (touch &
-  absorb git/docs/mesh context into `.hailmary/memory/` snapshots — owner-local,
-  **secret values skipped AND scrubbed** by regex at capture), `hit [n]` (launch
-  swarm), `status`, `standby`. `.hailmary/` is gitignored.
-- **AIXMOS** (`docs/AIXMOS-CHARTER.md`) — the operations/network brain that runs
-  the swarm + TMMT operatives. Peer to HAILMARY: AIXMOS runs the network,
-  HAILMARY serves the Owner.
-- **Memory loop** (Phase 3, `scripts/mesh/memory-sync.sh`) — **push-only**
-  (M1 → vault) rsync of memory snapshots into BRAINIAC's Obsidian vault over
-  Tailscale. Set `HAILMARY_VAULT` (Tailscale SSH `host:path`, off git); `install`
-  lays a macOS LaunchAgent (`com.tmmt.memory-sync`).
-- **Unison** (`scripts/mesh/unison.sh`) — the single switch that boots the whole
-  home base as one: HAILMARY `booyah` → memory loop → always-on presence.
-  Launcher verbs: **`bash scripts/tmmt unison|booyah|memory`**.
-- **Owner taps remaining:** run `bash scripts/hailmary booyah` (or `tmmt unison`)
-  **on the M1**; set `HAILMARY_VAULT`; share BRAINIAC into the assistant's
-  tailnet (least-privilege). See `docs/AIXMOS-MESH-BLUEPRINT.md` Phases 2–5.
-
-## One-word command system — SHIPPED 2026-06-16
-
-Front door: `START-HERE.md`. Every word routes through `scripts/tmmt`; `scripts/go`
-installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
-
-- **`booyah`** = THE start word → full base boot (`scripts/mesh/unison.sh up`).
-  `wake` = HAILMARY only. `menu` = colorful board (`scripts/menu`, role-aware).
-- **Watch (Cyborg):** `watchtower` (`scripts/watchtower` — League roster + live
-  vertical health), `health` (`scripts/health.sh` — pings `watch/targets.tsv`;
-  401/403 = UP🔒, 000/5xx = DOWN), `whoami` (`scripts/whoami-tmmt`).
-- **Clients:** `onboard` (`scripts/aixmos onboard`), `aixmos` (cast).
-- **You first:** `compass` (`scripts/compass` — protect-first, toward God; exempt
-  from DARK). **Protect/kill:** `dark`/`light` (`scripts/godark` — anyone stops,
-  only owner seal lifts; `dark hard` = `tailscale down`), `fix`, `seal`.
-- **Deploy:** `scripts/deploy [owner|operator]` — role-aware (owner needs the
-  Owner Seal `auth/OWNER.seal`; operators fenced). `scripts/install-desktop.sh`
-  (Mac icons), `scripts/make-wallpaper.py` + `make-pocket-card.py` (cheatsheets).
-- **Roster (the League):** `docs/WATCHTOWER-ROSTER.md` — Boss (PROJECT X HAILMARY, Ops
-  + the word), Cyborg (Watchtower = AIXMOS/HAILMARY), Red Hood (Umar, Credit
-  Guidance), The Crew (rentals + verticals + operators), Batman (e-commerce).
-- **DARK guards** in tmmt/hailmary/aixmos/go/unison; `.hailmary/` + `.swarm/`
-  gitignored; `auth/OWNER.seal` is a salted hash (no secret), safe to commit.
-
-## Docs
-
-- `WHAT-YOU-HAVE.md` — whole-stack master map (repo + Slack + Drive + Gmail)
-- `docs/ONE-SHOT-ACROSS-THE-BOARD.md` — the single per-machine one-shot (`scripts/one-shot.sh carry|brain|moe|own`) for the carry M5, M1 brain, and Moe Legacy operator Mac
-- `docs/MESH-SWARM.md` — the mesh/swarm system: setup, daily flow, security model
-- `docs/security/SUPABASE-ADVISORS-2026-06-15.md` — security audit + key-rotation runbook
-- `docs/security/GO-GHOST-PROTOCOL.md` — personal privacy / identity-compartmentalization protocol (GHOST = the real you; X = the one public node). Companions: `GHOST-EVERYDAY-DEFAULTS.md` (daily-driver stack), `FOOTPRINT-CLEANUP-TRACKER.md` (working tracker), `X-NODE-DEFINITION.md` (**X = AIXMOS**)
-- `docs/FLEET-ROSTER.md` — canonical device map (mesh node + ghost endpoint per machine); brain = M1 `brainiac-mac` (primary) + Windows `brainiac-win` (compute/backup)
-- `docs/BRAINIAC-MAC-SETUP.md` — one-page runbook to stand up the M1 as the always-on assistant the carry Mac talks to/texts. One-shots: `scripts/setup-home-brain.command` (M1) + `scripts/setup-home-brain.ps1` (Windows backup) — family-member-runnable, remote access via Tailscale+SSH
-- `docs/BRAINIAC-RESILIENCE.md` — make the brain never let you down: UPS/power, tower failover, heartbeat tripwire, encrypted offsite backup (`scripts/mesh/vault-backup.sh`), owner-only `tag:brain` ACL
-- `docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md` — owner intent: home HQ → office expansion; per-operator subaccount + one-shot device seats ($97/mo); tier pricing as stated, with a flagged reconciliation vs `OFFER-STACK.md` (monthly vs one-time)
-- `docs/ARCHITECT-COCKPIT.md` — the 3D "go virtual" cockpit (`bash scripts/hologram` → `tools/hologram-cockpit/index.html`): orbit/zoom/click-to-dissect the whole empire; WebXR/Vision-Pro + live-data upgrade path; cross-operator learning-brain vision
-- `docs/MISSION-CONTROL.md` — the holographic front door (`bash scripts/home` → `tools/launcher/index.html`) + plug-and-play Desktop app icons (`bash scripts/install-apps`): launch Cockpit/Wiki fullscreen like native apps + copy flash-deploy commands. Hub loops Mission Control ↔ Cockpit ↔ Wiki
-- `docs/WIKI-DROPDOWN-METHOD.md` — the Karpathy-style home base (replaces Obsidian entirely): plain-markdown source + a generated offline **full reader** that renders every doc inline (`tools/wiki/build.mjs` node renderer, no deps). `WIKI.md` (markdown home) + `scripts/wiki` (`build`/`open` → `tools/wiki/index.html`); cockpit ↔ wiki cross-linked
-- `docs/ACCESS-GOVERNANCE.md` — authorize fast, revoke hard: X = PROJECT X HAILMARY (owner); least-privilege "clear path for owner, fenced for others"; owner-sealed flash deploy; unauthorized-access response (DARK → trace grantor → `kill-partner`). Defense + revocation only — no traps/sabotage (keeps the ghost legit)
-- `docs/DMV-CLUBHOUSE-OFFICE.md` — the Virginia office buildout: the Ultimate Clubhouse (Traphouse) for TMMT Rentals + DMV operators; systems/network blueprint (same tailnet, fenced seats, office brain node, MRR tie-in)
-- `docs/ROADMAP.md` — tiered project roadmap with owner assignments and completion status
-- `docs/ARCHITECTURE.md` — tech stack, directory structure, auth flow diagrams
-- `docs/DATABASE-SCHEMA.md` — all 44 tables with field specs
-- `docs/PIPELINE-FLOW.md` — customer and vehicle lifecycle state machines
-- `docs/STATUS.md` — feature status, known issues, codebase stats
-- `docs/SENTRY-SETUP.md` — Sentry activation guide (account setup, DSN, alert config)
-- `docs/PARTNER-PORTAL.md` — investor read-only portal: RLS migration, `app_metadata.role`, `partner_fleet_access`
-- `docs/superpowers/specs/` — design specs (supabase-auth, airtable-sync, maintenance-toggle)
-- `docs/superpowers/plans/` — implementation plans (supabase-auth, airtable-sync, tier2-hardening)
-- `supabase/migrations/` — RLS migration (`20260331_enable_rls.sql`)
-
-## AIXMOS Ultimatrix — Ghost/Identity + A2P Compliance Overlay (wired 2026-06-22)
-
-Defensive privacy + SMS-compliance overlay. Source of truth: `config/identity.config.json` (no PII). Specs are CI-enforceable. Companions: `docs/aixmos/*` and existing `docs/security/GO-GHOST-PROTOCOL.md` + `X-NODE-DEFINITION.md`.
-
-### PRIVACY INVARIANTS (hard — enforce in code + CI) → `specs/identity-privacy-invariants.md`
-1. No owner PII (legal name, personal/work cell, personal email, home address) hardcoded, committed, logged, or emitted.
-2. Public contact resolves ONLY from `config/identity.config.json` → `public_contact`. No inline literals in customer-facing code/templates/exports.
-3. Personal/work cell is a vault forward-target (`VAULT://work_cell`), never in repo. Refuse requests to hardcode it.
-4. Any public-facing artifact must source contact from config or fail the build.
-
-### COMPLIANCE GATES (hard) → `specs/compliance-sms-gate.md`
-1. A2P SMS: `credit_repair` / `funding` / `debt_relief` / `lending` = NO promotional SMS (carrier + CROA). Transactional-only or off-channel.
-2. Owner-approval gate stays on all customer-facing/financial actions. Never bypass.
-3. `credit_repair` & `funding` feature flags stay disabled; unlock only by owner/umar after legal steps. `sms_marketing_credit_funding` is hard-locked.
-
-### Tooling
-- `/ghost-check` — read-only audit (PII, inline contact literals, restricted-vertical SMS paths, gate bypasses). `/ghost-apply` — 1:1 conform-pass (rewrites code; run deliberately).
-- `./ultimatrix.sh scan` — local PII exposure scan (reads `.aixmos/pii_denylist.local`, gitignored; CI reads the `PII_DENYLIST` repo secret). CI: `.github/workflows/pii-guard.yml`.
-- Engagement rule: reference config, never hardcode identity/contact. On credit/funding paths, assume the gate applies. If a change would write PII or bypass a gate, STOP and flag it.
+- [ ] `shared/` built; gates + approval gate enforced and unit-tested
+- [ ] WS1: provisioning runs end-to-end; Fleet dashboard live; Turo/Stripe/QuickBooks/Twilio connectors working
+- [ ] WS2: full pipeline built but **all legal gates still `false`** pending attorney sign-off; CPN/tradeline blocks `true` and tested
+- [ ] WS3: $97 signup + portal + commission engine working; covenant enforcement wired; commissions pay only on real client services, never recruitment
+- [ ] Virginia-only launch confirmed; multi-state gate `false`
+- [ ] No secret committed; all PII paths land on NAS tier, not cloud LLM context
+<!-- AIXMOS-LAUNCH-RULES:END -->

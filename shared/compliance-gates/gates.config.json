@@ -1,0 +1,55 @@
+{
+  "_README": "These gates physically block features that are illegal to operate until the listed legal step is complete. Do NOT default any gate to true except cpn_and_rented_tradelines_blocked. Each gate is checked by requireGate() in gate.ts/gate.py. Flip a gate to true ONLY after the human confirms the legal step is done. See root CLAUDE.md section 3.",
+  "_launch_scope": "VIRGINIA ONLY at launch. multistate_matrix_cleared must be true before any non-VA operator can transact credit/funding services.",
+  "gates": {
+    "croa_contracts_attorney_approved": {
+      "value": false,
+      "blocks": ["workstream-2-credit-funding/intake (contract+disclosure generation)", "dispute-engine enrollment"],
+      "clears_when": "Licensed VA attorney approves CROA-compliant service agreement, separate written disclosure statement, and 3-day Notice of Cancellation.",
+      "legal_basis": "Credit Repair Organizations Act, 15 U.S.C. 1679 et seq.",
+      "owner_action_required": "Attorney sign-off on document suite; store signed approval reference here."
+    },
+    "vdacs_registered_bonded": {
+      "value": false,
+      "blocks": ["workstream-2-credit-funding/intake (any paid credit-repair enrollment in VA)"],
+      "clears_when": "Credit services business registered with Virginia VDACS and surety bond posted (100x standard fee; min $5,000 / max $50,000).",
+      "legal_basis": "Virginia Credit Services Businesses Act, Va. Code 59.1-335.1 et seq.",
+      "owner_action_required": "File VDACS registration; bind surety bond; record policy number out-of-band (never in repo)."
+    },
+    "no_advance_fee_billing_enforced": {
+      "value": false,
+      "blocks": ["workstream-3-operator-network/signup-97 (credit-repair billing path)", "any Stripe charge tied to credit-repair services"],
+      "clears_when": "Billing logic proven to never charge a consumer before credit-repair services are fully performed (monthly-after-service or per-deletion only). Unit tests demonstrate it.",
+      "legal_basis": "CROA + Telemarketing Sales Rule advance-fee ban.",
+      "owner_action_required": "Confirm billing model; review test evidence."
+    },
+    "sbf_broker_registered": {
+      "value": false,
+      "blocks": ["workstream-2-credit-funding/funding-desk (MCA / revenue-based financing referrals)"],
+      "clears_when": "Registered as a Virginia sales-based financing broker with the SCC ($1,000 initial, $500 annual) AND the 9-item disclosure-form workflow is implemented.",
+      "legal_basis": "Va. Code 6.2-2228 et seq. (HB1027, 2022).",
+      "owner_action_required": "SCC registration. NOTE: funding desk can launch with cards/LOC/SBA/equipment WITHOUT this gate; only MCA/RBF is blocked."
+    },
+    "cpn_and_rented_tradelines_blocked": {
+      "value": true,
+      "blocks": "NOTHING when true. This gate being true MEANS the prohibition is active. Never set to false.",
+      "clears_when": "ALWAYS TRUE. This is a permanent prohibition, not a feature to unlock.",
+      "legal_basis": "Federal fraud (false statements on credit applications); FTC actions (TopTradelines, BoostMyScore).",
+      "owner_action_required": "None. Keep true forever. Intake/dispute engines must detect and reject CPNs and rented tradelines."
+    },
+    "securities_counsel_cleared_fund": {
+      "value": false,
+      "blocks": ["any pooled-capital / community-fund / multi-investor co-investment vehicle"],
+      "clears_when": "Securities counsel clears a specific structure (Reg D / Reg CF / other). DEFAULT PLAN IS TO NOT BUILD THIS — deliver community capital via CDFI + Virginia SSBCI partnerships instead.",
+      "legal_basis": "Howey (SEC v. W.J. Howey Co.); Investment Company Act of 1940.",
+      "owner_action_required": "Do not build a pooled fund. If ever pursued, engage securities counsel first."
+    },
+    "multistate_matrix_cleared": {
+      "value": false,
+      "blocks": ["credit/funding services for any operator or client outside Virginia"],
+      "clears_when": "State-by-state compliance matrix completed (credit services registration + commercial-financing disclosure laws in CA, CT, FL, GA, KS, MO, NY, TX, UT, VA) for each target state.",
+      "legal_basis": "State credit services + commercial financing disclosure statutes.",
+      "owner_action_required": "Per-state legal review before enabling that state."
+    }
+  }
+}
