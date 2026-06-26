@@ -24,13 +24,19 @@ operator to orchestrator — build for delegation, not hand-holding.
 - TypeScript + Python. Shared schemas are the contract — change schema first, then
   both sides. Don't fork types.
 - Owner-approval primitives live in shared lib; reuse them, don't reinvent per feature.
+  Reusable safety primitives (use these, don't rebuild): `shared/owner-approval-gate/`
+  (assertApproved), `shared/compliance-gates/` (requireGate + sms-gate assertSmsAllowed),
+  and `shared/home-brain/` (guardHomeAction = kill switch + spend cap + PII firewall +
+  approval gate + NAS audit chain, for the M1/Windows brains). See `shared/home-brain/README.md`.
 - Compliance gates are code, not comments — keep them in the gate modules.
 - Commit style: short imperative subject. Reference the stack touched (rental/credit/ecom).
 
 ## ARCHITECTURE (nouns)
 - **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,
-  served tailnet-only), work Mac, brainiac (main compute — DEFINE), UGREEN NAS
-  (file tier), iPhone (Private LLM + Shortcuts), operator/employee laptops.
+  served tailnet-only), work Mac, the two home brains — `brainiac-mac` (macOS M1)
+  and `brainiac-win` (Windows compute/warm-backup), both guarded by
+  `shared/home-brain` — UGREEN NAS (file tier + `AIXMOS_AUDIT_DIR`), iPhone
+  (Private LLM + Shortcuts; drops `~/.aixmos/HALT` as the phone kill switch).
 - **Cloud hub:** Cloudflare Workers Gateway — role-scoped secrets, tiered model
   routing (Ollama → Haiku → Sonnet → Opus), role-broker for team access.
 - **Backbone:** GHL · Airtable (`appcenWUju039rD7b`) · n8n · Supabase · Qdrant · Redis.
