@@ -58,6 +58,10 @@ case "$v" in
   hot|moe-hot)      exec bash "$ROOT/scripts/moe-hot";;
   playbook|closekit|scripts) { f="$ROOT/docs/MOE-LEGACY-CLOSING-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
   ads|market|marketing) { f="$ROOT/docs/MARKETING-ADS-KIT.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  agency|funding|process) { f="$ROOT/docs/FUNDING-AGENCY-PLAYBOOK.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  org|team|roles) { f="$ROOT/docs/EXECUTIVES-ONLY.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  edge|win|pitch) { f="$ROOT/docs/THE-EDGE.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
+  index|compiled|all-docs|map-all) { f="$ROOT/docs/MASTER-INDEX.md"; command -v open >/dev/null 2>&1 && open "$f" 2>/dev/null || ${PAGER:-less} "$f"; exit 0; };;
   memorial|tribute) exec bash "$ROOT/scripts/memorial" "${1:-status}" "${@:2}";;
   member|learn|earn|churn) exec bash "$ROOT/scripts/member" "${1:-catalog}" "${@:2}";;
   send-pack|sendpack|pack) exec bash "$ROOT/scripts/send-pack" "${1:-}";;
@@ -68,6 +72,8 @@ case "$v" in
   operator|onboard-op) exec bash "$ROOT/scripts/onboard-op" "$@";;
   new-operator|stamp|stamp-operator) exec bash "$ROOT/scripts/new-operator" "$@";;
   ceo|cockpit|exec) exec bash "$ROOT/scripts/ceo" "${1:-}";;
+  env|restore-env|pull-env) exec bash "$ROOT/scripts/restore-env.sh";;
+  seat|operator-seat|provision-seat|king) exec bash "$ROOT/scripts/seat.sh" "$@";;
   brain|llm) exec bash "$ROOT/scripts/setup-llm.sh" "${1:-}";;
   fatherbox|control|command) exec bash "$ROOT/scripts/fatherbox";;
   seal|lock) exec bash "$ROOT/scripts/owner-seal.sh" "${1:-status}";;
@@ -92,5 +98,5 @@ case "$v" in
   remote|reach|into) exec bash "$ROOT/scripts/mesh/link.sh" assist "${1:-brainiac-mac}" "${@:2}";;
   garage) exec bash "$ROOT/scripts/garage" "$@";;
   overhaul) [ -x "$ROOT/scripts/overhaul-deploy.sh" ] && exec bash "$ROOT/scripts/overhaul-deploy.sh" "$@" || { echo "overhaul-deploy.sh not installed yet"; exit 1; };;
-  *) printf 'tmmt words: up | unison [up|status|down] | booyah | garage | local | onboard | aixmos [roster|wake|sleep] | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
+  *) printf 'tmmt words: up | unison | booyah | env | garage | local | onboard | aixmos | always [role] | always-off | memory | who | help "reason" | go [n] | serve | assist <machine> | mesh | sync | fix | notify | notify-test\n';;
 esac

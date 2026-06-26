@@ -150,7 +150,7 @@ export function getPlatformManifest(): PlatformManifest {
       platformId: "aixmos-platform",
       platformName: "AIXMOS Platform",
       version: "0.0.0",
-      apexOwner: { name: "PROJECT X HAILMARY", title: "Founder & Apex Owner" },
+      apexOwner: { name: "X", title: "Founder & Apex Owner" },
     };
   }
   return JSON.parse(readFileSync(path, "utf8")) as PlatformManifest;

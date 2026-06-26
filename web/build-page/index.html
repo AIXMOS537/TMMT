@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover">
+<title>The Machine — AIXMOS Build Page</title>
+<meta name="description" content="AIXMOS build pages — every operator's machine on one permanent, shareable page. Modules, tier, crew, and access, owner-gated.">
+<meta name="theme-color" content="#07090E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AIXMOS">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIXMOS">
+<meta property="og:title" content="The Machine — AIXMOS Build Page">
+<meta property="og:description" content="Every operator's machine on one permanent, shareable build page. Pick the parts. Power it on. The clan rolls in.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307090E'/%3E%3Crect x='9' y='9' width='14' height='14' transform='rotate(45 16 16)' fill='%23E8B44C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  :root{
+    --void:#07090E; --carbon:#0E1218; --carbon-2:#141A22; --line:#1F2630;
+    --gold:#E8B44C; --gold-bright:#FFD479;
+    --holo-cyan:#4DE3E8; --holo-magenta:#C86BFF;
+    --mist:#8A94A6; --mist-dim:#586273; --paper:#EAF0F7;
+    --accent:#E8B44C;
+    --holo:linear-gradient(110deg,var(--holo-cyan) 0%,var(--holo-magenta) 38%,var(--gold-bright) 72%,var(--holo-cyan) 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--void);color:var(--paper);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.5}
+  #ambient{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.7}
+  .grid-veil{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.1;mask-image:radial-gradient(circle at 50% 20%,#000,transparent 75%);-webkit-mask-image:radial-gradient(circle at 50% 20%,#000,transparent 75%)}
+  main{position:relative;z-index:2}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  .mono{font-family:'Space Mono',monospace}
+  .holo-text{background:var(--holo);background-size:280% 280%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:holoShift 9s ease-in-out infinite}
+  @keyframes holoShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(7,9,14,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .tb-row{display:flex;align-items:center;gap:12px;padding:12px 22px;max-width:1080px;margin:0 auto}
+  .brand{font-family:'Chakra Petch';font-weight:700;letter-spacing:.18em;font-size:15px;display:flex;align-items:center;gap:8px;flex:none}
+  .brand .dia{width:13px;height:13px;background:var(--holo);background-size:200% 200%;transform:rotate(45deg);animation:holoShift 6s ease-in-out infinite}
+  .urlpill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--carbon);border:1px solid var(--line);border-radius:40px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:12px;color:var(--mist);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .urlpill .lock{color:var(--mist-dim);flex:none}
+  .urlpill b{color:var(--paper)}
+  .tb-btn{font-family:'Chakra Petch';font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;padding:9px 16px;border-radius:40px;cursor:pointer;border:1px solid transparent;transition:.2s;flex:none}
+  .tb-btn.share{background:var(--gold);color:#1a1206}
+  .tb-btn.share:hover{background:var(--gold-bright);box-shadow:0 0 24px rgba(232,180,76,.3)}
+  .tb-btn.ghost{background:transparent;border-color:var(--line);color:var(--mist)}
+  .tb-btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+  .tb-row2{display:flex;align-items:center;gap:8px;padding:0 22px 12px;max-width:1080px;margin:0 auto;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tb-row2::-webkit-scrollbar{height:0}
+  .oplabel{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--mist-dim);text-transform:uppercase;flex:none}
+  .opchip{display:inline-flex;align-items:center;gap:7px;cursor:pointer;background:var(--carbon-2);border:1px solid var(--line);border-radius:40px;padding:7px 13px;font-family:'Chakra Petch';font-weight:600;font-size:12px;color:var(--mist);transition:.2s;flex:none;white-space:nowrap}
+  .opchip .od{width:8px;height:8px;border-radius:50%;flex:none}
+  .opchip:hover{color:var(--paper);border-color:var(--mist-dim)}
+  .opchip.active{color:#0a0a0a;border-color:transparent}
+  .opadd{flex:none;cursor:pointer;background:transparent;border:1px dashed var(--mist-dim);border-radius:40px;padding:7px 13px;font-family:'Chakra Petch';font-weight:600;font-size:12px;color:var(--mist);white-space:nowrap;transition:.2s}
+  .opadd:hover{border-color:var(--gold);color:var(--gold)}
+  .saved{flex:none;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist-dim);opacity:0;transition:.3s}
+  .saved.show{opacity:1;color:var(--gold)}
+
+  /* form */
+  .opform{display:none;gap:9px;flex-wrap:wrap;align-items:center;padding:14px 22px;max-width:1080px;margin:0 auto;border-top:1px solid var(--line)}
+  .opform.open{display:flex}
+  .opform input{background:var(--void);border:1px solid var(--line);border-radius:3px;color:var(--paper);font-family:'Inter';font-size:13px;padding:9px 12px;outline:none}
+  .opform input:focus{border-color:var(--gold)}
+  .opform .nm{flex:1;min-width:130px}.opform .cs{width:108px}.opform .bn{width:150px}
+  .swatches{display:flex;gap:6px}
+  .sw{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s}
+  .sw.pick{border-color:var(--paper);transform:scale(1.12)}
+  .mini{font-family:'Chakra Petch';font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;padding:9px 15px;border-radius:3px;cursor:pointer;border:none}
+  .mini.save{background:var(--gold);color:#1a1206}.mini.cancel{background:transparent;border:1px solid var(--line);color:var(--mist)}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:54px 0 40px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+  @media(max-width:820px){.hero-grid{grid-template-columns:1fr;gap:30px}}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+  .tag{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;border-radius:40px;border:1px solid var(--line);color:var(--mist)}
+  .tag.tier{border-color:var(--accent);color:var(--accent)}
+  .tag.state{display:inline-flex;align-items:center;gap:7px}
+  .tag.state .pip{width:7px;height:7px;border-radius:50%;background:var(--mist-dim)}
+  .tag.state.live .pip{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+  .tag.state.online .pip{background:#7CFFA0;box-shadow:0 0 10px #7CFFA0}
+  .hero h1{font-family:'Chakra Petch';font-weight:700;font-size:clamp(40px,8.5vw,82px);line-height:.94;letter-spacing:-.01em;text-transform:uppercase}
+  .hero .owner{margin-top:14px;color:var(--mist);font-size:15px}
+  .hero .owner b{color:var(--paper);font-weight:600}
+  .hero .rate{margin-top:10px;font-family:'Chakra Petch';font-weight:700;font-size:22px;color:var(--accent)}
+  .hero-stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px}
+  .hstat .v{font-family:'Chakra Petch';font-weight:700;font-size:26px;line-height:1}
+  .hstat .l{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist-dim);margin-top:5px}
+
+  .stage{position:relative;width:100%;aspect-ratio:1/1;max-width:380px;margin:0 auto}
+  .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48%;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:radial-gradient(circle at 50% 40%,rgba(232,180,76,.1),rgba(7,9,14,.6));border:1px solid var(--line);transition:.5s}
+  .core::before{content:"";position:absolute;inset:-2px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--holo);background-size:280% 280%;opacity:0;transition:.6s;z-index:-1;animation:holoShift 9s ease-in-out infinite}
+  .stage.live .core{border-color:transparent;box-shadow:0 0 50px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .stage.live .core::before{opacity:.9}
+  .stage.online .core::before{opacity:1}
+  .stage.online .core{box-shadow:0 0 80px color-mix(in srgb,var(--accent) 45%,transparent),0 0 120px rgba(77,227,232,.15);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 70px rgba(232,180,76,.25),0 0 110px rgba(77,227,232,.12)}50%{box-shadow:0 0 95px rgba(232,180,76,.42),0 0 150px rgba(200,107,255,.22)}}
+  .core .pct{font-family:'Chakra Petch';font-weight:700;font-size:clamp(28px,7vw,40px);line-height:1}
+  .core .pl{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--mist);margin-top:4px}
+  .stage.online .core .pct,.stage.online .core .pl{color:#0a0a0a}
+  .node{position:absolute;width:11%;aspect-ratio:1/1;transform:translate(-50%,-50%) rotate(45deg);background:var(--carbon-2);border:1px solid var(--line);transition:.45s cubic-bezier(.2,.8,.2,1)}
+  .node.on{background:var(--holo);background-size:200% 200%;border-color:transparent;box-shadow:0 0 16px rgba(200,107,255,.5);animation:holoShift 6s ease-in-out infinite}
+
+  /* ---------- SECTIONS ---------- */
+  section.blk{padding:40px 0;border-top:1px solid var(--line)}
+  .sh{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:10px;margin-bottom:24px}
+  .sh::before{content:"";width:22px;height:1px;background:var(--gold);opacity:.7}
+  .sh .hint{margin-left:auto;color:var(--mist-dim);letter-spacing:.1em;text-transform:none;font-size:10px}
+
+  /* spec sheet */
+  .specs{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  @media(max-width:620px){.specs{grid-template-columns:1fr}}
+  .srow{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--carbon)}
+  .specs .srow:nth-child(odd){border-right:1px solid var(--line)}
+  @media(max-width:620px){.specs .srow:nth-child(odd){border-right:none}}
+  .srow .k{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist-dim)}
+  .srow .v{font-family:'Chakra Petch';font-weight:600;font-size:14px;text-align:right}
+  .srow .v.acc{color:var(--accent)}
+
+  /* mod list */
+  .modgroup-label{font-family:'Chakra Petch';font-weight:600;font-size:13px;color:var(--mist);margin:6px 0 12px;letter-spacing:.04em}
+  .mods{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:560px){.mods{grid-template-columns:1fr}}
+  .mod{position:relative;cursor:pointer;background:var(--carbon);border:1px solid var(--line);border-radius:4px;padding:15px 15px 14px;transition:.2s;overflow:hidden;text-align:left}
+  .mod:hover{transform:translateY(-2px);border-color:var(--mist-dim)}
+  .mod .top{display:flex;align-items:center;gap:9px}
+  .mod .glyph{width:18px;height:18px;flex:none;color:var(--mist)}
+  .mod .nm{font-family:'Chakra Petch';font-weight:600;font-size:14px}
+  .mod .cat{margin-left:auto;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist-dim)}
+  .mod .ds{font-size:12px;color:var(--mist);margin-top:8px;line-height:1.45}
+  .mod .act{position:absolute;top:13px;right:13px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist-dim);opacity:0;transition:.2s}
+  .mod:hover .act{opacity:1}
+  .mod.inst{border:1px solid transparent;background:linear-gradient(var(--carbon-2),var(--carbon-2)) padding-box,var(--holo) border-box}
+  .mod.inst .glyph{color:var(--gold-bright)}
+  .mod.inst .cat{color:var(--accent)}
+  .mod.avail{opacity:.66;background:repeating-linear-gradient(135deg,var(--carbon) 0 9px,#0c1017 9px 18px)}
+  .mod.avail:hover{opacity:.9}
+  .mod.locked{opacity:.62}
+  .mod.locked .lockrow{display:flex}
+  .lockrow{display:none;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:9px}
+  .lockrow svg{width:11px;height:11px}
+
+  /* dyno bars */
+  .dyno{display:flex;flex-direction:column;gap:14px}
+  .dbar{display:grid;grid-template-columns:120px 1fr 42px;gap:12px;align-items:center}
+  @media(max-width:560px){.dbar{grid-template-columns:96px 1fr 38px}}
+  .dbar .dl{font-family:'Chakra Petch';font-weight:600;font-size:13px;color:var(--mist)}
+  .dbar .track{height:9px;background:var(--carbon-2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .dbar .fill{height:100%;width:0;background:var(--holo);background-size:200% 200%;border-radius:6px;transition:width .7s cubic-bezier(.2,.8,.2,1);animation:holoShift 7s ease-in-out infinite}
+  .dbar .dv{font-family:'Space Mono',monospace;font-size:12px;color:var(--paper);text-align:right}
+
+  /* build log */
+  .log{position:relative;padding-left:24px}
+  .log::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:var(--line)}
+  .logitem{position:relative;padding:0 0 18px 4px}
+  .logitem:last-child{padding-bottom:0}
+  .logitem::before{content:"";position:absolute;left:-23px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--carbon-2);border:1px solid var(--accent)}
+  .logitem.hot::before{background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .logitem .ln{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--mist-dim)}
+  .logitem .lt{font-family:'Chakra Petch';font-weight:600;font-size:14px;margin-top:2px}
+
+  /* crew */
+  .crewlist{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:560px){.crewlist{grid-template-columns:1fr}}
+  .crew{display:flex;gap:13px;align-items:center;cursor:pointer;background:var(--carbon);border:1px solid var(--line);border-radius:4px;padding:14px 16px;transition:.2s}
+  .crew:hover{border-color:var(--mist-dim)}
+  .crew.on{background:var(--carbon-2);border-color:var(--gold)}
+  .crew .dot{width:9px;height:9px;border-radius:50%;background:var(--mist-dim);flex:none;transition:.2s}
+  .crew.on .dot{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  .crew .ct{flex:1}.crew .cn{font-family:'Chakra Petch';font-weight:600;font-size:14px}
+  .crew .cd{font-size:11px;color:var(--mist);margin-top:2px}
+  .crew .cs{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist-dim)}
+  .crew.on .cs{color:var(--gold)}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;margin-top:20px}
+  footer p{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--mist-dim)}
+
+  /* modals */
+  .modal{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(4,6,10,.78);backdrop-filter:blur(4px);padding:22px}
+  .modal.open{display:flex}
+  .mbox{max-width:430px;width:100%;background:var(--carbon);border:1px solid var(--gold);border-radius:6px;padding:24px;box-shadow:0 0 60px rgba(232,180,76,.2)}
+  .mbox .mkey{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:8px}
+  .mbox .mkey svg{width:13px;height:13px}
+  .mbox .mtitle{font-family:'Chakra Petch';font-weight:700;font-size:21px;margin:11px 0 9px}
+  .mbox .mnote{font-size:13px;color:var(--mist);line-height:1.55}
+  .mbox input{width:100%;margin-top:14px;background:var(--void);border:1px solid var(--line);border-radius:3px;color:var(--paper);font-family:'Space Mono',monospace;font-size:12px;padding:11px 12px;outline:none}
+  .mbox input:focus{border-color:var(--gold)}
+  .mbox .mbtns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .mbox .mmsg{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);margin-top:12px;min-height:14px}
+
+  .sharecard{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;background:var(--carbon);border:1px solid var(--line);border-radius:6px;padding:22px}
+  @media(max-width:560px){.sharecard{grid-template-columns:1fr;text-align:center}}
+  .qrwrap{background:#fff;border-radius:8px;padding:11px;width:174px;height:174px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+  .qrwrap img{width:100%;height:100%;image-rendering:pixelated}
+  .qrwrap .qrfall{font-family:'Space Mono',monospace;font-size:10px;color:#444;text-align:center;line-height:1.4}
+  .si-url{font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);word-break:break-all;margin-bottom:10px}
+  .si-note{font-size:13px;color:var(--mist);line-height:1.55;margin-bottom:16px}
+  .si-btns{display:flex;gap:10px;flex-wrap:wrap}
+  @media(max-width:560px){.si-btns{justify-content:center}}
+  a.tb-btn{text-decoration:none;display:inline-flex;align-items:center}
+
+  .specbox{max-width:780px;width:100%}
+  .specpre{max-height:62vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:'Space Mono',monospace;font-size:11px;line-height:1.6;color:var(--mist);background:var(--void);border:1px solid var(--line);border-radius:5px;padding:16px;margin-top:10px}
+  .speclink{display:inline-block;margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--gold);text-decoration:none;cursor:pointer}
+  .speclink:hover{text-decoration:underline}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto}}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+</style>
+</head>
+<body>
+<canvas id="ambient"></canvas>
+<div class="grid-veil"></div>
+
+<div class="topbar">
+  <div class="tb-row">
+    <div class="brand"><span class="dia"></span>AIXMOS</div>
+    <div class="urlpill"><span class="lock">🔒</span><span id="urlText">aixmos.app/—</span></div>
+    <button class="tb-btn ghost" id="loadBtn" type="button">Load</button>
+    <button class="tb-btn share" id="shareBtn" type="button">Share</button>
+  </div>
+  <div class="tb-row2">
+    <span class="oplabel">Build</span>
+    <div id="opchips" style="display:flex;gap:8px"></div>
+    <button class="opadd" id="opAddBtn" type="button">＋ New build</button>
+    <span class="saved" id="savedTag">◍ Saved</span>
+  </div>
+  <div class="opform" id="opForm">
+    <input class="nm" id="fName" type="text" placeholder="Owner name" maxlength="22">
+    <input class="cs" id="fCall" type="text" placeholder="Callsign" maxlength="10">
+    <input class="bn" id="fBuild" type="text" placeholder="Build name" maxlength="22">
+    <div class="swatches" id="fSwatches"></div>
+    <button class="mini save" id="fSave" type="button">Create</button>
+    <button class="mini cancel" id="fCancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<main>
+  <section class="hero"><div class="wrap"><div class="hero-grid">
+    <div>
+      <div class="badge-row">
+        <span class="tag tier" id="tagTier">—</span>
+        <span class="tag state" id="tagState"><span class="pip"></span><span id="stateText">COLD</span></span>
+        <span class="tag" id="tagCompliance">COMPLIANCE —</span>
+      </div>
+      <h1 id="buildTitle">The Machine</h1>
+      <div class="owner">Built by <b id="ownerName">—</b> · <span id="callName" class="mono"></span></div>
+      <div class="rate" id="rateText">—</div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="v" id="hsReady">0%</div><div class="l">Readiness</div></div>
+        <div class="hstat"><div class="v" id="hsMods">0/8</div><div class="l">Modules</div></div>
+        <div class="hstat"><div class="v" id="hsCrew">0/4</div><div class="l">Crew</div></div>
+      </div>
+    </div>
+    <div class="stage" id="stage" aria-label="Machine readiness">
+      <div class="core"><div class="pct" id="corePct">0%</div><div class="pl">Readiness</div></div>
+    </div>
+  </div></div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Spec Sheet</div>
+    <div class="specs" id="specs"></div>
+  </div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Build List <span class="hint">tap to install / remove</span></div>
+    <div class="modgroup-label">Installed</div>
+    <div class="mods" id="modsInstalled"></div>
+    <div class="modgroup-label" style="margin-top:24px">Available bays</div>
+    <div class="mods" id="modsAvailable"></div>
+  </div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Dyno · Capability Output</div>
+    <div class="dyno" id="dyno"></div>
+  </div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Build Log</div>
+    <div class="log" id="log"></div>
+  </div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Crew · Access Roster <span class="hint">tap to wire / unwire</span></div>
+    <div class="crewlist" id="crew"></div>
+  </div></section>
+
+  <section class="blk"><div class="wrap">
+    <div class="sh">Handoff · Scan To Load <span class="hint">point a phone camera</span></div>
+    <div class="sharecard">
+      <div class="qrwrap"><img id="qrImg" alt="Scan to load this build"><span class="qrfall" id="qrFall" style="display:none">Connect to render the scan code</span></div>
+      <div class="shareinfo">
+        <div class="si-url" id="shareUrl">aixmos.app/—</div>
+        <p class="si-note">The code and link load this exact machine — modules, crew, and cleared access — as its own build page. Hand it to an operator you're onboarding. Your live URL goes online once the page is hosted (deploy guide included).</p>
+        <div class="si-btns">
+          <button class="tb-btn share" id="copyLinkBtn" type="button">Copy link</button>
+          <a class="tb-btn ghost" id="dlQr" download="aixmos-build-qr.png">Save QR</a>
+        </div>
+      </div>
+    </div>
+  </div></section>
+
+  <footer><div class="wrap"><p id="footUrl">AIXMOS · TMMT AUTO SERVICES LLC</p><a class="speclink" id="specOpen">Spec &amp; handoff ↗</a></div></footer>
+</main>
+
+<div class="modal" id="gate" role="dialog" aria-modal="true"><div class="mbox">
+  <div class="mkey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Gated Bay · Owner Approval</div>
+  <div class="mtitle" id="gateTitle"></div>
+  <div class="mnote" id="gateNote"></div>
+  <div id="gateApprovers" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"></div>
+  <div class="mbtns"><button class="mini save" id="grantBtn" type="button">Grant access</button><button class="mini cancel" id="gateClose" type="button">Cancel</button></div>
+</div></div>
+
+<div class="modal" id="loadModal" role="dialog" aria-modal="true"><div class="mbox">
+  <div class="mkey">Load A Build Code</div>
+  <div class="mtitle">Drop in a machine</div>
+  <div class="mnote">Paste a build code an operator handed you. It loads their exact machine — modules, crew, and cleared access — as a new build page.</div>
+  <input id="codeIn" placeholder="Paste AIX1.…">
+  <div class="mbtns"><button class="mini save" id="codeLoad" type="button">Load build</button><button class="mini cancel" id="loadClose" type="button">Cancel</button></div>
+  <div class="mmsg" id="loadMsg"></div>
+</div></div>
+
+<script>
+(function(){
+  "use strict";
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var Store=(function(){
+    var mem={};var hasWS=(typeof window!=='undefined'&&window.storage&&typeof window.storage.get==='function');
+    function get(k){if(hasWS){return window.storage.get(k,false).then(function(r){return r?r.value:null;}).catch(function(){return null;});}return Promise.resolve().then(function(){try{return localStorage.getItem(k);}catch(e){return (k in mem)?mem[k]:null;}});}
+    function set(k,v){if(hasWS){return window.storage.set(k,v,false).catch(function(){});}return Promise.resolve().then(function(){try{localStorage.setItem(k,v);}catch(e){mem[k]=v;}});}
+    return {get:get,set:set};
+  })();
+  var KEY='aixmos:state:v4';
+
+  /* ==================================================================
+     AIXMOS CONFIG — single source of truth.
+     Mirror of aixmos.config.json. Keep the two in sync; the backend /
+     Claude Code repo should read the same module keys and flags.
+     - key:       stable id, maps to your platform schema (do not rename)
+     - gated:     bay requires owner approval before it can be installed
+     - flag:      feature-flag this unlock corresponds to in your repo
+     - approvers: who is allowed to grant it (mirrors "only Muhammad/Umar")
+     ================================================================== */
+  var CONFIG_VERSION='1.0.0';
+  var MODULES=[
+    {key:"fleet_engine",   n:"Fleet Engine",   s:"Vehicle lifecycle, bookings, payments. Wheels to revenue.", g:"car",    cats:["Revenue Ops","Service"]},
+    {key:"intake_gate",    n:"Intake Gate",    s:"Every lead triaged at zero cost. Nothing slips.",          g:"funnel", cats:["Automation","Revenue Ops"]},
+    {key:"ai_brain",       n:"AI Brain",       s:"Local agent swarm. Your data never leaves the floor.",     g:"chip",   cats:["Automation","Network"]},
+    {key:"dropnet",        n:"DropNet",        s:"NAS drop zone. Every file routed, filed, backed up over the tailnet.", g:"folder", cats:["Automation","Compliance"]},
+    {key:"credit_to_keys", n:"Credit-to-Keys", s:"Five-rung funding ladder. Credit becomes keys.",           g:"key",    cats:["Revenue Ops","Compliance"], gated:true, flags:["credit_repair","funding"], approvers:["owner","umar"],
+      gate:"Locked under CROA and the Virginia Credit Services Businesses Act. Maps to the workstream-2 credit/funding vertical — flags credit_repair + funding. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."},
+    {key:"operator_network",n:"Operator Net",  s:"Plug in nodes. Every operator runs your playbook.",         g:"node",   cats:["Network"]},
+    {key:"dispatch",       n:"Dispatch",       s:"Overdrive routing for couriers and emergency runs.",        g:"bolt",   cats:["Service","Network"], gated:true, flags:["dispatch_overdrive"], approvers:["owner"],
+      gate:"Operation Overdrive runs on a grant and licensing track (operational gate, not part of the credit/funding legal pair). Grant only once dispatch, courier, and insurance requirements are cleared for the operator."},
+    {key:"detail_bay",     n:"Detail Bay",     s:"Service ops, scheduling, upsells. The finish.",             g:"spark",  cats:["Service","Revenue Ops"]}
+  ];
+  var TIERS=[
+    {key:"operator",n:"Operator",d:"Runs the whole floor on your playbook.",scope:"Full Floor"},
+    {key:"partner", n:"Partner", d:"Owns a vertical inside your build.",    scope:"Vertical"},
+    {key:"crew",    n:"Crew",    d:"Works the bays you assign them.",       scope:"Assigned Bays"},
+    {key:"client",  n:"Client",  d:"Their own room. Their own keys.",       scope:"Private Room"}
+  ];
+  var CATS=["Automation","Revenue Ops","Compliance","Network","Service"];
+  var ACCENTS=["#E8B44C","#4DE3E8","#C86BFF","#8CE86B","#FF9F4D","#6BA8FF"];
+  var GLYPHS={car:'<path d="M3 13l2-6h14l2 6v5h-3a2 2 0 0 1-4 0H10a2 2 0 0 1-4 0H3z"/>',funnel:'<path d="M3 4h18l-7 8v6l-4 2v-8z"/>',chip:'<rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',folder:'<path d="M3 6h6l2 2h10v10H3z"/>',key:'<circle cx="8" cy="8" r="4"/><path d="M11 11l9 9M17 17l2-2M15 15l2-2"/>',node:'<circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v4M11 12l-5 5M13 12l5 5"/>',bolt:'<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',spark:'<path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>'};
+  var LOCKMINI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  function el(t,c){var e=document.createElement(t);if(c)e.className=c;return e;}
+  function uid(){return 'op'+Math.random().toString(36).slice(2,8);}
+  function uniq(a){var o={},r=[];a.forEach(function(x){if(!(x in o)){o[x]=1;r.push(x);}});return r;}
+  function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'build';}
+
+  var state={operators:[],activeId:null};
+  function op(){return state.operators.filter(function(o){return o.id===state.activeId;})[0]||state.operators[0];}
+  function isLocked(o,idx){return !!MODULES[idx].gated && o.unlocked.indexOf(idx)===-1;}
+  /* Real AIXMOS ascension ladder (aixmos-core.ts). NOTE: true tier is driven by
+     earn-gates/entitlements in the core engine — this is a build-size proxy for display. */
+  function computeTier(o){var n=o.build.length;if(n===0)return{name:'—',rate:'—'};if(o.build.some(function(i){return MODULES[i].gated;}))return{name:'Partner',rate:'$5K–$50K'};if(n>=6)return{name:'Node',rate:'$997/mo'};if(n>=4)return{name:'Builder',rate:'$297/mo'};return{name:'Operator',rate:'$97/mo'};}
+  function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+  function caps(o){var out={};CATS.forEach(function(c){var tot=0,have=0;MODULES.forEach(function(m,i){if(m.cats.indexOf(c)>-1){tot++;if(o.build.indexOf(i)>-1)have++;}});out[c]=tot?Math.round(have/tot*100):0;});return out;}
+
+  function encodeOp(o){try{return 'AIX1.'+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,n:o.name,c:o.callsign,bn:o.buildName,a:o.accent,b:o.build,k:o.access,u:o.unlocked,gr:o.grants||{}}))));}catch(e){return '';}}
+  function decodeCode(str){try{var s=String(str).trim().replace(/^AIX1\./,'');var p=JSON.parse(decodeURIComponent(escape(atob(s))));var vm=function(a){return (a||[]).filter(function(i){return typeof i==='number'&&i>=0&&i<MODULES.length;});};var b=vm(p.b),k=(p.k||[]).filter(function(i){return i>=0&&i<TIERS.length;}),u=vm(p.u);u=uniq(u.concat(b.filter(function(i){return MODULES[i].gated;})));var gr={};if(p.gr&&typeof p.gr==='object'){u.forEach(function(i){if(p.gr[i])gr[i]=String(p.gr[i]).slice(0,16);else gr[i]='Owner';});}else{u.forEach(function(i){gr[i]='Owner';});}return {name:(p.n||'Imported').slice(0,22),callsign:(p.c||'OP').slice(0,10),buildName:(p.bn||'The Machine').slice(0,22),accent:/^#[0-9A-Fa-f]{6}$/.test(p.a)?p.a:ACCENTS[0],build:b,access:k,unlocked:u,grants:gr};}catch(e){return null;}}
+
+  /* refs */
+  var stage=document.getElementById('stage');
+  var nodes=[];for(var i=0;i<MODULES.length;i++){var ang=(i/MODULES.length)*Math.PI*2-Math.PI/2,r=42;var nd=el('div','node');nd.style.left=(50+Math.cos(ang)*r)+'%';nd.style.top=(50+Math.sin(ang)*r)+'%';stage.appendChild(nd);nodes.push(nd);}
+  var $=function(id){return document.getElementById(id);};
+  var savedTag=$('savedTag'),saveTimer=null;
+  function markSaved(){savedTag.classList.add('show');clearTimeout(saveTimer);saveTimer=setTimeout(function(){savedTag.classList.remove('show');},1300);}
+  function persist(){Store.set(KEY,JSON.stringify(state)).then(markSaved);}
+
+  /* render whole page for active op */
+  function render(){
+    var o=op();if(!o)return;
+    document.documentElement.style.setProperty('--accent',o.accent);
+    var n=o.build.length,p=Math.round(n/8*100),tr=computeTier(o);
+    // url + titles
+    var url='aixmos.app/'+slug(o.name)+'/'+slug(o.buildName);
+    document.title=o.buildName+' — '+o.name+' · AIXMOS';
+    $('urlText').innerHTML='aixmos.app/'+slug(o.name)+'/<b>'+slug(o.buildName)+'</b>';
+    $('footUrl').textContent=url.toUpperCase()+' · AIXMOS';
+    $('buildTitle').textContent=o.buildName;
+    $('ownerName').textContent=o.name;
+    $('callName').textContent=o.callsign?('#'+o.callsign):'';
+    $('rateText').textContent=tr.rate;
+    $('tagTier').textContent=tr.name;
+    $('hsReady').textContent=p+'%';$('hsMods').textContent=n+'/8';$('hsCrew').textContent=o.access.length+'/4';
+    $('corePct').textContent=p+'%';
+    // state tag
+    var st=$('tagState'),stt=$('stateText');st.classList.remove('live','online');
+    if(n===8){st.classList.add('online');stt.textContent='ONLINE';}
+    else if(n>0){st.classList.add('live');stt.textContent='BUILDING';}
+    else stt.textContent='COLD';
+    stage.classList.toggle('live',n>0&&n<8);stage.classList.toggle('online',n===8);
+    // compliance
+    var gatedIn=o.build.filter(function(i){return MODULES[i].gated;}).length;
+    $('tagCompliance').textContent=gatedIn?('COMPLIANCE · '+gatedIn+' CLEARED'):'COMPLIANCE · STANDARD';
+    // nodes
+    nodes.forEach(function(nd,idx){nd.classList.toggle('on',o.build.indexOf(idx)>-1);});
+    renderSpecs(o,tr,p,n);
+    renderMods(o);
+    renderDyno(o);
+    renderLog(o);
+    renderCrew(o);
+    renderChips();
+    renderShare(o);
+  }
+
+  function renderSpecs(o,tr,p,n){
+    var rows=[
+      ['Owner',o.name,false],['Callsign','#'+(o.callsign||'—'),false],
+      ['Tier',tr.name,true],['Monthly Rate',tr.rate,true],
+      ['Modules',n+' / 8',false],['Readiness',p+'%',true],
+      ['Crew Wired',o.access.length+' / 4',false],['State',n===8?'ONLINE':n>0?'BUILDING':'COLD',false],
+      ['Gated Cleared',o.build.filter(function(i){return MODULES[i].gated;}).length+' / 2',false],['Accent',o.accent.toUpperCase(),false]
+    ];
+    var h='';rows.forEach(function(r){h+='<div class="srow"><span class="k">'+r[0]+'</span><span class="v'+(r[2]?' acc':'')+'">'+r[1]+'</span></div>';});
+    $('specs').innerHTML=h;
+  }
+
+  function modCard(idx,o){
+    var m=MODULES[idx],inst=o.build.indexOf(idx)>-1,locked=isLocked(o,idx);
+    var cls='mod '+(inst?'inst':(locked?'avail locked':'avail'));
+    var act=inst?'Remove ✕':(locked?'Locked':'Install +');
+    var lr=locked?'<div class="lockrow">'+LOCKMINI+'Requires access · tap to grant</div>':'';
+    var c=el('button',cls);c.type='button';c.setAttribute('data-i',idx);
+    c.innerHTML='<div class="top"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'+GLYPHS[m.g]+'</svg><span class="nm">'+m.n+'</span><span class="cat">'+m.cats[0]+'</span></div><div class="ds">'+m.s+'</div>'+lr+'<div class="act">'+act+'</div>';
+    c.addEventListener('click',function(){toggleModule(idx);});
+    return c;
+  }
+  function renderMods(o){
+    var inB=$('modsInstalled'),avB=$('modsAvailable');inB.innerHTML='';avB.innerHTML='';
+    var anyI=false,anyA=false;
+    MODULES.forEach(function(m,idx){
+      if(o.build.indexOf(idx)>-1){inB.appendChild(modCard(idx,o));anyI=true;}
+      else{avB.appendChild(modCard(idx,o));anyA=true;}
+    });
+    if(!anyI)inB.innerHTML='<div style="color:var(--mist-dim);font-family:Space Mono,monospace;font-size:12px">No modules installed yet — pull from the bays below.</div>';
+    if(!anyA)avB.innerHTML='<div style="color:var(--mist-dim);font-family:Space Mono,monospace;font-size:12px">All bays installed. Machine is fully built.</div>';
+  }
+
+  function renderDyno(o){
+    var c=caps(o),h='';
+    CATS.forEach(function(cat){var v=c[cat];h+='<div class="dbar"><span class="dl">'+cat+'</span><div class="track"><div class="fill" style="width:'+v+'%"></div></div><span class="dv">'+v+'</span></div>';});
+    $('dyno').innerHTML=h;
+  }
+
+  function renderLog(o){
+    var items=[{n:'Machine initialized',hot:false}];
+    o.build.slice().sort(function(a,b){return a-b;}).forEach(function(idx){
+      var lbl;
+      if(MODULES[idx].gated){var by=(o.grants&&o.grants[idx])?o.grants[idx]:'Owner';lbl='Access cleared by '+cap(by)+' · '+MODULES[idx].n;}
+      else lbl='Installed · '+MODULES[idx].n;
+      items.push({n:lbl,hot:false});
+    });
+    o.access.slice().sort(function(a,b){return a-b;}).forEach(function(idx){items.push({n:'Wired · '+TIERS[idx].n+' access',hot:false});});
+    if(o.build.length===8)items.push({n:'Machine online — all systems',hot:true});
+    else if(o.build.length>0)items.push({n:'Build in progress',hot:true});
+    var h='';items.forEach(function(it,i){var num=('0'+(i+1)).slice(-2);h+='<div class="logitem'+(it.hot?' hot':'')+'"><div class="ln">STAGE '+num+'</div><div class="lt">'+it.n+'</div></div>';});
+    $('log').innerHTML=h;
+  }
+
+  function renderCrew(o){
+    var h='';TIERS.forEach(function(t,idx){var on=o.access.indexOf(idx)>-1;h+='<div class="crew'+(on?' on':'')+'" data-t="'+idx+'"><span class="dot"></span><div class="ct"><div class="cn">'+t.n+'</div><div class="cd">'+t.d+'</div></div><div class="cs">'+t.scope+'</div></div>';});
+    var box=$('crew');box.innerHTML=h;
+    box.querySelectorAll('.crew').forEach(function(row){row.addEventListener('click',function(){toggleTier(+row.getAttribute('data-t'));});});
+  }
+
+  /* interactions */
+  function toggleModule(idx){var o=op();if(isLocked(o,idx)){openGate(idx);return;}var pos=o.build.indexOf(idx);if(pos>-1)o.build.splice(pos,1);else o.build.push(idx);render();persist();}
+  function toggleTier(idx){var o=op();var pos=o.access.indexOf(idx);if(pos>-1)o.access.splice(pos,1);else o.access.push(idx);render();persist();}
+
+  /* gate */
+  var gate=$('gate'),pendingGate=null,selectedApprover='Owner';
+  function openGate(idx){
+    pendingGate=idx;
+    $('gateTitle').textContent=MODULES[idx].n;
+    $('gateNote').textContent=MODULES[idx].gate;
+    var apprs=MODULES[idx].approvers||['Owner'];
+    selectedApprover=apprs[0];
+    var box=$('gateApprovers');
+    box.innerHTML='<span style="font-family:Space Mono,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist-dim);align-self:center">Approved by</span>';
+    apprs.forEach(function(a,i){
+      var b=el('button','mini '+(i===0?'save':'cancel'));b.type='button';b.textContent=cap(a);b.setAttribute('data-a',a);
+      b.addEventListener('click',function(){selectedApprover=a;box.querySelectorAll('button').forEach(function(x){x.className='mini cancel';});b.className='mini save';});
+      box.appendChild(b);
+    });
+    gate.classList.add('open');
+  }
+  function closeGate(){gate.classList.remove('open');pendingGate=null;}
+  $('gateClose').addEventListener('click',closeGate);
+  gate.addEventListener('click',function(e){if(e.target===gate)closeGate();});
+  $('grantBtn').addEventListener('click',function(){if(pendingGate===null)return;var o=op(),idx=pendingGate;if(o.unlocked.indexOf(idx)===-1)o.unlocked.push(idx);if(!o.grants)o.grants={};o.grants[idx]=selectedApprover||'Owner';if(o.build.indexOf(idx)===-1)o.build.push(idx);closeGate();render();persist();});
+
+  /* chips */
+  var opchips=$('opchips');
+  function renderChips(){opchips.innerHTML='';state.operators.forEach(function(o){var chip=el('button','opchip'+(o.id===state.activeId?' active':''));chip.type='button';if(o.id===state.activeId)chip.style.background=o.accent;chip.innerHTML='<span class="od" style="background:'+(o.id===state.activeId?'#0a0a0a':o.accent)+'"></span>'+o.buildName;chip.addEventListener('click',function(){state.activeId=o.id;render();persist();window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});});opchips.appendChild(chip);});}
+
+  /* new build form */
+  var opForm=$('opForm'),fName=$('fName'),fCall=$('fCall'),fBuild=$('fBuild'),fSw=$('fSwatches'),pickedAccent=ACCENTS[0];
+  ACCENTS.forEach(function(a,i){var s=el('div','sw'+(i===0?' pick':''));s.style.background=a;s.setAttribute('data-a',a);s.addEventListener('click',function(){pickedAccent=a;fSw.querySelectorAll('.sw').forEach(function(x){x.classList.remove('pick');});s.classList.add('pick');});fSw.appendChild(s);});
+  function openForm(){opForm.classList.add('open');fName.value='';fCall.value='';fBuild.value='';pickedAccent=ACCENTS[state.operators.length%ACCENTS.length];fSw.querySelectorAll('.sw').forEach(function(x){x.classList.toggle('pick',x.getAttribute('data-a')===pickedAccent);});fName.focus();}
+  function closeForm(){opForm.classList.remove('open');}
+  $('opAddBtn').addEventListener('click',function(){opForm.classList.contains('open')?closeForm():openForm();});
+  $('fCancel').addEventListener('click',closeForm);
+  $('fSave').addEventListener('click',function(){var nm=fName.value.trim()||('Operator '+(state.operators.length+1));var cs=fCall.value.trim()||nm.split(' ')[0].toUpperCase();var bn=fBuild.value.trim()||'The Machine';var o={id:uid(),name:nm,callsign:cs,buildName:bn,accent:pickedAccent,build:[],access:[],unlocked:[]};state.operators.push(o);state.activeId=o.id;closeForm();render();persist();window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});});
+  fName.addEventListener('keydown',function(e){if(e.key==='Enter')$('fSave').click();});
+
+  /* share */
+  $('shareBtn').addEventListener('click',function(){var l=buildLink(op());if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(l).then(function(){flashShare('Share link copied');},function(){flashShare('Copy failed — use Copy link below');});}else{flashShare('Use Copy link below');}});
+  function flashShare(t){var b=$('shareBtn');var o=b.textContent;b.textContent=t.indexOf('copied')>-1?'Copied ✓':'Share';savedTag.textContent='◍ '+t;savedTag.classList.add('show');clearTimeout(saveTimer);saveTimer=setTimeout(function(){savedTag.classList.remove('show');savedTag.textContent='◍ Saved';b.textContent='Share';},1600);}
+
+  /* load modal */
+  var loadModal=$('loadModal'),codeIn=$('codeIn'),loadMsg=$('loadMsg');
+  $('loadBtn').addEventListener('click',function(){codeIn.value='';loadMsg.textContent='';loadModal.classList.add('open');codeIn.focus();});
+  $('loadClose').addEventListener('click',function(){loadModal.classList.remove('open');});
+  loadModal.addEventListener('click',function(e){if(e.target===loadModal)loadModal.classList.remove('open');});
+  $('codeLoad').addEventListener('click',function(){var d=decodeCode(codeIn.value);if(!d){loadMsg.textContent='That code did not read. Check it and try again.';return;}var o={id:uid(),name:d.name,callsign:d.callsign,buildName:d.buildName,accent:d.accent,build:d.build,access:d.access,unlocked:d.unlocked,grants:d.grants||{}};state.operators.push(o);state.activeId=o.id;loadModal.classList.remove('open');render();persist();window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});});
+
+  /* ---------- share: deep links + QR ---------- */
+  function shareBase(){try{if(location.protocol==='http:'||location.protocol==='https:')return location.origin+location.pathname;}catch(e){}return 'https://aixmos.app/';}
+  function buildLink(o){return shareBase()+'#load='+encodeURIComponent(encodeOp(o));}
+  function renderShare(o){
+    $('shareUrl').textContent='aixmos.app/'+slug(o.name)+'/'+slug(o.buildName);
+    var dl=$('dlQr');if(dl)dl.download=slug(o.name)+'-'+slug(o.buildName)+'-qr.png';
+    renderQR(o);
+    try{history.replaceState(null,'','#/'+slug(o.name)+'/'+slug(o.buildName));}catch(e){}
+  }
+  function renderQR(o){
+    var img=$('qrImg'),fall=$('qrFall'),dl=$('dlQr'),link=buildLink(o);
+    if(typeof qrcode==='undefined'){if(img)img.style.display='none';if(fall)fall.style.display='block';return;}
+    function make(ec){var qr=qrcode(0,ec);qr.addData(link);qr.make();return qr.createDataURL(6,8);}
+    var url=null;
+    try{url=make('M');}catch(e){try{url=make('L');}catch(e2){url=null;}}
+    if(url){if(img){img.src=url;img.style.display='block';}if(fall)fall.style.display='none';if(dl)dl.href=url;}
+    else{if(img)img.style.display='none';if(fall){fall.textContent='Build too large for one code — use Copy link';fall.style.display='block';}}
+  }
+  $('copyLinkBtn').addEventListener('click',function(){var l=buildLink(op());var b=$('copyLinkBtn');function done(ok){b.textContent=ok?'Copied ✓':'Copy failed';setTimeout(function(){b.textContent='Copy link';},1500);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(l).then(function(){done(true);},function(){done(false);});}else done(false);});
+
+  /* boot */
+  Store.get(KEY).then(function(raw){
+    if(raw){try{var s=JSON.parse(raw);if(s&&s.operators&&s.operators.length)state=s;}catch(e){}}
+    state.operators.forEach(function(o){if(!o.unlocked)o.unlocked=[];if(!o.build)o.build=[];if(!o.access)o.access=[];if(!o.grants)o.grants={};if(!o.buildName)o.buildName='The Machine';});
+    if(!state.operators.length){state.operators=[{id:uid(),name:'TMMT · Prime',callsign:'PRIME',buildName:'The Machine',accent:ACCENTS[0],build:[0,1,2,3,5],access:[0,1],unlocked:[4,6],grants:{4:'owner',6:'owner'}}];state.activeId=state.operators[0].id;persist();}
+    if(!state.activeId)state.activeId=state.operators[0].id;
+    var h=location.hash||'';
+    if(h.indexOf('#load=')===0){
+      var d=decodeCode(decodeURIComponent(h.slice(6)));
+      if(d){var o={id:uid(),name:d.name,callsign:d.callsign,buildName:d.buildName,accent:d.accent,build:d.build,access:d.access,unlocked:d.unlocked,grants:d.grants||{}};state.operators.push(o);state.activeId=o.id;persist();}
+    }else if(h.indexOf('#/')===0){
+      var parts=h.slice(2).split('/');var m=state.operators.filter(function(x){return slug(x.name)===parts[0]&&slug(x.buildName)===(parts[1]||'');})[0];if(m)state.activeId=m.id;
+    }
+    render();
+  });
+
+  /* ambient */
+  var cv=$('ambient'),ctx=cv.getContext('2d'),W,H,parts=[];
+  function size(){W=cv.width=innerWidth;H=cv.height=innerHeight;}size();window.addEventListener('resize',size);
+  function seed(){parts=[];var count=reduce?34:Math.min(90,Math.floor(W*H/16000));for(var i=0;i<count;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*1+.3,vy:Math.random()*.22+.05});}
+  seed();window.addEventListener('resize',seed);
+  var cols=['rgba(232,180,76,','rgba(77,227,232,','rgba(200,107,255,'];
+  function draw(){ctx.clearRect(0,0,W,H);for(var i=0;i<parts.length;i++){var p=parts[i];p.y-=p.vy;if(p.y<-4){p.y=H+4;p.x=Math.random()*W;}ctx.beginPath();ctx.arc(p.x,p.y,p.z,0,6.283);ctx.fillStyle=cols[i%3]+(0.08+p.z*0.16)+')';ctx.fill();}if(!reduce)requestAnimationFrame(draw);}
+  draw();
+})();
+</script>
+<div class="modal" id="specModal" role="dialog" aria-modal="true"><div class="mbox specbox">
+  <div class="mkey">AIXMOS · One-File Spec &amp; Handoff</div>
+  <pre id="specPre" class="specpre"></pre>
+  <div class="mbtns"><button class="mini save" id="specCopy" type="button">Copy all</button><button class="mini cancel" id="specClose" type="button">Close</button></div>
+</div></div>
+<script type="text/markdown" id="specdoc">
+AIXMOS BUILD PAGE — COMPLETE SPEC, HANDOFF & CONFIG (compiled in-file)
+Generated 2026-06-22 · everything for this module lives in this one file.
+Sections: SESSION HANDOFF / RECONCILIATION LOG / CONFIG (aixmos.config.json) / DEPLOY / CLAUDE CODE INTEGRATION / README
+
+
+================================================================
+## SESSION HANDOFF
+================================================================
+
+# AIXMOS BUILD PAGE — SESSION HANDOFF
+*Paste this into another chat or Claude Code to continue. It is self-contained.*
+
+**MERGE NOTE for the receiving session:** This is one module inside the broader AIXMOS / TMMT platform — the public, shareable *build page* layer. Treat the module `key`s and feature `flag`s below as the contract that keeps it 1:1 with the rest of the platform; reconcile names against the real repo before changing anything. Don't treat the UI gate as legal authorization (see Compliance Boundary).
+
+---
+
+## 1. WHAT THIS IS
+
+A permanent, shareable **build page** for every operator's AIXMOS machine — same pattern as a PinkSlips car-build page (`pinkslips.app/owner/build-name`), rebuilt in TMMT brand (gold-on-black, holographic). It started as a "build the machine" vision (pick-a-part → Build-A-Bear: operators pick only the parts they need, assemble their own machine, grant their crew access) and converged on a PinkSlips-style profile page per operator.
+
+**Deliverable:** one self-contained `index.html` (no build step, works offline). Plus a config mirror, deploy guide, and a Claude Code integration prompt. Packaged as `aixmos-build-page.zip`.
+
+---
+
+## 2. FEATURE INVENTORY (what the page does today)
+
+- **Per-operator builds.** Each operator = a machine with modules, crew tiers, tier/rate, accent colour, and its own page. Switch builds via pills; "＋ New build" sets owner name, callsign, build name, accent.
+- **Hero** with holographic hex "core" that lights node-by-node as modules install, plus tier badge, monthly rate, live status (COLD / BUILDING / ONLINE), readiness %.
+- **Spec sheet** — owner, callsign, tier, rate, modules, readiness, crew, gated-cleared, accent.
+- **Build list** — Installed vs Available bays; tap to install/remove. Pick-a-part mechanic.
+- **Gated bays** — `credit_to_keys` and `dispatch` ship locked; tapping opens an owner-approval modal that requires choosing an approver, then unlocks + installs. Grant is recorded.
+- **Dyno** — capability output bars (Automation / Revenue Ops / Compliance / Network / Service) computed from installed modules.
+- **Build log** — staged timeline; gated entries read "Access cleared by {approver}".
+- **Crew roster** — 4 access tiers (Operator / Partner / Crew / Client), tap to wire/unwire.
+- **Handoff** — Scan-to-load QR + Copy link + Save QR. Top-bar Share copies the same deep link.
+- **Persistence** — saves per device (artifact storage API when embedded, `localStorage` standalone). Auto-saves on every change.
+- **Production trim** — meta/OG/Twitter tags, theme colour, Apple web-app tags, inline favicon, per-build `<title>`, reduced-motion + keyboard-focus support, graceful QR fallback offline.
+
+---
+
+## 3. CONFIG — SINGLE SOURCE OF TRUTH
+
+Lives in `aixmos.config.json` and is mirrored in the `CONFIG` block at the top of `index.html`. Keep them in sync; keep `key`s stable (they map to the platform schema).
+
+**Modules** (order = node order) — *reconciled v1.1 against the live repo*:
+| key | name | gated | flags | approvers | maps_to |
+|---|---|---|---|---|---|
+| fleet_engine | Fleet Engine | — | — | — | workstream-1 · Fleet Economics Command Center |
+| intake_gate | Intake Gate | — | — | — | AIXMOS Intake & Triage Gate (n8n) |
+| ai_brain | AI Brain | — | — | — | Ollama + Workers tiered routing |
+| dropnet | DropNet | — | — | — | AIXMOS DropNet (NAS file tier) |
+| credit_to_keys | Credit-to-Keys | ✅ | credit_repair, funding | owner, umar | workstream-2 credit-funding vertical |
+| operator_network | Operator Net | — | — | — | workstream-3 operator network ($97/mo) |
+| dispatch | Dispatch | ✅ | dispatch_overdrive *(confirm)* | owner | Operation Overdrive (licensing gate) |
+| detail_bay | Detail Bay | — | — | — | TMMT Auto Detail |
+
+**Tiers (crew):** operator (Full Floor), partner (Vertical), crew (Assigned Bays), client (Private Room).
+
+**Pricing ladder** (in `computeTier()`) — *reconciled to the real aixmos-core.ts ascension ladder*:
+| tier | rate | rule (build-size proxy) |
+|---|---|---|
+| Operator | $97/mo | 1–3 modules, none gated |
+| Builder | $297/mo | 4–5 modules, none gated |
+| Node | $997/mo | 6+ modules, none gated |
+| Partner | $5K–$50K | any gated module installed |
+
+> True tier is driven by **earn-gates / entitlements in `aixmos-core.ts`**, not module count — the build page maps build size to the ladder names as a display proxy only.
+
+**Capability categories:** Automation, Revenue Ops, Compliance, Network, Service.
+
+---
+
+## 4. OWNER-APPROVAL + COMPLIANCE BOUNDARY
+
+- Real legal flags: `credit_repair` + `funding` in `shared/compliance-gates/gates.config.json`, unlockable **only** by `owner` or `umar` after the required legal steps.
+- Real owner-approval enforcement: `shared/owner-approval-gate/` **plus a `.claude/hooks/` PreToolUse hook** — CLAUDE.md is context, the hook is the hard block. Keep the hook installed.
+- A2P SMS: credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.
+- Gated bays require an approval grant; the approver (owner / umar) is recorded, shown in the build log, and carried inside the share code for provenance.
+- **HARD LINE:** the build-page gate is *not* legal sign-off. Real CROA / Virginia credit-services / dispatch + courier licensing / insurance clearance stays in the actual compliance flow. The unlock records that those steps were done — it does not perform or replace them. Never auto-unlock.
+
+---
+
+## 5. SHARE / HANDOFF MECHANICS
+
+- **Build code:** `AIX1.<base64(JSON)>` encoding name, callsign, build name, accent, build, access, unlocked, grants.
+- **Deep link:** `{host}/#load=<urlencoded code>` → opens the page and rebuilds that exact machine as a new build.
+- **Pretty hash:** switching builds sets `#/owner-slug/build-slug` (bookmarkable). On load, `#load=` imports; `#/owner/build` selects a matching saved build.
+- **QR** encodes the deep link (qrcode-generator via cdnjs, with a text fallback if offline / too large).
+
+---
+
+## 6. TECH NOTES
+
+- Single static HTML file. Fonts: Chakra Petch (display), Inter (body), Space Mono (data). One CDN dependency: qrcode-generator (graceful fallback if it fails to load).
+- Storage wrapper: `window.storage` → `localStorage` → in-memory, all try/catch'd. No bare browser-storage calls that break the artifact runtime.
+- Hash-based routing → no server logic needed to deploy.
+- **Brand tokens:** void `#07090E`, carbon `#0E1218`, gold `#E8B44C` / bright `#FFD479`, holo cyan `#4DE3E8`, holo magenta `#C86BFF`, mist `#8A94A6`. Holographic = cyan→magenta→gold gradient, reserved for active/online states; gold is the resting brand colour.
+
+---
+
+## 7. DEPLOY (make the URL real)
+
+Static host, ~5 min: rename to `index.html` → push to a repo → deploy on Vercel (or Netlify / Cloudflare Pages / GitHub Pages) → add domain `aixmos.app` + DNS. QR/links resolve immediately because routing is hash-based. Full steps in `DEPLOY.md`.
+
+---
+
+## 8. CLAUDE CODE INTEGRATION
+
+Drop `aixmos-build-page.zip` into the AIXMOS repo and paste `CLAUDE_CODE_INTEGRATION.md`. It instructs the agent to: discover the real repo tree; treat the repo as authoritative on module/flag **names**; reconcile `aixmos.config.json` against actual flags (esp. `credit_funding`, `dispatch_overdrive`); generate the page's embedded CONFIG **from** the JSON so they never drift, with a drift check; place files; and stop short of any backend, secrets, or auto-unlock.
+
+---
+
+## 9. OPEN ITEMS / DECISIONS
+
+*Reconciled in-session (v1.1): flags → `credit_repair`+`funding`; approvers → `owner`/`umar`; DataRoom → DropNet; pricing → real Operator/Builder/Node/Partner ladder; gate paths set. Remaining:*
+
+1. **Confirm `dispatch_overdrive`** — Operation Overdrive may be gated by licensing config rather than a feature flag. Verify the real name/mechanism in the repo.
+2. **Parts-registry mapping** — modules should map onto the registered parts in `aixmos-parts.ts` (doctrine: parts are registered, never coded into core), not be a second source of truth. Wire the build page to read the registry.
+3. **Crew roster vs real access model** — current roster is Operator/Partner/Crew/Client. Real product access tiers are Public / Operator-Owner / Employee-Vendor / Full $50K; archetypes (Closer/Mechanic/Financier/Operator) are a separate axis. Decide which the roster should mirror.
+4. **Tier source of truth** — true tier comes from earn-gates in `aixmos-core.ts`; decide whether the page should read real entitlements instead of the build-size proxy.
+5. **Backend (flagged, not built)** — Supabase `builds` table + Vercel function + owner-auth to make `aixmos.app/{owner}/{build}` resolve to a stored, editable page.
+
+---
+
+## 10. FILES IN THE PACKAGE
+
+`index.html` (the app) · `aixmos.config.json` (catalog) · `README.md` · `DEPLOY.md` · `CLAUDE_CODE_INTEGRATION.md` — bundled as `aixmos-build-page.zip`.
+
+*End of handoff.*
+
+================================================================
+## RECONCILIATION LOG
+================================================================
+
+# AIXMOS Build Page — Reconciliation Log (config v1.0 → v1.1)
+
+Reconciled the build-page config against the live AIXMOS Claude Code repo (aixmos-packet, aixmos-core.ts, aixmos-parts.ts, shared compliance/owner-approval gates). Applied to `index.html`, `aixmos.config.json`, and the handoff doc.
+
+## Corrected (high confidence — pulled from the real repo)
+
+| What | Was (my guess) | Now (real) |
+|---|---|---|
+| Legal feature flags | `credit_funding` | `credit_repair` + `funding` |
+| Approver roles | `Owner` / `Umar` | `owner` / `umar` (display capitalized) |
+| Pricing ladder | Starter $97 / Operator $297 / Command $697 / Flagship "from $50K" | **Operator $97 / Builder $297 / Node $997 / Partner $5K–$50K** |
+| File: DataRoom | `dataroom` / "DataRoom" | `dropnet` / "DropNet" (the real named NAS file tier) |
+| Module key | `operator_net` | `operator_network` |
+| Gate location | unspecified | `shared/compliance-gates/gates.config.json` |
+| Gate enforcement | "UI gate" | `shared/owner-approval-gate/` + `.claude/hooks/` PreToolUse hook (CLAUDE.md is context, not enforcement) |
+
+## Added mappings (each module → real repo target)
+
+- fleet_engine → workstream-1 · Fleet Economics Command Center
+- intake_gate → AIXMOS Intake & Triage Gate (n8n); `credit-funding` category routes to **Moe Legacy**
+- ai_brain → Ollama local inference + Cloudflare Workers tiered routing
+- dropnet → AIXMOS DropNet (UGREEN NAS, Tailscale)
+- credit_to_keys → workstream-2 credit-funding vertical (intake → dispute engine → tradeline tracker → funding desk)
+- operator_network → workstream-3 operator network ($97/mo, portal, commission engine, covenant)
+- dispatch → Operation Overdrive (emergency dispatch / medical courier)
+- detail_bay → TMMT Auto Detail
+
+## Still needs your confirmation
+
+1. **`dispatch_overdrive`** flag name is provisional — Operation Overdrive may be gated by licensing config, not a feature flag. Confirm the real mechanism.
+2. **Parts registry** — modules should map onto `aixmos-parts.ts` registered parts (doctrine: register parts, never code into core). The page currently hardcodes the 8; ideal end-state is reading the registry.
+3. **Crew roster** — current Operator/Partner/Crew/Client vs the real access tiers (Public / Operator-Owner / Employee-Vendor / Full $50K) and the archetype axis (Closer / Mechanic / Financier / Operator). Pick what the roster should mirror.
+4. **Tier source** — true tier is earn-gate-driven in `aixmos-core.ts`; the page uses a build-size proxy for display. Decide whether to wire real entitlements.
+
+## Unchanged (already correct)
+
+Module display names (Fleet Engine, Intake Gate, AI Brain, Credit-to-Keys, Operator Net, Dispatch, Detail Bay), capability categories, the car-mod/pick-a-part metaphor, gold-on-black + holographic brand, owner-approval-on-grant model, build-code/QR/deep-link handoff, the $97 entry and $5K–$50K Partner anchors.
+
+================================================================
+## CONFIG (aixmos.config.json)
+================================================================
+
+{
+  "configVersion": "1.1.0",
+  "note": "Single source of truth for AIXMOS build pages, RECONCILED against the live Claude Code repo (aixmos-packet / aixmos-core.ts / shared compliance gates). The embedded CONFIG block in index.html mirrors this. Keep module keys and flags identical to the platform schema.",
+  "reconciledAgainst": [
+    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner/umar)",
+    "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse (real enforcement)",
+    "aixmos-core.ts ascension ladder: Operator $97 -> Builder $297 -> Node $997 -> Partner $5K-$50K",
+    "aixmos-parts.ts (car-mod parts registry — modules should map to registered parts)",
+    "workstreams: 1 aixmos-core, 2 credit-funding, 3 operator-network; shared/"
+  ],
+  "modules": [
+    { "key": "fleet_engine",    "name": "Fleet Engine",   "blurb": "Vehicle lifecycle, bookings, payments. Wheels to revenue.", "categories": ["Revenue Ops", "Service"], "maps_to": "workstream-1 · Fleet Economics Command Center" },
+    { "key": "intake_gate",     "name": "Intake Gate",    "blurb": "Every lead triaged at zero cost. Nothing slips.",          "categories": ["Automation", "Revenue Ops"], "maps_to": "AIXMOS Intake & Triage Gate (n8n) — credit-funding category routes to Moe Legacy" },
+    { "key": "ai_brain",        "name": "AI Brain",       "blurb": "Local agent swarm. Your data never leaves the floor.",     "categories": ["Automation", "Network"], "maps_to": "Ollama local inference + Cloudflare Workers tiered routing" },
+    { "key": "dropnet",         "name": "DropNet",        "blurb": "NAS drop zone. Every file routed, filed, backed up over the tailnet.", "categories": ["Automation", "Compliance"], "maps_to": "AIXMOS DropNet (UGREEN NAS file tier, Tailscale)" },
+    {
+      "key": "credit_to_keys",  "name": "Credit-to-Keys", "blurb": "Five-rung funding ladder. Credit becomes keys.",
+      "categories": ["Revenue Ops", "Compliance"],
+      "gated": true,
+      "flags": ["credit_repair", "funding"],
+      "approvers": ["owner", "umar"],
+      "maps_to": "workstream-2 credit-funding vertical (intake -> dispute engine -> tradeline tracker -> funding desk)",
+      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."
+    },
+    { "key": "operator_network","name": "Operator Net",   "blurb": "Plug in nodes. Every operator runs your playbook.",         "categories": ["Network"], "maps_to": "workstream-3 operator network ($97/mo, operator portal, commission engine, covenant)" },
+    {
+      "key": "dispatch",        "name": "Dispatch",       "blurb": "Overdrive routing for couriers and emergency runs.",
+      "categories": ["Service", "Network"],
+      "gated": true,
+      "flags": ["dispatch_overdrive"],
+      "approvers": ["owner"],
+      "maps_to": "Operation Overdrive (emergency dispatch / medical courier, grant track)",
+      "gateReason": "Operational gate, NOT part of the credit/funding legal pair. Grant only once dispatch, courier, and insurance requirements are cleared.",
+      "CONFIRM": "dispatch_overdrive flag name is provisional — confirm against the real repo; Operation Overdrive may be gated by licensing config rather than a feature flag."
+    },
+    { "key": "detail_bay",      "name": "Detail Bay",     "blurb": "Service ops, scheduling, upsells. The finish.",             "categories": ["Service", "Revenue Ops"], "maps_to": "TMMT Auto Detail" }
+  ],
+  "tiers": [
+    { "key": "operator", "name": "Operator", "desc": "Runs the whole floor on your playbook.", "scope": "Full Floor" },
+    { "key": "partner",  "name": "Partner",  "desc": "Owns a vertical inside your build.",     "scope": "Vertical" },
+    { "key": "crew",     "name": "Crew",     "desc": "Works the bays you assign them.",        "scope": "Assigned Bays" },
+    { "key": "client",   "name": "Client",   "desc": "Their own room. Their own keys.",        "scope": "Private Room" }
+  ],
+  "tiersNote": "These are build-page access roles. The real 4-tier product access model in the repo is: Public / Operator-Owner / Employee-Vendor / Full $50K. Operator archetype classes (Closer, Mechanic, Financier, Operator) are a separate axis. Reconcile if you want the roster to mirror one of these exactly.",
+  "pricing": [
+    { "tier": "Operator", "rate": "$97/mo",    "rule": "1-3 modules, none gated" },
+    { "tier": "Builder",  "rate": "$297/mo",   "rule": "4-5 modules, none gated" },
+    { "tier": "Node",     "rate": "$997/mo",   "rule": "6+ modules, none gated" },
+    { "tier": "Partner",  "rate": "$5K–$50K",  "rule": "any gated module installed" }
+  ],
+  "pricingNote": "RECONCILED to the real ascension ladder (Operator $97 / Builder $297 / Node $997 / Partner $5K-$50K). True tier is driven by earn-gates/entitlements in aixmos-core.ts — the build-size mapping here is a display proxy only.",
+  "complianceGate": {
+    "file": "shared/compliance-gates/gates.config.json",
+    "legalFlags": ["credit_repair", "funding"],
+    "approvers": ["owner", "umar"],
+    "enforcement": "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse hook (CLAUDE.md is context, NOT enforcement)",
+    "a2pSmsRestriction": "credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.",
+    "boundary": "The build-page gate records an approver for provenance. It is NOT legal sign-off. Real CROA / VA credit-services / dispatch licensing / insurance clearance stays in the actual compliance flow. Never auto-unlock."
+  },
+  "capabilityCategories": ["Automation", "Revenue Ops", "Compliance", "Network", "Service"],
+  "partsDoctrine": "Per aixmos-parts.ts: capabilities are REGISTERED as parts (with dependencies, conflicts, stage gates, legal gates) — new mods are registered, never coded into core. The build-page modules should map onto registered parts, not become a second source of truth."
+}
+
+================================================================
+## DEPLOY
+================================================================
+
+# AIXMOS Build Page — Go Live Guide
+
+The build page is one self-contained `.html` file. It uses **hash routing** (`#/owner/build`), so it needs **no server logic** to go online — any static host works, and the QR + share links resolve the moment it's live.
+
+---
+
+## What works right now (no backend)
+
+- **Per-build pages** — each operator's machine renders as its own page.
+- **Scan to load** — the QR encodes the full build. Scanning opens the page and rebuilds that exact machine (modules, crew, cleared access).
+- **Share link / Copy link** — same thing as a tappable link (`yoursite/#load=…`).
+- **Save QR** — downloads the code as an image for a flyer, card, or phone wallpaper.
+- **Saves per device** — builds persist locally on each device. The QR/link is how a build travels between devices, so no database is required for handoff.
+
+The build code is just configuration — **not credentials, not personal data**. Nothing sensitive is transmitted.
+
+---
+
+## Step 1 — Put it online (Vercel, ~5 min, free)
+
+1. Rename the file to `index.html`.
+2. Create a GitHub repo and drop `index.html` in the root.
+3. Go to vercel.com → **Add New → Project** → import that repo → **Deploy**.
+4. You now have a live URL like `aixmos-xxxx.vercel.app`. The QR codes already point at it.
+
+> Netlify, Cloudflare Pages, and GitHub Pages all work the same way — it's a static file.
+
+## Step 2 — Put your domain on it
+
+1. In Vercel: **Project → Settings → Domains → Add** `aixmos.app`.
+2. Vercel shows the DNS records to set (an A record or CNAME) at your domain registrar.
+3. Add them, wait for it to verify. Now `aixmos.app` serves the page and every QR/link resolves to your brand.
+
+---
+
+## The recommended NEXT step (needs your accounts — flagged, not built)
+
+To make `aixmos.app/{owner}/{build}` resolve to a **stored** page (clean URL, no long code in the link, editable behind a login) — the full PinkSlips behavior — you add a small backend:
+
+- **Store builds server-side.** You already run **Supabase** — one `builds` table (`owner_slug`, `build_slug`, `config_json`, `owner_id`) covers it.
+- **Resolve the pretty URL.** A Vercel function reads `owner/build` from the path and returns the stored config; the page renders it.
+- **Edit auth.** Only the owner (or you, the orchestrator) can change a build — gate writes behind a login so a public viewer can look but not alter.
+- **Keep the gate honest.** The locked bays (Credit-to-Keys, Dispatch) stay UI gates. **Real CROA / licensing / insurance clearance still happens off-platform** — the unlock should be recorded, not treated as legal sign-off.
+
+This is the only piece that touches your accounts, domain, and data handling, so it's the right thing to do deliberately rather than wire blind. Say the word and I'll spec the Supabase schema, the Vercel function, and the auth flow as a build packet.
+
+================================================================
+## CLAUDE CODE INTEGRATION
+================================================================
+
+# Claude Code — AIXMOS Build Page Integration
+
+Paste this whole file into Claude Code at the root of your AIXMOS repo. It tells the agent how to fold the build page in and keep it 1:1 with the platform. It does not assume your exact tree — step 1 is to discover it.
+
+---
+
+## CONTEXT
+
+I'm adding a public **build page** (`index.html` + `aixmos.config.json`, in this drop) to the AIXMOS repo. Every operator's machine renders as a permanent, shareable page (modules, tier, crew, owner-gated bays, scan-to-load QR). It must stay **1:1** with the platform: same module keys, same gated feature flags, same owner-approval rule (only Owner or Umar can clear `credit_funding`).
+
+## TASK
+
+1. **Discover the repo.** Read the existing structure, the shared schema(s), the feature-flag definitions, and the owner-approval / compliance-gate primitives. Report where modules, flags, and gates are currently defined.
+
+2. **Reconcile the catalog — do not blind-overwrite.** Compare `aixmos.config.json` in this drop against the repo's real module list and flags:
+   - If the repo already defines modules/flags, treat the repo as authoritative for **names and keys**, and update `aixmos.config.json` to match. Flag every diff for my review before changing keys.
+   - Confirm the two gated bays map to real flags: `credit_to_keys → credit_funding`, `dispatch → dispatch_overdrive`. If your flag names differ, align the config to the repo's names and tell me what you changed.
+   - Verify approvers: `credit_funding` = `["Owner","Umar"]`, `dispatch_overdrive` = `["Owner"]`. Match these to the repo's owner-approval primitive.
+
+3. **Wire config as the single source of truth.** Generate the `CONFIG` block embedded in `index.html` **from** `aixmos.config.json` (a small codegen/build step or a documented manual mirror), so the page, the JSON, and the platform schema never drift. Add a check/test that fails if `index.html`'s CONFIG and `aixmos.config.json` disagree.
+
+4. **Place the files** where static assets / web deliverables live in this repo (or create a `web/build-page/` folder if there's no obvious home). Keep `index.html` self-contained.
+
+5. **Pricing.** `computeTier()` in `index.html` has placeholder mid-tiers ($297 / $697). Pull the real numbers from the repo's pricing source if one exists; otherwise leave the TODO and tell me.
+
+## HARD RULES
+
+- **Do not** treat the UI gate as legal authorization. The unlock records an approver for provenance; real CROA / Virginia credit-services / dispatch licensing / insurance steps stay gated in the actual compliance flow. Keep that boundary intact and don't auto-unlock anything.
+- **Do not** rename module `key`s or flag names without surfacing the diff for my approval — they're the contract that keeps everything 1:1.
+- **Do not** add a backend, write secrets, or wire customer-facing or financial actions in this task. Stop at the static page + config reconciliation and report.
+
+## OUTPUT
+
+- A summary of the repo's existing module/flag/gate definitions and every diff against this drop.
+- The reconciled `aixmos.config.json`, the synced `index.html` CONFIG block, and the drift check.
+- A short note on where you placed the files and what's left for me to decide (pricing numbers, flag-name conflicts, file location).
+- The proposed commit message. Wait for my go before committing if your repo convention requires approval; otherwise commit on a branch named `feat/build-page`.
+
+================================================================
+## README
+================================================================
+
+# AIXMOS Build Page
+
+A permanent, shareable build page for every operator's AIXMOS machine — same idea as a PinkSlips car build page, in TMMT brand. One self-contained `index.html`: hero, spec sheet, mod list, dyno (capability output), build log, crew roster, and a scan-to-load QR.
+
+## Files
+
+| File | What it is |
+|---|---|
+| `index.html` | The whole app. Static, no build step, works offline (graceful QR fallback). Rename to `index.html` if it isn't already. |
+| `aixmos.config.json` | Canonical config — modules, gates, flags, tiers, pricing. The `CONFIG` block in `index.html` mirrors this. |
+| `DEPLOY.md` | How to take it live (Vercel + domain), plus the flagged backend step. |
+| `CLAUDE_CODE_INTEGRATION.md` | Paste-into-Claude-Code prompt to fold this into the AIXMOS repo and keep config in sync. |
+
+## How it works
+
+- **Builds** = operator machines. Each has modules, crew tiers, tier/rate, and a colour.
+- **Gated bays** (`credit_to_keys`, `dispatch`) stay locked until granted through the owner-approval modal. The grant records the approver (Owner / Umar) and travels with the build code. **The UI gate is not legal sign-off** — real CROA / licensing / insurance clearance happens off-platform; the unlock just records that it was done.
+- **Share / QR** encodes the full build into a link (`#load=…`). Scanning or opening it rebuilds that exact machine as its own page. No backend needed for handoff.
+- **Persistence**: saves per device via the artifact storage API when embedded, `localStorage` when standalone. Build codes are how a machine travels between devices.
+
+## Editing the catalog
+
+Change `aixmos.config.json` **and** the matching `CONFIG` arrays near the top of `index.html` (they're marked "single source of truth"). Keep `key` values stable — they map to your platform schema. Mid-tier prices live in `computeTier()`.
+
+## Single source of truth
+
+Module `key`s and gated `flag`s are the contract between this page, `aixmos.config.json`, and your Claude Code / backend repo. Don't rename them casually — that's what keeps the page 1:1 with what operators actually run.
+</script>
+<script>
+(function(){
+  var m=document.getElementById('specModal'),pre=document.getElementById('specPre'),src=document.getElementById('specdoc');
+  function open(){pre.textContent=(src.textContent||'').trim();m.classList.add('open');}
+  document.getElementById('specOpen').addEventListener('click',function(e){e.preventDefault();open();});
+  document.getElementById('specClose').addEventListener('click',function(){m.classList.remove('open');});
+  m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('open');});
+  document.getElementById('specCopy').addEventListener('click',function(){var t=(src.textContent||'').trim(),b=document.getElementById('specCopy');function d(o){b.textContent=o?'Copied ✓':'Copy failed';setTimeout(function(){b.textContent='Copy all';},1500);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){d(true);},function(){d(false);});}else d(false);});
+})();
+</script>
+<!-- AIXMOS_CONFIG_START -->
+<script type="application/json" id="aixmos-config">
+{
+  "configVersion": "1.1.0",
+  "note": "Single source of truth for AIXMOS build pages, RECONCILED against the live Claude Code repo (aixmos-packet / aixmos-core.ts / shared compliance gates). The embedded CONFIG block in index.html mirrors this. Keep module keys and flags identical to the platform schema.",
+  "reconciledAgainst": [
+    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner/umar)",
+    "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse (real enforcement)",
+    "aixmos-core.ts ascension ladder: Operator $97 -> Builder $297 -> Node $997 -> Partner $5K-$50K",
+    "aixmos-parts.ts (car-mod parts registry — modules should map to registered parts)",
+    "workstreams: 1 aixmos-core, 2 credit-funding, 3 operator-network; shared/"
+  ],
+  "modules": [
+    { "key": "fleet_engine",    "name": "Fleet Engine",   "blurb": "Vehicle lifecycle, bookings, payments. Wheels to revenue.", "categories": ["Revenue Ops", "Service"], "maps_to": "workstream-1 · Fleet Economics Command Center" },
+    { "key": "intake_gate",     "name": "Intake Gate",    "blurb": "Every lead triaged at zero cost. Nothing slips.",          "categories": ["Automation", "Revenue Ops"], "maps_to": "AIXMOS Intake & Triage Gate (n8n) — credit-funding category routes to Moe Legacy" },
+    { "key": "ai_brain",        "name": "AI Brain",       "blurb": "Local agent swarm. Your data never leaves the floor.",     "categories": ["Automation", "Network"], "maps_to": "Ollama local inference + Cloudflare Workers tiered routing" },
+    { "key": "dropnet",         "name": "DropNet",        "blurb": "NAS drop zone. Every file routed, filed, backed up over the tailnet.", "categories": ["Automation", "Compliance"], "maps_to": "AIXMOS DropNet (UGREEN NAS file tier, Tailscale)" },
+    {
+      "key": "credit_to_keys",  "name": "Credit-to-Keys", "blurb": "Five-rung funding ladder. Credit becomes keys.",
+      "categories": ["Revenue Ops", "Compliance"],
+      "gated": true,
+      "flags": ["credit_repair", "funding"],
+      "approvers": ["owner", "umar"],
+      "maps_to": "workstream-2 credit-funding vertical (intake -> dispute engine -> tradeline tracker -> funding desk)",
+      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."
+    },
+    { "key": "operator_network","name": "Operator Net",   "blurb": "Plug in nodes. Every operator runs your playbook.",         "categories": ["Network"], "maps_to": "workstream-3 operator network ($97/mo, operator portal, commission engine, covenant)" },
+    {
+      "key": "dispatch",        "name": "Dispatch",       "blurb": "Overdrive routing for couriers and emergency runs.",
+      "categories": ["Service", "Network"],
+      "gated": true,
+      "flags": ["dispatch_overdrive"],
+      "approvers": ["owner"],
+      "maps_to": "Operation Overdrive (emergency dispatch / medical courier, grant track)",
+      "gateReason": "Operational gate, NOT part of the credit/funding legal pair. Grant only once dispatch, courier, and insurance requirements are cleared.",
+      "CONFIRM": "dispatch_overdrive flag name is provisional — confirm against the real repo; Operation Overdrive may be gated by licensing config rather than a feature flag."
+    },
+    { "key": "detail_bay",      "name": "Detail Bay",     "blurb": "Service ops, scheduling, upsells. The finish.",             "categories": ["Service", "Revenue Ops"], "maps_to": "TMMT Auto Detail" }
+  ],
+  "tiers": [
+    { "key": "operator", "name": "Operator", "desc": "Runs the whole floor on your playbook.", "scope": "Full Floor" },
+    { "key": "partner",  "name": "Partner",  "desc": "Owns a vertical inside your build.",     "scope": "Vertical" },
+    { "key": "crew",     "name": "Crew",     "desc": "Works the bays you assign them.",        "scope": "Assigned Bays" },
+    { "key": "client",   "name": "Client",   "desc": "Their own room. Their own keys.",        "scope": "Private Room" }
+  ],
+  "tiersNote": "These are build-page access roles. The real 4-tier product access model in the repo is: Public / Operator-Owner / Employee-Vendor / Full $50K. Operator archetype classes (Closer, Mechanic, Financier, Operator) are a separate axis. Reconcile if you want the roster to mirror one of these exactly.",
+  "pricing": [
+    { "tier": "Operator", "rate": "$97/mo",    "rule": "1-3 modules, none gated" },
+    { "tier": "Builder",  "rate": "$297/mo",   "rule": "4-5 modules, none gated" },
+    { "tier": "Node",     "rate": "$997/mo",   "rule": "6+ modules, none gated" },
+    { "tier": "Partner",  "rate": "$5K–$50K",  "rule": "any gated module installed" }
+  ],
+  "pricingNote": "RECONCILED to the real ascension ladder (Operator $97 / Builder $297 / Node $997 / Partner $5K-$50K). True tier is driven by earn-gates/entitlements in aixmos-core.ts — the build-size mapping here is a display proxy only.",
+  "complianceGate": {
+    "file": "shared/compliance-gates/gates.config.json",
+    "legalFlags": ["credit_repair", "funding"],
+    "approvers": ["owner", "umar"],
+    "enforcement": "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse hook (CLAUDE.md is context, NOT enforcement)",
+    "a2pSmsRestriction": "credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.",
+    "boundary": "The build-page gate records an approver for provenance. It is NOT legal sign-off. Real CROA / VA credit-services / dispatch licensing / insurance clearance stays in the actual compliance flow. Never auto-unlock."
+  },
+  "capabilityCategories": ["Automation", "Revenue Ops", "Compliance", "Network", "Service"],
+  "partsDoctrine": "Per aixmos-parts.ts: capabilities are REGISTERED as parts (with dependencies, conflicts, stage gates, legal gates) — new mods are registered, never coded into core. The build-page modules should map onto registered parts, not become a second source of truth."
+}
+</script>
+<!-- AIXMOS_CONFIG_END -->
+</body>
+</html>

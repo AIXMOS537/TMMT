@@ -34,9 +34,9 @@ describe("brand-shell", () => {
     expect(d.name).toBe("TMMT");
   });
 
-  it("manifest names apex owner", () => {
+  it("manifest names apex owner by public node, never legal name (PII)", () => {
     const m = getPlatformManifest();
-    expect(m.apexOwner.name).toBe("PROJECT X HAILMARY");
+    expect(m.apexOwner.name).toBe("X");
     expect(m.platformId).toBe("aixmos-platform");
   });
 });

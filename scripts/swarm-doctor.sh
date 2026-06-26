@@ -33,6 +33,14 @@ git ls-remote origin -h HEAD >/dev/null 2>&1 && pass "git auth to origin works (
 [[ -f "$SWARM_ROOT/.swarm/machine" || -n "${SWARM_MACHINE:-}" ]] && pass "machine name set ($(swarm_machine))" || wrn "machine name not set — run scripts/swarm-join.sh"
 gu="$(git config user.email 2>/dev/null || true)"
 [[ -n "$gu" ]] && pass "git commit identity set ($gu)" || wrn "git user.email not set in this repo — set per account (multi-account hygiene)"
+# Unsafe location: a repo in the Trash, a temp dir, or a removable volume is one
+# click (or one reboot) from losing everything — including the restored .env.
+case "$SWARM_ROOT" in
+  *.Trash/*|*/.Trash|*/Trash/*) fl "repo is in the TRASH ($SWARM_ROOT) — emptying trash deletes it + your .env. Move it: mv \"$SWARM_ROOT\" ~/projects/TMMT";;
+  /tmp/*|/private/tmp/*|/var/tmp/*|/private/var/folders/*) fl "repo is in a TEMP dir ($SWARM_ROOT) — wiped on reboot. Move it: mv \"$SWARM_ROOT\" ~/projects/TMMT";;
+  /Volumes/*|/media/*|/mnt/*|/run/media/*) wrn "repo is on a removable/mounted volume ($SWARM_ROOT) — unplugging it cuts the brain. A local path (~/projects/TMMT) is safer.";;
+  *) pass "repo location is safe ($SWARM_ROOT)";;
+esac
 
 say "${BOLD}Secret hygiene${RST}"
 if git check-ignore -q .env 2>/dev/null || grep -qE '^\.env' .gitignore 2>/dev/null; then pass ".env is git-ignored"; else fl ".env is NOT git-ignored — add '.env*' to .gitignore NOW"; fi
