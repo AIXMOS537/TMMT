@@ -105,6 +105,7 @@ booyah() {
   if [[ -f "$CHARTER" ]]; then ok "charter loaded — owner-only, local-first, never-sold"
   else warn "charter missing ($CHARTER) — booting in caretaker mode"; fi
   # 2. Owner identity — GHOST / X / HAILMARY (who you are in both worlds).
+  seed_x_profile_if_missing 2>/dev/null || true
   load_x_profile || true
   # 3. Host identity — who's home base.
   ok "host: $(swarm_machine)"

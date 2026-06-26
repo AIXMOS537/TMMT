@@ -97,3 +97,10 @@ __pycache__/
 # Sweep-archive dumps (one-time machine sweeps) — never commit; route real intake
 # files to imports/<area>/ instead. (See docs/security/HISTORY-SCRUB-RUNBOOK.md)
 imports/**/_SWEEP_ARCHIVE_*/
+.env
+*.local
+node_modules/
+dist/
+# never commit secrets, bonds, registration numbers, client PII
+secrets/
+*.pii

@@ -22,7 +22,7 @@
   },
   "contact": {
     "supportEmail": "support@allinonemanagementsolutions.com",
-    "salesPhone": "+15713265611"
+    "salesPhone": "VAULT://public_line"
   },
   "agent": {
     "name": "Riley",
