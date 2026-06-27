@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
   const stamp = new Date().toISOString();
 
   let paymentResult:
-    | { recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null }
+    | { recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null; collected?: boolean }
     | undefined;
   if (shouldRecordPayment(body, tags)) {
     paymentResult = await recordGhlPayment(supabase, body, tags);
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
   // when there's no code, no amount, or an unknown code. Collected sales only —
   // no guaranteed/passive income (protective structure for the owner).
   let referralPaid: { commission: number } | undefined;
-  if (paymentResult?.recorded && paymentResult.affiliateRef && (paymentResult.amount ?? 0) > 0) {
+  if (paymentResult?.recorded && paymentResult.collected && paymentResult.affiliateRef && (paymentResult.amount ?? 0) > 0) {
     try {
       const r = await recordCollectedReferral(supabase, {
         code: paymentResult.affiliateRef,
