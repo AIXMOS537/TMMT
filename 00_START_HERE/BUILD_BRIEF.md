@@ -7,7 +7,7 @@ Two source strategy reports sit beside this file; they hold the full reasoning. 
 
 ## The company
 
-TMMT (Muhammad Taha, founder/CEO) is an automotive rental business productized into an app + AI platform (AIXMOS), launching nationally at **$97/month**. Partner **Umar** runs a credit repair + business funding agency that is being merged in as an in-house vertical. The pitch: an operator network where people **learn and earn at the same time**, open to all regardless of starting capital, but protected by firm conduct standards.
+TMMT (PROJECT X HAILMARY, founder/CEO) is an automotive rental business productized into an app + AI platform (AIXMOS), launching nationally at **$97/month**. Partner **Umar** runs a credit repair + business funding agency that is being merged in as an in-house vertical. The pitch: an operator network where people **learn and earn at the same time**, open to all regardless of starting capital, but protected by firm conduct standards.
 
 ## The three things we are building
 
