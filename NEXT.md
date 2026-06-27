@@ -7,10 +7,12 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Tell me what you already sent Aayan so I make it linear.** Controls are handed to
-**Aayan "Nightwing" Khan** (first lieutenant; X still master). Moe Legacy is **frozen
-until he pays up**. Point me at what Aayan already has (license/token/payload/docs) and
-I align it all one direction under his new role.
+**Decide Aayan's access as Lieutenant — he currently has almost none.** I audited every
+system: he has a platform **login** (`aayan.khan.6449@gmail.com`, signed in once 6/14)
+with **ZERO roles**, an **empty "Khan Strategies LLC" org shell** (no members), and a
+6/4 welcome email. **No GitHub, no mesh tag, no license/kill-switch payload, no secrets.**
+Nothing over-granted. Say the word and I attach him as fenced `tenant_admin` of his org
+(your gates + kill-switch intact) — or hold.
 
 ---
 
@@ -26,7 +28,8 @@ I align it all one direction under his new role.
 ## Company map (locked in)
 - **AIXMOS** = the GHL **agency** account (All In One Management). Taha owns it.
 - **TMMT Rentals** = a **sub-account**. Separate company. Taha owns it.
-- **Nightwing (Aayan Khan)** = first lieutenant, now controls-holder under X. `aayan@khanstrategies.com`.
+- **Nightwing (Aayan Khan)** = first lieutenant, now controls-holder under X. Business/contact
+  `aayan@khanstrategies.com`; **platform login `aayan.khan.6449@gmail.com`** (org: Khan Strategies LLC).
 - **Moe Legacy** = credit/funding partner — **FROZEN until payment**. Was on
   MyFreeScoreNow + DisputeFox. Rick Sorkin/agency-layer work is paused with the freeze.
 
@@ -36,7 +39,7 @@ I align it all one direction under his new role.
 
 | What | State | Whose move |
 |---|---|---|
-| **Align what Aayan already has** ("make it linear") | Waiting on your list of what you sent him | Yours — tell me |
+| Aayan access — **audited 2026-06-27** | Login only, **0 roles**; empty Khan Strategies org; no GitHub/mesh/secrets. Nothing dangerous. | Yours — grant or hold |
 | Moe Legacy (all work) | **FROZEN until paid** — org suspended in Supabase | Moe (pay up) → then yours to unfreeze |
 | Commission model guardrail | Pay on real collected sales only — never recruitment/"staying on" (anti-pyramid) | Watch on build |
 | Leak risk: old rental builder ships too much | Caught + stopped. Needs allowlist rebuild before ANY handoff. | Mine (on your go) |

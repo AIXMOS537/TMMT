@@ -27,7 +27,9 @@ operator to orchestrator — build for delegation, not hand-holding.
 - **Owner = X (Muhammad Taha).** Public/partners meet only the **face** (DREAMA/AIXMOS).
   HAILMARY / Project X = owner-only control brain, never customer-facing. Keys return to X.
 - **Controls handed to Aayan "Nightwing" Khan (2026-06-27)** — first lieutenant; **X stays
-  master** (gates, break-glass, IP, kill-switch remain X's). `aayan@khanstrategies.com`. Roster: `docs/WATCHTOWER-ROSTER.md`.
+  master** (gates, break-glass, IP, kill-switch remain X's). Contact `aayan@khanstrategies.com`;
+  platform login `aayan.khan.6449@gmail.com` (org: Khan Strategies LLC). Audited 2026-06-27:
+  login only, 0 roles, no GitHub/mesh/secrets. Roster: `docs/WATCHTOWER-ROSTER.md`.
 - **Moe Legacy = FROZEN until paid** (2026-06-27) — org `bbbb…bbbb` `suspended_at` set in
   Supabase, reversible. All Moe work (below) is paused; clear the freeze on payment.
 - **Moe scope:** he runs credit repair on **MyFreeScoreNow + DisputeFox** — **integrate his
