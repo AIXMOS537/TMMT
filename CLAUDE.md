@@ -20,6 +20,28 @@ operator to orchestrator — build for delegation, not hand-holding.
 - **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
 - **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls.
 
+## CURRENT CANON (updated 2026-06-23 — full record: `docs/MASTER-COMPILE-2026-06-23.md`; live anchor: `NEXT.md`)
+- **Company map:** AIXMOS = the GHL **agency** (All In One Management; the engine + IP; X owns).
+  **TMMT Rentals** = a sub-account (separate auto company; X owns). **Moe Legacy** = a
+  credit-repair + funding **partner** (Muhammad Umar/Moe), already operating.
+- **Owner = X (Muhammad Taha).** Public/partners meet only the **face** (DREAMA/AIXMOS).
+  HAILMARY / Project X = owner-only control brain, never customer-facing. Keys return to X.
+- **Moe scope:** he runs credit repair on **MyFreeScoreNow + DisputeFox** — **integrate his
+  vendors, do NOT rebuild a dispute engine.** What X builds for Moe = the **agency layer**
+  (`workstream-3`: lead pool + students/operators + commission engine) + **Rick Sorkin**
+  (Moe's assistant — face only, X is master). Spec: `docs/RICK-SORKIN.md`.
+- **Leash → graduation:** X holds master keys / kill-switch / owner-gate until **$50K real USD
+  collected** (via TMMT tokens) for engine use; then Moe graduates to a full **white-label
+  LICENSE** (takes marketing credit) — **IP + kill-switch stay X's. License, not sale.**
+  Spec: `docs/AIXMOS-LICENSE-AND-TOKENS.md`.
+- **Tripwires:** TMMT tokens stay **closed-loop usage credits** (never cashable/transferable/
+  "invest" → else money-transmission/securities). Commissions pay on **real collected client
+  services**, never recruitment (anti-pyramid). Credit = **"guidance,"** never "repair," in AIXMOS copy.
+- **Owner Voice Vault** (`owner-voice/`, gitignored, never pushed): private DRAFT→HELD→RELEASED
+  room for Taha's voice; nothing releases without a per-piece owner gate. Spec: `docs/OWNER-VOICE-VAULT.md`.
+- **Handoff hygiene:** the rental builder over-ships (would leak HAILMARY/Project-X/financials).
+  Any partner bundle needs an **allowlist** rebuild + leak-check before ANY files go out.
+
 ## REPO CONVENTIONS
 - TypeScript + Python. Shared schemas are the contract — change schema first, then
   both sides. Don't fork types.
