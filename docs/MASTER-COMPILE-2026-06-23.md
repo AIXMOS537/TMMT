@@ -6,6 +6,11 @@
 
 ---
 
+> **UPDATE 2026-06-27 (supersedes Moe-active assumptions below):** Controls handed to
+> **Aayan "Nightwing" Khan** (first lieutenant; X still master). **Moe Legacy is FROZEN
+> until paid** (org suspended in Supabase, reversible). All Moe agency-layer / Rick Sorkin
+> work is paused. See `NEXT.md` and `docs/WATCHTOWER-ROSTER.md`.
+
 ## 1. The company map (locked)
 
 | Entity | What it is | Owner |

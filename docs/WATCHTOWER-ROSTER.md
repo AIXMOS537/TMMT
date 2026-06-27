@@ -21,6 +21,13 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
 > Brainiac, Batman, Red Hood, Nightwing). More operators pending down the pipeline —
 > each joins **fenced**, then earns their post.
 
+### Status — 2026-06-27 (owner decision)
+- 🦅 **Nightwing (Ayyan Khan)** is handed **the controls** — first lieutenant /
+  controls-holder. **The Boss (X) remains master:** every money/legal/customer action
+  still routes through the owner gate; break-glass, IP, and kill-switch stay with X.
+- 🐦‍⬛ **Red Hood (Umar / Moe Legacy)** and all Moe Legacy work are **FROZEN until paid**
+  (org suspended in Supabase, reversible). The city engagement is wound down pending payment.
+
 ## How the League maps to the machine
 
 - **🦾 Cyborg = the Watchtower.** The sentinel post. In the system this is the

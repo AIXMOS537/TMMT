@@ -7,23 +7,28 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Confirm Moe's package = the agency layer (not a dispute engine).** Moe already
-runs credit repair on his own licensed stack (MyFreeScoreNow + DisputeFox). What
-Taha builds for him is the layer above: ads → **lead pool** → **students/operators**
-who close for **commission + recurring** → **Rick Sorkin** (DREAMA-faced AIXMOS) in
-their pocket. Say "build it" and I scope a clean `workstream-3` + Rick Sorkin
-package that **integrates** DisputeFox/MyFreeScoreNow/GHL — never rebuilds them.
+**Tell me what you already sent Aayan so I make it linear.** Controls are handed to
+**Aayan "Nightwing" Khan** (first lieutenant; X still master). Moe Legacy is **frozen
+until he pays up**. Point me at what Aayan already has (license/token/payload/docs) and
+I align it all one direction under his new role.
+
+---
+
+## Handover (2026-06-27)
+- **Aayan "Nightwing" Khan** now holds the controls — **Lieutenant; X (Taha) stays
+  master.** Every money/legal/customer action still hits your gate; break-glass, IP,
+  and kill-switch remain yours. Roster: `docs/WATCHTOWER-ROSTER.md`.
+- **Moe Legacy = FROZEN** until paid. Org `bbbb…bbbb` `suspended_at` set in Supabase
+  (reversible — clear it when he pays). All Moe work paused.
 
 ---
 
 ## Company map (locked in)
 - **AIXMOS** = the GHL **agency** account (All In One Management). Taha owns it.
 - **TMMT Rentals** = a **sub-account**. Separate company. Taha owns it.
-- **Moe Legacy** = **credit repair + business funding**, already operating on
-  MyFreeScoreNow + DisputeFox. From Taha he gets the **agency/lead/commission layer**
-  + **Rick Sorkin** AI — never rentals, never HAILMARY/Project-X (face only).
-- **Rick Sorkin** = Moe's assistant. Face = DREAMA/AIXMOS; brain = Project X; master
-  = **X (Taha)** — keys always return to X. Spec: `docs/RICK-SORKIN.md` (owner-only).
+- **Nightwing (Aayan Khan)** = first lieutenant, now controls-holder under X. `aayan@khanstrategies.com`.
+- **Moe Legacy** = credit/funding partner — **FROZEN until payment**. Was on
+  MyFreeScoreNow + DisputeFox. Rick Sorkin/agency-layer work is paused with the freeze.
 
 ---
 
@@ -31,12 +36,11 @@ package that **integrates** DisputeFox/MyFreeScoreNow/GHL — never rebuilds the
 
 | What | State | Whose move |
 |---|---|---|
-| Moe's agency-layer package (WS3 + Rick Sorkin, integrates his tools) | Scoped. Not yet packaged. | Yours — say "build it" |
-| Credit-repair core | **Not ours** — Moe runs DisputeFox/MyFreeScoreNow (his licensed lane) | Moe's vendors |
+| **Align what Aayan already has** ("make it linear") | Waiting on your list of what you sent him | Yours — tell me |
+| Moe Legacy (all work) | **FROZEN until paid** — org suspended in Supabase | Moe (pay up) → then yours to unfreeze |
 | Commission model guardrail | Pay on real collected sales only — never recruitment/"staying on" (anti-pyramid) | Watch on build |
 | Leak risk: old rental builder ships too much | Caught + stopped. Needs allowlist rebuild before ANY handoff. | Mine (on your go) |
-| PR #129 (Moe admin onboarding + voice vault) | CI passing, watched | Mine (merge on your say) |
-| moe-legacy-app deploy | Parked behind owner gate | Yours + Moe's keys |
+| PR #129 (admin onboarding + voice vault) | CI passing, watched | Mine (merge on your say) |
 | Owner Voice Vault | Built, dark, waiting | Yours, when ready |
 | $50K graduation gate + TMMT-token model | Defined: `docs/AIXMOS-LICENSE-AND-TOKENS.md` | Yours to confirm |
 | Pioneer marketing positioning | **DRAFT** ready for review: `docs/marketing/PIONEER-POSITIONING.md` | Yours — approve before any publish |
