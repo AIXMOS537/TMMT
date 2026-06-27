@@ -111,6 +111,18 @@ function isPaymentEvent(event: string): boolean {
   );
 }
 
+/**
+ * A sale is COLLECTED (money actually changed hands) only on a real payment
+ * event or an explicit charged amount. When the amount comes purely from a tag
+ * fallback (an enrollment tag applied before Stripe confirms), it is NOT yet
+ * collected — it records as "Pending" and pays NO commission. This is what keeps
+ * the "collected sales only" guarantee honest: the owner never pays out, or
+ * over-counts revenue, on money that hasn't actually landed.
+ */
+export function isCollectedPayment(event: string, explicitAmount: number | undefined): boolean {
+  return isPaymentEvent(event) || (explicitAmount ?? 0) > 0;
+}
+
 /** Remaining contract balance for a revenue tag (0 if none/unknown). */
 export function depositBalanceForTag(tag: string): number {
   return REVENUE_TAGS[tag]?.balance ?? 0;
@@ -126,7 +138,7 @@ export async function recordGhlPayment(
   supabase: SupabaseClient,
   body: Record<string, unknown>,
   tags: string[]
-): Promise<{ recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null }> {
+): Promise<{ recorded: boolean; id?: string; reason?: string; amount?: number; affiliateRef?: string | null; collected?: boolean }> {
   const email =
     (typeof body.email === "string" && body.email) ||
     (typeof body.contact_email === "string" && body.contact_email) ||
@@ -161,6 +173,10 @@ export async function recordGhlPayment(
     "";
 
   const productCode = tagMeta?.product_code ?? null;
+
+  // Collected only when money actually landed (payment event or explicit amount).
+  // A tag-only enrollment records as Pending and pays no commission downstream.
+  const collected = isCollectedPayment(event, explicitAmount);
 
   // Idempotency: if this exact transaction was already recorded (webhook retry,
   // duplicate delivery), don't insert a second row.
@@ -224,7 +240,7 @@ export async function recordGhlPayment(
       payment_method: tagMeta?.method ?? paymentMethod,
       last_payment_date: today,
       amount,
-      payment_status: amount > 0 ? "Paid" : "Pending",
+      payment_status: amount > 0 && collected ? "Paid" : "Pending",
       notes,
       payment_plan: revenueTag === "member-97" ? "Monthly $97" : product,
       product_code: productCode,
@@ -253,5 +269,5 @@ export async function recordGhlPayment(
     });
   }
 
-  return { recorded: true, id: paymentId, amount, affiliateRef };
+  return { recorded: true, id: paymentId, amount, affiliateRef, collected };
 }
