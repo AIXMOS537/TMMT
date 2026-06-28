@@ -12,3 +12,4 @@ export * from "./spend-ledger";
 export * from "./pii-firewall";
 export * from "./audit-log";
 export * from "./home-guard";
+export * from "./guarded-agent";

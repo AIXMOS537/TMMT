@@ -46,6 +46,31 @@ guardHomeAction({
 });
 ```
 
+## Live enforcement in an autonomous loop
+
+A home-brain loop must never call its executors directly — route every step
+through `runGuarded()` (or `tryGuarded()` to skip blocked steps and keep going).
+The executor runs ONLY if every guard passes; blocks are audited automatically.
+
+```ts
+import { runGuarded } from "@shared/home-brain";
+
+for (const step of plan) {
+  await runGuarded(
+    { actor: "brainiac-mac/follow-up", action: step.label, costUsd: step.estUsd, capUsd },
+    () => step.execute(),
+  );
+}
+```
+
+## Owner-approval release flow (SMS)
+
+1. Inbound agent reply is held → persisted to `gated_actions` (migration
+   `20260628000000_gated_actions.sql`) → owner notified.
+2. Owner approves: `POST /api/agent/approvals/[id]` `{ "decision": "approve" }`
+   (owner-auth only). The SMS gate is re-checked at send time, then it sends and
+   the row is marked `sent`. `{ "decision": "reject" }` closes it out.
+
 ## Phone kill switch (no app required)
 
 The sentinel file is the cross-platform "stop" the owner can hit from his phone

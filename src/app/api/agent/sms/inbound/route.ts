@@ -13,6 +13,7 @@ import { handoffToHuman } from '@/lib/agent/handoff'
 import { a2pSmsClassForSlug } from '@/lib/verticals/registry'
 import { evaluateSms } from '@shared/compliance-gates/sms-gate'
 import { createPendingAction } from '@shared/owner-approval-gate/approval'
+import { persistPending } from '@/lib/agent/approval-store'
 
 function twiml(body: string): string {
   if (!body) return '<Response/>'
@@ -164,9 +165,30 @@ export async function POST(req: Request): Promise<NextResponse> {
           // HOLD — queue for owner approval instead of auto-sending (§2).
           const pending = createPendingAction(
             'customer_message',
-            { conversationId: conv.id, leadId: lead.id, to: from, body: result.outboundBody, vertical: verticalClass },
-            'sms-agent'
+            {
+              conversationId: conv.id,
+              leadId: lead.id,
+              from: to, // send FROM the org's number
+              to: from, // TO the lead
+              body: result.outboundBody,
+              vertical: verticalClass,
+            },
+            'sms-agent',
           )
+          // Persist to the owner-approval queue so it can be released later via
+          // POST /api/agent/approvals/[id]. Persistence failure is non-fatal —
+          // the message is still held (never auto-sent) and the owner notified.
+          try {
+            await persistPending({
+              id: pending.id,
+              type: 'customer_message',
+              orgId: org.id,
+              payload: pending.payload,
+              createdBy: 'sms-agent',
+            })
+          } catch (persistErr) {
+            console.error('[agent/sms/inbound] approval persist failed (held anyway):', persistErr)
+          }
           await db.from('agent_messages').insert({
             conversation_id: conv.id,
             direction: 'out',
