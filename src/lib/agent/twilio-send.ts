@@ -13,6 +13,12 @@ export interface SendSmsArgs {
   vertical?: string | null
   /** Defaults to "transactional" (safe). "marketing" on a restricted vertical is blocked. */
   messageType?: SmsMessageType
+  /**
+   * Owner approval for THIS send. Per the owner-approval gate (CLAUDE.md §2), no
+   * customer-facing message goes out without it: a "marketing" send requires
+   * ownerApproved === true or it is HELD (throws). Transactional sends don't.
+   */
+  ownerApproved?: boolean
 }
 
 export class TwilioRateLimitedError extends Error {
@@ -29,6 +35,13 @@ export class SmsComplianceBlockedError extends Error {
   }
 }
 
+export class SmsOwnerApprovalRequiredError extends Error {
+  constructor(public reason: string) {
+    super(`SMS held for owner approval: ${reason}`)
+    this.name = 'SmsOwnerApprovalRequiredError'
+  }
+}
+
 /**
  * Per-tenant outbound SMS rate cap. Twilio's API limit is ~1 msg/sec/from,
  * but bursting from one tenant can exhaust shared connections and starve
@@ -38,10 +51,19 @@ export class SmsComplianceBlockedError extends Error {
  * not on the inbound path.
  */
 export async function sendSms(args: SendSmsArgs): Promise<{ sid: string }> {
-  // A2P 10DLC + CROA gate: never send promotional SMS on a restricted vertical.
-  // Enforced at send-time; restricted-vertical campaign config must gate too.
-  const gate = evaluateSmsCompliance({ vertical: args.vertical, messageType: args.messageType })
+  // Owner-approval + A2P/CROA gate, enforced at send-time:
+  //  • BLOCK → promotional SMS on a restricted vertical (carrier + CROA): refuse.
+  //  • HOLD  → a marketing message awaiting owner approval: refuse until approved.
+  // Marketing sends require explicit owner approval (CLAUDE.md §2); transactional
+  // sends (the safe default) do not.
+  const gate = evaluateSmsCompliance({
+    vertical: args.vertical,
+    messageType: args.messageType,
+    requiresOwnerApproval: args.messageType === 'marketing',
+    ownerApproved: args.ownerApproved,
+  })
   if (gate.decision === 'BLOCK') throw new SmsComplianceBlockedError(gate.reason)
+  if (gate.decision === 'HOLD') throw new SmsOwnerApprovalRequiredError(gate.reason)
 
   const sid = args.twilioAccountSid ?? process.env.TWILIO_ACCOUNT_SID
   const tok = args.twilioAuthToken ?? process.env.TWILIO_AUTH_TOKEN
