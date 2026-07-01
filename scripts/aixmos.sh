@@ -17,6 +17,8 @@
 #   aixmos beat        record THIS device's heartbeat now
 #   aixmos where       YOU ARE HERE: env (DEV/TEST/PROD) + branch + path guard
 #   aixmos onboard     mission-gated onboarding interview (operator/dev/vendor)
+#   aixmos accounts    discover your accounts from browsers (site list, no passwords)
+#   aixmos harden      guided 1-by-1 password/MFA hardening tracker
 #   aixmos help
 #
 # Tip: add the repo's scripts/ to PATH, or alias:  alias aixmos='bash scripts/aixmos.sh'
@@ -86,6 +88,8 @@ case "$cmd" in
   beat)    exec bash "$S/heartbeat.sh" beat;;
   where|whereami) exec bash "$S/whereami.sh";;
   onboard) exec bash "$S/onboard-interview.sh" "$@";;
+  harden)  exec bash "$S/account-hardening.sh" "$@";;
+  accounts) exec bash "$S/account-discover.sh" "$@";;
   help|-h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//';;
   *) bad "unknown command: $cmd"; echo "try: aixmos help"; exit 2;;
 esac

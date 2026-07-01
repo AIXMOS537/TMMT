@@ -82,9 +82,17 @@ EXCLUDE=(
   "DEPLOY.md"                           # owner three-app deploy (they use LEGACY-DEPLOY-MOE.md)
   "scripts/aixmos.sh"                   # mesh operator CLI (wraps stripped scripts)
   "scripts/build-projectaixmos-legacy.sh" # the builder itself — don't ship it
+  "scripts/oneshot.sh"                  # owner control board
+  "scripts/grant.sh"                    # owner-only: granting access
+  "scripts/onboard-tonight.sh"          # owner-only: onboarding orchestrator
+  "scripts/onboard-interview.sh"        # owner-only interview (Moe gets moe-oneshot)
+  "scripts/secret-scan.sh"              # owner security tooling
   # --- owner secrets/memory ---
   ".claude.local.md"
   ".claude/settings.local.json"
+  "docs/SEALED-TRUTH.md"                # owner-only; the one truth — never hands off
+  "scripts/master-key.sh"               # owner-only master key
+  "docs/MASTER-KEY.md"                  # owner-only
 )
 
 # References that must NOT survive in the handed-off code (managed-cloud, no brain).

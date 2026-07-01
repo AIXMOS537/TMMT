@@ -1,6 +1,6 @@
 # AIXMOS — All-In-One Management Platform Blueprint
 
-> **Founder:** PROJECT X HAILMARY · **Thesis:** one platform that runs **any business in
+> **Founder:** X · **Thesis:** one platform that runs **any business in
 > any industry** — operated agents-first, so an owner never has to ask or beg for
 > help. This blueprint ties together the pieces already in this repo into that
 > single, repeatable model.
