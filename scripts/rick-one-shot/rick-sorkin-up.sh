@@ -116,8 +116,8 @@ boot_mesh() {
   hdr "M1 mesh boot"
   if [[ -x "$TMMT/scripts/bootstrap-rick-m1.sh" ]]; then
     bash "$TMMT/scripts/bootstrap-rick-m1.sh" 2>&1 | tail -20
-  elif [[ -x "$TMMT/scripts/office-up-rick.sh" ]]; then
-    bash "$TMMT/scripts/office-up-rick.sh"
+  elif [[ -x "$TMMT/scripts/office-up-rick.sh" && -z "${RICK_SORKIN_NO_RECURSE:-}" ]]; then
+    RICK_SORKIN_NO_RECURSE=1 bash "$TMMT/scripts/office-up-rick.sh"
   fi
   [[ -x "$HOME/Sync/rick/RICK-DESK/INSTALL-RICK-BRIDGE-ON-M1.command" ]] \
     && bash "$HOME/Sync/rick/RICK-DESK/INSTALL-RICK-BRIDGE-ON-M1.command" 2>/dev/null | tail -5 || true
