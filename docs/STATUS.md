@@ -151,17 +151,9 @@ Phases 1–4 (teams, scripts, more ventures, backup) not started.
 ## Known Issues
 
 - **Payments table empty** — May need re-import or manual entry
-- ~~**Maintenance show/no-show toggle**~~ — ✅ Shipped: inline `StatusPill` saves status immediately; No-Show/Late auto-set the fee
+- **Maintenance show/no-show toggle** — Spec approved (`docs/superpowers/specs/2026-03-26-maintenance-toggle-design.md`); `StatusPill` component and inline save not yet implemented
 - **Maintenance/Vendors/Handovers empty** — New tables awaiting data
 - **No RLS** — Public forms rely on RLS being disabled for anon inserts; enabling RLS requires explicit anon INSERT policies for form tables
-- ~~**No password reset**~~ — ✅ Shipped: self-service reset via Supabase Auth at `/login/forgot` → `/login/reset`
+- **No password reset** — Admins must reset passwords via Supabase dashboard
 - **No file uploads** — Airtable had attachment fields (photos, licenses, contracts) not yet migrated to Supabase Storage
 - **TMMT Rentals (Copy) base** — Deferred; needs manager clarification
-
-## Recently Shipped (2026-06-09)
-
-- **Maintenance show/no-show toggle** — inline `StatusPill` in the maintenance table; No-Show/Late auto-assess `NO_SHOW_FEE` via auth-gated `adminUpsert()`
-- **Self-service password reset** — Supabase Auth PKCE flow: `/login/forgot` → `/api/auth/callback` → `/login/reset`; enumeration-safe
-- **MissionBoard on the dashboard** — owner "Your Mission Now" panel fed by live metrics (`src/lib/mission/build.ts`)
-- **CSV export** — `ExportButton` on all 19 admin DataTable pages, exports the filtered view (`src/lib/csv.ts`)
-- **Vitest unit tests** — `npm test`; 24 tests across utils, csv, auth-roles, mission builder

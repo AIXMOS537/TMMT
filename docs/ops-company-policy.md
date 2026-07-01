@@ -14,7 +14,7 @@ Use this document when fact-checking internal commands and operator-facing messa
 - Never open with company name or price.
 - Never use: "I'm following up", "As per my last", "Circle back", "Hope this finds you well".
 
-## Pricing & commitments (do not state unless pre-approved by Muhammad)
+## Pricing & commitments (do not state unless pre-approved by X)
 - Do not invent discounts, refunds, or payment terms.
 - Do not promise specific vehicle availability without fleet confirmation.
 - Do not guarantee credit repair outcomes (guidance only).
