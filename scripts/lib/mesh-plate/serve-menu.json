@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "verticals": {
+    "car_rental": { "badge": "🚗 Car Rental", "items": [] },
+    "generic": { "badge": "", "items": [] }
+  },
+  "roles": {
+    "owner": {
+      "badge": "👑 OWNER",
+      "hello": "Boss — one plate. Not the whole kitchen.",
+      "sections": [
+        { "title": "TODAY", "items": [
+          { "icon": "☀️", "label": "CEO BRIEF", "hint": "what matters in 60 sec", "cmd": "bash scripts/ceo.sh" },
+          { "icon": "📥", "label": "MY DECISIONS", "hint": "waiting on you only", "cmd": "bash scripts/queue.sh" },
+          { "icon": "🔗", "label": "GET PAID", "hint": "paste GHL checkout links", "cmd": "x --money" }
+        ]},
+        { "title": "FLEET", "items": [
+          { "icon": "🛰️", "label": "FLEET UP", "hint": "all devices + Sync", "cmd": "fleet-up" },
+          { "icon": "🐉", "label": "RICK JOB", "hint": "mission via Syncthing", "cmd": "rick-send \"mission\"" },
+          { "icon": "🧠", "label": "BRAINIAC", "hint": "status / wake", "cmd": "brainiac-ctl status" }
+        ]}
+      ]
+    },
+    "operator": {
+      "badge": "🤝 OPERATOR",
+      "hello": "Your lane only.",
+      "sections": [
+        { "title": "YOUR DAY", "items": [
+          { "icon": "📍", "label": "WHERE AM I", "hint": "dev or live?", "cmd": "bash scripts/whereami.sh" }
+        ]}
+      ]
+    }
+  }
+}
