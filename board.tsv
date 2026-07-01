@@ -1,2 +1,2 @@
 # id	status	machine	branch	lane	tier	lease	task	log
-1	TODO			general	1		smoke: summarize open priorities	
+1	CLAIMED	rick	swarm/rick/1	general	1	2026-07-01T08:26:37.001Z	smoke: summarize open priorities	
