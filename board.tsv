@@ -2,4 +2,4 @@
 1	DOING	brainiac-mac	swarm/brainiac-mac/1	a task
 2	DOING	carry-mac	swarm/carry-mac/2	a task
 3	DOING	carry	swarm/carry/3	Wire GHL P0 env vars on Vercel
-4	CLAIMED	carry	swarm/carry/4	Wire GHL P0 env vars
+4	DOING	carry	swarm/carry/4	Wire GHL P0 env vars
