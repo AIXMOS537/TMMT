@@ -3,3 +3,4 @@
 2	DOING	carry-mac	swarm/carry-mac/2	a task
 3	DOING	carry	swarm/carry/3	Wire GHL P0 env vars on Vercel
 4	DOING	carry	swarm/carry/4	Wire GHL P0 env vars
+5	TODO	-	-	Extend existing document-upload pattern (src/app/(admin)/document-actions.ts, forms/license-upload-actions.ts, src/lib/document-storage.ts) to fleet/maintenance photos on the relevant admin pages — do NOT build a parallel upload system, reuse the existing Storage bucket/migration pattern. Ref docs/ACTION-CHECKLIST.md E4.
