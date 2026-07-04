@@ -22,7 +22,7 @@ import {
   PiiFirewallError,
 } from "./pii-firewall";
 import { appendAudit, verifyAuditChain } from "./audit-log";
-import { guardHomeAction, HomeApprovalRequiredError } from "./home-guard";
+import { guardHomeAction, HomeApprovalRequiredError, ApprovalMismatchError } from "./home-guard";
 import {
   createPendingAction,
   type GatedAction,
@@ -104,6 +104,18 @@ describe("audit chain", () => {
     expect(res.count).toBe(2);
   });
 
+  it("detects tail-truncation via the tip sidecar", () => {
+    appendAudit({ actor: "brainiac-mac", action: "draft reply" }, audit());
+    appendAudit({ actor: "brainiac-mac", action: "charge fee" }, audit());
+    // Drop the last (most incriminating) record — leaves a valid prefix.
+    const file = path.join(dir, "home-brain-audit.jsonl");
+    const lines = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
+    fs.writeFileSync(file, lines[0] + "\n", "utf8");
+    const res = verifyAuditChain(audit());
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/truncation/);
+  });
+
   it("detects tampering with history", () => {
     appendAudit({ actor: "brainiac-mac", action: "draft reply" }, audit());
     appendAudit({ actor: "brainiac-mac", action: "charge fee" }, audit());
@@ -183,6 +195,21 @@ describe("guardHomeAction (unified chokepoint)", () => {
         env(),
       ),
     ).toThrow(HomeApprovalRequiredError);
+  });
+
+  it("rejects an approval issued for a DIFFERENT action (no replay)", () => {
+    // approved is a customer_message approval; try to use it to move money.
+    expect(() =>
+      guardHomeAction(
+        {
+          actor: "brainiac-mac",
+          action: "move money",
+          gatedType: "move_money",
+          approval: approved,
+        },
+        env(),
+      ),
+    ).toThrow(ApprovalMismatchError);
   });
 
   it("allows an irreversible action once the owner has approved it", () => {

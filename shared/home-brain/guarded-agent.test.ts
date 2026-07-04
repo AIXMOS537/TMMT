@@ -35,7 +35,11 @@ describe("runGuarded", () => {
     );
     expect(ran).toBe(true);
     expect(out.result).toBe("done");
-    expect(verifyAuditChain(env().audit).ok).toBe(true);
+    // Not just "ok" (an empty log is also ok) — assert an allowed entry was
+    // actually written, so this fails if the guard were removed from runGuarded.
+    const chain = verifyAuditChain(env().audit);
+    expect(chain.ok).toBe(true);
+    expect(chain.count).toBe(1);
   });
 
   it("does NOT execute when halted, and re-throws", async () => {

@@ -40,10 +40,11 @@ describe("vertical registry", () => {
     expect(MOE_LEGACY.a2pSmsClass).toBe("credit_repair");
   });
 
-  it("defaults unknown/missing slugs to a non-restricted class", () => {
+  it("resolves known slugs and FAILS CLOSED for unknown/missing ones", () => {
     expect(a2pSmsClassForSlug("tmmt-rentals")).toBe("rentals");
-    expect(a2pSmsClassForSlug(null)).toBe("rentals");
-    expect(a2pSmsClassForSlug("does-not-exist")).toBe("rentals");
+    // Unknown/null must map to a RESTRICTED class so promo SMS is blocked.
+    expect(a2pSmsClassForSlug(null)).toBe("restricted_unknown");
+    expect(a2pSmsClassForSlug("does-not-exist")).toBe("restricted_unknown");
   });
 });
 

@@ -171,10 +171,11 @@ export function defaultVerticalBrand(): VerticalConfig {
 
 /**
  * Resolve the canonical A2P SMS class for an org slug, for the SMS compliance
- * gate. Unknown/missing slugs fall back to the non-restricted default so we
- * never silently treat a credit/funding org as unrestricted.
+ * gate. FAILS CLOSED: an unknown/missing slug returns "restricted_unknown"
+ * (a member of sms_restricted_verticals), so a misconfigured credit/funding org
+ * can never be silently treated as unrestricted and have promo SMS auto-approved.
  */
 export function a2pSmsClassForSlug(slug: string | null | undefined): string {
-  if (!slug) return "rentals";
-  return getVerticalBySlug(slug)?.a2pSmsClass ?? "rentals";
+  if (!slug) return "restricted_unknown";
+  return getVerticalBySlug(slug)?.a2pSmsClass ?? "restricted_unknown";
 }

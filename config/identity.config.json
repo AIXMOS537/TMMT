@@ -19,7 +19,7 @@
         "ein_on_file": true, "po_box_allowed": false, "per_sub_account": true } }
   },
   "compliance": {
-    "sms_restricted_verticals": ["credit_repair","funding","debt_relief","lending"],
+    "sms_restricted_verticals": ["credit_repair","funding","debt_relief","lending","restricted_unknown"],
     "sms_restricted_policy": "NO promotional SMS. Transactional-only or off-channel.",
     "owner_approval_gate": "required for all customer-facing and financial actions"
   },

@@ -48,6 +48,20 @@ export class HomeApprovalRequiredError extends Error {
   }
 }
 
+/** The supplied approval was issued for a different action than the one running. */
+export class ApprovalMismatchError extends Error {
+  constructor(
+    public gatedType: GatedActionType,
+    public approvalType: GatedActionType,
+  ) {
+    super(
+      `APPROVAL MISMATCH: action "${gatedType}" was handed an approval for "${approvalType}". ` +
+        `An approval only authorizes the exact action it was issued for.`,
+    );
+    this.name = "ApprovalMismatchError";
+  }
+}
+
 export interface HomeActionRequest {
   /** Which brain/agent is acting, e.g. "brainiac-mac/follow-up-agent". */
   actor: string;
@@ -94,6 +108,13 @@ export function guardHomeAction(
 
     if (req.gatedType && IRREVERSIBLE.has(req.gatedType)) {
       if (!req.approval) throw new HomeApprovalRequiredError(req.gatedType);
+      // Bind the approval to THIS action type. Without this, an approval for a
+      // cheap action (e.g. a customer_message) could be replayed to authorize a
+      // different irreversible action (e.g. move_money). The approval must have
+      // been issued for exactly this gatedType.
+      if (req.approval.type !== req.gatedType) {
+        throw new ApprovalMismatchError(req.gatedType, req.approval.type);
+      }
       assertApproved(req.approval);
     }
   } catch (e) {

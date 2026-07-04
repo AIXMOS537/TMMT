@@ -42,12 +42,11 @@ begin
         or (org_id is not null and public.is_org_member(org_id))
       );
 
-    -- Only owner/staff may flip status (approve/reject). The actual send is
-    -- performed by the service role, not authenticated users.
+    -- No authenticated UPDATE policy: decisions (approve/reject) MUST go through
+    -- POST /api/agent/approvals/[id], which enforces owner-only auth and does
+    -- the write as the service role. A direct staff JWT cannot flip status here,
+    -- so the approval trail can't be forged by a non-owner via PostgREST.
     drop policy if exists gated_actions_decide on public.gated_actions;
-    create policy gated_actions_decide on public.gated_actions for update to authenticated
-      using (public.is_staff())
-      with check (public.is_staff());
   else
     raise notice 'is_staff()/is_org_member() helpers absent — apply tenant-scope migration first; leaving gated_actions service-role-only';
   end if;

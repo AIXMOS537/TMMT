@@ -25,6 +25,7 @@
 set -uo pipefail
 
 MODE="${1:-run}"; DRY=0; [ "$MODE" = "--check" ] && DRY=1
+if [ "$DRY" = 1 ]; then DRYLABEL=" (dry-run)"; WOULD="WOULD BE "; else DRYLABEL=""; WOULD=""; fi
 
 if [ -t 1 ]; then G=$'\e[32m'; R=$'\e[31m'; Y=$'\e[33m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; R=; Y=; BD=; X=; fi
 say(){ printf '%s\n' "$*"; }
@@ -39,7 +40,7 @@ have(){ command -v "$1" >/dev/null 2>&1; }
 IS_MAC=0; [ "$(uname -s)" = "Darwin" ] && IS_MAC=1
 AIXMOS_DIR="${AIXMOS_DIR:-$HOME/TMMT}"
 
-step "ONE-SHOT M1 brain bring-up${DRY:+ (dry-run)}"
+step "ONE-SHOT M1 brain bring-up$DRYLABEL"
 [ "$IS_MAC" = 1 ] || warn "not macOS — install/power/tailnet steps are macOS-only; running what's portable"
 
 # ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ else
   say "   set TS_AUTHKEY to auto-join the tailnet, or run scripts/setup-home-brain.command"
 fi
 
-banner "M1 ${DRY:+WOULD BE }FULLY UP"
+banner "M1 ${WOULD}FULLY UP"
 say "Kill switch (phone):  touch \$HOME/.aixmos/HALT     Resume:  rm \$HOME/.aixmos/HALT"
 say "Router:               http://<brain-tailnet-ip>:4000/v1"
 [ "$DRY" = 1 ] && say "${Y}(dry-run — nothing changed. Re-run without --check to do it for real.)${X}"

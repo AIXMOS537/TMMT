@@ -47,12 +47,16 @@ export function haltReason(opts?: HaltOptions): string | null {
   const envHalted = opts?.envHalted ?? process.env.AIXMOS_HOME_KILL === "1";
   if (envHalted) return "AIXMOS_HOME_KILL=1";
   const f = killFilePath(opts);
+  // Use statSync (which THROWS) rather than existsSync (which swallows every
+  // error and returns false). A missing file → ENOENT → clear to run. ANY other
+  // error (permissions, I/O, unreadable mount) → fail SAFE: treat as halted.
   try {
-    if (fs.existsSync(f)) return `kill file present at ${f}`;
-  } catch {
-    return "kill-switch check failed (failing safe)";
+    fs.statSync(f);
+    return `kill file present at ${f}`;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+    return `kill-switch unreadable at ${f} (failing safe → halted)`;
   }
-  return null;
 }
 
 export function isHalted(opts?: HaltOptions): boolean {

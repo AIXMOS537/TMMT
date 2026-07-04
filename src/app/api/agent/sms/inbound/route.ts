@@ -98,11 +98,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const { data: msgs } = await db.from('agent_messages')
-      .select('direction, body')
+      .select('direction, body, compliance_flags')
       .eq('conversation_id', conv.id)
       .order('ts', { ascending: false })
-      .limit(10)
-    const recent = (msgs ?? []).reverse().map((m) => ({ direction: m.direction as 'in' | 'out', body: m.body }))
+      .limit(20)
+    // Exclude outbound replies the customer NEVER received — held-for-approval
+    // and gate-blocked drafts are stored with direction 'out' but were not sent.
+    // Feeding them back would make the LLM think the lead already saw them.
+    const NOT_SENT = ['held_for_owner_approval', 'sms_blocked_restricted_vertical']
+    const recent = (msgs ?? [])
+      .filter((m) => {
+        if (m.direction !== 'out') return true
+        const flags: string[] = Array.isArray(m.compliance_flags) ? m.compliance_flags : []
+        return !flags.some((f) => NOT_SENT.includes(f))
+      })
+      .reverse()
+      .slice(-10)
+      .map((m) => ({ direction: m.direction as 'in' | 'out', body: m.body }))
 
     await db.from('agent_messages').insert({ conversation_id: conv.id, direction: 'in', body })
 

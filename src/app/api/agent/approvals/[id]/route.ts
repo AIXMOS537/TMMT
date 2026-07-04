@@ -12,6 +12,8 @@ import { isOwnerUser } from '@/lib/auth-roles'
 import {
   getGatedAction,
   recordDecision,
+  approveForSend,
+  assertSendable,
   markSent,
   markFailed,
   ApprovalTransitionError,
@@ -64,17 +66,28 @@ export async function POST(
   const action = await getGatedAction(id)
   if (!action) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
+  if (decision === 'reject') {
+    try {
+      await recordDecision(id, 'reject', approver, reason)
+    } catch (e) {
+      if (e instanceof ApprovalTransitionError) {
+        return NextResponse.json({ error: e.message }, { status: 409 })
+      }
+      throw e
+    }
+    return NextResponse.json({ id, status: 'rejected' })
+  }
+
+  // Approve — idempotent + RETRYABLE (a failed send can be re-approved & resent).
+  let sendable
   try {
-    await recordDecision(id, decision, approver, reason)
+    sendable = await approveForSend(id, approver, reason)
+    assertSendable(sendable.status) // live invariant: only 'approved' may send
   } catch (e) {
     if (e instanceof ApprovalTransitionError) {
       return NextResponse.json({ error: e.message }, { status: 409 })
     }
     throw e
-  }
-
-  if (decision === 'reject') {
-    return NextResponse.json({ id, status: 'rejected' })
   }
 
   // 4. Execute approved action. Only customer_message SMS is wired here.

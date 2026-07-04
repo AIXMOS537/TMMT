@@ -124,26 +124,48 @@ export async function markSent(id: string, sentRef: string): Promise<void> {
   if (error) throw new Error(`markSent failed: ${error.message}`)
 }
 
-/** Record that an approved action failed to execute. */
+/** Record that an approved action failed to execute (transient send error). */
 export async function markFailed(id: string, reason: string): Promise<void> {
   const db = createServiceSupabase()
-  await db
+  const { error } = await db
     .from('gated_actions')
     .update({ status: 'failed', reason })
     .eq('id', id)
     .eq('status', 'approved')
+  if (error) throw new Error(`markFailed failed: ${error.message}`)
 }
 
-export async function listPending(orgId: string): Promise<GatedActionRow[]> {
+/**
+ * Move an action to `approved` so it can be sent. Idempotent, and RETRYABLE:
+ * a `failed` action (transient send error) can be re-approved and re-sent.
+ * Rejected/sent actions cannot be re-approved.
+ */
+export async function approveForSend(
+  id: string,
+  approver: string,
+  reason?: string,
+): Promise<GatedActionRow> {
+  const current = await getGatedAction(id)
+  if (!current) throw new Error(`gated action ${id} not found`)
+  if (current.status === 'approved') return current // already approved — idempotent
+  if (current.status !== 'pending' && current.status !== 'failed') {
+    throw new ApprovalTransitionError(current.status, 'approve')
+  }
   const db = createServiceSupabase()
   const { data, error } = await db
     .from('gated_actions')
+    .update({
+      status: 'approved',
+      approved_by: approver,
+      approved_at: new Date().toISOString(),
+      reason: reason ?? null,
+    })
+    .eq('id', id)
+    .in('status', ['pending', 'failed'])
     .select('*')
-    .eq('org_id', orgId)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true })
-  if (error) throw new Error(`listPending failed: ${error.message}`)
-  return (data as GatedActionRow[]) ?? []
+    .single()
+  if (error) throw new Error(`approveForSend failed: ${error.message}`)
+  return data as GatedActionRow
 }
 
 /** All pending actions across orgs — for the owner's approval queue view. */

@@ -58,11 +58,15 @@ export function isLocalDestination(urlStr: string): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true
   if (host.endsWith('.local') || host.endsWith('.ts.net')) return true
-  // Tailscale CGNAT range 100.64.0.0/10 (100.64.x.x – 100.127.x.x)
-  const m = host.match(/^100\.(\d+)\./)
-  if (m) {
-    const oct = Number(m[1])
-    if (oct >= 64 && oct <= 127) return true
+  // Tailscale CGNAT range 100.64.0.0/10 (100.64.x.x – 100.127.x.x). Require the
+  // WHOLE hostname to be a valid dotted-quad first, so a public DNS name like
+  // "100.100.evil.com" cannot masquerade as a tailnet IP and leak PII.
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const octets = ipv4.slice(1).map(Number)
+    if (octets.every((o) => o <= 255) && octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127) {
+      return true
+    }
   }
   return false
 }

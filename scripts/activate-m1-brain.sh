@@ -22,6 +22,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT" || exit 1
 
 MODE="${1:-run}"
 DRY=0; [ "$MODE" = "--check" ] && DRY=1
+if [ "$DRY" = 1 ]; then DRYLABEL=" (dry-run)"; WOULD="WOULD BE "; else DRYLABEL=""; WOULD=""; fi
 
 if [ -t 1 ]; then G=$'\e[32m'; R=$'\e[31m'; Y=$'\e[33m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; R=; Y=; BD=; X=; fi
 say(){ printf '%s\n' "$*"; }
@@ -37,7 +38,7 @@ AUDIT_DIR="${AIXMOS_AUDIT_DIR:-$AIXMOS_HOME/audit}"
 CAP="${AIXMOS_DAILY_CAP_USD:-10}"
 KILL_FILE="$AIXMOS_HOME/HALT"
 
-step "M1 Home Brain activation${DRY:+ (dry-run)}"
+step "M1 Home Brain activation$DRYLABEL"
 [ "$DRY" = 1 ] || [ "$(uname -s)" = "Darwin" ] || warn "not macOS — LaunchAgent step will be skipped (meant for the M1)"
 
 # ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ fi
 step "3) Ollama + router models"
 if command -v ollama >/dev/null 2>&1; then
   for m in qwen2.5:14b qwen2.5-coder:14b; do
-    if ollama list 2>/dev/null | grep -q "${m%%:*}"; then ok "model $m present"
+    if ollama list 2>/dev/null | grep -qF "$m"; then ok "model $m present"
     else warn "model $m missing"; run "ollama pull '$m'"; fi
   done
 else
@@ -126,7 +127,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-banner "BRAIN ${DRY:+WOULD BE }ACTIVE"
+banner "BRAIN ${WOULD}ACTIVE"
 say "Router (tailnet-only):   http://<brain-tailnet-ip>:${BRAIN_ROUTER_PORT:-4000}/v1"
 say "Kill switch (phone):     touch $KILL_FILE      # halts every guarded action"
 say "Resume:                  rm $KILL_FILE"
