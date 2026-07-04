@@ -253,8 +253,9 @@ installs role-aware aliases into `.zshrc`/`.bashrc` so each is a bare word.
   Owner Seal `auth/OWNER.seal`; operators fenced). `scripts/install-desktop.sh`
   (Mac icons), `scripts/make-wallpaper.py` + `make-pocket-card.py` (cheatsheets).
 - **Roster (the League):** `docs/WATCHTOWER-ROSTER.md` — Boss (Muhammad Taha, Ops
-  + the word), Cyborg (Watchtower = AIXMOS/HAILMARY), Red Hood (Umar, Credit
-  Guidance), The Crew (rentals + verticals + operators), Batman (e-commerce).
+  + the word), Cyborg (Watchtower = AIXMOS/HAILMARY), The Crew (rentals +
+  verticals + operators), Batman (e-commerce). Credit Guidance = house vertical
+  (Taha-owned).
 - **DARK guards** in tmmt/hailmary/aixmos/go/unison; `.hailmary/` + `.swarm/`
   gitignored; `auth/OWNER.seal` is a salted hash (no secret), safe to commit.
 
