@@ -8,12 +8,18 @@ tailscale status >/dev/null 2>&1 && echo "  ok tailscale" || echo "  ! tailscale
 banner "2) Mesh join"
 bash "$ROOT/scripts/swarm-join.sh" --name rick 2>/dev/null || bash "$ROOT/scripts/swarm-join.sh" || true
 banner "3) Agents + Ollama"
-if [ -d "$HOME/Projects/AIXMOS-AGENTS" ]; then
-  (cd "$HOME/Projects/AIXMOS-AGENTS" && npm install --silent 2>/dev/null; npm start >/tmp/rick-agents.log 2>&1 &)
+AGENTS="$HOME/Projects/AIXMOS-AGENTS"
+# Self-clone the agent army if it isn't here yet — no manual step for X.
+if [ ! -d "$AGENTS/.git" ]; then
+  echo "  → agent army not present; cloning…"
+  mkdir -p "$HOME/Projects"
+  git clone --depth 1 https://github.com/AIXMOS537/AIXMOS-AGENTS.git "$AGENTS" 2>/dev/null \
+    || echo "  ! clone failed (auth?) — run 'gh auth login' once, then re-run rick-sorkin up"
+fi
+if [ -d "$AGENTS" ]; then
+  (cd "$AGENTS" && git pull --ff-only 2>/dev/null; npm install --silent 2>/dev/null; npm start >/tmp/rick-agents.log 2>&1 &)
   sleep 3
-  curl -sf http://127.0.0.1:7777/healthz >/dev/null && echo "  ok agents :7777" || echo "  ! agents — see /tmp/rick-agents.log"
-else
-  echo "  ! clone: git clone https://github.com/AIXMOS537/AIXMOS-AGENTS.git ~/Projects/AIXMOS-AGENTS"
+  curl -sf http://127.0.0.1:7777/healthz >/dev/null && echo "  ok agents :7777" || echo "  ! agents starting — see /tmp/rick-agents.log"
 fi
 command -v ollama >/dev/null && (ollama serve >/dev/null 2>&1 &) || true
 banner "4) HAILMARY"
