@@ -20,7 +20,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SEAL_SH="$ROOT/scripts/owner-seal.sh"
 GODARK="$ROOT/scripts/godark"
 STATE="$HOME/.hailmary"; mkdir -p "$STATE"
-SESSION="$STATE/session"; ARMED="$STATE/armed"; LOG="$STATE/guard.log"
+SESSION="$STATE/session"; ARMED="$STATE/armed"; LOG="$STATE/guard.log"; MARK="$STATE/guard.laststate"
+DARK_FLAG="$ROOT/.swarm/DARK"   # godark's own state marker — the reliable dark test
 DEFAULT_TTL=720   # minutes
 
 now(){ date +%s; }
@@ -32,8 +33,12 @@ case "${1:-status}" in
     ttl="${2:-$DEFAULT_TTL}"
     # Auth code = the Owner Seal. Never stored; verified by owner-seal.sh.
     if bash "$SEAL_SH" check; then
-      echo $(( $(now) + ttl*60 )) > "$SESSION"
+      echo $(( $(now) + ttl*60 )) > "$SESSION"; echo master > "$MARK"
       log "MASTER unlocked (ttl ${ttl}m)"
+      # If the machine was auto-reverted to dark, restore it now that the owner is back.
+      if [ -f "$DARK_FLAG" ] && [ -x "$GODARK" ]; then
+        echo "  … machine was AIXMOS-only; restoring HAILMARY…"; bash "$GODARK" lift || true
+      fi
       echo "  ✓ HAILMARY MASTER — active for ${ttl} minutes. Locks back to AIXMOS-only on timeout/lock."
     else
       echo "  ✗ Wrong word. Still AIXMOS-only."; exit 1
@@ -54,14 +59,21 @@ case "${1:-status}" in
     [ -f "$ARMED" ] && echo "  Enforcement: ARMED (auto-revert live)" || echo "  Enforcement: dry-run (guard only logs; arm when ready)"
     ;;
   guard)
-    if session_valid; then exit 0; fi          # owner is present in master session — nothing to do
+    last="$(cat "$MARK" 2>/dev/null || echo none)"
+    if session_valid; then
+      # owner present in a master session — nothing to do. Log only on transition.
+      [ "$last" != master ] && { log "master session active"; echo master > "$MARK"; }
+      exit 0
+    fi
     if [ -f "$ARMED" ]; then
-      # already dark? avoid re-running
-      if [ -x "$GODARK" ] && ! bash "$GODARK" status 2>/dev/null | grep -qi dark; then
+      # Reliable dark test = godark's own flag file (not string-matching status output).
+      if [ ! -f "$DARK_FLAG" ] && [ -x "$GODARK" ]; then
         bash "$GODARK" >/dev/null 2>&1 || true; log "AUTO-REVERT -> AIXMOS-only (armed)"
       fi
+      echo reverted > "$MARK"
     else
-      log "WOULD auto-revert -> AIXMOS-only (dry-run; not armed)"
+      # dry-run: log only when the decision first changes, so no 120s spam.
+      [ "$last" != wouldrevert ] && { log "WOULD auto-revert -> AIXMOS-only (dry-run; not armed)"; echo wouldrevert > "$MARK"; }
     fi
     ;;
   arm)
