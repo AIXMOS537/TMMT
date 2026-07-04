@@ -8,14 +8,17 @@
 
 ---
 
-## Founding operators (no upfront brain cost — deferred)
+## Founding operators — ARCHIVED (superseded 2026-07-01)
 
-| Operator | Org | Terms |
-|---|---|---|
-| **Ayyan Khan** *(🦅 Nightwing — field-ops lead)* | TMMT / network | brain free until $50K is collected (hourly / salary / commission) |
-| **Muhammad Umar** | **owner, MoeLegacy** | brain free until $50K is collected (hourly / salary / commission) |
+> ⛔ The original two "founding seats" are no longer active. Per the sovereignty lock:
+> **Muhammad Umar / MoeLegacy = TERMINAL CUT** — adversarial, permanently fenced; no
+> seat, no deferred comp, no vertical, no asset routing through his accounts.
+> **Ayyan Khan = PENDING VERIFICATION** — fenced until Taha confirms out-of-band
+> (2026-06-30 flag). The prior terms ("brain free until $50K collected —
+> hourly / salary / commission") are kept only as a historical books record, not an
+> active arrangement.
 
-Setup covered now; settled over time. Everyone after the founders pays the ladder.
+Everyone pays the ladder below.
 
 ---
 
