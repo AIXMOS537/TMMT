@@ -145,3 +145,16 @@ export async function listPending(orgId: string): Promise<GatedActionRow[]> {
   if (error) throw new Error(`listPending failed: ${error.message}`)
   return (data as GatedActionRow[]) ?? []
 }
+
+/** All pending actions across orgs — for the owner's approval queue view. */
+export async function listPendingAll(limit = 100): Promise<GatedActionRow[]> {
+  const db = createServiceSupabase()
+  const { data, error } = await db
+    .from('gated_actions')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+    .limit(limit)
+  if (error) throw new Error(`listPendingAll failed: ${error.message}`)
+  return (data as GatedActionRow[]) ?? []
+}
