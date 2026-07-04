@@ -68,16 +68,18 @@ data encrypted + owner-isolated per operator.
   within 30 days for profits-interest grants. Don't bundle equity into product offers.
 - **Monitoring:** screen-watcher requires per-person consent + monitoring policy.
 
-## KNOWN GAPS (as of 2026-06-27 — keep current)
-- **SMS restricted verticals declared, not enforced in code.** `config/identity.config.json`
-  hard-locks promotional SMS for credit/funding/debt/lending, but `src/lib/agent/twilio-send.ts`
-  `sendSms()` has no vertical guard. No promotional blast path exists today; add a
-  transactional-only assertion before one ever does. Owner-gated (compliance-sensitive).
+## KNOWN GAPS (as of 2026-07-04 — keep current)
+- **SMS gate exists but isn't wired into the send path.** `shared/compliance-gates/sms-gate.ts`
+  (#126, unit-tested) BLOCKs promotional SMS for restricted verticals (credit/funding/debt/
+  lending) via `assertSmsAllowed()`, sourced from `config/identity.config.json`. But
+  `src/lib/agent/twilio-send.ts` `sendSms()` does **not** call it yet — wire `assertSmsAllowed`
+  into the send path (thread vertical + type through) so the gate is enforced, not just present.
 - **Founding-admin email is an inline literal** in `src/lib/verticals/registry.ts` +
   `config/verticals.json`. Move to an env-sourced value before broad launch (needs the prod
   env var set so onboarding doesn't break — coordinate with owner).
 - Lexar sweep-archive PDFs were removed from HEAD (#104) but remain in git **history** —
-  finish with `scripts/scrub-history.sh --apply` from a full clone.
+  finish with `scripts/scrub-history.sh --apply` from a full clone. NOTE: the pre-push guard
+  (#123) blocks master force-push unless `ALLOW_FORCE_MASTER=1`; the scrub script sets it.
 
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
