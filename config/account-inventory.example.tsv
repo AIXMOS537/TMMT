@@ -11,7 +11,7 @@
 6	infra	GitHub	https://github.com/settings/security	no	no	no	revoke old PATs; passkey
 6	infra	Vercel	https://vercel.com/account/tokens	no	no	no	rotate tokens
 6	infra	Supabase	https://supabase.com/dashboard/account/security	no	no	no	roll service_role + DB pw
-6	infra	Airtable	https://airtable.com/create/tokens	no	no	no	REVOKE leaked PAT pat8mah6… (do now)
+6	infra	Airtable	https://airtable.com/create/tokens	no	no	no	REVOKE leaked PAT AIRTABLE_TOKEN_REVOKED… (do now)
 6	infra	GoHighLevel	-	no	no	no	rotate API key + webhook secrets
 6	infra	Domain/DNS registrar	-	no	no	no	enable registrar lock + transfer-lock
 7	social	Instagram	-	no	no	no	unique pw + MFA

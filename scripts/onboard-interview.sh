@@ -56,7 +56,13 @@ WHAT="$(ask 'In one line: what will you own / move forward for the mission?')"
 SKILLS="$(ask 'Your skills / tools (comma-separated):')"
 SCOPE="$(ask 'What systems do you need access to? (be specific, least-privilege):')"
 STEP1="$(ask 'Your FIRST step — the one move you will make next (one step at a time):')"
-CONSENT="$(ask 'Do you agree to: least-privilege access, the fact-check gate, and never acting against the owner/family? (yes/no):')"
+# Car-partner minimum requirement: a dealership license. Operators must provide one
+# (the owner partners 1 car, 50/50; a license is the non-negotiable minimum).
+LICENSE=""
+if [ "$ROLE" = "operator" ]; then
+  LICENSE="$(ask 'Dealership license number (REQUIRED for any car partnership — no license, no grant). Leave blank ONLY if you will never touch a vehicle:')"
+fi
+CONSENT="$(ask 'Do you agree to: UPHOLD THE OPERATOR STANDARDS (take work OFF the boss plate, do not blow up his phone, mission-first, honesty), keep everything confidential, least-privilege access, the fact-check gate, and never acting against the owner/family? (yes/no):')"
 case "$(printf '%s' "$CONSENT" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in y|yes) :;; *) die "Onboarding requires agreement to the rules. Stopped.";; esac
 
 # ---- STEP 2: record a LOCAL profile (owner reviews before granting) ----
@@ -72,6 +78,7 @@ owns: $WHAT
 skills: $SKILLS
 access_requested: $SCOPE
 first_step: $STEP1
+dealership_license: ${LICENSE:-}
 agreed_to_rules: yes
 EOF
 

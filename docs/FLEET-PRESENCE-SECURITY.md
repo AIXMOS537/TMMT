@@ -17,7 +17,7 @@ A live audit of your GitHub (`AIXMOS537/TMMT`) on 2026-06-16 found:
 - **Access: only you** — one collaborator, `AIXMOS537` (admin). No outside access.
 - **Automation: one workflow** (`mission-daily`) — your own cron; POSTs to your own
   `tmmt-ops.vercel.app` with a GitHub-encrypted secret. **No exfiltration.**
-- **Commit authors: only "PROJECT X HAILMARY" and "Claude"** (your sessions). No stranger pushed.
+- **Commit authors: only "X" and "Claude"** (your sessions). No stranger pushed.
 
 → At the access level that matters, **no backdoor into your code.** Re-run anytime
 with the GitHub MCP audit (collaborators, workflows, commit authors).
