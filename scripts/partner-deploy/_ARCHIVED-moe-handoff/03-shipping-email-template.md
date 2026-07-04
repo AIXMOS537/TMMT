@@ -2,7 +2,7 @@
 
 **Send AFTER the pre-install call and AFTER the USB is in the mail.**
 
-**To:** moe@moelegacy.example.com
+**To:** partner@example.com
 **From:** tmmtautodetail@gmail.com
 **Subject:** Your AIXMOS Partner USB — shipped, what to expect, when we install
 

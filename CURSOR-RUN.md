@@ -378,7 +378,7 @@ ls -la /Volumes/AIXMOS-PARTNER/
 **Time:** 15 min call + 15 min mail prep
 
 ```bash
-open ~/Projects/TMMT/scripts/partner-deploy/moe-handoff/01-pre-install-call-script.md
+open ~/Projects/TMMT/scripts/partner-deploy/_ARCHIVED-moe-handoff/01-pre-install-call-script.md
 ```
 
 Follow the script. Read the **recovery phrase verbatim** (from step 5 output) at the end. He writes it down. You confirm he read it back.
@@ -400,7 +400,7 @@ $EDITOR ~/Documents/Business/legal/moe-legacy/engagement-tracker.md
 **Time:** 25 min
 
 ```bash
-open ~/Projects/TMMT/scripts/partner-deploy/moe-handoff/02-install-day-call-script.md
+open ~/Projects/TMMT/scripts/partner-deploy/_ARCHIVED-moe-handoff/02-install-day-call-script.md
 ```
 
 Both of you on the phone. Have audit-readout open on your side:

@@ -100,7 +100,7 @@ psql "$SUPABASE_DB_URL" -f sql/20260609_partner_tenancy.sql
 # 3. Issue Moe's license + install token
 ./owner/issue-license.sh \
   --partner=moe-legacy \
-  --partner-email="moe@moelegacy.example.com" \
+  --partner-email="partner@example.com" \
   --challenge-phrase="$(openssl rand -hex 6)"
 # Outputs: install token (one-time), license row ID, challenge phrase to share OOB
 

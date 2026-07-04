@@ -55,10 +55,10 @@ real bug to fix before any partner.
 ~/Projects/TMMT/scripts/partner-deploy/owner/issue-license.sh \
   --partner=moe-legacy \
   --partner-name="Moe Legacy" \
-  --partner-email="moe@moelegacy.example.com" \
+  --partner-email="partner@example.com" \
   --challenge-phrase="$(openssl rand -hex 6)"
 
-# B. Pre-install call (use script in moe-handoff/01)
+# B. Pre-install call (use script in _ARCHIVED-moe-handoff/01)
 
 # C. Plug in a USB, formatted as exFAT or APFS, named AIXMOS-PARTNER
 
@@ -73,9 +73,9 @@ real bug to fix before any partner.
 
 # F. Ship USB (hand-deliver if possible; signature-required mail otherwise)
 
-# G. Send shipping email (template in moe-handoff/03)
+# G. Send shipping email (template in _ARCHIVED-moe-handoff/03)
 
-# H. When USB arrives, install call (script in moe-handoff/02)
+# H. When USB arrives, install call (script in _ARCHIVED-moe-handoff/02)
 ```
 
 ## Setup Tailscale ACL first (one-time, before step 4)
