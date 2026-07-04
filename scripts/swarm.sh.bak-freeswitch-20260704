@@ -173,13 +173,8 @@ EOF
 launch_agent() {
   local id="$1" wt="$2" task="$3"
   agent_prompt "$id" "$task" > "$wt/.swarm-task.txt"
-  # FREE by default (2026-07-04): route swarm agents through the ccr local tier = $0.
-  # This is the fix for the paid-autopilot bleed. Set SWARM_PAID=1 to use real
-  # Anthropic (Fable/Opus) — reserve that for hard, human-gated work only.
-  local _base="http://127.0.0.1:3456"
-  [[ "${SWARM_PAID:-0}" == "1" ]] && _base="https://api.anthropic.com"
-  local cc="ANTHROPIC_BASE_URL=$_base claude"
-  [[ "${SWARM_YOLO:-0}" == "1" ]] && cc="ANTHROPIC_BASE_URL=$_base claude --dangerously-skip-permissions"
+  local cc="claude"
+  [[ "${SWARM_YOLO:-0}" == "1" ]] && cc="claude --dangerously-skip-permissions"
   local run="cd $(printf '%q' "$wt") && $cc \"\$(cat .swarm-task.txt)\""
   local mode="${SWARM_LAUNCH:-auto}"
 
