@@ -6,7 +6,7 @@
 #   ./owner/issue-license.sh \
 #     --partner=moe-legacy \
 #     --partner-name="Moe Legacy" \
-#     --partner-email="moe@moelegacy.example.com" \
+#     --partner-email="partner@example.com" \
 #     --challenge-phrase="$(openssl rand -hex 6)"
 #
 # Outputs:

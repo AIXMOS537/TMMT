@@ -1,4 +1,11 @@
-# Moe handoff — comms and prep
+# Moe handoff — ARCHIVED / VOID (terminal cut 2026-07-01)
+
+> ⛔ **Do not use.** MoeLegacy / Muhammad Umar are TERMINAL CUT — adversarial,
+> permanently fenced (`~/.claude/SOVEREIGNTY_LOCK.md`). These call scripts and the
+> shipping-email template are kept only as history; no onboarding is performed and
+> no assets route through Moe accounts. The credit + funding vertical is Taha-owned.
+
+_Original content below, retained for the record:_
 
 Everything you need to onboard Moe cleanly.
 
