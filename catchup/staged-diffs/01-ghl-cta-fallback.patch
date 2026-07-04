@@ -1,0 +1,37 @@
+diff --git a/AIXMOS/public/ghl-config.js b/AIXMOS/public/ghl-config.js
+index 5b406c6..5dfda34 100644
+--- a/AIXMOS/public/ghl-config.js
++++ b/AIXMOS/public/ghl-config.js
+@@ -22,6 +22,12 @@
+     return url.startsWith("http://") || url.startsWith("https://");
+   }
+ 
++  // Where a CTA points BEFORE real GHL checkout links are pasted in. Sends the
++  // click to the intake form so the funnel still captures the lead instead of a
++  // dead href="#" that just jumps to the top of the page. Once the real URL is
++  // live in AIXMOS_GHL, that wins and this fallback is never used.
++  const FALLBACK_APPLY = "apply.html";
++
+   window.wireAixmosGhl = function wireAixmosGhl() {
+     const cfg = window.AIXMOS_GHL;
+     if (!cfg) return;
+@@ -29,15 +35,16 @@
+     document.querySelectorAll("[data-ghl-href]").forEach((el) => {
+       const key = el.getAttribute("data-ghl-href");
+       const url = cfg[key];
+-      if (isLiveUrl(url)) el.setAttribute("href", url);
++      // Live checkout link if we have one; otherwise fall back to the intake form.
++      el.setAttribute("href", isLiveUrl(url) ? url : FALLBACK_APPLY);
+     });
+ 
+     document.querySelectorAll("[data-ghl-card]").forEach((card) => {
+       const key = card.getAttribute("data-ghl-card");
+       const url = cfg[key];
+-      if (!isLiveUrl(url)) return;
++      const dest = isLiveUrl(url) ? url : FALLBACK_APPLY;
+ 
+-      const open = () => window.open(url, "_blank", "noopener,noreferrer");
++      const open = () => window.open(dest, "_blank", "noopener,noreferrer");
+       card.addEventListener("click", open);
+       card.addEventListener("keydown", (e) => {
+         if (e.key === "Enter" || e.key === " ") {
