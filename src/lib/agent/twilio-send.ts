@@ -1,5 +1,6 @@
 import Twilio from 'twilio'
 import { isRateLimited } from '@/lib/rate-limit'
+import { assertSmsAllowed, SmsBlockedError, type SmsType } from '../../../shared/compliance-gates/sms-gate'
 
 export interface SendSmsArgs {
   from: string
@@ -8,6 +9,12 @@ export interface SendSmsArgs {
   organizationId?: string
   twilioAccountSid?: string
   twilioAuthToken?: string
+  /** Use-case/vertical, e.g. "rentals" | "credit_repair" | "funding". Drives the SMS compliance gate. */
+  vertical?: string
+  /** Carrier message class. Defaults to "transactional" — the safe default. */
+  type?: SmsType
+  /** True only after an owner has explicitly approved a marketing send. */
+  ownerApproved?: boolean
 }
 
 export class TwilioRateLimitedError extends Error {
@@ -26,6 +33,19 @@ export class TwilioRateLimitedError extends Error {
  * not on the inbound path.
  */
 export async function sendSms(args: SendSmsArgs): Promise<{ sid: string }> {
+  // Compliance gate FIRST (shared/compliance-gates/sms-gate). BLOCKs promotional
+  // SMS for A2P-restricted verticals (credit/funding/debt/lending) — throws
+  // SmsBlockedError — and HOLDs un-approved marketing. Transactional is the safe
+  // default, so callers that don't pass vertical/type are unaffected.
+  const gate = assertSmsAllowed({
+    vertical: args.vertical ?? '',
+    type: args.type ?? 'transactional',
+    owner_approved: args.ownerApproved,
+  })
+  if (gate.decision === 'HOLD') {
+    throw new SmsBlockedError(gate.reason)
+  }
+
   const sid = args.twilioAccountSid ?? process.env.TWILIO_ACCOUNT_SID
   const tok = args.twilioAuthToken ?? process.env.TWILIO_AUTH_TOKEN
   if (!sid || !tok) throw new Error('Twilio credentials missing (SID or AUTH_TOKEN)')
