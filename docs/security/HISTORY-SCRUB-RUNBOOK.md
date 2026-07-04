@@ -42,6 +42,10 @@ scripts/scrub-history.sh --path "imports/lexar-2026-05-20"
 scripts/scrub-history.sh --path "imports/lexar-2026-05-20" --apply
 ```
 
+> The pre-push guard (`scripts/hooks/pre-push`, #123) refuses to force-push `master` unless
+> `ALLOW_FORCE_MASTER=1` is set. `scrub-history.sh` sets it automatically for its own push;
+> if you force-push by hand instead, prefix with `ALLOW_FORCE_MASTER=1`.
+
 ## After the rewrite
 
 1. **Every collaborator re-clones.** Old clones now have divergent history; pulling will conflict.
