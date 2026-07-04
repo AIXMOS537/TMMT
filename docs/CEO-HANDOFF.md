@@ -1,4 +1,4 @@
-# CEO Handoff — Muhammad Taha touches nothing
+# CEO Handoff — PROJECT X HAILMARY touches nothing
 
 > Authored by **PROJECT X HAILMARY** for the Owner. You're the CEO now — you
 > **direct and review**; the system and your lieutenants **execute**. This page is the

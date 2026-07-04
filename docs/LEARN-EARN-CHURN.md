@@ -9,12 +9,12 @@
 
 | | **Project X HAILMARY** | **Project X AIXMOS** |
 |---|---|---|
-| Who | **Invite-only** — Muhammad Taha + family + friends (right now: just them) | **The public** — anyone who joins |
+| Who | **Invite-only** — PROJECT X HAILMARY + family + friends (right now: just them) | **The public** — anyone who joins |
 | What | The Owner's personal big-play agent + the brain | The Learn·Earn·Churn program + the operator network |
 | Access | The Owner allows you in. No purchase grants it. | **$97/mo** opens the door; climb the ladder from there |
 | Word | `booyah` / `wake` (owner only) | `member` / `onboard` |
 
-**Rule:** money never buys HAILMARY. HAILMARY is granted by Muhammad Taha alone.
+**Rule:** money never buys HAILMARY. HAILMARY is granted by PROJECT X HAILMARY alone.
 AIXMOS is the public learn-earn-churn engine everyone pays into.
 
 ## The promise (from the gutter, up)

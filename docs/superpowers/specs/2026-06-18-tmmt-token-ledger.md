@@ -1,6 +1,6 @@
 # TMMT Token Ledger — v0 Spec (smallest safe slice)
 
-**Owner:** X (Muhammad Taha) · **Date:** 2026-06-18 · **Status:** spec for owner review — NOT yet built, NOT applied to prod
+**Owner:** X (PROJECT X HAILMARY) · **Date:** 2026-06-18 · **Status:** spec for owner review — NOT yet built, NOT applied to prod
 
 ## Goal (plain English)
 $97/mo buys a monthly stack of **TMMT tokens**. When the AIXMOS engine ("the genie") does a

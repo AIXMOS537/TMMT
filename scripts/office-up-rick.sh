@@ -26,12 +26,16 @@ if command -v ollama >/dev/null; then
 else
   warn "ollama not installed — run: bash scripts/setup-llm.sh"
 fi
+# Self-clone the agent army if it isn't here yet — no manual step for X.
+if [ ! -d "$HOME/Projects/AIXMOS-AGENTS/.git" ]; then
+  mkdir -p "$HOME/Projects"
+  git clone --depth 1 https://github.com/AIXMOS537/AIXMOS-AGENTS.git "$HOME/Projects/AIXMOS-AGENTS" 2>/dev/null \
+    || warn "agent-army clone failed (auth?) — run 'gh auth login' once, then re-run"
+fi
 if [ -d "$HOME/Projects/AIXMOS-AGENTS" ]; then
-  (cd "$HOME/Projects/AIXMOS-AGENTS" && npm install --silent 2>/dev/null; npm start >/tmp/rick-agents.log 2>&1 &)
+  (cd "$HOME/Projects/AIXMOS-AGENTS" && git pull --ff-only 2>/dev/null; npm install --silent 2>/dev/null; npm start >/tmp/rick-agents.log 2>&1 &)
   sleep 3
-  curl -sf http://127.0.0.1:7777/healthz >/dev/null && ok "agents :7777" || warn "agents — see /tmp/rick-agents.log"
-else
-  warn "clone: git clone https://github.com/AIXMOS537/AIXMOS-AGENTS.git ~/Projects/AIXMOS-AGENTS"
+  curl -sf http://127.0.0.1:7777/healthz >/dev/null && ok "agents :7777" || warn "agents starting — see /tmp/rick-agents.log"
 fi
 
 banner "4) HAILMARY (owner-proxy) booted"

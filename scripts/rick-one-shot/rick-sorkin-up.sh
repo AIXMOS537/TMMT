@@ -183,7 +183,7 @@ case "$VERB" in
     cat <<EOF
 rick-sorkin — Rick Sorkin one-shot (M1 Max)
 
-  rick-sorkin up       full install + boot (default)
+  rick-sorkin up       full install + boot (always-on via office-up-rick) (default)
   rick-sorkin update   git pull + refresh identity
   rick-sorkin status   green/red report
   rick-sorkin prime    print RICK-PRIME.md

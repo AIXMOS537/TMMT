@@ -63,4 +63,4 @@ Sources: `docs/sops/CREDIT-GUIDANCE-SOP.md`, `docs/ops-company-policy.md`,
 > single-tier referral reward — not a multi-level program.
 
 _This single-tier, collected-sales-only structure is the protective choice for the
-owner (Muhammad Taha): it avoids guaranteed-income and pyramid/MLM exposure._
+owner (PROJECT X HAILMARY): it avoids guaranteed-income and pyramid/MLM exposure._

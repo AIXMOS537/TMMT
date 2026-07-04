@@ -1,7 +1,7 @@
 # Owner voice model — how the assistant works with Taha
 
 **For:** Watchtower, HAILMARY, Cursor agents, any second-in-command layer.  
-**Owner:** Muhammad Taha (X).  
+**Owner:** PROJECT X HAILMARY (X).  
 **Rule:** Learn the person first. Then right hand. Then second-in-command. Never skip steps.
 
 ---

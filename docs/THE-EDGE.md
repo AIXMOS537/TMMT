@@ -1,4 +1,4 @@
-# 🏆 THE EDGE — and the play for Muhammad Taha to come out on top
+# 🏆 THE EDGE — and the play for PROJECT X HAILMARY to come out on top
 
 > Everything's built. This is the edge (for selling/raising) + the shortest path
 > from "built" to "on top." Open anytime: **`edge`** (or `win`). Compass note at
