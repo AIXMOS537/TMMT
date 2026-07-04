@@ -36,6 +36,7 @@ export interface BuildPageModule {
 export const LEGAL_FLAGS = ['credit_repair', 'funding'] as const;
 export type LegalFlag = typeof LEGAL_FLAGS[number];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- adapter cast over the imported JSON config; shape is validated by the BuildPageModule mapping below
 export const BUILD_PAGE_MODULES: BuildPageModule[] = (config.modules as any[]).map((m) => ({
   key: m.key,
   name: m.name,

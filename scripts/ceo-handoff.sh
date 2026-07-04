@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ceo-handoff — PROJECT X HAILMARY. The single command a LIEUTENANT runs so the
-# CEO (Muhammad Taha) never has to touch setup. It chains the safe, credential-
+# CEO (PROJECT X HAILMARY) never has to touch setup. It chains the safe, credential-
 # bound steps that only a human-with-keys can do, reports up, and stops.
 #
 # WHO RUNS THIS: a delegate (Nightwing / Crew) — NOT the CEO.

@@ -25,9 +25,9 @@ function dashboard(overrides: Partial<{
 
 describe("buildOwnerMissionData", () => {
   it("always produces 8 stats and passes through the greeting name", () => {
-    const data = buildOwnerMissionData(dashboard(), "Taha");
+    const data = buildOwnerMissionData(dashboard(), "PROJECT X HAILMARY");
     expect(data.view).toBe("owner");
-    expect(data.greetingName).toBe("Taha");
+    expect(data.greetingName).toBe("PROJECT X HAILMARY");
     expect(data.stats).toHaveLength(8);
   });
 

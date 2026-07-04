@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # PROJECT X HAILMARY — RESTORE OPERATOR ACCESS
-# Re-activates a revoked license. Muhammad Taha only.
+# Re-activates a revoked license. PROJECT X HAILMARY only.
 # ============================================================
 
 set -euo pipefail

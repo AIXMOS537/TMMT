@@ -1,6 +1,6 @@
 # Finance intake — bills across personal, family, and businesses
 
-**Owner:** Muhammad Taha · **Principle:** God → self/wellbeing → family → others
+**Owner:** PROJECT X HAILMARY · **Principle:** God → self/wellbeing → family → others
 
 ## How to use
 

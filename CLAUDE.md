@@ -5,7 +5,7 @@
 > import it by default or it bloats every session).
 
 ## WHO / WHAT
-AIXMOS is the AI + automation spine for TMMT Auto Services LLC (Muhammad Taha, CEO).
+AIXMOS is the AI + automation spine for TMMT Auto Services LLC (PROJECT X HAILMARY, CEO).
 You are working inside the codebase that powers the platform. Owner is moving from
 operator to orchestrator — build for delegation, not hand-holding.
 

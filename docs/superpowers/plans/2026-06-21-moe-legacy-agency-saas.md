@@ -1,6 +1,6 @@
 # Moe Legacy — Agency-SaaS Rollout Plan
 
-**Owner:** X (Muhammad Taha) · **Date:** 2026-06-21 · **Status:** plan for owner review
+**Owner:** X (PROJECT X HAILMARY) · **Date:** 2026-06-21 · **Status:** plan for owner review
 **Spec:** `docs/superpowers/specs/2026-06-21-moe-legacy-agency-saas-design.md`
 
 Phased so **money leads, IP follows, and every step is reversible.** Each phase has a clear

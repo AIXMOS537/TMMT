@@ -60,7 +60,7 @@ bash scripts/swarm-join.sh --name carry-mac --email you@personal.example
 
 | OS | Notes |
 |---|---|
-| **macOS** (carry Mac / work Mac) | `brew install tmux` for the best swarm view. `.env` comes off the key flashdrive (`scripts/bootstrap-carry-mac.sh`). |
+| **macOS** (carry Mac / work Mac) | `brew install tmux` for the best swarm view. `.env` is pulled from Vercel (`vercel env pull .env --environment=production`; `swarm-join.sh` does this automatically). |
 | **Linux / WSL** | `sudo apt install tmux`. Full tmux experience. Best choice for a Surface. |
 | **Windows native** (Surface, Git Bash) | Install **Git for Windows** + **Windows Terminal**. No tmux, so agents open in WT tabs. Symlinks are usually blocked, so the swarm copies `.env` and runs `npm install` per worktree (first launch slower, then fast). |
 

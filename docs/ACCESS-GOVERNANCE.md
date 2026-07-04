@@ -1,10 +1,10 @@
 # Access Governance — authorize fast, revoke hard
 
-> How X (Muhammad Taha) keeps a **clear path for himself**, a **fenced path for
+> How X (PROJECT X HAILMARY) keeps a **clear path for himself**, a **fenced path for
 > everyone else**, **flash-deploys** the moment he authorizes, and **cuts off**
 > anyone unauthorized — completely and fast. Defense and revocation, done right.
 
-**Identity:** **X = Muhammad Taha** — the owner. (Public-facing brand node is also
+**Identity:** **X = PROJECT X HAILMARY** — the owner. (Public-facing brand node is also
 **X = AIXMOS** per `security/X-NODE-DEFINITION.md`; the person and the front share
 the name by design.) The network being built: **Project X HAILMARY** (owner +
 family/friends, invite-only) and **Project X AIXMOS** (the public operator
