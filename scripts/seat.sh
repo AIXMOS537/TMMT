@@ -19,11 +19,11 @@ info(){ printf '  \033[34m›\033[0m %s\n' "$*"; }
 warn(){ printf '  \033[33m!\033[0m %s\n' "$*" >&2; }
 die(){  printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
-# Defaults = the first King-of-Credit-Guidance seat.
+# Seat identity comes from args — no personal defaults baked into the repo.
 VERTICAL="${1:-moe-legacy}"
-EMAIL="${2:-umar47002@yahoo.com}"
+EMAIL="${2:?seat email required, e.g. bash seat.sh moe-legacy founder@example.com}"
 STAGE="${3:-graduate}"
-NAME="${4:-Umar — Moe Legacy}"
+NAME="${4:-New Seat}"
 
 cat <<B
 
