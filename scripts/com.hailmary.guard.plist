@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hailmary.guard</string>
+
+  <!-- The auto-revert heartbeat. DRY-RUN until you run:
+       bash scripts/hailmary-session.sh arm
+       While disarmed it ONLY logs to ~/.hailmary/guard.log — it cannot change
+       your machine's mode. It can never lock the owner out. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__GUARD_SH__</string>
+    <string>guard</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>120</integer>
+
+  <key>StandardOutPath</key>
+  <string>__STATE__/guard.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__STATE__/guard.err.log</string>
+</dict>
+</plist>
