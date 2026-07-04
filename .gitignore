@@ -96,3 +96,6 @@ dist/
 # never commit secrets, bonds, registration numbers, client PII
 secrets/
 *.pii
+
+# RICK SORKIN: owner-local memory + approvals queue — never pushed
+.rick/

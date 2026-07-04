@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# rick — thin launcher so `bin/rick ...` works from anywhere. Real CLI: scripts/rick.
+set -uo pipefail
+_REPO="$(cd "$(dirname "$0")/.." && pwd)"
+if [ ! -f "$_REPO/scripts/rick" ]; then
+  for d in "$HOME/Projects/TMMT" "$HOME/projects/TMMT" "$HOME/TMMT"; do
+    [ -f "$d/scripts/rick" ] && { _REPO="$d"; break; }
+  done
+fi
+exec bash "$_REPO/scripts/rick" "$@"

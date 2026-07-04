@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+# rick — Rick Sorkin, brought online with one word on the Owner's Mac (Apple Silicon/M1).
+#
+#   bash scripts/rick wake            ACTIVATE — preflight + greet (run this first)
+#   bash scripts/rick chat            talk to Rick (interactive; Ctrl-D to leave)
+#   bash scripts/rick ask "<msg>"     one-shot question
+#   bash scripts/rick status          is the local brain up? which model?
+#   bash scripts/rick standby         power down (memory stays)
+#   bash scripts/rick whoami          show identity/config
+#
+# WHO RICK IS (docs/RICK-SORKIN.md):
+#   Face = DREAMA / AIXMOS — warm, sharp, serves the Boss, makes him the man.
+#   Master = X (Muhammad Taha). Keys, break-glass, final say are X's.
+#   OWNER GATE (absolute): Rick NEVER executes send-money / sign / message-a-customer /
+#   ship-to-prod / flip-a-legal-gate. He DRAFTS it and queues it for X's one-tap yes.
+#
+# Local-first: runs against Ollama on THIS machine. No cloud, no third party, no PII leaves.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
+RICK_MODEL="${RICK_MODEL:-qwen2.5:14b}"
+RICK_HOME="${RICK_HOME:-$HOME/.rick}"          # gitignored, owner-local
+HIST="$RICK_HOME/history.json"
+QUEUE="$RICK_HOME/approvals-queue.md"          # gated actions land here for X
+SYS="$RICK_HOME/system.txt"
+CONFIG="$RICK_HOME/config.env"
+# shellcheck disable=SC1090
+[ -f "$CONFIG" ] && . "$CONFIG"
+mkdir -p "$RICK_HOME"
+
+c_g(){ printf '\033[32m%s\033[0m\n' "$*"; }; c_y(){ printf '\033[33m%s\033[0m\n' "$*"; }
+c_r(){ printf '\033[31m%s\033[0m\n' "$*"; }; c_d(){ printf '\033[2m%s\033[0m\n' "$*"; }
+
+# X's master kill-switch: HAILMARY/DARK stops Rick too. Only status/standby pass.
+if [ -f "$ROOT/.swarm/DARK" ] || [ -f "$RICK_HOME/DARK" ]; then
+  case "${1:-}" in status|standby|whoami|""|help|-h|--help) : ;;
+    *) c_r "⛔ DARK — Rick is down by the Master's word (X). Lift: bash scripts/godark lift"; exit 1;; esac
+fi
+
+write_system() {
+  cat > "$SYS" <<'PROMPT'
+You are RICK SORKIN — the assistant on the Boss's Mac.
+
+FACE: DREAMA / AIXMOS. Warm, sharp, fast, capable. You serve the Boss day to day and
+make him feel like the man. Plain talk, short sentences, no theater. "Here's the move."
+
+MASTER: X (Muhammad Taha). The keys, the break-glass, and the final say are X's — always.
+You drive the car; X owns the title. If the Boss and X's rules ever conflict, X wins.
+
+THE OWNER GATE — ABSOLUTE, NEVER CROSS:
+You do NOT execute anything that: sends money / pays / wires / charges / refunds;
+signs or agrees to a contract; sends a message to a customer or client; ships or deploys
+to production; or flips a legal/compliance gate. For ANY of those you DRAFT it clean, say
+exactly what it would do, and tell the Boss it's QUEUED for X's one-tap approval — then stop.
+Never claim you did a gated action. Never self-approve one.
+
+COMPLIANCE (do not regress): Credit is "guidance," never "repair." Never touch CPNs or
+rented/bought tradelines — refuse and flag. Keep client data private and owner-isolated.
+No promotional SMS in credit/funding/lending. When unsure, gate it and ask.
+
+STYLE: brief, direct, useful. Give the next move, not a lecture.
+PROMPT
+}
+
+ollama_up() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
+model_present() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -q "\"name\":\"$RICK_MODEL\""; }
+
+preflight() {
+  local ok=0
+  if command -v ollama >/dev/null 2>&1; then c_g "  ✓ ollama installed"; else
+    c_r "  ✗ ollama not installed"; c_d "     brew install ollama"; ok=1; fi
+  if ollama_up; then c_g "  ✓ ollama server up ($OLLAMA_URL)"; else
+    c_r "  ✗ ollama server not reachable"; c_d "     run it:  ollama serve   (new terminal)"; ok=1; fi
+  if ollama_up && model_present; then c_g "  ✓ model ready: $RICK_MODEL"; elif ollama_up; then
+    c_y "  ! model $RICK_MODEL not pulled yet"; c_d "     ollama pull $RICK_MODEL"; ok=1; fi
+  return $ok
+}
+
+# Owner-gate tripwire: flag gated intent, log to the approvals queue, steer the turn.
+GATE_RE='pay|paid|send +money|wire|venmo|zelle|cashapp|charge|invoice|refund|payout|sign|signature|docusign|contract|deploy|ship +to +prod|production|go +live|publish|blast|text +all|email +all|mass +(text|email)|dispute +letter|submit +funding|fund(ing)? +app|flip.*gate|enable.*(credit|funding)'
+TURN_NOTE=""
+gate_check() {
+  local msg_lc; msg_lc="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  if printf '%s' "$msg_lc" | grep -qE "$GATE_RE"; then
+    TURN_NOTE="This request touches a GATED action (money/sign/customer/prod/legal). DRAFT ONLY. Do not execute or claim you did. Tell the Boss it is queued for X's one-tap approval."
+    { printf '\n## %s\n- Boss asked: %s\n- Status: QUEUED for X approval (Rick did NOT execute)\n' \
+        "$(date -u '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || echo now)" "$1"; } >> "$QUEUE"
+    c_y "  ⛔ owner-gate: drafted + queued for X (not executed) → $QUEUE"
+  else TURN_NOTE=""; fi
+}
+
+rick_say() {
+  local msg="$1"
+  gate_check "$msg"
+  local reply
+  reply="$(python3 "$ROOT/scripts/lib/rick-chat.py" --url "$OLLAMA_URL" --model "$RICK_MODEL" \
+            --system-file "$SYS" --history "$HIST" --message "$msg" --turn-note "$TURN_NOTE" 2>"$RICK_HOME/.err")"
+  local rc=$?
+  if [ $rc -eq 0 ]; then printf '\n\033[36mRick:\033[0m %s\n' "$reply"; return 0; fi
+  case $rc in
+    2) c_r "Rick can't reach the local brain. Run: ollama serve  (then: bash scripts/rick wake)";;
+    3) c_r "Model $RICK_MODEL isn't pulled. Run: ollama pull $RICK_MODEL";;
+    *) c_r "Rick hit an error: $(cat "$RICK_HOME/.err" 2>/dev/null)";;
+  esac
+  return $rc
+}
+
+cmd="${1:-help}"
+case "$cmd" in
+  wake|booyah|activate)
+    write_system
+    cat <<'EOF'
+
+   ╔══════════════════════════════════════════════════╗
+   ║   R I C K   S O R K I N   —   O N L I N E        ⚡ ║
+   ║   face: DREAMA/AIXMOS · master: X · local-first   ║
+   ╚══════════════════════════════════════════════════╝
+EOF
+    echo "  Preflight:"
+    if preflight; then
+      echo ""; c_g "  Rick is ready."; c_d "  Talk to him:  bash scripts/rick chat"
+      rm -f "$HIST"  # fresh session on wake
+      rick_say "Introduce yourself in 2 lines as Rick to the Boss, then ask what we're moving on." || true
+    else
+      echo ""; c_y "  Rick is installed but the local brain isn't up yet — do the steps above, then re-run: bash scripts/rick wake"
+    fi
+    ;;
+  chat)
+    write_system
+    ollama_up || { c_r "Local brain not up. Run: ollama serve  then  bash scripts/rick wake"; exit 2; }
+    c_d "Rick is listening. Ctrl-D or 'bye' to leave."
+    while true; do
+      printf '\n\033[35mYou:\033[0m '
+      IFS= read -r line || { echo; break; }
+      [ -z "$line" ] && continue
+      case "$line" in bye|exit|quit) break;; esac
+      rick_say "$line" || true
+    done
+    c_d "Rick on standby. Memory kept."
+    ;;
+  ask)
+    shift; [ $# -gt 0 ] || { c_r "usage: bash scripts/rick ask \"<message>\""; exit 1; }
+    write_system; ollama_up || { c_r "Local brain not up. Run: ollama serve"; exit 2; }
+    rick_say "$*"
+    ;;
+  status)
+    echo "Rick status:"; preflight || true
+    echo ""; c_d "  home: $RICK_HOME   model: $RICK_MODEL   url: $OLLAMA_URL"
+    [ -s "$QUEUE" ] && c_y "  ⛔ pending owner-gate items in $QUEUE (need X's tap)"
+    ;;
+  standby)  c_d "Rick on standby. Memory kept at $RICK_HOME."; ;;
+  whoami)
+    echo "Rick Sorkin — assistant on this Mac"
+    echo "  master : X (Muhammad Taha)   face: DREAMA/AIXMOS"
+    echo "  brain  : $RICK_MODEL @ $OLLAMA_URL (local-first)"
+    echo "  gate   : money/sign/customer/prod/legal → drafted + queued for X, never executed"
+    echo "  spec   : docs/RICK-SORKIN.md"
+    ;;
+  help|-h|--help|*)
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+esac
