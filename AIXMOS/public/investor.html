@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AIXMOS — Investor one-pager. Workforce infrastructure for everyday entrepreneurs. Over $1M in operations touched. The model, the receipts, the ask." />
+  <title>AIXMOS — Investor One-Pager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --blue:#1440C4; --blue-2:#2563EB; --blue-dim:rgba(20,64,196,0.07);
+      --navy:#0A1628; --white:#FFFFFF; --surface:#F4F7FF;
+      --border:rgba(10,37,102,0.10); --muted:rgba(10,22,40,0.50);
+      --green:#1D9E75; --amber:#D97706;
+      --font-d:'Bebas Neue',sans-serif; --font-b:'DM Sans',sans-serif;
+      --container:min(1080px,100% - 48px);
+      --radius-sm:8px; --radius:12px; --radius-lg:16px;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:var(--font-b);background:var(--white);color:var(--navy);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .container{width:var(--container);margin-inline:auto}
+    a{color:var(--blue);text-decoration:none}
+
+    /* header band */
+    .doc-head{background:var(--navy);color:var(--white);padding:14px 0}
+    .doc-head .container{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .brand{font-family:var(--font-d);font-size:1.6rem;letter-spacing:.06em}
+    .brand span{color:#7FA0FF}
+    .doc-head .meta{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+
+    /* hero */
+    .hero{background:var(--surface);border-bottom:1px solid var(--border);padding:clamp(40px,7vw,72px) 0}
+    .eyebrow{display:inline-block;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:600;margin-bottom:14px}
+    .hero h1{font-family:var(--font-d);font-weight:400;letter-spacing:.02em;line-height:.98;font-size:clamp(3rem,7vw,5.4rem);margin:0 0 18px}
+    .hero p{font-size:1.12rem;color:var(--muted);max-width:60ch;margin:0}
+
+    /* metric strip */
+    .metrics{padding:clamp(36px,6vw,56px) 0}
+    .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .metric{border:1px solid var(--border);border-radius:var(--radius);padding:22px;background:var(--white)}
+    .metric .n{font-family:var(--font-d);font-size:clamp(2.2rem,4vw,3rem);color:var(--blue);line-height:1;letter-spacing:.01em}
+    .metric .l{font-size:.86rem;color:var(--muted);margin-top:8px}
+    .metric.hi{background:var(--blue);border-color:var(--blue)}
+    .metric.hi .n{color:var(--white)}
+    .metric.hi .l{color:rgba(255,255,255,.85)}
+
+    section{padding:clamp(44px,7vw,72px) 0}
+    .alt{background:var(--surface);border-block:1px solid var(--border)}
+    .sec-head{max-width:680px;margin-bottom:28px}
+    .pill{display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid var(--border);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+    .sec-head h2{font-family:var(--font-d);font-weight:400;letter-spacing:.02em;font-size:clamp(1.9rem,3vw+1rem,2.6rem);margin:0 0 10px}
+    .sec-head p{margin:0;color:var(--muted);font-size:1.02rem}
+
+    /* story */
+    .story{display:grid;grid-template-columns:1.2fr .8fr;gap:36px;align-items:start}
+    .story p{margin:0 0 16px;color:var(--navy)}
+    .story p .em{color:var(--blue);font-weight:600}
+    .story-side{position:sticky;top:16px;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;background:var(--white)}
+    .story-side h3{font-family:var(--font-d);letter-spacing:.04em;font-size:1.3rem;margin:0 0 14px}
+    .timeline{list-style:none;margin:0;padding:0}
+    .timeline li{position:relative;padding:0 0 16px 22px;color:var(--muted);font-size:.92rem}
+    .timeline li::before{content:"";position:absolute;left:0;top:.5em;width:9px;height:9px;border-radius:50%;background:var(--blue)}
+    .timeline li:last-child{padding-bottom:0}
+    .timeline li strong{display:block;color:var(--navy);font-weight:600}
+
+    /* model / pricing */
+    .ladder{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .ladder th,.ladder td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--border);font-size:.94rem}
+    .ladder thead th{background:var(--navy);color:var(--white);font-weight:600;letter-spacing:.03em;font-size:.78rem;text-transform:uppercase}
+    .ladder tbody tr:last-child td{border-bottom:none}
+    .ladder .rate{font-family:var(--font-d);color:var(--blue);font-size:1.25rem;letter-spacing:.01em;white-space:nowrap}
+    .ladder .full{background:var(--blue-dim)}
+    .scroll-x{overflow-x:auto}
+
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{border:1px solid var(--border);border-radius:var(--radius);padding:22px;background:var(--white)}
+    .card h3{font-family:var(--font-d);letter-spacing:.04em;font-size:1.25rem;margin:0 0 10px}
+    .card ul{margin:0;padding-left:18px;color:var(--muted);font-size:.94rem}
+    .card li{margin:6px 0}
+    .card li strong{color:var(--navy)}
+
+    .built-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .built{border:1px solid var(--border);border-radius:var(--radius);padding:20px;background:var(--white)}
+    .built .k{font-family:var(--font-d);letter-spacing:.04em;font-size:1.15rem;color:var(--blue);margin-bottom:6px}
+    .built p{margin:0;font-size:.9rem;color:var(--muted)}
+
+    .note{border-left:3px solid var(--amber);background:#fff8ee;border-radius:0 var(--radius) var(--radius) 0;padding:16px 18px;color:var(--navy);font-size:.92rem}
+    .note strong{color:var(--amber)}
+
+    /* ask */
+    .ask{background:var(--navy);color:var(--white)}
+    .ask .sec-head h2{color:var(--white)}
+    .ask .sec-head p{color:rgba(255,255,255,.7)}
+    .ask .pill{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2)}
+    .ask-box{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;border:1px solid rgba(255,255,255,.14);border-radius:var(--radius-lg);padding:clamp(24px,4vw,36px);background:rgba(255,255,255,.03)}
+    .ask-box h3{font-family:var(--font-d);letter-spacing:.03em;font-size:clamp(1.6rem,2vw+1rem,2.2rem);margin:0 0 12px}
+    .ask-box p{margin:0 0 8px;color:rgba(255,255,255,.8)}
+    .ask-proof{border:1px solid rgba(255,255,255,.14);border-radius:var(--radius);padding:20px;background:rgba(255,255,255,.04)}
+    .ask-proof .n{font-family:var(--font-d);font-size:2.6rem;color:#7FA0FF;line-height:1}
+    .ask-proof .l{color:rgba(255,255,255,.75);font-size:.9rem;margin-top:6px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:var(--radius-sm);font-family:var(--font-b);font-weight:500;font-size:.92rem;border:1px solid transparent;cursor:pointer;margin-top:8px}
+    .btn-primary{background:#fff;color:var(--navy)}
+    .btn-primary:hover{background:#e9eefc}
+
+    footer{padding:26px 0;border-top:1px solid var(--border);color:var(--muted);font-size:.86rem}
+    .foot-inner{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+    .foot-tag{font-family:var(--font-d);letter-spacing:.06em;color:var(--navy)}
+
+    @media (max-width:820px){
+      .metric-grid{grid-template-columns:1fr 1fr}
+      .story,.ask-box{grid-template-columns:1fr}
+      .story-side{position:static}
+      .two,.built-grid{grid-template-columns:1fr}
+    }
+    @media print{
+      .doc-head{background:#fff;color:var(--navy);border-bottom:1px solid var(--border)}
+      .doc-head .brand span{color:var(--blue)}
+      .ask{background:#fff;color:var(--navy)}
+      .ask .sec-head h2,.ask-box h3,.ask-box p,.ask-proof .l{color:var(--navy)}
+      .ask-proof .n{color:var(--blue)}
+      .metric.hi{background:#fff}.metric.hi .n{color:var(--blue)}.metric.hi .l{color:var(--muted)}
+      section{padding:20px 0}
+      a[href]:after{content:""}
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-head">
+    <div class="container">
+      <span class="brand">AIX<span>MOS</span></span>
+      <span class="meta">Investor One-Pager · Confidential · 2026</span>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="container">
+      <span class="eyebrow">For the people. By the people.</span>
+      <h1>What we&rsquo;re worth.</h1>
+      <p>AIXMOS is workforce infrastructure for everyday entrepreneurs &mdash; dispatching, AI agents, operator networks, vendor routing, and business-in-a-box deployment in one owner-gated ecosystem. Built by an operator who has already run the playbook, not theorized about it.</p>
+    </div>
+  </section>
+
+  <div class="metrics">
+    <div class="container">
+      <div class="metric-grid">
+        <div class="metric hi"><div class="n">$1M+</div><div class="l">In operations touched to date</div></div>
+        <div class="metric"><div class="n">$90&ndash;100K</div><div class="l">/mo car-rental operation built</div></div>
+        <div class="metric"><div class="n">$250K</div><div class="l">Generated in a single year, rebuilt from zero</div></div>
+        <div class="metric"><div class="n">$50K</div><div class="l">Investor closed on the spot &mdash; 50/50 pipeline split</div></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="alt">
+    <div class="container">
+      <div class="sec-head">
+        <span class="pill">The founder</span>
+        <h2>The operator behind the machine.</h2>
+        <p>The receipts come first. The story is why they&rsquo;re real.</p>
+      </div>
+      <div class="story">
+        <div>
+          <p>PROJECT X HAILMARY came to America at six and immediately started navigating systems for the people he loves &mdash; housing, documents, taxes. He has been solving operational problems for his family his entire life.</p>
+          <p>At 22 he built a car-rental operation to <span class="em">$90,000&ndash;$100,000/month</span> &mdash; for someone else. He was told to screw off and walked away with nothing.</p>
+          <p>He rebuilt. With his parents&rsquo; backing he generated <span class="em">$250,000 in a year</span>, and has since <span class="em">touched over $1,000,000 in operations</span>. He closed a <span class="em">$50,000 investor on the spot</span> by offering his entire pipeline for a 50/50 split.</p>
+          <p>He lost two brothers. AIXMOS is for them. One of their mothers is getting her house paid for. <strong>This has to print.</strong></p>
+          <p>The mission: give every overlooked, bottlenecked, first-generation entrepreneur the same operational spine large corporations already have.</p>
+        </div>
+        <aside class="story-side">
+          <h3>The track record</h3>
+          <ul class="timeline">
+            <li><strong>Age 6</strong>Arrived in the U.S. &mdash; became the family&rsquo;s operator.</li>
+            <li><strong>Age 22</strong>Built a rental op to $90K&ndash;$100K/mo for an owner.</li>
+            <li><strong>The rebuild</strong>Started over, $250K generated in one year.</li>
+            <li><strong>Now</strong>$1M+ operations touched; $50K investor closed 50/50.</li>
+            <li><strong>AIXMOS</strong>Productizing the whole playbook for other operators.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="sec-head">
+        <span class="pill">The model</span>
+        <h2>One engine. A revenue ladder from $97 to $50K.</h2>
+        <p>Everyone enters cheap and climbs. Every client&rsquo;s 90-day target is $10,000/month &mdash; the same number appears on every client-facing page.</p>
+      </div>
+      <div class="scroll-x">
+        <table class="ladder">
+          <thead>
+            <tr><th>Tier</th><th>Price</th><th>Model</th><th>What it is</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Membership</td><td class="rate">$97<span style="font-size:.7rem;color:var(--muted)">/mo</span></td><td>Recurring</td><td>Entry point &mdash; community, playbooks, pathway to $10K/mo</td></tr>
+            <tr><td>LLC Formation</td><td class="rate">$397</td><td>One-time</td><td>Entity formation + filing guidance + onboarding</td></tr>
+            <tr><td>Credit Guidance</td><td class="rate">$500&ndash;$1K</td><td>One-time</td><td>Roadmap + vendor routing &mdash; guide only (compliance-gated)</td></tr>
+            <tr><td>Base Infrastructure</td><td class="rate">$3,750</td><td>Down</td><td>GHL + website + automations + 30-day hypercare</td></tr>
+            <tr><td>Enterprise Systems</td><td class="rate">$7,500</td><td>Project</td><td>Full build, multi-vertical routing, dedicated team</td></tr>
+            <tr><td>Car Rental in a Box</td><td class="rate">$15,000</td><td>50% down</td><td>Vehicle ops + staffing, from the $90K/mo playbook</td></tr>
+            <tr><td>E-Commerce Ecosystem</td><td class="rate">$25,000</td><td>50% down</td><td>Full setup + $10K inventory float + automation</td></tr>
+            <tr class="full"><td><strong>Full Ecosystem</strong></td><td class="rate">$50,000</td><td>Structured</td><td>All verticals + revenue share + white-glove exec team</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="two" style="margin-top:16px">
+        <div class="card">
+          <h3>Operator network</h3>
+          <ul>
+            <li><strong>10% referral track</strong> &mdash; reps close, get paid on real client services (never recruitment).</li>
+            <li><strong>50/50 partnership track</strong> &mdash; AIXMOS runs the machine, the operator executes.</li>
+            <li><strong>$97/mo</strong> membership is the recurring floor under the whole network.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why it compounds</h3>
+          <ul>
+            <li>One engine powers every tier &mdash; build once, resell across operators.</li>
+            <li>Local-first AI keeps per-client cost near zero at volume.</li>
+            <li>Owner-gated: nothing customer-facing or financial fires without approval.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="container">
+      <div class="sec-head">
+        <span class="pill">Already built</span>
+        <h2>Not a deck &mdash; a running system.</h2>
+        <p>The infrastructure exists today. This is what the capital scales, not what it invents.</p>
+      </div>
+      <div class="built-grid">
+        <div class="built"><div class="k">3-agent spine</div><p>CHUMMO intake, MOOSE fulfillment, VISION quality control &mdash; volume handled by AI, judgment by operators.</p></div>
+        <div class="built"><div class="k">Fleet engine</div><p>The car-rental stack &mdash; the most mature vertical, plug-and-play, built from the owner&rsquo;s own $90K/mo operation.</p></div>
+        <div class="built"><div class="k">Operator build page</div><p>Every operator&rsquo;s machine as a shareable page &mdash; pick modules, power on, hand off by QR.</p></div>
+        <div class="built"><div class="k">4-role portal</div><p>Admin / executive / operator / member dashboards with walled-off, per-operator data isolation.</p></div>
+        <div class="built"><div class="k">Owner-approval gate</div><p>Hard block on every send / pay / sign / ship &mdash; enforced in code, not policy.</p></div>
+        <div class="built"><div class="k">Credit &amp; funding vertical</div><p>Full intake &rarr; dispute &rarr; funding pipeline, built and held behind legal compliance gates.</p></div>
+      </div>
+      <div class="note" style="margin-top:18px">
+        <strong>Straight talk:</strong> the credit-repair and business-funding features are built but <strong>locked behind compliance gates</strong> (CROA + Virginia Credit Services Businesses Act) until an attorney signs off and registrations are filed. Launch is Virginia-only. We ship the legal way &mdash; that&rsquo;s a moat, not a delay.
+      </div>
+    </div>
+  </section>
+
+  <section class="ask">
+    <div class="container">
+      <div class="sec-head">
+        <span class="pill">The ask</span>
+        <h2>Back the operator who already proved the model.</h2>
+        <p>The last investor got a 50/50 pipeline split and it closed on the spot. The structure is proven &mdash; capital accelerates operators, inventory, and the first 10 full-stack deployments.</p>
+      </div>
+      <div class="ask-box">
+        <div>
+          <h3>What the capital does</h3>
+          <p>&mdash; Onboard and equip operators against a live pipeline.</p>
+          <p>&mdash; Fund the first full-ecosystem ($50K) deployments &mdash; first 10 only.</p>
+          <p>&mdash; Clear the legal path to unlock the credit &amp; funding vertical.</p>
+          <p>&mdash; Deepen the fleet stack &mdash; the proven $90K/mo engine.</p>
+          <a class="btn btn-primary" href="apply.html">Start the conversation &rarr;</a>
+        </div>
+        <div class="ask-proof">
+          <div class="n">50/50</div>
+          <div class="l">The proven deal structure &mdash; entire pipeline shared, already closed once at $50K.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container foot-inner">
+      <span class="foot-tag">AIX<span style="color:var(--blue)">MOS</span> &mdash; For the people. By the people.</span>
+      <span>&copy; 2026 AIXMOS &middot; Confidential investor material. Figures are operator-reported, pre-audit.</span>
+    </div>
+  </footer>
+</body>
+</html>
