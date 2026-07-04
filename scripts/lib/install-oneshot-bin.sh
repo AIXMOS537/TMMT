@@ -34,6 +34,19 @@ EOF
 chmod +x "$BIN/booyah"
 wrap hailmary "$TMMT_REPO/bin/hailmary"
 
+# fleet-wide Claude Code hooks/skills — tracked in-repo, mirrored to every device
+CFG="$TMMT_REPO/scripts/claude-config"
+if [ -d "$CFG/hooks" ] && [ -n "$(ls -A "$CFG/hooks" 2>/dev/null)" ]; then
+  mkdir -p "$HOME/.claude/hooks"
+  rsync -a "$CFG/hooks/" "$HOME/.claude/hooks/"
+  echo "✓ synced shared hooks → ~/.claude/hooks"
+fi
+if [ -d "$CFG/skills" ] && [ -n "$(ls -A "$CFG/skills" 2>/dev/null)" ]; then
+  mkdir -p "$HOME/.claude/skills"
+  rsync -a "$CFG/skills/" "$HOME/.claude/skills/"
+  echo "✓ synced shared skills → ~/.claude/skills"
+fi
+
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   [ -e "$rc" ] || touch "$rc"
   if ! grep -q 'TMMT_LOCAL_BIN' "$rc" 2>/dev/null; then

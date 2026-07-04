@@ -26,6 +26,12 @@ operator to orchestrator — build for delegation, not hand-holding.
 - Owner-approval primitives live in shared lib; reuse them, don't reinvent per feature.
 - Compliance gates are code, not comments — keep them in the gate modules.
 - Commit style: short imperative subject. Reference the stack touched (rental/credit/ecom).
+- **No sensitive/third-party data in git.** Never commit PII, financials, secrets, or
+  one-time sweep dumps (`_SWEEP_ARCHIVE_*/` is gitignored). A tree-level `git rm` still
+  leaves blobs in history — purge with `scripts/scrub-history.sh` (runbook:
+  `docs/security/HISTORY-SCRUB-RUNBOOK.md`).
+- Standalone static deliverables live in `tools/` (e.g. `tools/aixmos-build-page/` — the
+  operator build page), excluded from Vercel deploys by `scripts/vercel-ignore.sh`.
 
 ## ARCHITECTURE (nouns)
 - **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,

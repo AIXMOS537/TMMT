@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-27
 **Status:** Approved design, ready for implementation plan
-**Owner:** PROJECT X HAILMARY
+**Owner:** X
 **Spec sits within:** AIXMOS Rescue Dispatch SaaS (10-subproject portfolio; this is #1)
 
 ---

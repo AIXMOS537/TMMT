@@ -91,7 +91,7 @@ Sync complete: 22/25 tables synced | 1,453 records inserted | 1 failed
 
 ```bash
 # Add token to .env first:
-# AIRTABLE_PAT=REDACTED-AIRTABLE-PAT
+# AIRTABLE_PAT=AIRTABLE_PAT_REVOKED...
 
 # Live sync
 node --env-file=.env scripts/sync-airtable.mjs
