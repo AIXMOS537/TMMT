@@ -145,8 +145,14 @@ export function computeFleetEconomics(
   perVehicle.sort((a, b) => b.net - a.net);
 
   const fleetSize = vehicles.length;
-  const totalRevenue = round2(perVehicle.reduce((s, v) => s + v.revenue, 0));
-  const totalCost = round2(perVehicle.reduce((s, v) => s + v.cost, 0));
+  // Totals come from the RAW inputs, not from the sum of per-vehicle rows, so a
+  // payment/expense whose vehicle name doesn't match a fleet row is still counted
+  // in the fleet's money. (Per-vehicle attribution stays best-effort by name, so
+  // perVehicle may not sum exactly to these totals when data isn't fully tagged.)
+  const totalRevenue = round2(
+    revenue.reduce((s, r) => s + (r.counts ? Number(r.amount) || 0 : 0), 0)
+  );
+  const totalCost = round2(costs.reduce((s, c) => s + (Number(c.amount) || 0), 0));
   const netProfit = round2(totalRevenue - totalCost);
 
   return {

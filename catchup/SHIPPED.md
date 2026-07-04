@@ -12,8 +12,13 @@ waits for your YES. Owner-only page with Approve / Reject, backed by a real
 `gated_actions` table + guarded server actions. No auto-approve path anywhere.
 **Turn on:** apply the migration `supabase/migrations/20260628120000_gated_actions.sql`
 to Supabase, then sign in as owner and open `/approvals`.
-**Enforce it on outbound SMS:** set `OWNER_APPROVAL_ENFORCE=1` — the B3 agent then
-queues texts to the console instead of sending. Off by default (nothing changes until you flip it).
+**Enforce it on outbound SMS:** set `OWNER_APPROVAL_ENFORCE=1` — B3's reply is then
+**held** (logged with a `held_for_owner_approval` flag, not spoken back to the customer)
+and recorded as a pending action in `/approvals`. Wired on the real path (the TwiML
+reply in `api/agent/sms/inbound`), not just the `sendSms` primitive. Off by default.
+Note: approving records the decision; auto-delivering the approved text is the next
+step (it does not send on approve yet) — but nothing auto-sends without you, which is
+the whole point.
 
 ## 2. M1 brain — go live and PROVE it  ·  `scripts/brain-live.sh`
 **What:** one command on the carry Mac that starts Ollama, pulls the model, runs a

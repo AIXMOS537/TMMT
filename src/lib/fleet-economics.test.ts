@@ -97,6 +97,23 @@ describe("computeFleetEconomics", () => {
     expect(e.perVehicle[0].name).toBe("Model 3");
   });
 
+  it("counts revenue/cost that doesn't match a vehicle in the fleet TOTALS", () => {
+    // A payment attributed to a vehicle not in the fleet, and an untagged cost.
+    const rev2: RevenueInput[] = [
+      ...revenue,
+      { vehicle: "Ghost Car", amount: 1000, counts: true },
+    ];
+    const costs2: CostInput[] = [...costs, { vehicle: null, amount: 50 }];
+    const e2 = computeFleetEconomics(vehicles, rev2, costs2);
+    // Totals include the unmatched money…
+    expect(e2.totalRevenue).toBe(3300); // 2300 + 1000
+    expect(e2.totalCost).toBe(750); // 700 + 50
+    expect(e2.netProfit).toBe(2550);
+    // …but no phantom vehicle row is invented.
+    expect(e2.perVehicle.find((v) => v.name === "Ghost Car")).toBeUndefined();
+    expect(e2.perVehicle).toHaveLength(vehicles.length);
+  });
+
   it("handles an empty fleet without NaN/Infinity", () => {
     const empty = computeFleetEconomics([], [], []);
     expect(empty.fleetSize).toBe(0);
