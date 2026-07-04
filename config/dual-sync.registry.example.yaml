@@ -10,7 +10,7 @@ schema_version: 1
 
 principals:
   taha:
-    display_name: "PROJECT X HAILMARY"
+    display_name: "Owner Name"
     tier: owner                    # owner | founding_operator | operator | agency_owner
     org_slug: aixmos
     brain_mesh: brainiac-mac
@@ -24,7 +24,7 @@ principals:
     voice_ladder_default: draft
 
   moe-legacy:
-    display_name: "Muhammad Umar"
+    display_name: "Founding Operator"
     tier: founding_operator        # fenced; founding terms in OFFER-STACK
     org_slug: moe-legacy
     brain_mesh: brainiac-mac       # hosted on owner spine until own brain paid

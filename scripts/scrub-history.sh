@@ -82,8 +82,10 @@ git filter-repo --path "$PURGE_PATH" --invert-paths --force
 
 # filter-repo strips the remote by design; restore and force-push.
 git remote get-url origin >/dev/null 2>&1 || git remote add origin "$ORIGIN_URL"
-git push --force --all origin
-git push --force --tags origin
+# The pre-push guard (scripts/hooks/pre-push, #123) refuses to force-push master
+# unless this override is set — which is exactly the deliberate recovery it's for.
+ALLOW_FORCE_MASTER=1 git push --force --all origin
+ALLOW_FORCE_MASTER=1 git push --force --tags origin
 
 grn "Done. History rewritten and force-pushed."
 echo "Next: notify collaborators to re-clone; rebase open branches; rotate any exposed secrets."
