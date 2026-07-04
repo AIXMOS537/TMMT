@@ -123,14 +123,38 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
 
+    // Owner-approval gate (root CLAUDE.md §2). When enforcement is on, the agent's
+    // reply is NOT spoken back to the customer — it's logged as held and recorded as
+    // a pending gated action for the owner to approve in /approvals. Default-off, so
+    // behavior is unchanged until OWNER_APPROVAL_ENFORCE=1.
+    const holdForApproval =
+      process.env.OWNER_APPROVAL_ENFORCE === '1' && !!result.outboundBody
+
     if (result.outboundBody) {
       await db.from('agent_messages').insert({
         conversation_id: conv.id,
         direction: 'out',
         body: result.outboundBody,
-        compliance_flags: result.complianceFlags,
+        compliance_flags: holdForApproval
+          ? [...result.complianceFlags, 'held_for_owner_approval']
+          : result.complianceFlags,
         llm_assessment: result.llmAssessment ?? null,
       })
+      if (holdForApproval) {
+        const { recordPendingAction } = await import('@/lib/approvals')
+        await recordPendingAction(
+          'customer_message',
+          {
+            channel: 'sms',
+            to: from,
+            body: result.outboundBody,
+            organizationId: org.id,
+            leadId: lead.id,
+            conversationId: conv.id,
+          },
+          'b3-sms-agent',
+        ).catch((err) => console.error('[agent/sms/inbound] approval queue failed', err))
+      }
     }
 
     if (result.newState === 'HUMAN_HANDOFF') {
@@ -142,7 +166,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       }).catch(() => undefined)
     }
 
-    return xmlResp(twiml(result.outboundBody ?? ''))
+    return xmlResp(twiml(holdForApproval ? '' : (result.outboundBody ?? '')))
   } catch (e) {
     if (
       e instanceof LicenseDisabledError ||
