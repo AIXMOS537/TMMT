@@ -121,9 +121,11 @@ board_edit() {
       "$mutate" "$tmp/$BOARD_FILE"
       git add -A
       git diff --cached --quiet && exit 0
-      # [skip ci] = belt-and-suspenders: if a Vercel git connection is ever
+      # [vercel skip] = belt-and-suspenders: if a Vercel git connection is ever
       # re-added, coordination pushes must NEVER trigger a deploy (quota guard).
-      git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: update coordination state [skip ci]"
+      # NOTE: Vercel does NOT honor [skip ci] (GitHub-Actions convention) — proven
+      # 2026-07-03 when tmmt-ops showed BLOCKED deployments for every coord push.
+      git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: update coordination state [skip ci] [vercel skip]"
       git push -q origin "HEAD:$COORD_BRANCH"
     ) || rc=$?
     git worktree remove --force "$tmp" 2>/dev/null || rm -rf "$tmp"
