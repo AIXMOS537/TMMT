@@ -49,6 +49,9 @@ export class LlmTimeoutError extends Error {
 // regeneration triggers a second/third call. 8s × 3 max calls = 24s
 // worst case for the LLM phase, but typical p99 single calls are ~3s.
 const DEFAULT_TIMEOUT_MS = 8_000
+// Local models load into RAM and run on the M1 — more headroom than the cloud
+// path, still bounded so the SMS route never hangs past Twilio's window.
+const LOCAL_TIMEOUT_MS = 20_000
 
 export interface CallResult {
   parsed: LLMOutput
@@ -57,11 +60,100 @@ export interface CallResult {
   model: ModelKey
   inputTokens: number
   outputTokens: number
+  /** Which provider actually served the call. 'local' = zero marginal cost. */
+  provider?: 'local' | 'anthropic'
 }
 
+/**
+ * Router entry point. LOCAL-FIRST per the AIXMOS mandate: if a local brain
+ * (Ollama on the M1) is configured via LOCAL_BRAIN_URL / POCKET_BRAIN_URL, try
+ * it first at zero token cost, then fall back to Anthropic on any failure. When
+ * no local URL is set it behaves exactly as before (Anthropic only), so existing
+ * deployments and tests are unchanged until the brain is wired.
+ */
 export async function callAgent(args: CallArgs): Promise<CallResult> {
+  const localUrl = process.env.LOCAL_BRAIN_URL || process.env.POCKET_BRAIN_URL
+  const localDisabled = process.env.LOCAL_BRAIN_DISABLE === '1'
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is required')
+
+  if (localUrl && !localDisabled) {
+    try {
+      return await callLocalBrain(args, localUrl)
+    } catch (err) {
+      if (!apiKey) throw err // nothing to fall back to
+      // otherwise fall through to the cloud path
+    }
+  }
+
+  if (!apiKey) {
+    throw new Error('No LLM configured: set LOCAL_BRAIN_URL (Ollama) or ANTHROPIC_API_KEY')
+  }
+  return callAnthropic(args, apiKey)
+}
+
+/** Local Ollama path (OpenAI-compatible /v1/chat/completions). Zero token cost. */
+export async function callLocalBrain(args: CallArgs, url: string): Promise<CallResult> {
+  const model =
+    process.env.LOCAL_BRAIN_MODEL || process.env.POCKET_BRAIN_MODEL || 'qwen2.5:14b'
+  const timeoutMs = args.timeoutMs ?? LOCAL_TIMEOUT_MS
+  const maxRetries = args.maxRetries ?? 1
+
+  let lastErr: Error | null = null
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    let text: string
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: args.systemPrompt },
+            { role: 'user', content: args.userMessage },
+          ],
+          temperature: 0.2,
+          max_tokens: 600,
+          stream: false,
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error(`local brain HTTP ${res.status}`)
+      const data = (await res.json()) as {
+        choices?: { message?: { content?: string } }[]
+      }
+      text = (data.choices?.[0]?.message?.content ?? '').trim()
+    } catch (err) {
+      clearTimeout(timer)
+      if (controller.signal.aborted) throw new LlmTimeoutError(timeoutMs)
+      throw err
+    }
+    try {
+      const parsed = LLMOutputSchema.parse(JSON.parse(extractJson(text)))
+      return {
+        parsed,
+        raw: text,
+        costUsd: 0,
+        model: args.model,
+        provider: 'local',
+        inputTokens: 0,
+        outputTokens: 0,
+      }
+    } catch (e) {
+      lastErr = e as Error
+      if (attempt === maxRetries) {
+        throw new Error(
+          `local brain output failed schema after ${attempt + 1} attempts: ${(e as Error).message}\nRaw: ${text}`,
+        )
+      }
+    }
+  }
+  throw lastErr ?? new Error('unreachable')
+}
+
+async function callAnthropic(args: CallArgs, apiKey: string): Promise<CallResult> {
   const client = new Anthropic({ apiKey })
   const modelId = MODELS[args.model]
   const maxRetries = args.maxRetries ?? 1
@@ -101,7 +193,7 @@ export async function callAgent(args: CallArgs): Promise<CallResult> {
       const inT = resp.usage.input_tokens
       const outT = resp.usage.output_tokens
       const costUsd = inT * PRICE_PER_TOKEN[args.model].in + outT * PRICE_PER_TOKEN[args.model].out
-      return { parsed, raw: text, costUsd, model: args.model, inputTokens: inT, outputTokens: outT }
+      return { parsed, raw: text, costUsd, model: args.model, provider: 'anthropic', inputTokens: inT, outputTokens: outT }
     } catch (e) {
       lastErr = e as Error
       if (attempt === maxRetries) {
@@ -112,7 +204,7 @@ export async function callAgent(args: CallArgs): Promise<CallResult> {
   throw lastErr ?? new Error('unreachable')
 }
 
-function extractJson(text: string): string {
+export function extractJson(text: string): string {
   // Strip markdown code fences if present
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
   if (fenced) return fenced[1]
