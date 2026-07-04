@@ -1,3 +1,4 @@
 # email,vertical,stage,name
-# Moe Legacy founding admin (Umar) — run with --dry-run first, then --apply when contract signed
-umar47002@yahoo.com,moe-legacy,admin,Muhammad Umar
+# Example only — replace with the real founding admin locally; run --dry-run first,
+# then --apply when the contract is signed. Do not commit real emails/names.
+founder@example.com,moe-legacy,admin,Founding Admin
