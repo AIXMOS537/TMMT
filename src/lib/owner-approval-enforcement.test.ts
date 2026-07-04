@@ -32,7 +32,9 @@ function walk(dir: string): string[] {
   return out;
 }
 
-const GATE = /assertApproved|ownerApproved|evaluateSmsCompliance|SmsOwnerApprovalRequired|owner-approval-gate|requiresOwnerApproval/;
+// Any of these count as "routed through the owner-approval / compliance gate".
+// assertSmsAllowed = the canonical shared gate (shared/compliance-gates/sms-gate).
+const GATE = /assertSmsAllowed|SmsBlockedError|assertApproved|ownerApproved|owner_approved|owner-approval-gate|shared\/compliance-gates/;
 
 const importsTwilio = /from\s+['"]twilio['"]|require\(\s*['"]twilio['"]\s*\)/;
 const importsStripe = /from\s+['"]stripe['"]|from\s+['"]@stripe/;

@@ -1,6 +1,6 @@
 import Twilio from 'twilio'
 import { isRateLimited } from '@/lib/rate-limit'
-import { evaluateSmsCompliance, type SmsMessageType } from '@/lib/agent/sms-compliance-gate'
+import { assertSmsAllowed, SmsBlockedError, type SmsType } from '../../../shared/compliance-gates/sms-gate'
 
 export interface SendSmsArgs {
   from: string
@@ -9,15 +9,11 @@ export interface SendSmsArgs {
   organizationId?: string
   twilioAccountSid?: string
   twilioAuthToken?: string
-  /** Vertical slug or compliance category — gates restricted-vertical promotional SMS. */
-  vertical?: string | null
-  /** Defaults to "transactional" (safe). "marketing" on a restricted vertical is blocked. */
-  messageType?: SmsMessageType
-  /**
-   * Owner approval for THIS send. Per the owner-approval gate (CLAUDE.md §2), no
-   * customer-facing message goes out without it: a "marketing" send requires
-   * ownerApproved === true or it is HELD (throws). Transactional sends don't.
-   */
+  /** Use-case/vertical, e.g. "rentals" | "credit_repair" | "funding". Drives the SMS compliance gate. */
+  vertical?: string
+  /** Carrier message class. Defaults to "transactional" — the safe default. */
+  type?: SmsType
+  /** True only after an owner has explicitly approved a marketing send. */
   ownerApproved?: boolean
 }
 
@@ -25,20 +21,6 @@ export class TwilioRateLimitedError extends Error {
   constructor(public organizationId: string) {
     super(`Twilio send rate-limited for organization=${organizationId}`)
     this.name = 'TwilioRateLimitedError'
-  }
-}
-
-export class SmsComplianceBlockedError extends Error {
-  constructor(public reason: string) {
-    super(`SMS blocked by compliance gate: ${reason}`)
-    this.name = 'SmsComplianceBlockedError'
-  }
-}
-
-export class SmsOwnerApprovalRequiredError extends Error {
-  constructor(public reason: string) {
-    super(`SMS held for owner approval: ${reason}`)
-    this.name = 'SmsOwnerApprovalRequiredError'
   }
 }
 
@@ -51,19 +33,18 @@ export class SmsOwnerApprovalRequiredError extends Error {
  * not on the inbound path.
  */
 export async function sendSms(args: SendSmsArgs): Promise<{ sid: string }> {
-  // Owner-approval + A2P/CROA gate, enforced at send-time:
-  //  • BLOCK → promotional SMS on a restricted vertical (carrier + CROA): refuse.
-  //  • HOLD  → a marketing message awaiting owner approval: refuse until approved.
-  // Marketing sends require explicit owner approval (CLAUDE.md §2); transactional
-  // sends (the safe default) do not.
-  const gate = evaluateSmsCompliance({
-    vertical: args.vertical,
-    messageType: args.messageType,
-    requiresOwnerApproval: args.messageType === 'marketing',
-    ownerApproved: args.ownerApproved,
+  // Compliance gate FIRST (shared/compliance-gates/sms-gate). BLOCKs promotional
+  // SMS for A2P-restricted verticals (credit/funding/debt/lending) — throws
+  // SmsBlockedError — and HOLDs un-approved marketing. Transactional is the safe
+  // default, so callers that don't pass vertical/type are unaffected.
+  const gate = assertSmsAllowed({
+    vertical: args.vertical ?? '',
+    type: args.type ?? 'transactional',
+    owner_approved: args.ownerApproved,
   })
-  if (gate.decision === 'BLOCK') throw new SmsComplianceBlockedError(gate.reason)
-  if (gate.decision === 'HOLD') throw new SmsOwnerApprovalRequiredError(gate.reason)
+  if (gate.decision === 'HOLD') {
+    throw new SmsBlockedError(gate.reason)
+  }
 
   const sid = args.twilioAccountSid ?? process.env.TWILIO_ACCOUNT_SID
   const tok = args.twilioAuthToken ?? process.env.TWILIO_AUTH_TOKEN
