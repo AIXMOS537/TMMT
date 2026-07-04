@@ -7,12 +7,10 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Decide Aayan's access as Lieutenant — he currently has almost none.** I audited every
-system: he has a platform **login** (`aayan.khan.6449@gmail.com`, signed in once 6/14)
-with **ZERO roles**, an **empty "Khan Strategies LLC" org shell** (no members), and a
-6/4 welcome email. **No GitHub, no mesh tag, no license/kill-switch payload, no secrets.**
-Nothing over-granted. Say the word and I attach him as fenced `tenant_admin` of his org
-(your gates + kill-switch intact) — or hold.
+**Tell Aayan he's live.** Done: he's now `tenant_admin` of **Khan Strategies LLC**
+(fenced to his own org; your break-glass/gates/kill-switch intact). He logs in at the
+operator portal with `aayan.khan.6449@gmail.com`. Send him that + a one-line "you're the
+lieutenant, here's your org." Everything else is held and safe.
 
 ---
 
@@ -39,7 +37,7 @@ Nothing over-granted. Say the word and I attach him as fenced `tenant_admin` of 
 
 | What | State | Whose move |
 |---|---|---|
-| Aayan access — **audited 2026-06-27** | Login only, **0 roles**; empty Khan Strategies org; no GitHub/mesh/secrets. Nothing dangerous. | Yours — grant or hold |
+| Aayan access | **GRANTED `tenant_admin` of Khan Strategies LLC (2026-07-04)** — fenced; X keeps break-glass/gates/kill-switch | Send him login |
 | Moe Legacy (all work) | **FROZEN until paid** — org suspended in Supabase | Moe (pay up) → then yours to unfreeze |
 | Commission model guardrail | Pay on real collected sales only — never recruitment/"staying on" (anti-pyramid) | Watch on build |
 | Leak risk: old rental builder ships too much | Caught + stopped. Needs allowlist rebuild before ANY handoff. | Mine (on your go) |
