@@ -7,11 +7,13 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Nothing required of you. Rest — I've got it.** (2026-07-04) X is in full orchestrator
-mode: the brain + Rick + the army run all non-gated work. The only things that will ever
-reach you are the irreversible ones (money / sign / customer blast / prod / legal gate),
-pre-drafted as a one-tap yes/no. **One optional word when you want it:** should approvals
-route to Nightwing while you're out, or stay one-tap with you? Until you say — gate = you.
+**On the M1, run ONE line to wake Rick:** `cd ~/Projects/TMMT && git pull && bash scripts/rick-up`
+That installs Ollama, starts it, pulls the model, and brings Rick online — then
+`bash scripts/rick chat`. (Or hand that line to Nightwing/the army to run.)
+
+_You're in full orchestrator mode (2026-07-04): brain + Rick + army run all non-gated
+work; only irreversible actions (money/sign/customer/prod/legal) reach you as one-tap
+yes/no. Optional when you want: route approvals to Nightwing, or keep one-tap with you._
 
 ---
 

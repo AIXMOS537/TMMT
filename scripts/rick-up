@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# rick-up — one command to bring Rick fully online on the Owner's Mac (Apple Silicon).
+#
+#   bash scripts/rick-up
+#
+# Idempotent + self-healing: installs Ollama if missing, starts the local server,
+# pulls the model, then wakes Rick. Safe to re-run anytime. Local-first, no cloud.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
+RICK_MODEL="${RICK_MODEL:-qwen2.5:14b}"
+
+g(){ printf '\033[32m✓\033[0m %s\n' "$*"; }; y(){ printf '\033[33m!\033[0m %s\n' "$*"; }
+r(){ printf '\033[31m✗\033[0m %s\n' "$*"; }; step(){ printf '\n\033[1m▸ %s\033[0m\n' "$*"; }
+up(){ curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
+
+cat <<'EOF'
+
+   ╔══════════════════════════════════════════════════╗
+   ║   R I C K   —   O N E - S H O T   B O O T         ║
+   ╚══════════════════════════════════════════════════╝
+EOF
+
+# 1. Ollama installed?
+step "1/4  Local brain (Ollama)"
+if command -v ollama >/dev/null 2>&1; then
+  g "ollama present"
+elif [ "$(uname -s)" = "Darwin" ]; then
+  if command -v brew >/dev/null 2>&1; then
+    y "installing ollama via Homebrew…"; brew install ollama || { r "brew install failed — install manually: https://ollama.com/download"; exit 1; }
+    g "ollama installed"
+  else
+    r "Homebrew not found. Install Homebrew first (one line):"
+    echo '   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    echo "   …then re-run: bash scripts/rick-up"; exit 1
+  fi
+else
+  r "Not macOS. Install Ollama for your OS: https://ollama.com/download  then re-run."; exit 1
+fi
+
+# 2. Server up? (start it in the background if not)
+step "2/4  Start the server"
+if up; then g "server already up ($OLLAMA_URL)"; else
+  y "starting 'ollama serve' in the background…"
+  nohup ollama serve >/tmp/ollama-rick.log 2>&1 &
+  for i in 1 2 3 4 5 6 7 8 9 10; do sleep 1; up && break; done
+  if up; then g "server up"; else r "couldn't reach server — see /tmp/ollama-rick.log"; exit 1; fi
+fi
+
+# 3. Model pulled?
+step "3/4  Model ($RICK_MODEL)"
+if curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -q "\"name\":\"$RICK_MODEL\""; then
+  g "model ready"
+else
+  y "pulling $RICK_MODEL (one-time, a few GB — grab coffee)…"
+  ollama pull "$RICK_MODEL" || { r "pull failed — check network, then re-run"; exit 1; }
+  g "model pulled"
+fi
+
+# 4. Wake Rick
+step "4/4  Wake Rick"
+exec bash "$ROOT/scripts/rick" wake
