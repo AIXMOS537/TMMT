@@ -36,7 +36,21 @@ export interface BuildPageModule {
 export const LEGAL_FLAGS = ['credit_repair', 'funding'] as const;
 export type LegalFlag = typeof LEGAL_FLAGS[number];
 
-export const BUILD_PAGE_MODULES: BuildPageModule[] = (config.modules as any[]).map((m) => ({
+/** Raw shape of a module entry in aixmos.config.json (snake_case `maps_to`). */
+interface RawBuildPageModule {
+  key: string;
+  name: string;
+  blurb: string;
+  categories?: string[];
+  gated?: boolean;
+  flags?: string[];
+  approvers?: ApproverRole[];
+  maps_to?: string;
+}
+
+export const BUILD_PAGE_MODULES: BuildPageModule[] = (
+  config.modules as unknown as RawBuildPageModule[]
+).map((m) => ({
   key: m.key,
   name: m.name,
   blurb: m.blurb,
