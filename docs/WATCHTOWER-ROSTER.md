@@ -12,13 +12,13 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
 | 🛡️ **The Boss** | **Muhammad Taha** (Owner) | **Ops, everywhere** — checks in on systems, sets direction | 🔧 Operations (all verticals) |
 | 🧠 **Brainiac** | **BRAINIAC 7** (always-on brain node) | the memory + control-plane host (Fatherbox lives here) | Command center body |
 | 🦅 **Nightwing** | **Ayyan Khan** — field-operations lead / first lieutenant | runs operators on the ground; relays Watchtower ↔ Crew | Field ops |
-| 🐦‍⬛ **Red Hood** | **Umar** — MoeLegacy owner | **Credit repair / guidance** | 📈 Credit Guidance |
+| 📈 **Credit Desk** | **house vertical** (Taha-owned) | **Credit guidance / funding referral** | 📈 Credit Guidance |
 | 🚗 **The Crew** | the team + new operators (more pending down the pipeline) | **Car rentals + the other TMMT verticals** | 🚗 Rental · business systems · funding |
 | 🦇 **Batman** | the guardian in the back | **E-commerce** — and keeping everyone safe | 🛒 E-commerce · protection |
 
 > The global mesh is **protected by AIXMOS Agents of Chaos**, run by **TMMT
 > operators**, and **watched over by the guardians above** (Cyborg both versions,
-> Brainiac, Batman, Red Hood, Nightwing). More operators pending down the pipeline —
+> Brainiac, Batman, Nightwing). More operators pending down the pipeline —
 > each joins **fenced**, then earns their post.
 
 ## How the League maps to the machine
@@ -28,8 +28,8 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
   `fix`, `mesh`. Cyborg sees everything and reports up to the Boss.
 - **🛡️ The Boss = owner authority.** Sealed (`auth/OWNER.seal`). Moves device to
   device, checks systems, holds the only word that grants owner or lifts `dark`.
-- **🐦‍⬛ Red Hood (Umar) = Credit Guidance.** Compliance vocabulary is law —
-  **"guidance," never "repair"** in any customer-facing surface.
+- **📈 Credit Guidance = house vertical (Taha-owned).** Compliance vocabulary is
+  law — **"guidance," never "repair"** in any customer-facing surface.
 - **🚗 The Crew = rentals + verticals.** Operators are deployed **fenced /
   least-privilege** (`bash scripts/deploy operator`); new ones onboard via the
   Pocket Card + `docs/DEPLOY-EVERYWHERE.md`.
@@ -48,9 +48,9 @@ that powers it. Verticals are **locked** (see `docs/SYSTEM-BLUEPRINT.md`).
             🛡️ THE BOSS (Owner · Ops)
                      │  holds the word
         ┌────────────┼─────────────┬───────────────┐
-   🐦‍⬛ Red Hood    🚗 The Crew     🦇 Batman      🦾 Cyborg
+   📈 Credit Desk   🚗 The Crew     🦇 Batman      🦾 Cyborg
    Credit Guidance  Rentals/verticals  E-commerce   watches it all
-                     + operators        + safety    (AIXMOS/HAILMARY)
+   (Taha-owned)      + operators        + safety    (AIXMOS/HAILMARY)
 ```
 
 > Codenames are roles, not silos — everyone protects everyone. Cyborg watches,
