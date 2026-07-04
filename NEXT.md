@@ -7,10 +7,11 @@
 ---
 
 ## ▶ THE NEXT MOVE
-**Tell Aayan he's live.** Done: he's now `tenant_admin` of **Khan Strategies LLC**
-(fenced to his own org; your break-glass/gates/kill-switch intact). He logs in at the
-operator portal with `aayan.khan.6449@gmail.com`. Send him that + a one-line "you're the
-lieutenant, here's your org." Everything else is held and safe.
+**Nothing required of you. Rest — I've got it.** (2026-07-04) X is in full orchestrator
+mode: the brain + Rick + the army run all non-gated work. The only things that will ever
+reach you are the irreversible ones (money / sign / customer blast / prod / legal gate),
+pre-drafted as a one-tap yes/no. **One optional word when you want it:** should approvals
+route to Nightwing while you're out, or stay one-tap with you? Until you say — gate = you.
 
 ---
 

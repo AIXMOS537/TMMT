@@ -47,6 +47,13 @@ operator to orchestrator — build for delegation, not hand-holding.
   room for Taha's voice; nothing releases without a per-piece owner gate. Spec: `docs/OWNER-VOICE-VAULT.md`.
 - **Handoff hygiene:** the rental builder over-ships (would leak HAILMARY/Project-X/financials).
   Any partner bundle needs an **allowlist** rebuild + leak-check before ANY files go out.
+- **OPERATING MODE (2026-07-04): X → full orchestrator.** Taha steps back from operational
+  grind; the brain + **Rick Sorkin** + the agent army run ALL non-gated work autonomously
+  (build/draft/research/integrate/fix/organize/watch). **The owner-approval gate stays the
+  SOLE human checkpoint and remains X's** — send money / sign / blast customers / ship to
+  prod / flip legal gates still need X's tap (tee them up as one-tap, pre-drafted). Do NOT
+  disable the gate or let an agent self-approve a gated action. Approver delegation to
+  Nightwing = pending X's word; until then, gate = X.
 
 ## REPO CONVENTIONS
 - TypeScript + Python. Shared schemas are the contract — change schema first, then
