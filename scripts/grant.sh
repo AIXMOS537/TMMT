@@ -12,6 +12,7 @@ set -uo pipefail
 B(){ printf "\033[1m%s\033[0m\n" "$1"; }
 G(){ printf "\033[42;30m %s \033[0m\n" "$1"; }
 Y(){ printf "\033[43;30m %s \033[0m\n" "$1"; }
+R(){ printf "\033[41;97m %s \033[0m\n" "$1"; }
 dim(){ printf "\033[2m%s\033[0m\n" "$1"; }
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 GR="$ROOT/.aixmos/grants"; mkdir -p "$GR"
@@ -22,7 +23,10 @@ if [ "${1:-}" = "list" ]; then
 fi
 
 # find the card
-F="${1:-}"
+# --no-car = a non-car role (e.g. a setter) that will never touch a vehicle, so
+# the dealership-license requirement doesn't apply. You must declare it on purpose.
+NOCAR=false; F=""
+for a in "$@"; do case "$a" in --no-car) NOCAR=true;; *) [ -z "$F" ] && F="$a";; esac; done
 if [ -z "$F" ]; then
   F="$(ls -t "$HOME/Desktop"/TMMT-onboarding-*.txt "$HOME/Downloads"/TMMT-onboarding-*.txt "$ROOT/.aixmos/operators"/*.md 2>/dev/null | head -1)"
 fi
@@ -33,7 +37,25 @@ NAME="$(head -1 "$F" | sed -E 's/.*ONBOARDING[ ]*[—-]+[ ]*//; s/^# *//; s/Onbo
 [ -n "$NAME" ] || NAME="$(get name)"; [ -n "$NAME" ] || NAME="$(basename "$F")"
 ROLE="$(get role)"; ROLE="${ROLE:-operator}"
 OWNS="$(get owns)"; STEP="$(get first_step)"; CONF="$(get confidentiality_agreed)"
+SPONSOR="$(get sponsored_by)"; SPONSOR="${SPONSOR:-X (owner)}"  # who vouched / opened the door
+LICENSE="$(get dealership_license)"; [ -n "$LICENSE" ] || LICENSE="$(get dealer_license)"
 slug="$(printf '%s' "$NAME" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+
+# ── THE MINIMUM REQUIREMENT — hard block ─────────────────────────────────────
+# No dealership license, no grant. The only exception is a consciously-declared
+# non-car role (--no-car). A car partner without a license can NEVER be granted.
+if [ -z "$LICENSE" ] && ! $NOCAR; then
+  clear 2>/dev/null || true
+  R "⛔ BLOCKED — $NAME has NO dealership license on file."
+  echo
+  B "The minimum requirement isn't met. No license, no grant. No exceptions."
+  dim "  • A car partner MUST be a licensed dealer (your protection: their insurance,"
+  dim "    their bonding, their liability — not yours)."
+  dim "  • Get their license # on the card as:  dealership_license: <number>"
+  dim "  • Non-car role (e.g. a setter who never touches a vehicle)? Then run:"
+  dim "      bash scripts/grant.sh \"$F\" --no-car"
+  exit 1
+fi
 
 clear 2>/dev/null || true
 B "════════════ GRANT REVIEW ════════════"
@@ -41,6 +63,8 @@ echo "  👤 Name : $NAME"
 echo "  🎒 Role : $ROLE"
 echo "  💼 Owns : ${OWNS:-—}"
 echo "  👣 First: ${STEP:-—}"
+if $NOCAR; then printf "  🚗 Dealer license : %s\n" "n/a — non-car role (--no-car)"
+else            printf "  🚗 Dealer license : %s\n" "$LICENSE  ✓"; fi
 printf "  🔒 Confidential agreed : %s\n" "$([ -n "$CONF" ] && echo yes || echo '? (check card)')"
 echo
 B "Say the word, boss. Grant $NAME access?"
@@ -61,6 +85,9 @@ REC="$GR/${slug}-GRANTED.md"
 cat > "$REC" <<EOF
 # GRANTED — $NAME ($ROLE)
 granted_by: X (owner)
+sponsored_by: $SPONSOR
+dealership_license: ${LICENSE:-n/a (non-car role)}
+partnership: 1 car · 50/50 after owner cost-recovery (title stays with X)
 at: $(date -u +%FT%TZ)
 scope: $ENVN
 tailnet_tag: $TAG

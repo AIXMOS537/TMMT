@@ -59,7 +59,7 @@ brew install git-filter-repo        # or: pipx install git-filter-repo
 
 # 2. make a LOCAL replacements file (gitignored; delete after). One secret per line:
 #    <literal-secret>==><REPLACEMENT>
-printf '%s\n' 'REDACTED-AIRTABLE-PAT==>AIRTABLE_PAT_REDACTED' > /tmp/replacements.txt
+printf '%s\n' '<paste-the-leaked-token-here>==>SECRET_REVOKED' > /tmp/replacements.txt
 #    (paste the FULL real values here locally — never commit this file)
 
 # 3. rewrite all history

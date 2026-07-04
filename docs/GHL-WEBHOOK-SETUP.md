@@ -2,17 +2,13 @@
 
 When a contact is tagged in GHL, mirror activity into TMMT Supabase for owner visibility.
 
-## Endpoint (production)
+## Endpoint
 
 ```
-POST https://tmmt-ops.vercel.app/api/webhooks/ghl
+POST https://<your-domain>/api/webhooks/ghl
 Header: x-ghl-webhook-secret: <GHL_WEBHOOK_SECRET>
 Content-Type: application/json
 ```
-
-Use **`tmmt-ops`**, not `tmmt-command-center` — the command-center deploy returns `307 → /login` on POST (staff auth middleware). Verified 2026-06-09.
-
-For local dev: `POST http://localhost:3000/api/webhooks/ghl`
 
 ## Payload (example)
 
