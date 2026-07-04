@@ -1,8 +1,12 @@
-# RICK SORKIN — Moe Legacy's assistant (owner-controlled)
+# RICK SORKIN — the owner-controlled assistant
 
-> **Owner-only. Never shown to Moe.** Companion to `docs/PROJECT-X-HAILMARY.md`
-> and `docs/OWNER-VOICE-MODEL.md`. Moe only ever meets the **face** (DREAMA /
+> **Owner-only. Never shown to a partner.** Companion to `docs/PROJECT-X-HAILMARY.md`
+> and `docs/OWNER-VOICE-MODEL.md`. Partners/public only ever meet the **face** (DREAMA /
 > AIXMOS). The **brain and the keys are Taha's (X).**
+>
+> **Two states of one tool** (built: `scripts/rick`): on **X's own Mac it serves X directly**
+> (runnable today — `bash scripts/rick-up`); when **licensed to a partner** (e.g. Moe) it
+> serves them while X stays master. **The Moe-facing deployment is FROZEN** with Moe's freeze.
 >
 > Name origin: a sharp operator working under a protected identity. Fits the rule —
 > brilliant in the room, but it is not who holds the title.

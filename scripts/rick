@@ -68,7 +68,7 @@ PROMPT
 }
 
 ollama_up() { [ -n "${RICK_MOCK:-}" ] && return 0; curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
-model_present() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -q "\"name\":\"$RICK_MODEL\""; }
+model_present() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -qF "$RICK_MODEL"; }
 
 preflight() {
   local ok=0
@@ -209,6 +209,7 @@ $(gather_context)"
     echo "  spec   : docs/RICK-SORKIN.md"
     ;;
   help|-h|--help|*)
-    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    # print the whole contiguous comment header (line 2 → first non-comment line)
+    awk 'NR==1{next} /^#/{sub(/^# ?/,"");print;next} {exit}' "$0"
     ;;
 esac

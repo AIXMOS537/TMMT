@@ -31,8 +31,11 @@ yes/no. Optional when you want: route approvals to Nightwing, or keep one-tap wi
 - **TMMT Rentals** = a **sub-account**. Separate company. Taha owns it.
 - **Nightwing (Aayan Khan)** = first lieutenant, now controls-holder under X. Business/contact
   `aayan@khanstrategies.com`; **platform login `aayan.khan.6449@gmail.com`** (org: Khan Strategies LLC).
-- **Moe Legacy** = credit/funding partner — **FROZEN until payment**. Was on
-  MyFreeScoreNow + DisputeFox. Rick Sorkin/agency-layer work is paused with the freeze.
+- **Moe Legacy** = credit/funding partner — **FROZEN until payment**. Runs on his own
+  MyFreeScoreNow + DisputeFox. The **Moe-facing** agency-layer deployment is paused with
+  the freeze. (Rick the tool is BUILT and runs for X now — see below.)
+- **Rick Sorkin** = the assistant. **BUILT & tested**, runs on X's M1 (`scripts/rick`).
+  Face DREAMA/AIXMOS; master = X. Moe-facing deployment paused until Moe pays.
 
 ---
 
@@ -40,6 +43,7 @@ yes/no. Optional when you want: route approvals to Nightwing, or keep one-tap wi
 
 | What | State | Whose move |
 |---|---|---|
+| Rick Sorkin agent | **BUILT + tested** (`scripts/rick`, `rick-up`, `doctor` green). Runs local on M1. | Wake it on the M1 |
 | Aayan access | **GRANTED `tenant_admin` of Khan Strategies LLC (2026-07-04)** — fenced; X keeps break-glass/gates/kill-switch | Send him login |
 | Moe Legacy (all work) | **FROZEN until paid** — org suspended in Supabase | Moe (pay up) → then yours to unfreeze |
 | Commission model guardrail | Pay on real collected sales only — never recruitment/"staying on" (anti-pyramid) | Watch on build |
@@ -75,6 +79,6 @@ Throw anything here at any speed. I sort it and surface the single next move.
 
 ---
 
-_Voice + protection: `docs/OWNER-VOICE-MODEL.md` · `docs/OWNER-VOICE-VAULT.md`._
-_Gates: `shared/compliance-gates/gates.config.json` · WS2: `workstream-2-credit-funding/`._
+_Full record: `docs/MASTER-BRIEF.md` · Voice: `docs/OWNER-VOICE-MODEL.md` · `docs/OWNER-VOICE-VAULT.md`._
+_Gates: `shared/compliance-gates/gates.config.json` · Rick: `docs/RICK-SORKIN.md` · `scripts/rick`._
 _Rule (yours): "simpler, straighter, slower — not louder."_

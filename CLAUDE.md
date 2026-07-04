@@ -20,7 +20,7 @@ operator to orchestrator — build for delegation, not hand-holding.
 - **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
 - **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls.
 
-## CURRENT CANON (updated 2026-06-23 — full record: `docs/MASTER-COMPILE-2026-06-23.md`; live anchor: `NEXT.md`)
+## CURRENT CANON (updated 2026-07-04 — full record: `docs/MASTER-BRIEF.md`; live anchor: `NEXT.md`)
 - **Company map:** AIXMOS = the GHL **agency** (All In One Management; the engine + IP; X owns).
   **TMMT Rentals** = a sub-account (separate auto company; X owns). **Moe Legacy** = a
   credit-repair + funding **partner** (Muhammad Umar/Moe), already operating.
