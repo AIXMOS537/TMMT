@@ -50,6 +50,16 @@ def main():
     history = load_history(a.history)
     messages = [{"role": "system", "content": system}] + history + \
                [{"role": "user", "content": a.message}]
+    # Offline self-test path: exercise the whole assembly (system + memory + gate)
+    # without a live model. Used by `rick doctor`.
+    if os.environ.get("RICK_MOCK"):
+        gated = " [gated-turn: draft+queue]" if a.turn_note else ""
+        print(f"[mock] assembled {len(messages)} msgs (system+{len(history)} history+1 user); "
+              f"received: {a.message}{gated}")
+        save_history(a.history, history + [{"role": "user", "content": a.message},
+                                           {"role": "assistant", "content": "[mock reply]"}])
+        return
+
     body = json.dumps({"model": a.model, "messages": messages, "stream": False}).encode()
 
     req = urllib.request.Request(a.url.rstrip("/") + "/api/chat", data=body,

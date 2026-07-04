@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # rick — Rick Sorkin, brought online with one word on the Owner's Mac (Apple Silicon/M1).
 #
-#   bash scripts/rick wake            ACTIVATE — preflight + greet (run this first)
+#   bash scripts/rick wake            ACTIVATE — preflight + greet, grounded in live state
 #   bash scripts/rick chat            talk to Rick (interactive; Ctrl-D to leave)
 #   bash scripts/rick ask "<msg>"     one-shot question
+#   bash scripts/rick brief           situational brief + top 3 next moves (reads NEXT.md)
+#   bash scripts/rick remember "<n>"  save a note Rick keeps across sessions
+#   bash scripts/rick recall          show what Rick remembers
+#   bash scripts/rick doctor          self-check the whole agent (no live model needed)
 #   bash scripts/rick status          is the local brain up? which model?
 #   bash scripts/rick standby         power down (memory stays)
 #   bash scripts/rick whoami          show identity/config
@@ -63,7 +67,7 @@ STYLE: brief, direct, useful. Give the next move, not a lecture.
 PROMPT
 }
 
-ollama_up() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
+ollama_up() { [ -n "${RICK_MOCK:-}" ] && return 0; curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
 model_present() { curl -fsS --max-time 4 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -q "\"name\":\"$RICK_MODEL\""; }
 
 preflight() {
@@ -106,6 +110,20 @@ rick_say() {
   return $rc
 }
 
+MEM="$RICK_HOME/memory.md"   # owner-local notes Rick keeps across sessions
+remember_note(){ printf -- '- [%s] %s\n' "$(date -u '+%Y-%m-%d %H:%M' 2>/dev/null || echo now)" "$1" >> "$MEM"; }
+gather_context(){
+  local ctx=""
+  [ -f "$ROOT/NEXT.md" ] && ctx+="=== CURRENT STATE (NEXT.md) ===
+$(sed -n '1,55p' "$ROOT/NEXT.md")
+
+"
+  [ -f "$MEM" ] && ctx+="=== RICK'S MEMORY ===
+$(tail -n 40 "$MEM")
+"
+  printf '%s' "$ctx"
+}
+
 cmd="${1:-help}"
 case "$cmd" in
   wake|booyah|activate)
@@ -121,7 +139,8 @@ EOF
     if preflight; then
       echo ""; c_g "  Rick is ready."; c_d "  Talk to him:  bash scripts/rick chat"
       rm -f "$HIST"  # fresh session on wake
-      rick_say "Introduce yourself in 2 lines as Rick to the Boss, then ask what we're moving on." || true
+      rick_say "Introduce yourself in 2 lines as Rick to the Boss. Then, using this current state, give the single most important next move. STATE:
+$(gather_context)" || true
     else
       echo ""; c_y "  Rick is installed but the local brain isn't up yet — do the steps above, then re-run: bash scripts/rick wake"
     fi
@@ -143,6 +162,38 @@ EOF
     shift; [ $# -gt 0 ] || { c_r "usage: bash scripts/rick ask \"<message>\""; exit 1; }
     write_system; ollama_up || { c_r "Local brain not up. Run: ollama serve"; exit 2; }
     rick_say "$*"
+    ;;
+  brief)
+    write_system; ollama_up || { c_r "Local brain not up. Run: bash scripts/rick-up"; exit 2; }
+    rick_say "Give the Boss a tight situational brief: 4 lines max, then the top 3 next moves (mark any that are GATED and need X's tap). Base it ONLY on this state:
+$(gather_context)"
+    ;;
+  remember)
+    shift; [ $# -gt 0 ] || { c_r "usage: bash scripts/rick remember \"<note>\""; exit 1; }
+    remember_note "$*"; c_g "Locked in. Rick will carry that across sessions."
+    ;;
+  recall)
+    if [ -s "$MEM" ]; then echo "Rick remembers:"; cat "$MEM"; else c_d "No notes yet. Add one: bash scripts/rick remember \"...\""; fi
+    ;;
+  doctor)
+    echo "Rick self-check:"; fails=0
+    command -v python3 >/dev/null 2>&1 && c_g "  python3 present" || { c_r "  python3 missing"; fails=$((fails+1)); }
+    python3 -m py_compile "$ROOT/scripts/lib/rick-chat.py" 2>/dev/null && c_g "  chat client compiles" || { c_r "  chat client broken"; fails=$((fails+1)); }
+    write_system; [ -s "$SYS" ] && c_g "  persona/system prompt written" || { c_r "  system prompt failed"; fails=$((fails+1)); }
+    # gate classification
+    TURN_NOTE=""; gate_check "wire \$5000 to a vendor" >/dev/null 2>&1
+    [ -n "$TURN_NOTE" ] && c_g "  owner-gate catches gated intent" || { c_r "  owner-gate MISSED a gated intent"; fails=$((fails+1)); }
+    TURN_NOTE=""; gate_check "help me organize leads" >/dev/null 2>&1
+    [ -z "$TURN_NOTE" ] && c_g "  owner-gate lets free work through" || { c_r "  owner-gate false-positive"; fails=$((fails+1)); }
+    # memory read/write
+    remember_note "doctor self-test note" && grep -q "doctor self-test note" "$MEM" && c_g "  memory read/write" || { c_r "  memory failed"; fails=$((fails+1)); }
+    # full pipeline via mock (no live model needed)
+    if RICK_MOCK=1 python3 "$ROOT/scripts/lib/rick-chat.py" --url "$OLLAMA_URL" --model "$RICK_MODEL" \
+         --system-file "$SYS" --history "$RICK_HOME/.doctor-hist.json" --message "ping" --turn-note "" >/dev/null 2>&1; then
+      c_g "  end-to-end chat pipeline (mock) OK"; rm -f "$RICK_HOME/.doctor-hist.json"
+    else c_r "  chat pipeline broken"; fails=$((fails+1)); fi
+    echo ""
+    if [ "$fails" -eq 0 ]; then c_g "  ALL CHECKS PASS — Rick is sound. Bring the brain up: bash scripts/rick-up"; else c_r "  $fails check(s) failed"; fi
     ;;
   status)
     echo "Rick status:"; preflight || true
