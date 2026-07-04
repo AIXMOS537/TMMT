@@ -1,5 +1,10 @@
 // Tailscale ACL — paste into https://login.tailscale.com/admin/acls
 //
+// ⛔ SOVEREIGNTY NOTE (2026-07-01): MoeLegacy / Muhammad Umar are TERMINAL CUT /
+//    adversarial-fenced. This is a GENERIC least-privilege partner template only —
+//    do NOT recreate a Moe/Umar tag or onboard them with it. Use solely for a
+//    Taha-vetted operator (and Ayyan stays fenced pending out-of-band verification).
+//
 // Per design spec §12. Narrows partner Macs to a tiny set of destinations:
 //   - NAS SMB + NFS
 //   - lic.tmmt.tools (v2; v1 uses Supabase directly)
@@ -13,12 +18,12 @@
 //   - <NAS_TAILNET_IP>   ← from `tailscale status` on the NAS node
 //   - <OWNER_USER>       ← your Tailscale login email
 //
-// Then add the per-partner tag (e.g., tag:partner-moe) under tagOwners.
+// Then add the per-partner tag (e.g., tag:partner-example) under tagOwners.
 // One tag per partner, all owned by autogroup:admin.
 
 {
   "tagOwners": {
-    "tag:partner-moe":    ["autogroup:admin"]
+    "tag:partner-example":    ["autogroup:admin"]
     // future:  "tag:partner-<name>": ["autogroup:admin"]
   },
 
@@ -29,7 +34,7 @@
     // Partner Macs: allow ONLY the narrow lane
     {
       "action": "accept",
-      "src":    ["tag:partner-moe"],
+      "src":    ["tag:partner-example"],
       "dst": [
         "<NAS_TAILNET_IP>:445",            // NAS SMB
         "<NAS_TAILNET_IP>:2049",           // NAS NFS (if used)
@@ -44,20 +49,20 @@
   ],
 
   "tests": [
-    // Verify partner-moe CAN reach the NAS
+    // Verify partner-exampleCAN reach the NAS
     {
-      "src":    "tag:partner-moe",
+      "src":    "tag:partner-example",
       "accept": ["<NAS_TAILNET_IP>:445"]
     },
-    // Verify partner-moe CANNOT reach BRAINIAC
+    // Verify partner-exampleCANNOT reach BRAINIAC
     {
-      "src":  "tag:partner-moe",
+      "src":  "tag:partner-example",
       "deny": ["100.117.163.93:22", "100.117.163.93:443"]
     },
-    // Verify partner-moe CANNOT reach owner's M5
+    // Verify partner-exampleCANNOT reach owner's M5
     // (substitute owner's tailnet IP from `tailscale status`)
     {
-      "src":  "tag:partner-moe",
+      "src":  "tag:partner-example",
       "deny": ["100.77.126.8:22"]
     }
   ]

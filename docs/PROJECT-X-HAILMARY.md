@@ -59,9 +59,10 @@ Fatherbox watches and supports it.
 ## 3. The offer stack (the business engine)
 
 > **Canonical pricing + delivery terms now live in `docs/OFFER-STACK.md`.** Summary:
-> founders (Ayyan Khan, Muhammad Umar/MoeLegacy) deferred until $50K collected via
-> hourly/salary/commission; then **$15K** (TMMT vertical), **$25K** (MoeLegacy/AIXMOS
-> credit+funding), **$35K** (both), **$50K** (full horizontal+vertical). **50%
+> founder comp (ARCHIVED — Umar/MoeLegacy terminal-cut 2026-07-01, Ayyan pending
+> verification; see `docs/FOUNDERS-ONLINE.md`) was deferred until $50K collected via
+> hourly/salary/commission; then **$15K** (TMMT vertical), **$25K** (AIXMOS
+> credit+funding — Taha-owned), **$35K** (both), **$50K** (full horizontal+vertical). **50%
 > deposit = go** → triggers backend dev+research discovery. Watchtower runs the
 > army via each client's always-on "antenna"; Muhammad Taha = Head Master / lead
 > backend, remotes in (Tailscale + consented RustDesk).
