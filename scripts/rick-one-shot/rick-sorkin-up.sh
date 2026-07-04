@@ -112,6 +112,53 @@ install_rick_model() {
   fi
 }
 
+install_always_on() {
+  hdr "Always-on (Rick never sleeps)"
+  if [[ "$(uname -s)" != "Darwin" ]]; then warn "always-on is macOS-only (LaunchAgent) — skipped"; return; fi
+  local ka="$TMMT/scripts/rick-one-shot/rick-keepalive.sh"
+  [[ -f "$ka" ]] || ka="$SELF_DIR/rick-keepalive.sh"
+  if [[ ! -f "$ka" ]]; then warn "rick-keepalive.sh missing — always-on skipped"; return; fi
+  chmod +x "$ka" 2>/dev/null || true
+  local plist="$HOME/Library/LaunchAgents/com.aixmos.rick.plist"
+  mkdir -p "$HOME/Library/LaunchAgents"
+  cat > "$plist" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.aixmos.rick</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>$ka</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict><key>TMMT</key><string>$TMMT</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>120</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>$HOME/.rick/launchd.out.log</string>
+  <key>StandardErrorPath</key><string>$HOME/.rick/launchd.err.log</string>
+</dict>
+</plist>
+PL
+  launchctl unload "$plist" 2>/dev/null || true
+  if launchctl load -w "$plist" 2>/dev/null; then
+    ok "Rick always-on: boots on login + self-heals every 2 min"
+  elif launchctl bootstrap "gui/$(id -u 2>/dev/null)" "$plist" 2>/dev/null; then
+    ok "Rick always-on (bootstrap)"
+  else
+    warn "load it once by hand: launchctl load -w $plist"
+  fi
+}
+
+uninstall_always_on() {
+  hdr "Rick stand-down"
+  local plist="$HOME/Library/LaunchAgents/com.aixmos.rick.plist"
+  launchctl unload "$plist" 2>/dev/null || launchctl bootout "gui/$(id -u 2>/dev/null)/com.aixmos.rick" 2>/dev/null || true
+  [[ -f "$plist" ]] && rm -f "$plist" && ok "always-on removed (Rick stops auto-booting)" || warn "no LaunchAgent installed"
+}
+
 boot_mesh() {
   hdr "M1 mesh boot"
   if [[ -x "$TMMT/scripts/bootstrap-rick-m1.sh" ]]; then
@@ -172,8 +219,12 @@ case "$VERB" in
     install_rick_model
     boot_mesh
     control_brainiac
+    install_always_on
     stamp_state
     status
+    ;;
+  off|stop|standdown)
+    uninstall_always_on
     ;;
   prime|identity)
     install_identity
@@ -183,9 +234,10 @@ case "$VERB" in
     cat <<EOF
 rick-sorkin — Rick Sorkin one-shot (M1 Max)
 
-  rick-sorkin up       full install + boot (default)
+  rick-sorkin up       full install + boot + ALWAYS-ON (default)
   rick-sorkin update   git pull + refresh identity
   rick-sorkin status   green/red report
+  rick-sorkin off      stand down (remove always-on)
   rick-sorkin prime    print RICK-PRIME.md
 
 Paste into Claude: ~/Sync/rick/RICK-ONE-SHOT/PASTE-INTO-CLAUDE.md
