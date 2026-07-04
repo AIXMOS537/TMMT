@@ -10,7 +10,7 @@ owner:
   handles:
     - "+1XXXXXXXXXX"   # personal
     - "+1XXXXXXXXXX"   # business (if different)
-  display_name: "Taha"
+  display_name: "Owner"
 
 home_line:
   # The number on the Brainiac Mac / SIM — intake line for forwarded texts

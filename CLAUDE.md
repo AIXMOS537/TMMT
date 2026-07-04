@@ -12,8 +12,10 @@ operator to orchestrator — build for delegation, not hand-holding.
 ## NON-NEGOTIABLE RULES
 - **OWNER APPROVAL GATE.** Any code path that is customer-facing, financial, legal,
   or production-bound must terminate at an owner-approval step. Never auto-execute
-  send/pay/sign/ship. (Enforcement note: this file is context, not a hard block —
-  the real gate is the **PreToolUse hook** in `.claude/hooks/`. Keep it installed.)
+  send/pay/sign/ship. (Enforcement: `.claude/hooks/owner-approval-gate.py`, a PreToolUse
+  hook wired in `.claude/settings.json` — it blocks agent shell commands that send/pay/
+  sign/ship/deploy unless `AIXMOS_OWNER_APPROVED=1`. Keep it installed. Runtime code
+  paths still route approvals through `shared/owner-approval-gate/`.)
 - **LEGALLY GATED FEATURES STAY LOCKED.** Credit-repair and funding features ship
   behind flags that ONLY Muhammad or Umar can unlock after the required legal steps.
   Do not enable, default-on, or remove these flags. See COMPLIANCE below.
@@ -65,6 +67,19 @@ data encrypted + owner-isolated per operator.
 - **Securities:** equity/profit-share instruments = Reg D / Howey-sensitive; §83(b)
   within 30 days for profits-interest grants. Don't bundle equity into product offers.
 - **Monitoring:** screen-watcher requires per-person consent + monitoring policy.
+
+## KNOWN GAPS (as of 2026-07-04 — keep current)
+- **SMS gate exists but isn't wired into the send path.** `shared/compliance-gates/sms-gate.ts`
+  (#126, unit-tested) BLOCKs promotional SMS for restricted verticals (credit/funding/debt/
+  lending) via `assertSmsAllowed()`, sourced from `config/identity.config.json`. But
+  `src/lib/agent/twilio-send.ts` `sendSms()` does **not** call it yet — wire `assertSmsAllowed`
+  into the send path (thread vertical + type through) so the gate is enforced, not just present.
+- **Founding-admin email is an inline literal** in `src/lib/verticals/registry.ts` +
+  `config/verticals.json`. Move to an env-sourced value before broad launch (needs the prod
+  env var set so onboarding doesn't break — coordinate with owner).
+- Lexar sweep-archive PDFs were removed from HEAD (#104) but remain in git **history** —
+  finish with `scripts/scrub-history.sh --apply` from a full clone. NOTE: the pre-push guard
+  (#123) blocks master force-push unless `ALLOW_FORCE_MASTER=1`; the scrub script sets it.
 
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
