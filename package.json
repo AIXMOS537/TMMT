@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify": "bash scripts/verify.sh",
+    "ship": "bash scripts/ship.sh",
     "check-env": "node scripts/check-env.mjs",
     "check-env:revenue": "node scripts/check-env.mjs --revenue",
     "ghl:check": "node scripts/ghl-activation-check.mjs",

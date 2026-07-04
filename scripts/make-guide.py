@@ -77,7 +77,7 @@ ctext(d,860,"your helper buddies",F(46,False),(180,186,220))
 d.rounded_rectangle([W//2-420,1020,W//2+420,1180],radius=30,fill=(34,38,76))
 ctext(d,1055,"so easy a 5-year-old can do it",F(40),WHITE)
 ctext(d,1300,"made for",F(34,False),(150,156,200))
-ctext(d,1350,"MUHAMMAD TAHA",F(54),GOLD)
+ctext(d,1350,"PROJECT X HAILMARY",F(54),GOLD)
 pages.append(im)
 
 # ---- Page 2: the two brothers -----------------------------------------------

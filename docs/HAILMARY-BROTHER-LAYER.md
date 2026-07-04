@@ -1,7 +1,7 @@
 # HAILMARY Brother Layer — home brain, your voice, your move
 
 **Parent system:** `docs/DUAL-SETUP-SYNC.md` (universal mobile ↔ brain registry)  
-**Owner:** Muhammad Taha · **Home brain:** M1 (`brainiac-mac`) · **Mobile:** Carry M5 (window, not the brain)
+**Owner:** PROJECT X HAILMARY · **Home brain:** M1 (`brainiac-mac`) · **Mobile:** Carry M5 (window, not the brain)
 
 Plain goal: your home Mac stays on. Messages hit it. HAILMARY is your **right-hand brother first** — learns how you talk per person — then drafts or sends **as you** only on the ladder you approve. Carry Mac can close; the M1 does not sleep on this job.
 

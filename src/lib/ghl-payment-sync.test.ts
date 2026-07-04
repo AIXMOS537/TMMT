@@ -1,5 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { extractPaymentRef, extractAffiliateRef, shouldRecordPayment, depositBalanceForTag } from "./ghl-payment-sync";
+import { extractPaymentRef, extractAffiliateRef, shouldRecordPayment, depositBalanceForTag, isCollectedPayment } from "./ghl-payment-sync";
+
+describe("isCollectedPayment — only pay/count on money that actually landed", () => {
+  it("is collected on a real payment event (even without an explicit amount)", () => {
+    expect(isCollectedPayment("payment.received", undefined)).toBe(true);
+    expect(isCollectedPayment("invoice.paid", undefined)).toBe(true);
+    expect(isCollectedPayment("subscription.charged", undefined)).toBe(true);
+    expect(isCollectedPayment("order.completed", undefined)).toBe(true);
+    expect(isCollectedPayment("checkout.completed", undefined)).toBe(true);
+  });
+  it("is collected when the webhook carries an explicit charged amount", () => {
+    expect(isCollectedPayment("contact.tagged", 750)).toBe(true);
+  });
+  it("is NOT collected for a tag-only enrollment (no payment event, no explicit amount)", () => {
+    // e.g. an operator applies `credit-guidance-active` before Stripe confirms —
+    // records as Pending, pays NO commission until money actually lands.
+    expect(isCollectedPayment("contact.tagged", undefined)).toBe(false);
+    expect(isCollectedPayment("contact.created", undefined)).toBe(false);
+    expect(isCollectedPayment("contact.tagged", 0)).toBe(false);
+  });
+});
 
 describe("extractPaymentRef", () => {
   it("prefers transaction-level ids", () => {

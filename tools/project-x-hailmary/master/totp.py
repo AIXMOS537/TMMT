@@ -3,7 +3,7 @@
 PROJECT X HAILMARY — Revolving Authentication (TOTP, RFC 6238)
 Pure Python stdlib. No pip installs. Works offline.
 
-The revolving code changes every 30 seconds. Muhammad Taha can also load the
+The revolving code changes every 30 seconds. PROJECT X HAILMARY can also load the
 same seed into Google Authenticator / Authy on his phone so the rolling code
 travels with him even without CYBORG.
 

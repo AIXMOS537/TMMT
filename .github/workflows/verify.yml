@@ -1,0 +1,37 @@
+name: Verify (local-first gate)
+
+# The server-side backstop to the local gate (scripts/verify.sh): lint + unit
+# tests + production build on every PR and every push to master. Make this a
+# REQUIRED status check on master (branch protection) and broken code can never
+# land — so any deploy from master is inherently safe.
+#
+# No secrets needed: build/test/lint all run without .env (env is read lazily).
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# One run per ref; cancel stale runs so the latest commit is what's judged.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Production build (+ typecheck)
+        run: npm run build

@@ -75,9 +75,9 @@ Files: $COUNT   (FILE-LIST.txt has the full list)
 No secrets are in here (keys/.env/vault skipped on purpose).
 
 TO SEND: select everything in this folder → AirDrop (or Messages/Mail) to
-Muhammad Taha. He'll pull it into the system with:  intake <this folder>
+PROJECT X HAILMARY. He'll pull it into the system with:  intake <this folder>
 EOF
 
 ok "done — $COUNT file(s) bundled, no secrets included"
 command -v open >/dev/null 2>&1 && open "$DEST" 2>/dev/null || true
-say "$D   AirDrop this whole folder to Muhammad Taha.$X"
+say "$D   AirDrop this whole folder to PROJECT X HAILMARY.$X"

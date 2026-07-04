@@ -55,7 +55,7 @@ if [[ -f "$SWARM_ROOT/.env" ]]; then
     case "$perm" in 600|400) pass ".env permissions are tight ($perm)";; "" ) wrn "could not read .env permissions";; *) wrn ".env is $perm — tighten: chmod 600 .env";; esac
   fi
 else
-  wrn ".env missing — agents can't build until it's restored (key flashdrive: scripts/bootstrap-carry-mac.sh)"
+  wrn ".env missing — restore with: vercel env pull .env --environment=production (build/test/swarm run fine without it)"
 fi
 
 say "${BOLD}Guardrails${RST}"

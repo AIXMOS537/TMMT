@@ -80,15 +80,20 @@ chmod +x "$SWARM_ROOT"/scripts/hooks/* 2>/dev/null || true
 git config core.hooksPath scripts/hooks
 ok "secret-guard hooks installed (pre-commit + pre-push)"
 
-# 5) .env (secrets ride the key flashdrive, never git) -------------------------
+# 5) .env (Vercel is the source of truth; never git) ---------------------------
+# Note: build/test/lint and the agent swarm all run WITHOUT .env — env is read
+# lazily at request time. .env is only needed to run the live app.
 if [[ -f "$SWARM_ROOT/.env" ]]; then
   [[ "$(swarm_os)" != "windows" ]] && chmod 600 "$SWARM_ROOT/.env" 2>/dev/null || true
   ok ".env present"
-elif [[ -x "$SWARM_ROOT/scripts/bootstrap-carry-mac.sh" && "$(swarm_os)" == "macos" ]]; then
-  warn ".env missing — attempting key-flashdrive bootstrap..."
-  bash "$SWARM_ROOT/scripts/bootstrap-carry-mac.sh" || warn "bootstrap didn't complete — plug in the key drive and re-run, or copy .env manually"
+elif command -v vercel >/dev/null 2>&1; then
+  warn ".env missing — pulling from Vercel (the source of truth)..."
+  ( cd "$SWARM_ROOT" && vercel env pull .env --environment=production --yes ) \
+    && { [[ "$(swarm_os)" != "windows" ]] && chmod 600 "$SWARM_ROOT/.env" 2>/dev/null; ok ".env pulled from Vercel"; } \
+    || warn "vercel env pull didn't complete — run: vercel env pull .env --environment=production"
 else
-  warn ".env missing — restore it from your key flashdrive (owner only). Agents can't build without it."
+  warn ".env missing — restore with: vercel env pull .env --environment=production (owner only)."
+  warn "  (install the Vercel CLI first: npm i -g vercel && vercel login)"
 fi
 
 # 6) deps ----------------------------------------------------------------------
