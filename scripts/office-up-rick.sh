@@ -55,6 +55,15 @@ else
   bash "$ROOT/scripts/autopilot.sh" install 2>/dev/null || true
 fi
 
+# 6) LOGIN BOOT — wire Rick to come up on every login. Install-ONCE (guard on the
+#    plist) so a login-triggered run doesn't unload the agent it's running under.
+if [ "$(uname -s)" = "Darwin" ] && [ ! -f "$HOME/Library/LaunchAgents/com.aixmos.rick.plist" ]; then
+  banner "6) LOGIN BOOT — Rick comes up on every login (zero commands after this)"
+  bash "$ROOT/scripts/rick-autostart.sh" >/dev/null 2>&1 \
+    && ok "login autostart wired — Rick comes up on every login" \
+    || warn "login autostart needs attention: bash scripts/rick-autostart.sh"
+fi
+
 banner "RICK IS ACTIVE — and stays active"
 cat <<INFO
   He now runs himself on this M1, local-first:
@@ -64,5 +73,5 @@ cat <<INFO
   Status : cat "$ROOT/.hailmary/autopilot-status"
   Logs   : "$ROOT/.hailmary/autopilot.log"  ·  ~/.hailmary/daemon.out.log
   Pause  : tmmt dark        Resume: tmmt light
-  Stop   : bash scripts/autopilot.sh uninstall && bash scripts/hailmary-autostart.sh --uninstall
+  Stop   : bash scripts/autopilot.sh uninstall && bash scripts/hailmary-autostart.sh --uninstall && bash scripts/rick-autostart.sh --uninstall
 INFO
