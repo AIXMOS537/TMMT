@@ -20,8 +20,19 @@ export async function upsertLeadForVerification(args: {
   const baseId = process.env.AIRTABLE_BASE_ID;
   const table = process.env.AIRTABLE_LEADS_TABLE ?? "Leads";
 
+  // Never die silently again. The Airtable leg froze at 871 leads on 2026-01-15
+  // because this returned skipped:true with NO log when env was unset — no error,
+  // no alert, ~4 months of leads lost. Every skip/fail now shouts with a unique tag
+  // so Sentry / a log drain can catch it and raise it to 02-Needs-You.
+  const skip = (reason: string): { skipped: true; reason: string } => {
+    console.error(
+      `[INTAKE-SILENT-SKIP] Airtable lead upsert skipped — ${reason} | ghlContactId=${args.ghlContactId} table=${table}`
+    );
+    return { skipped: true, reason };
+  };
+
   if (!apiKey || !baseId) {
-    return { skipped: true, reason: "AIRTABLE_API_KEY or AIRTABLE_BASE_ID not set" };
+    return skip("AIRTABLE_API_KEY or AIRTABLE_BASE_ID not set");
   }
 
   const fields: AirtableFields = {
@@ -49,7 +60,7 @@ export async function upsertLeadForVerification(args: {
 
   const listRes = await fetch(listUrl, { headers, cache: "no-store" });
   if (!listRes.ok) {
-    return { skipped: true, reason: `Airtable list failed: ${listRes.status}` };
+    return skip(`Airtable list failed: ${listRes.status}`);
   }
 
   const listJson = (await listRes.json()) as { records?: { id: string }[] };
@@ -61,7 +72,7 @@ export async function upsertLeadForVerification(args: {
       { method: "PATCH", headers, body: JSON.stringify({ fields }) }
     );
     if (!patchRes.ok) {
-      return { skipped: true, reason: `Airtable patch failed: ${patchRes.status}` };
+      return skip(`Airtable patch failed: ${patchRes.status}`);
     }
     return { recordId: existingId, skipped: false };
   }
@@ -71,7 +82,7 @@ export async function upsertLeadForVerification(args: {
     { method: "POST", headers, body: JSON.stringify({ fields }) }
   );
   if (!createRes.ok) {
-    return { skipped: true, reason: `Airtable create failed: ${createRes.status}` };
+    return skip(`Airtable create failed: ${createRes.status}`);
   }
   const created = (await createRes.json()) as { id: string };
   return { recordId: created.id, skipped: false };
