@@ -69,11 +69,11 @@ data encrypted + owner-isolated per operator.
 - **Monitoring:** screen-watcher requires per-person consent + monitoring policy.
 
 ## KNOWN GAPS (as of 2026-07-04 — keep current)
-- **SMS gate exists but isn't wired into the send path.** `shared/compliance-gates/sms-gate.ts`
-  (#126, unit-tested) BLOCKs promotional SMS for restricted verticals (credit/funding/debt/
-  lending) via `assertSmsAllowed()`, sourced from `config/identity.config.json`. But
-  `src/lib/agent/twilio-send.ts` `sendSms()` does **not** call it yet — wire `assertSmsAllowed`
-  into the send path (thread vertical + type through) so the gate is enforced, not just present.
+- **SMS gate is now WIRED into the send path** (was a gap). `sendSms()` calls
+  `assertSmsAllowed()` first (default `transactional`), so promotional SMS to restricted
+  verticals (credit/funding/debt/lending) BLOCKs at the boundary — unit-tested. Residual:
+  when the outbound send path grows real callers, pass the true `vertical`+`type` through so
+  the gate evaluates them (default keeps existing/transactional sends unaffected).
 - **Founding-admin email is an inline literal** in `src/lib/verticals/registry.ts` +
   `config/verticals.json`. Move to an env-sourced value before broad launch (needs the prod
   env var set so onboarding doesn't break — coordinate with owner).
