@@ -520,21 +520,49 @@ export async function submitTeamOnboarding(formData: FormData): Promise<FormResu
 
   const d = parsed.data;
   const role = d.role || "operator";
+  const v3Auto = process.env.V3_AUTO_PROVISION_OPERATORS === "true" && role === "operator";
 
-  const result = await insertRow("team_onboarding", {
-    full_name: d.full_name.trim(),
-    phone: d.phone.replace(/[^\d+]/g, "") || null,
-    email: d.email || null,
-    role,
-    owns: d.owns?.trim() || null,
-    skills: d.skills?.trim() || null,
-    first_step: d.first_step?.trim() || null,
-    mission_accepted: true,
-    confidentiality_agreed: true,
-    device: d.device?.trim() || null,
-    source: "web_link",
-    status: "Pending Review",
-  });
+  const supabase = await createSSRClient();
+  const { data: inserted, error } = await supabase
+    .from("team_onboarding")
+    .insert({
+      full_name: d.full_name.trim(),
+      phone: d.phone.replace(/[^\d+]/g, "") || null,
+      email: d.email || null,
+      role,
+      owns: d.owns?.trim() || null,
+      skills: d.skills?.trim() || null,
+      first_step: d.first_step?.trim() || null,
+      mission_accepted: true,
+      confidentiality_agreed: true,
+      device: d.device?.trim() || null,
+      source: "web_link",
+      status: v3Auto ? "Queued" : "Pending Review",
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[team_onboarding] insert failed:", error.message);
+    return { success: false, error: "Submission failed. Please try again." };
+  }
+
+  const result: FormResult = { success: true };
+
+  // v3: auto-provision student-operators without human review (fire-and-forget).
+  if (v3Auto && inserted?.id) {
+    import("@/lib/v3/auto-provision")
+      .then(({ provisionOperatorFromOnboarding }) =>
+        provisionOperatorFromOnboarding({
+          id: inserted.id,
+          full_name: d.full_name.trim(),
+          phone: d.phone.replace(/[^\d+]/g, "") || null,
+          email: d.email || null,
+          role,
+        }),
+      )
+      .catch((err) => console.warn("[team_onboarding] v3 auto-provision error:", err));
+  }
 
   // Ping the owner the moment someone joins. Fire-and-forget — never blocks the reply.
   if (result.success) {

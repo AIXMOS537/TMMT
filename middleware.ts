@@ -16,12 +16,17 @@ function isPublicPath(pathname: string) {
     pathname === "/explainer" ||
     pathname === "/join" ||
     pathname === "/apply" ||
+    pathname === "/credit" ||
+    pathname === "/funding" ||
     pathname.startsWith("/build/") ||
+    pathname.startsWith("/lp/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/leads/") ||
+    pathname.startsWith("/api/agent/")
   );
 }
 
@@ -34,10 +39,15 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/explainer" ||
     pathname === "/join" ||
     pathname === "/apply" ||
+    pathname === "/credit" ||
+    pathname === "/funding" ||
     pathname.startsWith("/build/") ||
+    pathname.startsWith("/lp/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/leads/") ||
+    pathname.startsWith("/api/agent/")
   );
 }
 

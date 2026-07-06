@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getOpsMessages } from "@/lib/queries";
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
-import { CheckCircle, GraduationCap, ArrowRight } from "lucide-react";
+import { CheckCircle, GraduationCap, ArrowRight, DollarSign } from "lucide-react";
 
 export default function OperatorFeedPage() {
   const [messages, setMessages] = useState<Record<string, unknown>[]>([]);
@@ -40,6 +40,23 @@ export default function OperatorFeedPage() {
             </p>
             <p className="text-sm text-gray-500 dark:text-slate-400">
               Work through your modules, get certified, unlock your full toolkit.
+            </p>
+          </div>
+          <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+        </Card>
+      </Link>
+
+      <Link href="/operator/earnings">
+        <Card className="p-4 flex items-center gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors">
+          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+            <DollarSign size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 dark:text-white">
+              Earnings &amp; share links
+            </p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Your commission, tracked links, and the dream-car path.
             </p>
           </div>
           <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />

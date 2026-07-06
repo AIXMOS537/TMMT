@@ -53,11 +53,14 @@ export default function TeamOnboardingForm() {
             You&apos;re in{name ? `, ${name}` : ""}! 🎉
           </h1>
           <p className="text-lg text-gray-600 dark:text-slate-300">
-            That&apos;s it — nothing else to do.
+            Your operator account is being set up right now — no waiting on anyone.
           </p>
           <p className="text-lg text-gray-600 dark:text-slate-300 mt-3">
-            Muhammad got your info and will <strong>text you next</strong> to turn on your access,
-            one step at a time.
+            Check your <strong>email or phone</strong> for a login link to the Operator Academy.
+            Complete your modules, grab your tracked links, and start earning your split.
+          </p>
+          <p className="text-base text-gray-500 dark:text-slate-400 mt-4">
+            Login: <strong>tmmt-command-center.vercel.app</strong>
           </p>
           <p className="text-base text-gray-400 mt-6">You can close this page now.</p>
         </div>

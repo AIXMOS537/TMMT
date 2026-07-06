@@ -46,6 +46,29 @@ export async function setModuleProgress(
 
   if (error) return { error: error.message };
 
+  // v3: auto-certify at 100% modules — no human lead required.
+  if (process.env.V3_AUTO_CERTIFY_OPERATORS === "true" && pct >= 100) {
+    const { count } = await supabase
+      .from("operator_training_modules")
+      .select("id", { count: "exact", head: true })
+      .eq("active", true);
+    const { count: doneCount } = await supabase
+      .from("operator_training_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("profile_id", profileId)
+      .gte("percent_complete", 100);
+    if (count && doneCount && doneCount >= count) {
+      await supabase
+        .from("profiles")
+        .update({
+          is_certified: true,
+          unlock_status: "CERTIFIED",
+          updated_at: now,
+        })
+        .eq("id", profileId);
+    }
+  }
+
   revalidatePath("/operator/training");
   revalidatePath(`/operator/training/${moduleId}`);
   return { success: true };

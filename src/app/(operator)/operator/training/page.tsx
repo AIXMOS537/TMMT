@@ -98,7 +98,9 @@ export default async function OperatorTrainingPage() {
             certified
               ? "Full toolkit unlocked"
               : status.includes("READY")
-                ? "Ask your lead to certify you"
+                ? process.env.NEXT_PUBLIC_V3_AUTO_CERTIFY === "true"
+                  ? "Certifying automatically…"
+                  : "Ask your lead to certify you"
                 : "Keep going"
           }
         />
