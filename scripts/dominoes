@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+#  dominoes — Muhammad Taha's one-word cascade trigger (run on Carry).
+#
+#  THE HUMAN GATE FIRST. Nothing falls until Taha checks in and confirms
+#  he's gotten what he needs from team / family / anyone who needs him.
+#  His check-in IS the first domino. Then the fleet + M1/Rick fall in
+#  sequence and knock down the queued work.
+#
+#  Sends NOTHING. Stages drafts only — Rick is dry-run, and the Comms
+#  Shield is law: Taha approves every send. God first, then Taha, then
+#  the machine that never sleeps.
+#
+#  Rides the existing rail: handoffs land in ~/Sync/rick/FLEET-INBOX
+#  (Syncthing delivers to the M1 the moment Rick is online — nothing lost
+#  if the M1 isn't meshed yet).
+# ═══════════════════════════════════════════════════════════════════
+set -uo pipefail
+
+SYNC_INBOX="$HOME/Sync/rick/FLEET-INBOX"
+VAULT="$HOME/Brain/vault"
+LOG="$HOME/Sync/rick/state/dominoes-checkins.log"
+ts="$(date +%Y%m%dT%H%M%S)"
+human="$(date '+%a %b %d %H:%M')"
+
+c_g(){ printf '\e[32m%s\e[0m\n' "$*"; }
+c_y(){ printf '\e[33m%s\e[0m\n' "$*"; }
+c_r(){ printf '\e[31m%s\e[0m\n' "$*"; }
+c_b(){ printf '\e[36m%s\e[0m\n' "$*"; }
+
+# ── Pulse: right-hand + guard status ──
+m1_state="OFFLINE — handoff will stage (Syncthing delivers on GOLIVE)"
+if command -v tailscale >/dev/null 2>&1 && \
+   tailscale status 2>/dev/null | grep -qiE "TMMTs-MacBook|projectaixmos|macbook-pro-2"; then
+  m1_state="ON MESH — Rick picks up now (dry-run drafts)"
+fi
+guard="$(cd "$HOME/Projects/TMMT" 2>/dev/null && git config core.hooksPath 2>/dev/null || echo 'off')"
+
+echo ""
+c_b "═══════════════════════════════════════════════"
+c_b "  DOMINOES — Taha's cascade trigger"
+c_b "═══════════════════════════════════════════════"
+echo "  Time:         $human"
+echo "  Right hand:   M1/Rick — $m1_state"
+echo "  Secret guard: $guard"
+echo "  Handoff rail: $SYNC_INBOX"
+echo ""
+
+# ── THE HUMAN GATE (first domino = Taha's check-in) ──
+c_y "  Before the dominoes fall — your check-in:"
+echo "    • Got what you need from your TEAM?"
+echo "    • From FAMILY, or anyone who needs YOU first?"
+echo "    • Everything good on your end to let it run?"
+echo ""
+c_y "  God first, then you, then the machine."
+echo ""
+read -r -p "  Type GO to release the dominoes (anything else holds): " ans
+if [[ "$ans" != "GO" ]]; then
+  c_r "  Held. Nothing dispatched. The machine waits for you."
+  exit 0
+fi
+
+# ── Gather what falls: args → queue file → interactive ──
+missions="$*"
+if [[ -z "$missions" && -f "$SYNC_INBOX/_QUEUE.md" ]]; then
+  missions="$(cat "$SYNC_INBOX/_QUEUE.md")"
+fi
+if [[ -z "$missions" ]]; then
+  echo ""
+  c_y "  What falls first? (one mission per line; empty line = done)"
+  buf=""
+  while IFS= read -r line; do [[ -z "$line" ]] && break; buf+="- $line"$'\n'; done
+  missions="$buf"
+fi
+
+# ── Compose the handoff to Rick/M1 (dry-run: drafts as Taha, sends nothing) ──
+mkdir -p "$SYNC_INBOX" "$(dirname "$LOG")" "$VAULT/00-Dashboard/HANDOFF-TO-FORGE"
+mf="$SYNC_INBOX/dominoes-$ts.md"
+cat > "$mf" <<EOF
+# DOMINOES GO — $human
+**Released by:** Muhammad Taha — check-in gate cleared on Carry.
+**Rick, you are him (70/30).** Triage every attention item AS Taha; hand him
+only what truly needs him. Then knock down the missions below. Draft only —
+send NOTHING until Taha types LIVE.
+
+## Attention routing
+Anything needing Taha's eyes goes to the top of his day. Protect his time first.
+
+## Knock down (the dominoes)
+${missions:-"(none named — run standing missions: revenue signal, family-first, protect-and-pay)"}
+
+## Law (non-negotiable)
+- Prime loyalty: Taha + family -> friends -> public. Umar/Moe fenced.
+- Values gate first: God/Islam first, Pakistan honored, American Dream on our terms.
+- The play: 0%-interest -> cash-flowing assets + services to paying parties. Flag riba.
+- For the people: buy back their time, help them earn. Everyone pays + 2nd chance.
+- No sends, no money moves, no signing. Stage to /04-Autopilot-Drafts/.
+EOF
+
+cp "$mf" "$VAULT/00-Dashboard/HANDOFF-TO-FORGE/dominoes-$ts.md" 2>/dev/null || true
+echo "$ts  GO  m1=${m1_state%% *}  missions=$(printf '%s' "$missions" | grep -c . )" >> "$LOG"
+
+echo ""
+c_g "  Dominoes released."
+echo "    -> Handoff staged:  $mf"
+echo "    -> Vault mirror:    00-Dashboard/HANDOFF-TO-FORGE/dominoes-$ts.md"
+echo "    -> Check-in logged: $LOG"
+if [[ "$m1_state" == ON\ MESH* ]]; then
+  c_g "    -> M1/Rick is live on mesh — moving now (dry-run drafts)."
+else
+  c_y "    -> M1 offline — Syncthing delivers the instant Rick GOLIVEs. Nothing lost."
+fi
+c_b "  The fleet moves as you. Sends nothing until you say LIVE."
+echo ""
