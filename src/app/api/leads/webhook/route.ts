@@ -5,10 +5,11 @@
  * Emits lead_received audit event; downstream realtime subscriber triggers first outbound SMS.
  */
 import { NextResponse } from 'next/server'
-import { resolveOrgBySlugPublic, OrgNotFoundError } from '@/lib/agent/tenant'
+import { resolveOrgBySlugPublic, resolveOrgById, OrgNotFoundError } from '@/lib/agent/tenant'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
+import { triggerFirstOutbound } from '@/lib/agent/lead-outbound'
 import { isRateLimited } from '@/lib/rate-limit'
 
 const SKU_PRICE_CENTS: Record<string, number> = {
@@ -54,14 +55,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'too many requests' }, { status: 429 })
   }
 
-  let org
-  try { org = await resolveOrgBySlugPublic(slug) }
+  let orgPublic
+  try { orgPublic = await resolveOrgBySlugPublic(slug) }
   catch (e) {
     if (e instanceof OrgNotFoundError) return NextResponse.json({ error: 'org not found' }, { status: 404 })
     throw e
   }
 
-  try { await guardOrganization(org.id) }
+  try { await guardOrganization(orgPublic.id) }
   catch (e) {
     if (e instanceof LicenseDisabledError) {
       return NextResponse.json({ error: 'service temporarily unavailable' }, { status: 503 })
@@ -83,7 +84,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const { data: existing } = await db.from('incoming_leads')
     .select('id, agent_status')
     .eq('phone_e164', phone_e164)
-    .eq('organization_id', org.id)
+    .eq('organization_id', orgPublic.id)
     .maybeSingle()
 
   let leadId: string
@@ -107,7 +108,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }).eq('id', leadId)
   } else {
     const ins = await db.from('incoming_leads').insert({
-      organization_id: org.id,
+      organization_id: orgPublic.id,
       phone_e164,
       email: body.email ?? null,
       contact_name: body.name ?? null,
@@ -128,11 +129,22 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   await emitAudit({
-    organizationId: org.id,
+    organizationId: orgPublic.id,
     action: 'lead.received',
     ip: req.headers.get('x-forwarded-for') ?? null,
     payload: { lead_id: leadId, sku, phone_e164, utm_source: body.utm_source, utm_campaign: body.utm_campaign },
   })
 
-  return NextResponse.json({ ok: true, lead_id: leadId })
+  const org = await resolveOrgById(orgPublic.id)
+  const outbound = await triggerFirstOutbound({
+    org,
+    leadId,
+    phoneE164: phone_e164,
+    contactName: body.name ?? null,
+    sku,
+    skuPriceCents: sku_price_cents,
+    ip: req.headers.get('x-forwarded-for') ?? null,
+  })
+
+  return NextResponse.json({ ok: true, lead_id: leadId, sent: outbound.sent, outbound_reason: outbound.reason ?? null })
 }
