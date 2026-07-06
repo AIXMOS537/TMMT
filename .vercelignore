@@ -1,0 +1,24 @@
+# Vercel CLI does NOT respect .gitignore — only this file controls uploads.
+# See: https://vercel.com/docs/deployments/vercel-ignore
+
+# Local ML face/voice assets (multi-GB; individual .pth files exceed 100 MB limit)
+.aixmos/
+
+# Owner-local runtime state (never ship)
+.hailmary/
+.swarm/
+.swarm-task.txt
+.superpowers/
+
+# Business docs / brain kit (local canonical copies)
+BrainKit/
+OPERATIONS_BRAIN.md
+OPERATIONS_BRAIN.pdf
+SKILLS_BRIEF.md
+
+# Local secrets / notify config
+scripts/phase9-notify/.env.notify
+
+# Claude local overrides
+.claude.local.md
+.claude/
