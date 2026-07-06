@@ -27,6 +27,18 @@ const LOGIN_REDIRECT =
   process.env.PROVISION_LOGIN_URL?.replace(/\/login$/, '/operator/training') ??
   'https://tmmt-command-center.vercel.app/operator/training'
 
+export const MAX_TMMT_OPERATORS = Number(process.env.TMMT_MAX_OPERATORS ?? 100)
+
+export async function countActiveOperators(): Promise<number> {
+  const db = adminClient()
+  const { data: users } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  return (users?.users ?? []).filter((u) => u.app_metadata?.role === 'operator').length
+}
+
+export async function isOperatorCapReached(): Promise<boolean> {
+  return (await countActiveOperators()) >= MAX_TMMT_OPERATORS
+}
+
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -56,6 +68,19 @@ function randomPassword(): string {
 export async function provisionOperatorFromOnboarding(
   row: OnboardingRow,
 ): Promise<ProvisionResult> {
+  if (await isOperatorCapReached()) {
+    const db = adminClient()
+    await db
+      .from('team_onboarding')
+      .update({ status: 'Waitlist — cap reached', provision_error: `Max ${MAX_TMMT_OPERATORS} operators` })
+      .eq('id', row.id)
+    return {
+      ok: false,
+      onboardingId: row.id,
+      error: `TMMT operator network is full (${MAX_TMMT_OPERATORS} lifetime cap). You are on the waitlist.`,
+    }
+  }
+
   const db = adminClient()
   const email = resolveOperatorEmail(row)
   const affiliateCode = generateAffiliateCode(row.full_name)

@@ -92,7 +92,7 @@ fi
 
 # ── Deploy (CLI; git is disconnected so this is the only path) ───────────────
 command -v vercel >/dev/null 2>&1 || die "vercel CLI not found. npm i -g vercel"
-info "Linking project $PROJECT…"
+info "Linking project ${PROJECT}..."
 vercel link --yes --project "$PROJECT" --scope aixmos537 >/dev/null 2>&1 || die "could not link $PROJECT"
 ok "Linked $PROJECT."
 info "Deploying to production… (Vercel builds with the project's own env)"
