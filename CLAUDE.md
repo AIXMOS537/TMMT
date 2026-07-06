@@ -4,7 +4,7 @@
 
 TMMT Rentals is a **production-grade vehicle rental management system** built with Next.js 16 App Router, TypeScript, Tailwind CSS 4, and Supabase. It replaced an Airtable-based workflow. The goal is a fully production-ready admin platform.
 
-**Repo:** https://github.com/Metavibez4L/TMMT
+**Repo:** https://github.com/AIXMOS537/TMMT (private, sovereign — sole owner AIXMOS537). Former `Metavibez4L/TMMT` pointer retired 2026-07-06.
 
 ## Engineering Philosophy
 
