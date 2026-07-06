@@ -69,4 +69,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, { silent: true, disableLogger: true });
+// `silent: true` keeps Sentry's build logs quiet. `disableLogger` was removed
+// 2026-07-06 — deprecated, and its replacement (webpack.treeshake.removeDebugLogging)
+// is a no-op under Turbopack, so dropping it silences the warning with no behavior change.
+export default withSentryConfig(nextConfig, { silent: true });
