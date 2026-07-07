@@ -58,9 +58,9 @@ carry_handoff() {
   [[ -n "$ROOT" && -x "$ROOT/scripts/blip/session-sweep-tonight.sh" ]] \
     && bash "$ROOT/scripts/blip/session-sweep-tonight.sh" || true
   for comp in "$SCRIPTS/universal-brain-compile.sh" "$HOME/.config/tmmt/universal-brain-compile.sh"; do
-    [[ -x "$comp" ]] && bash "$comp" || true
+    [[ -x "$comp" ]] && timeout 600 bash "$comp" || true
   done
-  [[ -x "$RICK/BRAIN-FEED/compile-master.sh" ]] && bash "$RICK/BRAIN-FEED/compile-master.sh" || true
+  [[ -x "$RICK/BRAIN-FEED/compile-master.sh" ]] && timeout 300 bash "$RICK/BRAIN-FEED/compile-master.sh" || true
   date -u +%FT%TZ > "$RICK/AUTORUN.stamp"
   mkdir -p "$INBOX"
   cat > "$INBOX/law-10012-$(date +%Y%m%d-%H%M%S)-compile-fleet-handoff.md" <<EOF
