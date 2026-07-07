@@ -38,6 +38,7 @@ function isPublicPath(pathname: string) {
     pathname === "/build" ||
     pathname === "/explainer" ||
     pathname === "/join" ||
+    pathname === "/fit-test" ||
     pathname === "/apply" ||
     pathname === "/credit" ||
     pathname === "/funding" ||
@@ -61,6 +62,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/build" ||
     pathname === "/explainer" ||
     pathname === "/join" ||
+    pathname === "/fit-test" ||
     pathname === "/apply" ||
     pathname === "/credit" ||
     pathname === "/funding" ||

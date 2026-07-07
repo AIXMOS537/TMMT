@@ -1,0 +1,52 @@
+{
+  "version": "2026-07-04",
+  "name": "PROJECT X HAILMARY Sovereign Stack",
+  "master_command": "apex",
+  "aliases": ["sovereign", "seals", "forever"],
+  "layers": [
+    {
+      "id": "mesh",
+      "label": "TMMT Forever Loop",
+      "install": "bash scripts/forever-up.sh",
+      "daemon": "com.tmmt.forever-loop",
+      "interval_sec": 180,
+      "tasks": ["sync", "presence", "heartbeat", "sovereign_heal", "dispatch", "ghl_audit", "integration_probe"]
+    },
+    {
+      "id": "router",
+      "label": "Overdrive Task Router",
+      "daemon": "com.tmmt.router",
+      "install": "bash scripts/router install"
+    },
+    {
+      "id": "hailmary",
+      "label": "HAILMARY Keepalive",
+      "daemon": "com.aixmos.hailmary"
+    },
+    {
+      "id": "agents",
+      "label": "Project X Agent Stack",
+      "install": "bash ~/Desktop/X-FOREVER/RUN-X-FOREVER.sh",
+      "daemons": ["com.hailmary.litellm-local", "com.hailmary.ccr"]
+    },
+    {
+      "id": "heartbeat",
+      "label": "Fleet Heartbeat Board",
+      "daemon": "com.tmmt.heartbeat-watch"
+    },
+    {
+      "id": "login",
+      "label": "Sovereign Login Hook",
+      "daemon": "com.tmmt.sovereign-login",
+      "runs": "apex tick"
+    }
+  ],
+  "owner_visibility": {
+    "dashboard": "apex status",
+    "league": "watchtower",
+    "control_board": "tmmt",
+    "inbox": "~/Brain/vault/03-Systems/watchtower-inbox/events.log"
+  },
+  "notify_policy": "config/notify-policy.json",
+  "canon": ["docs/GO-LIVE-CANON.md", "docs/FOREVER-LOOP.md", "docs/SOVEREIGN-STACK.md"]
+}

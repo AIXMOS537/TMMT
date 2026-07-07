@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "max_operators_lifetime": 100,
+  "launch_cap_active": 10,
+  "launch_cap_note": "Starting with 10 founding operators. Expand to 100 as network proves.",
+  "fit_test_required": true,
+  "auto_provision_requires_fit_pass": true,
+  "returning_team_must_retest": true,
+  "failed_operators_must_retest": true,
+  "executive_backend_only": true,
+  "philosophy": "For the people. Low overhead after setup. Not everyone gets in — justice for those who are fit.",
+  "pass_score_percent": 80,
+  "founding_operator_slots": 10
+}

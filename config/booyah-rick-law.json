@@ -1,0 +1,56 @@
+{
+  "law_id": "BOOYAH-RICK-LAW",
+  "version": "1.0.0",
+  "owner": "Muhammad Taha",
+  "booyah": {
+    "role": "daily_activation_switch",
+    "meaning": "One word turns HAILMARY ON across every provisioned device",
+    "when": "Every morning · after reboot · when Taha says go",
+    "does": [
+      "god off — protect Fable credits",
+      "local brain up — Ollama · LiteLLM · mesh",
+      "unison — Carry home base online",
+      "route work to Rick/M1",
+      "presence heartbeat — devices seen on mesh",
+      "never calls paid cloud LLM on loops"
+    ],
+    "command_carry": "booyah",
+    "command_daily_full": "tmmt day",
+    "command_any_device": "bash ~/Sync/rick/BOOYAH-DAILY.sh"
+  },
+  "rick": {
+    "role": "local_execution_army",
+    "meaning": "1:1 parity with $50k+ enterprise ops stack — runs local, zero per-token burn",
+    "reports_to": "Muhammad Taha only",
+    "persona": "config/rick-persona.txt",
+    "home": "M1 Max (forge station)",
+    "inbox": "~/Sync/rick/FLEET-INBOX",
+    "enterprise_parity": [
+      "Mission control / work queue routing",
+      "CRM pipeline drafts (GHL) — owner approves LIVE",
+      "Credit-funding intake triage",
+      "Local code ship (forge · occ · aider · npm build)",
+      "Content / Moose heavy drafts",
+      "Revenue radar / Chummo outreach drafts",
+      "Fleet device orchestration (mesh · Syncthing)",
+      "Brain corpus compile + knowledge retrieval",
+      "Operator onboarding scaffolding (AIXMOS locked until unlock)",
+      "24/7 daemon execution — no employees required"
+    ],
+    "forbidden": [
+      "paid API on autopilot",
+      "LIVE send without Taha",
+      "deploy prod without Taha",
+      "money moves",
+      "master keys off Carry"
+    ]
+  },
+  "device_map": {
+    "carry-m5": { "daily": "booyah", "execution": "routes to Rick" },
+    "m1-rick": { "daily": "BOOYAH-DAILY.sh", "execution": "FLEET-INBOX + local forge" },
+    "brainiac-7": { "daily": "GO.bat", "execution": "gateway + NAS pull via M1" },
+    "iphone-taha": { "daily": "Tailscale + Enchanted", "execution": "rick-safe chat" },
+    "family": { "daily": "locked", "execution": "AIXMOS after Phase 2 unlock" },
+    "office": { "daily": "locked", "execution": "AIXMOS after Taha unlock" }
+  }
+}

@@ -23,7 +23,8 @@ WRAP
   chmod +x "$BIN/$name"
 }
 
-wrap oneshot scripts/oneshot.sh
+wrap oneshot scripts/one-shot.sh
+wrap one-shot scripts/one-shot.sh
 wrap order scripts/serve.sh
 wrap serve scripts/serve.sh
 wrap x scripts/x

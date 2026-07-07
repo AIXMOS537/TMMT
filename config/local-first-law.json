@@ -1,0 +1,47 @@
+{
+  "law_id": "LOCAL-FIRST-FOREVER",
+  "version": "1.0.0",
+  "owner": "Muhammad Taha",
+  "default": "local_oss_zero_paid_tokens",
+  "paid_allowed_only_when": [
+    "explicit_god_on_carry",
+    "owner_typed_approval_in_session",
+    "human_gate_money_legal_deploy"
+  ],
+  "forbidden_on_daemons": [
+    "anthropic_api_paid",
+    "openai_api_paid",
+    "cursor_agent_background",
+    "claude_p_batch",
+    "vercel_ai_gateway_paid",
+    "any_loop_calling_cloud_llm"
+  ],
+  "daemon_allowed": [
+    "m1-fleet-executor_local_build_only",
+    "syncthing",
+    "tailscale",
+    "ollama",
+    "litellm_local",
+    "presence_heartbeat",
+    "forever_loop_local_tasks_only"
+  ],
+  "local_stack_priority": [
+    "ollama:11434",
+    "litellm:4001",
+    "openclaude_ccr_occ",
+    "aider_local",
+    "anythingllm_local"
+  ],
+  "github_oss_sources": [
+    "https://github.com/AIXMOS537/TMMT",
+    "ollama/ollama",
+    "BerriAI/litellm",
+    "Anthropic/claude-code (local router only when god off)"
+  ],
+  "device_lanes": {
+    "hailmary_sovereign": ["carry-m5", "forge-m1", "brainiac-7", "iphone-taha"],
+    "aixmos_locked_until_unlock": ["family", "friends", "office-pc", "operators", "paid-parties"]
+  },
+  "rick_reports_to": "muhammad_taha_only",
+  "brain_chain": ["carry-m5-watchtower", "m1-rick-forge", "brainiac-windows-nas", "syncthing-fleet-inbox"]
+}

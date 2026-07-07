@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "law_id": "M1-WORK-LAW",
+  "effective": "2026-07-06",
+  "owner": {
+    "name": "Muhammad Taha",
+    "aliases": ["Taha", "Moe", "ceo.moe"],
+    "sovereign_device": "carry-m5",
+    "operational_proxy": "forge-m1"
+  },
+  "statement": "All work for Muhammad Taha — business ventures, personal life, social life, and professional life — is tracked, measured, triaged, and handled. New work routes to M1 (Rick/forge) by default. Carry retains sovereign gates only.",
+  "routing": {
+    "default_target": "m1",
+    "inbox": "~/Sync/rick/FLEET-INBOX",
+    "ledger": "~/.config/tmmt/.owner-only/work-ledger.tsv",
+    "prefer_all_new_work_to_m1": true,
+    "carry_only_when": [
+      "owner_gate",
+      "deploy_prod",
+      "legal_contract",
+      "money_move",
+      "family_private",
+      "master_keys",
+      "external_send_live"
+    ]
+  },
+  "domains": [
+    {
+      "id": "business",
+      "label": "Business ventures",
+      "examples": ["TMMT", "AIXMOS", "HAILMARY", "GHL", "operators", "revenue"]
+    },
+    {
+      "id": "personal",
+      "label": "Personal life",
+      "examples": ["health", "family admin", "home", "faith", "rest"]
+    },
+    {
+      "id": "social",
+      "label": "Social life",
+      "examples": ["friends", "community", "events", "relationships"]
+    },
+    {
+      "id": "work",
+      "label": "Professional / ops",
+      "examples": ["meetings", "follow-ups", "team", "clients", "vendors"]
+    }
+  ],
+  "intake_sources": [
+    {
+      "id": "owner_intake",
+      "path": "~/Brain/vault/00-Dashboard/OWNER-WORK-INTAKE",
+      "glob": "**/*.md",
+      "priority": "all_new"
+    },
+    {
+      "id": "idea_queue",
+      "path": "~/Brain/vault/00-Dashboard/IDEA-QUEUE-LIVE.md",
+      "type": "markdown_table",
+      "filter": "OPEN|P0"
+    },
+    {
+      "id": "handoff_forge",
+      "path": "~/Brain/vault/00-Dashboard/HANDOFF-TO-FORGE",
+      "glob": "*.md"
+    },
+    {
+      "id": "watchtower_inbox",
+      "path": "~/Brain/vault/03-Systems/watchtower-inbox",
+      "glob": "*.md"
+    },
+    {
+      "id": "dominoes",
+      "path": "~/Sync/rick/FLEET-INBOX",
+      "glob": "dominoes-*.md",
+      "note": "Human-gated cascade from Carry"
+    }
+  ],
+  "triage": {
+    "dimensions": [
+      {
+        "id": "emergency",
+        "label": "Emergency / harm prevention",
+        "weight": 1000,
+        "scale": "1-5",
+        "question": "If ignored today, does something break, burn, or hurt someone?"
+      },
+      {
+        "id": "money",
+        "label": "Money / revenue impact",
+        "weight": 100,
+        "scale": "1-5",
+        "question": "Does this unlock cash, stop bleed, or protect revenue?"
+      },
+      {
+        "id": "people_helped",
+        "label": "Long-term vision — people helped",
+        "weight": 50,
+        "scale": "1-5",
+        "question": "How many people get a second chance, income, dignity, or time back?"
+      },
+      {
+        "id": "time",
+        "label": "Time pressure",
+        "weight": 30,
+        "scale": "1-5",
+        "question": "Is there a real deadline or decay window?"
+      },
+      {
+        "id": "energy",
+        "label": "Owner energy cost",
+        "weight": 20,
+        "scale": "1-5",
+        "invert": true,
+        "question": "Can M1 handle this without draining Taha? (5 = M1 can fully absorb)"
+      },
+      {
+        "id": "cost",
+        "label": "Cost / spend",
+        "weight": 10,
+        "scale": "1-5",
+        "invert": true,
+        "question": "Is this cheap or free to execute locally? (5 = zero paid tokens)"
+      }
+    ],
+    "default_scores": {
+      "emergency": 2,
+      "money": 2,
+      "people_helped": 3,
+      "time": 2,
+      "energy": 4,
+      "cost": 5
+    },
+    "owner_attention_floor": 850,
+    "execute_on_m1_floor": 100
+  },
+  "north_star": "Peaceful. Paid. Protected. Maximize how many people we help — family first, then operators, then the public — without burning Muhammad Taha."
+}

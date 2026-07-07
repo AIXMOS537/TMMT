@@ -1,0 +1,45 @@
+{
+  "version": "2026-07-04",
+  "description": "Autonomous mesh tick — agents work as a team; owner pinged urgent/emergency only.",
+  "default_interval_sec": 180,
+  "roles": {
+    "carry": {
+      "interval_sec": 180,
+      "tasks": ["sync", "presence", "heartbeat", "dispatch", "ghl_audit", "integration_probe"]
+    },
+    "owner": {
+      "interval_sec": 180,
+      "tasks": ["sync", "presence", "heartbeat", "dispatch", "ghl_audit", "integration_probe"]
+    },
+    "forge": {
+      "interval_sec": 300,
+      "tasks": ["sync", "presence", "heartbeat", "dispatch", "build_probe", "integration_probe"]
+    },
+    "brain": {
+      "interval_sec": 300,
+      "tasks": ["sync", "presence", "heartbeat", "brain_ping", "memory_once"]
+    },
+    "ops": {
+      "interval_sec": 240,
+      "tasks": ["sync", "presence", "heartbeat", "integration_probe"]
+    },
+    "rick": {
+      "interval_sec": 120,
+      "tasks": ["sync", "presence", "heartbeat", "rick_inbox_scan"]
+    },
+    "operator": {
+      "interval_sec": 240,
+      "tasks": ["sync", "presence", "heartbeat"]
+    }
+  },
+  "dispatch": {
+    "queue_file": "~/Brain/vault/00-Dashboard/IDEA-QUEUE-LIVE.md",
+    "handoff_dir": "~/Brain/vault/00-Dashboard/HANDOFF-TO-FORGE",
+    "rick_inbox": "~/Sync/rick/FLEET-INBOX",
+    "dedupe_window_sec": 3600
+  },
+  "log": {
+    "inbox": "~/Brain/vault/03-Systems/watchtower-inbox/events.log",
+    "tick_log": ".swarm/forever-loop.log"
+  }
+}

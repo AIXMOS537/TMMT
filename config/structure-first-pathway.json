@@ -1,0 +1,76 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "program_name": "Structure-First Pathway",
+  "tagline": "Not lazy. Not unfocused. You needed a system that pays you back.",
+  "audience": "People who were mislabeled lazy, unfocused, or unmotivated — often ADHD, trauma, or survival mode. High structure. Zero shame. Real money.",
+  "philosophy": {
+    "never_say": ["lazy", "unfocused", "just try harder", "discipline yourself"],
+    "always_say": ["one next move", "visual board", "earn before ask", "structure not shame", "body double optional"],
+    "faith_centered": true,
+    "family_first": true
+  },
+  "pathway": {
+    "learn": {
+      "name": "LEARN",
+      "duration_days": "7-14",
+      "format": "micro-modules · 5-12 min each · one screen at a time",
+      "rules": [
+        "No wall of text — visual + checklist only",
+        "One module per session max unless they choose more",
+        "Academy auto-certifies at 100% when V3_AUTO_CERTIFY_OPERATORS=true",
+        "Fit test required first: /fit-test (80% pass)"
+      ],
+      "modules_trap": [
+        "T — Truth (who TMMT serves)",
+        "R — Route (your tracked link)",
+        "A — Automate (AI qualifies, you share)",
+        "P — Payout (30% split, visible)"
+      ],
+      "adhd_accommodations": [
+        "Timer visible on every page",
+        "Progress bar always shown",
+        "Copy-paste scripts provided — no blank page syndrome",
+        "Phone-first UI — thumb reachable buttons"
+      ]
+    },
+    "earn": {
+      "name": "EARN",
+      "duration_days": "14-30",
+      "first_win_target_usd": 50,
+      "rules": [
+        "Share ONE link only until first payout",
+        "AI handles qualify + SMS — human only adds warmth",
+        "Earnings page is the scoreboard — /operator/earnings",
+        "No meetings until $50 earned"
+      ],
+      "splits": {
+        "operator_affiliate": "30%",
+        "platform": "70%"
+      }
+    },
+    "churn": {
+      "name": "CHURN",
+      "meaning": "Churn through the finish line — dream car, business, family stability",
+      "milestones": [
+        { "label": "First lead shared", "reward": "badge + Rick shoutout" },
+        { "label": "First $50", "reward": "unlock second vertical link" },
+        { "label": "First $500 month", "reward": "founding operator review" },
+        { "label": "Dream car fund 25%", "reward": "TRAP graduate status" }
+      ],
+      "not_lazy_rule": "If they miss a day — system sends ONE nudge, not guilt. Come back tomorrow."
+    }
+  },
+  "entry_urls": {
+    "fit_test": "https://tmmt-ops.vercel.app/fit-test",
+    "join": "https://tmmt-ops.vercel.app/join",
+    "academy": "https://tmmt-command-center.vercel.app/operator/training",
+    "earnings": "https://tmmt-command-center.vercel.app/operator/earnings",
+    "lead_magnet": "https://tmmt-ops.vercel.app/lp/aixmos/lead-magnet"
+  },
+  "caps": {
+    "max_operators_lifetime": 100,
+    "launch_cap": 10,
+    "fit_pass_percent": 80
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "owner": "Muhammad Taha",
+  "escalation_chain": [
+    {
+      "tier": 1,
+      "who": "Muhammad Taha",
+      "role": "sovereign",
+      "when": "Always can do it himself first"
+    },
+    {
+      "tier": 2,
+      "who": "Immediate family at home",
+      "role": "family",
+      "when": "Physical help · same house · unlock after owner devices live",
+      "command": "bash scripts/mesh/family-harness.sh onboard"
+    },
+    {
+      "tier": 3,
+      "who": "1–5 executive VAs",
+      "role": "va",
+      "when": "Revenue pays for them · GHL admin · calendar · deploy gate",
+      "seat": "aixmos-public"
+    },
+    {
+      "tier": 4,
+      "who": "Student-operators (pay you)",
+      "role": "operator",
+      "when": "Available · in area · can complete job 100%",
+      "registry": "config/operator-dispatch.json"
+    }
+  ],
+  "autonomous_default": true,
+  "owner_notify_only": ["emergency", "urgent"],
+  "notify_policy": "config/notify-policy.json"
+}

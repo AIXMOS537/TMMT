@@ -77,3 +77,4 @@ scripts/phase9-notify/.env.notify
 # Python bytecode cruft
 __pycache__/
 *.pyc
+auth/OWNER.seal.bak-*

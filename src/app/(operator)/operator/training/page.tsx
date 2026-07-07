@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createSSRClient } from "@/lib/supabase-server";
 import { Card, PageHeader, StatCard } from "@/components/ui";
+import { TrapRaceBoard } from "@/components/race/trap-race-board";
+import { buildOperatorRaceData } from "@/lib/race/build-race-data";
 import {
   GraduationCap,
   Trophy,
@@ -75,6 +77,11 @@ export default async function OperatorTrainingPage() {
     (total > 0 && completed >= total ? "READY TO CERTIFY (100%)" : "IN PROGRAM");
   const certified = o?.is_certified === true;
   const nextModule = mods.find((m) => !done.has(m.id));
+  const race = buildOperatorRaceData({
+    name: o?.operator_name ?? "Operator",
+    pctComplete: pct,
+    certified,
+  });
 
   return (
     <div className="space-y-6">
@@ -82,6 +89,8 @@ export default async function OperatorTrainingPage() {
         title="Operator Academy"
         description="Complete every module to get certified and unlock your full operator toolkit."
       />
+
+      <TrapRaceBoard data={race} compact />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard

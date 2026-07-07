@@ -1,0 +1,25 @@
+{
+  "version": "2026-07-04",
+  "owner": "Muhammad Taha / PROJECT X HAILMARY",
+  "policy": "Agents work autonomously. Owner is pinged ONLY for urgent human flags and emergencies.",
+  "levels": {
+    "log": {
+      "notify_owner": false,
+      "destination": "watchtower-inbox"
+    },
+    "urgent": {
+      "notify_owner": true,
+      "when": "Human flagged owner OR mesh help request OR revenue blocker needing owner decision"
+    },
+    "emergency": {
+      "notify_owner": true,
+      "when": "Security hard stop, kill-switch, adversarial brief, production down, legal/compliance stop"
+    }
+  },
+  "watchtower_command": "watchtower",
+  "forever_loop": "bash scripts/forever-up.sh",
+  "forever_status": "bash scripts/mesh/forever-loop.sh status",
+  "mesh_sync": "bash scripts/tmmt sync",
+  "canon": "docs/GO-LIVE-CANON.md",
+  "blip_drop": "bash scripts/blip/DROP-AND-GO.sh"
+}
