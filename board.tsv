@@ -4,4 +4,4 @@
 3	DONE	carry	swarm/carry/3	Wire GHL P0 env vars on Vercel
 4	DONE	carry	swarm/carry/4	Wire GHL P0 env vars
 5	DOING	rick	swarm/rick/5	Extend existing document-upload pattern (src/app/(admin)/document-actions.ts, forms/license-upload-actions.ts, src/lib/document-storage.ts) to fleet/maintenance photos on the relevant admin pages — do NOT build a parallel upload system, reuse the existing Storage bucket/migration pattern. Ref docs/ACTION-CHECKLIST.md E4.
-6	TODO	-	-	task description
+6	CLAIMED	carry	swarm/carry/6	task description
