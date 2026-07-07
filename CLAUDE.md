@@ -103,7 +103,7 @@ Agents: CAPTAIN refinement via `captain_dispatch` prompt (JSON output) in `~/AIX
 9. **File uploads** — Airtable had photos/licenses/contracts not yet in Supabase Storage
 10. **Email notifications** — no transactional email yet
 11. **Reporting / analytics** — **PARTIAL**: CSV export on all 19 admin DataTable pages (`ExportButton` + `src/lib/csv.ts`, exports the filtered view). Aggregate/analytics views still TODO.
-12. ~~**Testing infrastructure**~~ — **DONE (unit)**: Vitest installed (`vitest.config.ts`, `npm test`) with first suites for utils, csv, auth-roles, and the mission builder (`src/lib/**/*.test.ts`). Playwright E2E smoke tests still in `e2e/`. Component/DOM tests (jsdom) not yet added.
+12. ~~**Testing infrastructure**~~ — **DONE (unit)**: Vitest installed (`vitest.config.ts`, `npm test`) with first suites for utils, csv, auth-roles, and the mission builder (`src/lib/**/*.test.ts`). Playwright E2E smoke tests still in `e2e/`. Component/DOM tests (jsdom) added — `StatusPill` + `ExportButton` render/interaction suites under `src/components/*.test.tsx`, opting into jsdom per-file via `// @vitest-environment jsdom` with `@testing-library/jest-dom` matchers registered in `vitest.setup.ts`.
 
 ## Admin Page Pattern
 
