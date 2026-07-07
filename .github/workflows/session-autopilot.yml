@@ -1,0 +1,100 @@
+name: Claude Session Autopilot
+
+# Zero-human branch management for claude/* session branches.
+#
+# Every 6 hours (and on manual trigger) this workflow:
+#   1. Opens a PR for any claude/* branch that has commits ahead of master
+#   2. Enables auto-merge on every open claude/* PR
+#   3. Deletes branches that are fully merged (ahead=0 + merged PR exists)
+#   4. Deletes branches that are at master with no open/unmerged PR (stale)
+#
+# ONE-TIME OWNER SETUP (< 2 min) to unlock auto-merge:
+#   GitHub → Settings → Branches → Add rule → Branch: master
+#     ✅ Require status checks: add "verify" + "pii-scan"
+#     ✅ Allow auto-merge
+#   After that, every PR merges itself the moment CI goes green. Zero human input.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:          # manual trigger anytime
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autopilot:
+    name: Autopilot claude/* branches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sweep + auto-manage session branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          git fetch --all --prune --quiet
+
+          # ── Collect all claude/* branches ────────────────────────────────
+          BRANCHES=$(gh api "repos/$REPO/branches" --paginate \
+            --jq '[.[] | select(.name | test("^claude/")) | .name]' \
+            | jq -r '.[]' 2>/dev/null || true)
+
+          CREATED=0 MERGED_ENABLED=0 DELETED=0
+
+          for branch in $BRANCHES; do
+            echo "── $branch"
+
+            # How far ahead of master is this branch?
+            AHEAD=$(git rev-list "origin/master..origin/$branch" --count 2>/dev/null || echo 0)
+
+            # ── Branch has new commits → open PR + enable auto-merge ──────
+            if [ "$AHEAD" -gt 0 ]; then
+              PR_NUM=$(gh pr list --head "$branch" --state open \
+                --json number --jq '.[0].number' 2>/dev/null || true)
+
+              if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+                echo "  Creating PR ($AHEAD commit(s) ahead)"
+                gh pr create \
+                  --head "$branch" \
+                  --base master \
+                  --title "session: $branch" \
+                  --body "$(printf 'Automated PR — Claude session branch.\n\nAuto-merge is enabled; this PR merges itself once **verify** + **pii-scan** are green.\n\n---\n_Created by the Session Autopilot workflow._')" \
+                  2>/dev/null && CREATED=$((CREATED+1)) || echo "  PR already open or conflict, skipping"
+
+                PR_NUM=$(gh pr list --head "$branch" --state open \
+                  --json number --jq '.[0].number' 2>/dev/null || true)
+              fi
+
+              if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "null" ]; then
+                gh pr merge "$PR_NUM" --auto --merge 2>/dev/null \
+                  && { echo "  Auto-merge ON (PR #$PR_NUM)"; MERGED_ENABLED=$((MERGED_ENABLED+1)); } \
+                  || echo "  Auto-merge unavailable on PR #$PR_NUM — enable branch protection to unlock"
+              fi
+              continue
+            fi
+
+            # ── Branch is at master (AHEAD=0) → candidate for deletion ───
+            # Only delete if a merged PR exists or no unmerged/open PR exists.
+            OPEN_PR=$(gh pr list --head "$branch" --state open \
+              --json number --jq 'length' 2>/dev/null || echo 0)
+
+            if [ "$OPEN_PR" -gt 0 ]; then
+              echo "  At master but has open PR — leaving alone"
+              continue
+            fi
+
+            echo "  At master, no open PR — deleting stale branch"
+            git push origin --delete "$branch" 2>/dev/null \
+              && { echo "  Deleted"; DELETED=$((DELETED+1)); } \
+              || echo "  Could not delete (may already be gone)"
+          done
+
+          echo ""
+          echo "Summary: PRs created=$CREATED auto-merge-enabled=$MERGED_ENABLED branches-deleted=$DELETED"
