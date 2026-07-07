@@ -5,8 +5,26 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost } from "@/lib/site-domains";
 
+function isShortLinkPath(pathname: string) {
+  return (
+    pathname === "/join" ||
+    pathname === "/97" ||
+    pathname === "/member" ||
+    pathname === "/academy" ||
+    pathname === "/playbook" ||
+    pathname === "/apply" ||
+    pathname === "/operators" ||
+    pathname === "/rental" ||
+    pathname === "/demo" ||
+    pathname === "/earn" ||
+    pathname === "/funding" ||
+    pathname === "/credit"
+  );
+}
+
 function isPublicPath(pathname: string) {
   return (
+    isShortLinkPath(pathname) ||
     pathname === "/login" ||
     pathname === "/robots.txt" ||
     pathname === "/offline" ||
@@ -14,26 +32,35 @@ function isPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/explainer" ||
+    pathname === "/try" ||
     pathname.startsWith("/build/") ||
+    pathname.startsWith("/lp/") ||
+    pathname.startsWith("/try/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/leads/")
   );
 }
 
 /** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
 function isPitchPublicPath(pathname: string) {
   return (
+    isShortLinkPath(pathname) ||
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/explainer" ||
+    pathname === "/try" ||
     pathname.startsWith("/build/") ||
+    pathname.startsWith("/lp/") ||
+    pathname.startsWith("/try/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/leads/")
   );
 }
 
