@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${SMOKE_BASE_URL:-https://tmmt-command-center.vercel.app}"
+# Public ops forms (customer-intake) live on tmmt-ops; command-center may lag until M1 prod deploy.
+BASE="${SMOKE_BASE_URL:-https://tmmt-ops.vercel.app}"
 paths=(
   "/"
   "/login"

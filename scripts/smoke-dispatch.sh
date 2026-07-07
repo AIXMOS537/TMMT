@@ -21,6 +21,7 @@ echo "=== 1. Production URLs (3-app ecosystem) ==="
 # url|expected-http-code|label
 checks=(
   "https://tmmt-ops.vercel.app/login|200|tmmt-ops /login"
+  "https://tmmt-ops.vercel.app/forms/customer-intake|200|tmmt-ops customer-intake"
   "https://tmmt-command-center.vercel.app|307|tmmt-command-center root (redirects to /login)"
   "https://tmmt-command-center.vercel.app/login|200|tmmt-command-center /login"
   "https://aixmos-landing.vercel.app|200|aixmos-landing root"
