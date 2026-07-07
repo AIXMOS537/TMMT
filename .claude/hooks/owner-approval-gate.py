@@ -20,16 +20,19 @@ import os
 import re
 import sys
 
-# (label, regex) — genuinely outbound / financial / production actions only.
-# Ordinary dev (git, npm, node, grep, build, test) must pass untouched.
+# (label, regex) — matches only REAL outbound/financial/production actions:
+# a call to a send/pay API host, an SDK send/charge call, a CLI invoked with a
+# real subcommand, or a prod deploy. Deliberately precise so it does NOT trip on
+# the mere WORD appearing in a commit message, file path (e.g. twilio-send.ts),
+# test name, or grep — only ordinary dev, which must always pass untouched.
 RISK = [
-    ("send SMS (Twilio)",      r"api\.twilio\.com|/Messages\.json|messages\.create|\btwilio\b"),
-    ("charge/pay (Stripe)",    r"api\.stripe\.com|\bstripe\b.*\b(charges?|payouts?|transfers?|paymentintents?|refunds?)\b"),
-    ("send (GoHighLevel)",     r"services\.leadconnectorhq\.com|gohighlevel|\bghl\b.*\b(send|message|sms|email)\b"),
-    ("send email",             r"api\.sendgrid\.com|api\.mailgun|\bses\b.*send-email|smtp.*send"),
-    ("e-sign / ship",          r"docusign|hellosign|\besign\b|\bship(ment)?\b.*\b(create|submit)\b"),
-    ("deploy to production",   r"vercel\s+.*--prod|vercel\s+deploy\s+--prod|netlify\s+deploy\s+--prod"),
-    ("credit-bureau dispute",  r"\bdispute\b.*\b(submit|send|file)\b|experian|equifax|transunion"),
+    ("send SMS (Twilio)",     r"api\.twilio\.com|/Messages\.json\b|\bmessages\.create\s*\(|(?<![\w-])twilio\s+(?:api|messages|phone-numbers)\b"),
+    ("charge/pay (Stripe)",   r"api\.stripe\.com|(?<![\w-])stripe\s+(?:charges|payouts|transfers|payment_intents|refunds)\b|\b(?:charges|payouts|paymentIntents|transfers|refunds)\.create\s*\("),
+    ("send (GoHighLevel)",    r"services\.leadconnectorhq\.com|rest\.gohighlevel\.com"),
+    ("send email (ESP)",      r"api\.sendgrid\.com|api\.mailgun\.net|email\.[a-z0-9.\-]*amazonaws\.com|(?<![\w-])aws\s+ses\s+send-email\b"),
+    ("e-sign",                r"\.docusign\.(?:net|com)|api\.hellosign\.com|api\.eversign\.com"),
+    ("deploy to production",  r"(?<![\w-])vercel\s+(?:deploy\s+)?[^\n]*--prod\b|(?<![\w-])netlify\s+deploy\s+[^\n]*--prod\b"),
+    ("credit-bureau submit",  r"(?:api|secure)\.(?:experian|equifax|transunion)\.com"),
 ]
 
 
