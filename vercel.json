@@ -16,6 +16,6 @@
   "crons": [
     { "path": "/api/cron/marketing-kpi-ghl", "schedule": "0 13 * * 1" },
     { "path": "/api/cron/journey-recompute", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/auto-provision-operators", "schedule": "*/15 * * * *" }
+    { "path": "/api/cron/auto-provision-operators", "schedule": "0 5 * * *" }
   ]
 }
