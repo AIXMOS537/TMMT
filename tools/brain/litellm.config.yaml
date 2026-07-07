@@ -15,16 +15,27 @@ model_list:
       model: ollama/qwen2.5:14b
       api_base: http://127.0.0.1:11434
 
-  # ── OPTIONAL OVERFLOW: ONE legitimate cloud key (uncomment to enable) ─────
-  # Used only when local is busy/insufficient. This is a single real key from a
-  # real account — never a rotation of many free keys.
-  # - model_name: code
-  #   litellm_params:
-  #     model: anthropic/<your-current-claude-model>
-  #     api_key: os.environ/ANTHROPIC_API_KEY
+  # ── OPTIONAL OVERFLOW — the COST LADDER (all OFF by default) ──────────────
+  # Local (above) does the volume for free. Only reach for cloud when local is
+  # busy/insufficient, and CHEAPEST-FIRST so a chat never drains credits on
+  # routine work. One legitimate key from a real account — never key rotation.
+  # See docs/EMPLOYEE-FLEET.md for the full doctrine.
+  #
+  # TIER 2 — CHEAP CLOUD overflow (uncomment to enable): Haiku, pennies/call.
   # - model_name: chat
   #   litellm_params:
-  #     model: anthropic/<your-current-claude-model>
+  #     model: anthropic/claude-haiku-4-5
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+  # - model_name: code
+  #   litellm_params:
+  #     model: anthropic/claude-haiku-4-5
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+  #
+  # TIER 3 — BIG cloud, ON DEMAND ONLY (separate model_name so it is never the
+  # default fall-through; ask for "big" explicitly for a task that earns it):
+  # - model_name: big
+  #   litellm_params:
+  #     model: anthropic/claude-sonnet-5
   #     api_key: os.environ/ANTHROPIC_API_KEY
 
 router_settings:
