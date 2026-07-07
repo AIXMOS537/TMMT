@@ -93,3 +93,7 @@ dist/
 # never commit secrets, bonds, registration numbers, client PII
 secrets/
 *.pii
+
+# autopilot runtime logs (config CHARTER.md/QUEUE.md are tracked; logs are not)
+.aixmos/autopilot/ledger.ndjson
+.aixmos/autopilot/*.log
