@@ -20,7 +20,10 @@ operator to orchestrator — build for delegation, not hand-holding.
   behind flags that ONLY Muhammad or Umar can unlock after the required legal steps.
   Do not enable, default-on, or remove these flags. See COMPLIANCE below.
 - **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
-- **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls.
+- **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls. Loops/
+  agents route through the brain-router (local `chat`/`code`); cloud is cheapest-first
+  overflow only, big models on demand — never for routine work. Always-on nodes run the
+  employee loops locally: `docs/EMPLOYEE-FLEET.md`.
 
 ## REPO CONVENTIONS
 - TypeScript + Python. Shared schemas are the contract — change schema first, then
