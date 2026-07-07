@@ -1,0 +1,59 @@
+name: Autopilot (self-continue)
+# Runs ONE safe backlog item on a schedule with no human input, even when no
+# machine is on. OFF by default: the job only runs when repo variable
+# AUTOPILOT_ENABLED == 'true' AND secret ANTHROPIC_API_KEY is set — so merging this
+# file costs nothing until the owner deliberately turns it on (BYO-key rule).
+#
+# Turn on:  repo → Settings → Secrets and variables → Actions
+#   • Variable AUTOPILOT_ENABLED = true
+#   • Variable AUTOPILOT_BRANCH  = <your work branch>   (never main/master)
+#   • Secret   ANTHROPIC_API_KEY = <your key>           (your capped spend)
+# Turn off: set AUTOPILOT_ENABLED = false (or delete the variable).
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours; harmless while disabled
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autopilot
+  cancel-in-progress: false
+
+jobs:
+  self-continue:
+    if: ${{ vars.AUTOPILOT_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ vars.AUTOPILOT_BRANCH || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Claude Code CLI
+        run: npm i -g @anthropic-ai/claude-code
+
+      - name: Configure git identity
+        run: |
+          git config user.name "aixmos-autopilot"
+          git config user.email "autopilot@tmmt.local"
+
+      - name: Run one safe cycle
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTOPILOT_BRANCH: ${{ vars.AUTOPILOT_BRANCH || github.ref_name }}
+          CLAUDE_FLAGS: "-p --dangerously-skip-permissions"
+          AUTOPILOT_MAX_SECONDS: "1500"
+        run: bash scripts/self-continue.sh once
