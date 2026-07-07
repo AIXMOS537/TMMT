@@ -21,6 +21,7 @@ export interface ProcessInboundArgs {
   skuPriceCents?: number
   inboundBody: string
   phone: string
+  channel?: 'sms' | 'voice'
   recentMessages: Array<{ direction: 'in' | 'out'; body: string }>
 }
 
@@ -61,6 +62,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   const systemPrompt = buildSystemPrompt(args.org, {
     currentState: args.prevState,
     sku: args.sku,
+    channel: args.channel,
     lastTurns: args.recentMessages,
   })
 

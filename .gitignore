@@ -85,6 +85,7 @@ __pycache__/
 
 # AIXMOS Ultimatrix: local PII denylist (owner-local only — NEVER commit PII)
 .aixmos/pii_denylist.local
+.aixmos/face/
 *.bak-*
 
 # AIXMOS runtime artifacts — per-machine, regenerated locally (heartbeat, device
