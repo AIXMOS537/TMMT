@@ -22,6 +22,11 @@ heal_label() {
 
 kickstart_label() {
   local label="$1"
+  case "$label" in
+    com.hailmary.litellm-local)
+      curl -sf --max-time 2 http://127.0.0.1:4001/ >/dev/null 2>&1 && return 0
+      ;;
+  esac
   launchctl kickstart -k "gui/$UID_NUM/$label" 2>/dev/null || true
 }
 
