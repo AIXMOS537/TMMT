@@ -673,3 +673,38 @@ export async function submitDealerApplication(formData: FormData): Promise<FormR
 
   return result;
 }
+
+// ── Mission-fit entrance test (pre-/join gate) ───────────────────────────────
+// Stateless: scores the answers and checks the operator cap. Persistence of
+// attempts (if wanted) rides on the /join submission that follows a pass.
+
+type MissionFitResult =
+  | { success: true; passed: boolean; score: number; executiveReview: boolean }
+  | { success: false; error: string };
+
+export async function submitMissionFitTest(formData: FormData): Promise<MissionFitResult> {
+  const { MISSION_FIT_QUESTIONS, scoreFitAnswers, isOperatorCapReached } = await import(
+    "@/lib/v3/mission-fit"
+  );
+
+  const answers: Record<string, number | string> = {};
+  for (const q of MISSION_FIT_QUESTIONS) {
+    const raw = formData.get(q.id);
+    if (raw === null || String(raw).trim() === "") {
+      return { success: false, error: "Please answer every question." };
+    }
+    answers[q.id] = String(raw);
+  }
+  const applicantType = formData.get("applicant_type");
+  if (typeof applicantType === "string" && applicantType.trim()) {
+    answers.applicant_type = applicantType.trim();
+  }
+
+  const cap = await isOperatorCapReached();
+  if (cap.blocked) {
+    return { success: false, error: cap.reason ?? "Operator network is full — you're early for the next wave." };
+  }
+
+  const { score, passed, executiveReview } = scoreFitAnswers(answers);
+  return { success: true, passed, score, executiveReview };
+}
