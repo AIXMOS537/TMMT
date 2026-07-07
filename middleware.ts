@@ -5,6 +5,19 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost } from "@/lib/site-domains";
 
+/** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio). */
+function isFunnelPublicPath(pathname: string) {
+  return (
+    pathname === "/join" ||
+    pathname.startsWith("/lp/") ||
+    pathname.startsWith("/api/leads/") ||
+    pathname === "/api/agent/_health" ||
+    pathname.startsWith("/api/agent/sms/") ||
+    pathname.startsWith("/api/agent/stripe/webhook/") ||
+    pathname.startsWith("/api/agent/cal/webhook/")
+  );
+}
+
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
@@ -19,7 +32,8 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    isFunnelPublicPath(pathname)
   );
 }
 
@@ -33,7 +47,8 @@ function isPitchPublicPath(pathname: string) {
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
-    pathname.startsWith("/api/webhooks/")
+    pathname.startsWith("/api/webhooks/") ||
+    isFunnelPublicPath(pathname)
   );
 }
 
