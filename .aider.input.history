@@ -1,0 +1,162 @@
+
+# 2026-07-07 03:02:33.618950
++# FLEET MISSION — trapper-corporate-build
++priority: MAX
++score: 9993
++law: CARRY-OFFICE-TAKEOVER-20260707-014551
++from: Carry MacBook-Pro-3 · 2026-07-07T05:45:56Z
+
+# 2026-07-07 03:02:33.619215
++# FLEET MISSION — trapper-corporate-build
++priority: MAX
++score: 9993
++law: CARRY-OFFICE-TAKEOVER-20260707-014551
++from: Carry MacBook-Pro-3 · 2026-07-07T05:45:56Z
+
+# 2026-07-07 03:14:40.990914
++# M1 WORK LAW — test
++from: MacBook-Pro-3 · 2026-07-07T04:46:52Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-203625-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# test
++
++Created: 2026-07-07T00:36:25Z
++Owner: Muhammad Taha
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 03:14:40.991160
++# M1 WORK LAW — test
++from: MacBook-Pro-3 · 2026-07-07T04:46:52Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-203625-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# test
++
++Created: 2026-07-07T00:36:25Z
++Owner: Muhammad Taha
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 03:21:28.116568
++# M1 WORK LAW — ClickUp: 2022 Ford Escape key needs battery
++from: MacBook-Pro-3 · 2026-07-07T04:48:52Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-clickup-86aea4mq9-2022-Ford-Escape-key-n
++
++## Mission
++# ClickUp: 2022 Ford Escape key needs battery
++
++status: to do
++url: https://app.clickup.com/t/86aea4mq9
++list: 901318986996
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 03:21:28.117072
++# M1 WORK LAW — ClickUp: 2022 Ford Escape key needs battery
++from: MacBook-Pro-3 · 2026-07-07T04:48:52Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-clickup-86aea4mq9-2022-Ford-Escape-key-n
++
++## Mission
++# ClickUp: 2022 Ford Escape key needs battery
++
++status: to do
++url: https://app.clickup.com/t/86aea4mq9
++list: 901318986996
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 03:33:40.554116
++# M1 WORK LAW — via watchtower 2153
++from: MacBook-Pro-3 · 2026-07-07T04:54:54Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-215343-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# via watchtower 2153
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 03:33:40.554306
++# M1 WORK LAW — via watchtower 2153
++from: MacBook-Pro-3 · 2026-07-07T04:54:54Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-215343-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# via watchtower 2153
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
