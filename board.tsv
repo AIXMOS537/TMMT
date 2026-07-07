@@ -1,3 +1,5 @@
 # id	status	machine	branch	lane	tier	lease	task	log
 1	FAILED	rick	swarm/rick/1	general	2		smoke: summarize open priorities	t2 FAILED
 2	TODO			general	1		Follow up with Tyler about the 6/20 payment tomorrow morning.	
+3	TODO			general	0		Verify portable pill works	
+4	TODO			code	2		Set up capture script on MacBook-Pro-3	
