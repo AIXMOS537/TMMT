@@ -18,6 +18,10 @@ export default function OfflinePage() {
           No internet right now. The app is still installed and ready — reconnect
           and it&apos;ll pick up where you left off.
         </p>
+        {/* Intentional raw <a>: a full-document navigation is what retries
+            loading the app after reconnecting. next/link's client-side nav is
+            the wrong behavior on the offline fallback. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/"
           className="mt-6 inline-block rounded-lg bg-[#1440C4] px-6 py-3 text-sm font-semibold hover:bg-blue-700"
