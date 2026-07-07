@@ -5,6 +5,29 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost } from "@/lib/site-domains";
 
+function isMachineAuthPath(pathname: string) {
+  return (
+    pathname.startsWith("/api/cron/") ||
+    pathname.startsWith("/api/license/") ||
+    pathname.startsWith("/api/admin/") ||
+    pathname === "/api/audit/events" ||
+    pathname === "/api/mission/generate"
+  );
+}
+
+const STAFF_ONLY_FORM_PREFIXES = ["/forms/handover", "/forms/onboarding-inspection"];
+
+function isStaffOnlyForm(pathname: string) {
+  return STAFF_ONLY_FORM_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
+function isPublicFormPath(pathname: string) {
+  if (isStaffOnlyForm(pathname)) return false;
+  return pathname.startsWith("/forms");
+}
+
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
@@ -20,7 +43,7 @@ function isPublicPath(pathname: string) {
     pathname === "/funding" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/lp/") ||
-    pathname.startsWith("/forms") ||
+    isPublicFormPath(pathname) ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
@@ -43,7 +66,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/funding" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/lp/") ||
-    pathname.startsWith("/forms") ||
+    isPublicFormPath(pathname) ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/api/webhooks/") ||
     pathname.startsWith("/api/leads/") ||
@@ -94,6 +117,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
   const ownerHub = isOwnerHubHost(host);
+
+  if (isMachineAuthPath(pathname)) {
+    return withRobotsHeader(NextResponse.next({ request }));
+  }
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
