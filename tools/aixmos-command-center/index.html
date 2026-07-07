@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AIXMOS — Press Start</title>
+<meta name="description" content="AIXMOS command center. Pick a level. Power it on. Built by PROJECT X HAILMARY — $1M+ in operations touched." />
+<meta name="theme-color" content="#07090E" />
+<meta property="og:title" content="AIXMOS — Press Start" />
+<meta property="og:description" content="The empire on one screen. Tap in." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307090E'/%3E%3Crect x='9' y='9' width='14' height='14' transform='rotate(45 16 16)' fill='%23E8B44C'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --void:#07090E; --carbon:#0E1218; --carbon-2:#141A22; --line:#1F2630;
+    --gold:#E8B44C; --gold-bright:#FFD479;
+    --cyan:#4DE3E8; --magenta:#C86BFF; --green:#7CFFA0;
+    --mist:#8A94A6; --mist-dim:#586273; --paper:#EAF0F7;
+    --holo:linear-gradient(110deg,var(--cyan) 0%,var(--magenta) 38%,var(--gold-bright) 72%,var(--cyan) 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--void);color:var(--paper);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.5;min-height:100dvh}
+  .mono{font-family:'Space Mono',monospace}
+  #ambient{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.65}
+  .grid-veil{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;opacity:.12;mask-image:radial-gradient(circle at 50% 30%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 30%,#000,transparent 78%)}
+  .scan{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px);mix-blend-mode:overlay;opacity:.5}
+  main{position:relative;z-index:2}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .holo-text{background:var(--holo);background-size:280% 280%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:holoShift 9s ease-in-out infinite}
+  @keyframes holoShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes blink{0%,44%{opacity:1}45%,100%{opacity:.15}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+  /* top */
+  .top{display:flex;align-items:center;gap:12px;padding:20px 0 8px}
+  .brand{font-family:'Chakra Petch';font-weight:700;letter-spacing:.2em;font-size:15px;display:flex;align-items:center;gap:9px}
+  .brand .dia{width:13px;height:13px;background:var(--holo);background-size:200% 200%;transform:rotate(45deg);animation:holoShift 6s ease-in-out infinite}
+  .top .who{margin-left:auto;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mist-dim)}
+
+  /* hero / start */
+  .hero{text-align:center;padding:clamp(30px,7vw,64px) 0 clamp(20px,4vw,36px)}
+  .kicker{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);animation:blink 1.6s steps(1) infinite}
+  .hero h1{font-family:'Chakra Petch';font-weight:700;font-size:clamp(52px,15vw,150px);line-height:.9;letter-spacing:-.01em;text-transform:uppercase;margin:14px 0 6px}
+  .hero .sub{font-family:'Chakra Petch';font-weight:600;font-size:clamp(15px,3.4vw,22px);letter-spacing:.02em;color:var(--paper)}
+  .hero .sub b{color:var(--gold)}
+  .hero .say{margin-top:12px;color:var(--mist);font-size:clamp(13px,2.6vw,16px)}
+
+  /* high score */
+  .score{margin:26px auto 6px;max-width:960px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(var(--carbon),var(--carbon));overflow:hidden}
+  .score-h{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .score-h::before{content:"";width:18px;height:1px;background:var(--gold)}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr)}
+  .stat{padding:18px 14px;text-align:center;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat .v{font-family:'Chakra Petch';font-weight:700;font-size:clamp(20px,4.4vw,30px);line-height:1;color:var(--gold-bright)}
+  .stat .l{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist-dim);margin-top:7px}
+  @media(max-width:720px){.stats{grid-template-columns:1fr 1fr 1fr}.stat:nth-child(3){border-right:none}.stat:nth-child(n+4){border-top:1px solid var(--line)}}
+  @media(max-width:420px){.stats{grid-template-columns:1fr 1fr}.stat{border-right:1px solid var(--line)!important}.stat:nth-child(even){border-right:none!important}.stat:nth-child(n+3){border-top:1px solid var(--line)}}
+
+  /* level select */
+  .select{padding:36px 0 8px}
+  .sh{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:26px}
+  .sh::before,.sh::after{content:"";width:38px;height:1px;background:var(--gold);opacity:.6}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:860px){.levels{grid-template-columns:1fr}}
+  .lvl{position:relative;display:block;text-decoration:none;color:inherit;background:var(--carbon);border:1px solid var(--line);border-radius:12px;padding:26px 22px 22px;overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s;isolation:isolate}
+  .lvl::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--holo);background-size:280% 280%;opacity:0;transition:opacity .3s;animation:holoShift 9s ease-in-out infinite}
+  .lvl::after{content:"";position:absolute;inset:1px;z-index:-1;background:var(--carbon-2);border-radius:11px}
+  .lvl:hover,.lvl:focus-visible{transform:translateY(-6px);border-color:transparent;outline:none}
+  .lvl:hover::before,.lvl:focus-visible::before{opacity:.9}
+  .lvl .tagno{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist-dim)}
+  .lvl.boss .tagno{color:var(--magenta)}
+  .lvl .ico{font-size:44px;line-height:1;margin:10px 0 14px;animation:floaty 4s ease-in-out infinite}
+  .lvl h3{font-family:'Chakra Petch';font-weight:700;font-size:26px;letter-spacing:.01em;text-transform:uppercase;line-height:1}
+  .lvl .desc{color:var(--mist);font-size:14px;margin-top:10px;min-height:42px}
+  .lvl .easy{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);margin-top:12px;letter-spacing:.04em}
+  .play{margin-top:18px;display:inline-flex;align-items:center;gap:9px;font-family:'Chakra Petch';font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:14px;padding:12px 20px;border-radius:40px;background:var(--gold);color:#1a1206;transition:box-shadow .2s,background .2s}
+  .lvl:hover .play,.lvl:focus-visible .play{background:var(--gold-bright);box-shadow:0 0 26px rgba(232,180,76,.5)}
+  .lvl.boss .play{background:linear-gradient(90deg,var(--magenta),var(--gold-bright))}
+  .play .tri{font-size:12px}
+  .ribbon{position:absolute;top:16px;right:-34px;transform:rotate(45deg);background:var(--magenta);color:#12030f;font-family:'Chakra Petch';font-weight:700;font-size:10px;letter-spacing:.18em;padding:5px 40px;text-transform:uppercase}
+
+  /* how to play */
+  .htp{margin-top:34px;border:1px dashed var(--mist-dim);border-radius:12px;padding:22px;background:rgba(20,26,34,.5)}
+  .htp h4{font-family:'Chakra Petch';font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:15px;color:var(--gold);margin-bottom:14px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:720px){.steps{grid-template-columns:1fr}}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step .num{flex:none;width:30px;height:30px;border-radius:50%;background:var(--holo);background-size:200% 200%;animation:holoShift 7s ease-in-out infinite;color:#0a0a0a;font-family:'Chakra Petch';font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .step p{font-size:14px;color:var(--paper)}
+  .step p b{color:var(--gold)}
+
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:24px 0 40px;text-align:center}
+  footer .tag{font-family:'Chakra Petch';font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:14px}
+  footer .tag b{color:var(--gold)}
+  footer p{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--mist-dim);margin-top:8px}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+</style>
+</head>
+<body>
+<canvas id="ambient"></canvas>
+<div class="grid-veil"></div>
+<div class="scan"></div>
+
+<main>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><span class="dia"></span>AIXMOS</div>
+      <div class="who">Player 1 · PROJECT X HAILMARY</div>
+    </div>
+
+    <section class="hero">
+      <div class="kicker">▸ Press Start ◂</div>
+      <h1 class="holo-text">THE EMPIRE</h1>
+      <div class="sub">One screen. <b>Three levels.</b> Tap in and play.</div>
+      <div class="say">I&rsquo;m done talking. The work talks now. &mdash; Player 1</div>
+    </section>
+
+    <div class="score">
+      <div class="score-h">High Score · The Receipts</div>
+      <div class="stats">
+        <div class="stat"><div class="v">$1M+</div><div class="l">Operations touched</div></div>
+        <div class="stat"><div class="v">$90&ndash;100K</div><div class="l">/mo rental built</div></div>
+        <div class="stat"><div class="v">$250K</div><div class="l">In one year</div></div>
+        <div class="stat"><div class="v">$50K</div><div class="l">Investor closed</div></div>
+        <div class="stat"><div class="v">$10K</div><div class="l">/mo every client</div></div>
+      </div>
+    </div>
+
+    <section class="select">
+      <div class="sh">Select Your Level</div>
+      <div class="levels">
+
+        <a class="lvl" href="https://claude.ai/code/artifact/f61e0e0a-1466-4403-bf1e-a8084137bd36" target="_blank" rel="noopener">
+          <div class="tagno">Level 01</div>
+          <div class="ico">🛠️</div>
+          <h3>The Machine</h3>
+          <div class="desc">Build your money machine. Pick the parts you want. Push the button. Watch it turn on.</div>
+          <div class="easy">▸ Like building a LEGO robot.</div>
+          <div class="play"><span class="tri">▶</span> Play</div>
+        </a>
+
+        <a class="lvl" href="https://claude.ai/code/artifact/b41696da-b33f-426e-8a43-d085ed5f70f9" target="_blank" rel="noopener">
+          <div class="tagno">Level 02</div>
+          <div class="ico">🏙️</div>
+          <h3>The Empire</h3>
+          <div class="desc">See the whole thing. What it does, what it costs, where it takes you. $97 to get in.</div>
+          <div class="easy">▸ Like the map of the whole game.</div>
+          <div class="play"><span class="tri">▶</span> Play</div>
+        </a>
+
+        <a class="lvl boss" href="https://claude.ai/code/artifact/307477d1-65db-434d-b1c3-cddbed78a718" target="_blank" rel="noopener">
+          <div class="ribbon">Boss</div>
+          <div class="tagno">Boss Level</div>
+          <div class="ico">💰</div>
+          <h3>The Money Story</h3>
+          <div class="desc">How it&rsquo;s worth over a million. The receipts, the moves, and the ask. This is the flex.</div>
+          <div class="easy">▸ Like the treasure at the end.</div>
+          <div class="play"><span class="tri">▶</span> Play</div>
+        </a>
+
+      </div>
+
+      <div class="htp">
+        <h4>🎮 How to play</h4>
+        <div class="steps">
+          <div class="step"><span class="num">1</span><p><b>Tap a card.</b> Any of the three above. It opens that world.</p></div>
+          <div class="step"><span class="num">2</span><p><b>Look around.</b> Tap things. Nothing breaks. It&rsquo;s all yours.</p></div>
+          <div class="step"><span class="num">3</span><p><b>Come back here.</b> This screen is home base. Pick the next level.</p></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <div class="tag">AIX<b>MOS</b> &mdash; For the people. By the people.</div>
+      <p>PROJECT X HAILMARY · TMMT AUTO SERVICES LLC · THE WORK SPEAKS</p>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cv=document.getElementById('ambient'),ctx=cv.getContext('2d'),W,H,parts=[];
+  function size(){W=cv.width=innerWidth;H=cv.height=innerHeight;}size();addEventListener('resize',size);
+  function seed(){parts=[];var n=reduce?28:Math.min(96,Math.floor(W*H/15000));for(var i=0;i<n;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*1+.3,vy:Math.random()*.24+.05});}
+  seed();addEventListener('resize',seed);
+  var cols=['rgba(232,180,76,','rgba(77,227,232,','rgba(200,107,255,'];
+  function draw(){ctx.clearRect(0,0,W,H);for(var i=0;i<parts.length;i++){var p=parts[i];p.y-=p.vy;if(p.y<-4){p.y=H+4;p.x=Math.random()*W;}ctx.beginPath();ctx.arc(p.x,p.y,p.z,0,6.283);ctx.fillStyle=cols[i%3]+(0.08+p.z*0.16)+')';ctx.fill();}if(!reduce)requestAnimationFrame(draw);}
+  draw();
+})();
+</script>
+</body>
+</html>
