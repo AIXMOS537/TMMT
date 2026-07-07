@@ -191,6 +191,26 @@ else
   warn "Tailscale not installed — brew install tailscale"
 fi
 
+# ── STEP 9: Local-first routing + self-running loops (best mode) ──
+say "STEP 9 — Local-first routing + self-running loops"
+# Route all agents/loops through the local brain-router: local is free, cloud is
+# cheapest-first overflow only (docs/EMPLOYEE-FLEET.md). Best-effort, non-blocking.
+if command -v litellm >/dev/null 2>&1; then
+  pgrep -f 'litellm --config' >/dev/null 2>&1 \
+    || ( nohup bash "$ROOT/scripts/brain-router.sh" >/tmp/brain-router.log 2>&1 & )
+  sleep 2; ok "brain-router (local primary) → :4000  (log: /tmp/brain-router.log)"
+else
+  warn "brain-router needs LiteLLM once: pipx install 'litellm[proxy]'  (then agents route local/free)"
+fi
+# Persist the always-on employee loops — OWNER nodes only (owner-proxy is owner-only).
+if [[ "${RICK:-}" == "1" || "${AIXMOS_OWNER_NODE:-}" == "1" ]] && [[ "$(uname)" == "Darwin" ]]; then
+  bash "$ROOT/scripts/office-up-rick.sh" >/dev/null 2>&1 \
+    && ok "employee loops persisted — autopilot + always-on HAILMARY, login-boot" \
+    || warn "run once: bash scripts/office-up-rick.sh"
+else
+  info "Always-on employee node?  AIXMOS_OWNER_NODE=1 bash scripts/office-up-rick.sh   (owner nodes only)"
+fi
+
 # ── Done ──────────────────────────────────────────────────
 printf '\n%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$G" "$RST"
 printf '%s  Machine armed. PROJECT X HAILMARY is live.%s\n' "$G" "$RST"
@@ -198,4 +218,5 @@ printf '%s━━━━━━━━━━━━━━━━━━━━━━━�
 printf '  ARIA          → http://localhost:4200\n'
 printf '  Face server   → http://localhost:7788/health\n'
 printf '  Ollama        → http://localhost:11434\n'
-printf '  Fleet status  → bash scripts/everything.sh --status\n\n'
+printf '  Brain router  → http://localhost:4000  (local-first; cloud = cheap overflow only)\n'
+printf '  Employee fleet→ docs/EMPLOYEE-FLEET.md   ·   Status → bash scripts/everything.sh --status\n\n'
