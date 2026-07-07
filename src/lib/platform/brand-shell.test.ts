@@ -14,12 +14,12 @@ describe("brand-shell", () => {
 
   it("loads canonical tenants", () => {
     expect(getBrandShell("aixmos")?.displayName).toBe("AIXMOS");
-    expect(getBrandShell("moe_legacy")?.displayName).toBe("Moe Legacy");
+    expect(getBrandShell("moe_legacy")?.displayName).toBe("AIXMOS Credit");
     expect(getBrandShell("tmmt_property")?.displayName).toBe("TMMT");
   });
 
   it("resolves aliases", () => {
-    expect(getBrandShell("redhood")?.id).toBe("moe-legacy");
+    expect(getBrandShell("redhood")).toBeUndefined();
     expect(getBrandShell("tmmt")?.id).toBe("tmmt");
   });
 

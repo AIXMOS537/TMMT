@@ -5,13 +5,11 @@
 # The fleet (docs/FLEET-ROSTER.md):
 #   • carry     — the Owner's carry Mac (M5) → owner kit, mobile command   [carry-mac]
 #   • brain     — the Owner's M1 Mac → owner kit + always-on home brain     [brainiac-mac]
-#   • moe       — Moe Legacy / Umar's Mac → fenced operator (Red Hood)      [moe-legacy]
 #   • own       — family / friend → THEIR OWN private mesh, fully isolated
 #
 #   bash scripts/one-shot.sh            # asks which machine this is
 #   bash scripts/one-shot.sh carry      # the Owner's carry M5
 #   bash scripts/one-shot.sh brain      # the Owner's M1 (also sets up always-on)
-#   bash scripts/one-shot.sh moe        # Moe Legacy operator (fenced)
 #   bash scripts/one-shot.sh own        # someone's own sovereign mesh
 #   bash scripts/one-shot.sh --help
 #
@@ -75,7 +73,6 @@ case "$ROLE" in
   mine) ROLE=carry;;                         # old "MINE" = the Owner's device
   carry-mac|carry) ROLE=carry;;
   brainiac-mac|brain|m1) ROLE=brain;;
-  moe-legacy|moe|umar|operator|red-hood|guest|partner) ROLE=moe;;
   own|sovereign|family|friend) ROLE=own;;
 esac
 
@@ -84,10 +81,9 @@ if [ -z "$ROLE" ]; then
   say "  ${BD}Which machine is this?${X}"
   say "   [1] ${BD}carry${X}  — the Owner's carry Mac (M5)"
   say "   [2] ${BD}brain${X}  — the Owner's M1 Mac (always-on home brain)"
-  say "   [3] ${BD}moe${X}    — Moe Legacy / Umar's Mac (fenced operator)"
-  say "   [4] ${BD}own${X}    — someone else's own private mesh"
+  say "   [3] ${BD}own${X}    — someone else's own private mesh"
   printf '  > '; IFS= read -r p || true
-  case "${p:-}" in 1) ROLE=carry;; 2) ROLE=brain;; 3) ROLE=moe;; 4) ROLE=own;; *) ROLE=carry;; esac
+  case "${p:-}" in 1) ROLE=carry;; 2) ROLE=brain;; 3) ROLE=own;; *) ROLE=carry;; esac
 fi
 
 banner(){ say; say "  ┌────────────────────────────────────────────────┐"; say "  │  ONE-SHOT · $1"; say "  └────────────────────────────────────────────────┘"; }
@@ -119,28 +115,6 @@ if [ "$ROLE" = "brain" ]; then
   fi
   [ -x "$ROOT/scripts/swarm-doctor.sh" ] && bash "$ROOT/scripts/swarm-doctor.sh" --quick 2>/dev/null || true
   ok "BRAIN ready."
-  exit 0
-fi
-
-# ================================================ moe — Moe Legacy (fenced op)
-if [ "$ROLE" = "moe" ]; then
-  banner "MOE LEGACY (Operator · fenced · Red Hood)"
-  set_machine_name "moe-legacy"
-  say
-  ok  "Welcome, Moe Legacy. 🐦‍⬛  You're set up as a fenced operator."
-  say "$D   You never need the owner's keys or seal. Your access is least-privilege"
-  say "   and isolated — your data stays yours; you can't reach owner-only systems.$X"
-  # Fenced provision. The full Red Hood kit (credit-guidance tools, banners) is
-  # scripts/umar-setup.command for a from-scratch machine; deploy operator is the
-  # idempotent re-runnable core (onboard + secret-guard + operator commands).
-  bash "$ROOT/scripts/deploy" operator || warn "deploy had warnings (continuing)"
-  say
-  ok "You're ready."
-  say "   Open a new terminal, then:"
-  say "     ${BD}moe${X}     — your daily control board (credit guidance)"
-  say "     ${BD}menu${X}    — all your one-word commands"
-  say "     ${BD}sync${X}    — pull/push your work safely"
-  say "$D   Stuck? you're never on your own — run:  tmmt help \"what's wrong\"$X"
   exit 0
 fi
 

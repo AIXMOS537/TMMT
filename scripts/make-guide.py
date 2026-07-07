@@ -99,7 +99,7 @@ ctext(d,1075,"on your carry Mac + your own devices",F(38,False),INK)
 ctext(d,1125,"(your personal mesh — you only)",F(34,False),MUT)
 d.rounded_rectangle([90,1230,W-90,1450],radius=30,fill=(232,248,250))
 ctext(d,1270,"AIXMOS helps your TEAM",F(50),CYAN)
-ctext(d,1345,"the people on the MoeLegacy mesh",F(38,False),INK)
+ctext(d,1345,"the people on the AIXMOS mesh",F(38,False),INK)
 ctext(d,1395,"(little brother does what big brother says)",F(34,False),MUT)
 pages.append(im)
 

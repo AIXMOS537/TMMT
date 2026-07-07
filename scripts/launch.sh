@@ -20,7 +20,7 @@ H
 mark(){ [ "$1" = 1 ] && printf "\033[42;30m ✓ \033[0m" || printf "\033[100;97m · \033[0m"; }
 printf "%s 1. House clean — Airtable token revoked\n" "$(mark "${AIRTABLE_DONE:-0}")"
 printf "%s 2. Team granted — %s in, %s waiting\n" "$(mark "$([ "$granted" -ge 1 ] && echo 1 || echo 0)")" "$granted" "$pending"
-printf "%s 3. An operator pointed at REAL prospects (Justin / Red Hood)\n" "$(mark 0)"
+printf "%s 3. An operator pointed at REAL prospects\n" "$(mark 0)"
 printf "%s 4. First qualified call BOOKED\n" "$(mark 0)"
 printf "%s 5. First DOLLAR — the proof\n" "$(mark 0)"
 echo

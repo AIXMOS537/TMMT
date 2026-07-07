@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# engineer — the systems-engineer console. Run an operator's machine (e.g. Moe
+# engineer — the systems-engineer console. Run an operator's machine (e.g. an
 # Legacy's) from YOUR carry M5, over your private Tailscale mesh. Owner-only.
 #
 # Access is consented + least-privilege: the operator's node must be on your
@@ -80,7 +80,7 @@ _host(){ # echo the user@host for a registered name
 cmd_add(){
   local name="${1:-}" host="${2:-}"
   [ -n "$name" ] || { printf '  Operator / agency name: '; IFS= read -r name || true; }
-  [ -n "$name" ] || die "need a name (e.g. \"Moe Legacy\")"
+  [ -n "$name" ] || die "need a name (e.g. \"Operator One\")"
   # No host given? Pick it from your tailnet — no typing a hostname.
   if [ -z "$host" ]; then
     host="$(_pick_node)" || true
@@ -143,7 +143,7 @@ cmd_setup(){
 
 cmd_pull(){
   local name="$1" path="${2:-}"; local h; h="$(_host "$name")"
-  [ -n "$path" ] || die "usage: engineer pull <name> <remote-path>   (e.g. ~/Desktop/moework)"
+  [ -n "$path" ] || die "usage: engineer pull <name> <remote-path>   (e.g. ~/Desktop/opwork)"
   exec bash "$ROOT/scripts/intake" mesh "$h:$path" "$name"
 }
 

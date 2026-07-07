@@ -29,7 +29,7 @@ payment + consent). ~$1–3k. This turns "built" into "legal to charge." *Nothin
 scales until this is done.*
 
 **2. Land Moe Legacy + first dollar.**
-`invite operator "Umar" info@moelegacy.com` → he runs one paste → `engineer add` →
+`onboard-op "Org" Name` → they run one paste → `engineer add` →
 his portal's ~90% built. Run `ads` → `moe-hot` → `playbook` → `deal`. **First
 paying client = proof.**
 

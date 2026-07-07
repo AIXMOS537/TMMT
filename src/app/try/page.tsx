@@ -193,8 +193,8 @@ export default function TryGeniePage() {
 
       {/* Compliance disclaimer (CROA/FTC-safe) */}
       <p className="mt-8 text-center text-[11px] leading-relaxed text-zinc-400">
-        Educational tools &amp; software access from Moe Legacy. This is a product demo with sample data,
-        not credit repair, and not financial or legal advice. Results vary. By Moe Legacy.
+        Educational tools &amp; software access from AIXMOS Credit. This is a product demo with sample data,
+        not credit repair, and not financial or legal advice. Results vary. By AIXMOS Credit.
       </p>
     </main>
   )

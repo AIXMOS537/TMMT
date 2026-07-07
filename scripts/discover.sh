@@ -14,8 +14,8 @@
 #   • Revocable: --revoke deletes the consent record + report.
 #
 # Usage:
-#   scripts/discover.sh --who "Moe Legacy" --scope ~/business --i-consent
-#   scripts/discover.sh --who "Moe Legacy" --scope ~/code --scope ~/work --i-consent
+#   scripts/discover.sh --who "Operator One" --scope ~/business --i-consent
+#   scripts/discover.sh --who "Operator One" --scope ~/code --scope ~/work --i-consent
 #   scripts/discover.sh --revoke
 #   scripts/discover.sh                         # shows the consent notice, scans nothing
 # ---------------------------------------------------------------------------

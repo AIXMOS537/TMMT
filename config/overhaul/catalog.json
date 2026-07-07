@@ -144,7 +144,7 @@
     {
       "id": "vp-credit", "category": "vertical", "label": "📈 Credit guidance + funding",
       "desc": "Credit GUIDANCE (never repair) + business-funding network.",
-      "maps_to": ["docs/kits/REDHOOD-KIT.md", "supabase/migrations/20260608120000_credit_funding_sessions.sql"], "tier_min": "inner"
+      "maps_to": ["supabase/migrations/20260608120000_credit_funding_sessions.sql"], "tier_min": "inner"
     },
     {
       "id": "vp-overdrive", "category": "vertical", "label": "🚑 Operation Overdrive (courier → ER fleet)",

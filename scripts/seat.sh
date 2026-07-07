@@ -5,7 +5,7 @@
 #   3. dry-run (shows the plan, writes nothing)
 #   4. confirm → apply (creates the seat, prints one-time credentials)
 #
-#   bash scripts/seat.sh                                   # defaults: Moe Legacy / Umar / graduate (the King)
+#   bash scripts/seat.sh                                   # defaults: tmmt-rentals / graduate
 #   bash scripts/seat.sh <vertical> <email> [stage] [name]
 #
 # Stages: learn | earn | admin | graduate     (graduate = sovereign owner, 85%)
@@ -20,8 +20,8 @@ warn(){ printf '  \033[33m!\033[0m %s\n' "$*" >&2; }
 die(){  printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 # Seat identity comes from args — no personal defaults baked into the repo.
-VERTICAL="${1:-moe-legacy}"
-EMAIL="${2:?seat email required, e.g. bash seat.sh moe-legacy founder@example.com}"
+VERTICAL="${1:-tmmt-rentals}"
+EMAIL="${2:?seat email required, e.g. bash seat.sh tmmt-rentals ops@example.com}"
 STAGE="${3:-graduate}"
 NAME="${4:-New Seat}"
 
@@ -106,7 +106,7 @@ case "$yn" in
     node scripts/provision-tenant-seat.mjs \
       --vertical "$VERTICAL" --email "$EMAIL" --stage "$STAGE" --name "$NAME" --apply
     echo
-    ok "Done. Send the one-time password above to Umar SECURELY (text/Signal — not email,"
+    ok "Done. Send the one-time password above to the seat holder SECURELY (text/Signal — not email,"
     echo "     since the email account IS the login). Have him reset on first sign-in. 👑"
     ;;
   *)

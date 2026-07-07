@@ -36,7 +36,6 @@ ${BD}  GUARDIANS holding the map${X}
    🦾  Cyborg     ${D}Watchtower — AIXMOS (public) + HAILMARY (Project X)${X}
    🧠  Brainiac   ${D}BRAINIAC 7 — brain node + control plane${X}
    🦅  Nightwing  ${D}Ayyan Khan — field-ops lead${X}
-   🐦‍⬛ Red Hood   ${D}Umar — Credit Guidance${X}
    🚗  The Crew   ${D}rentals + verticals + operators (fenced)${X}
    🦇  Batman     ${D}E-commerce — guards the back${X}
    ${D}protected by AIXMOS Agents of Chaos · more operators pending${X}

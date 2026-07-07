@@ -6,7 +6,7 @@
 #   4) prints the exact follow-up so the rest is two words
 #
 #   bash scripts/onboard-op "<Agency>" "<Name>" [user@host]
-#   e.g. bash scripts/onboard-op "Moe Legacy" Umar
+#   e.g. bash scripts/onboard-op "Acme Ops" Alex
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -t 1 ]]; then G=$'\e[32m'; C=$'\e[36m'; W=$'\e[97m'; D=$'\e[2m'; BD=$'\e[1m'; X=$'\e[0m'; else G=; C=; W=; D=; BD=; X=; fi

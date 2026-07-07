@@ -1,9 +1,9 @@
 {
   "id": "moe-legacy",
   "slug": "moe_legacy",
-  "aliases": ["moe-legacy", "moe_legacy", "redhood"],
-  "displayName": "Moe Legacy",
-  "legalName": "Moe Legacy",
+  "aliases": ["moe-legacy", "moe_legacy"],
+  "displayName": "AIXMOS Credit",
+  "legalName": "AIXMOS Credit",
   "tagline": "The go-to for getting funding-ready and funded",
   "locale": { "default": "en-US", "currency": "USD", "timezone": "America/New_York" },
   "region": { "primary": "US", "compliancePack": "us-credit-guidance" },
@@ -17,11 +17,11 @@
     "faviconPath": "/brands/moe-legacy/favicon.ico"
   },
   "domains": {
-    "marketing": "molegacy.com",
+    "marketing": "aixmos-landing.vercel.app",
     "app": "aixmos-landing.vercel.app"
   },
   "contact": {
-    "supportEmail": "support@molegacy.com",
+    "supportEmail": "tmmtautodetail@gmail.com",
     "salesPhone": "VAULT://public_line"
   },
   "agent": {

@@ -47,7 +47,7 @@ export const ACADEMY_LESSONS: Lesson[] = [
     title: "Where your leads come from",
     minutes: 3,
     body: [
-      "Two agencies drive the network. MOE LEGACY runs credit-guidance and business-" +
+      "Two agencies drive the network. AIXMOS CREDIT runs credit-guidance and business-" +
         "funding — people seeking capital. TMMT RENTALS runs car brokering, rentals, and " +
         "transportation — people who need a vehicle (B2B and B2C). Both run ads.",
       "Those ads feed one shared, attributed lead pool. Leads route by what the person " +
