@@ -27,7 +27,7 @@ const COPY: Record<string, SkuCopy> = {
   },
   'intro-97': {
     headline: 'Credit + Funding Audit — $97',
-    subhead: 'Real human eyes on your report + a 30-minute call with a Moe Legacy advisor.',
+    subhead: 'Real human eyes on your report + a 30-minute call with a TMMT credit advisor.',
     bullets: [
       'Personalized review of your full credit file',
       '30-minute strategy call (recorded for you)',
@@ -52,7 +52,7 @@ const COPY: Record<string, SkuCopy> = {
     bullets: [
       'Full fleet management SOPs + automation',
       'Renter intake, screening, and turnover workflow',
-      'Credit + funding lane connected via Moe Legacy',
+      'Credit + funding lane built in',
     ],
     cta: 'See if I qualify',
   },
@@ -70,7 +70,6 @@ const COPY: Record<string, SkuCopy> = {
 
 const ORG_BRAND: Record<string, { name: string; tagline: string }> = {
   aixmos:        { name: 'AIXMOS',          tagline: 'The AI engine — agents that answer, follow up, and close 24/7' },
-  moe_legacy:    { name: 'Moe Legacy',      tagline: 'The go-to for getting funding-ready and funded' },
   tmmt_property: { name: 'TMMT',            tagline: 'The car rental agency that teaches you to run your own fleet' },
 }
 

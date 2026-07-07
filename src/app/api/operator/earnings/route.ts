@@ -9,7 +9,9 @@ import { rollupAffiliates, type PaymentRow } from '@/lib/affiliates'
 
 export const dynamic = 'force-dynamic'
 
-const SHARE_BASE = process.env.NEXT_PUBLIC_OPS_URL ?? 'https://tmmt-ops.vercel.app'
+// `||` not `??`: an empty-string env var must still fall back, or share links
+// render as relative paths that break when copied out of the app.
+const SHARE_BASE = process.env.NEXT_PUBLIC_OPS_URL || 'https://tmmt-ops.vercel.app'
 
 export async function GET(): Promise<NextResponse> {
   const supabase = await createSSRClient()

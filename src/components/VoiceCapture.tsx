@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui";
 import { Mic, MicOff } from "lucide-react";
 
@@ -32,12 +32,14 @@ export default function VoiceCapture({
   disabled?: boolean;
 }) {
   const [listening, setListening] = useState(false);
-  const [supported, setSupported] = useState(true);
+  // Browser-capability read: useSyncExternalStore avoids setState-in-effect and
+  // hydration mismatch (server snapshot mirrors the old optimistic default).
+  const supported = useSyncExternalStore(
+    () => () => {},
+    () => !!getSpeechRecognition(),
+    () => true,
+  );
   const recRef = useRef<InstanceType<SpeechRecognitionCtor> | null>(null);
-
-  useEffect(() => {
-    setSupported(!!getSpeechRecognition());
-  }, []);
 
   const toggle = () => {
     const Ctor = getSpeechRecognition();

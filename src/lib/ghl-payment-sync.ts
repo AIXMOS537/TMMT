@@ -11,6 +11,11 @@ type RevenueTagMeta = {
 
 const REVENUE_TAGS: Record<string, RevenueTagMeta> = {
   "member-97": { amount: 97, label: "TMMT Academy ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
+  // Operator kits sold on /kits — GHL workflows tag the contact on purchase.
+  // Explicit webhook amount wins; these are setup-fee fallbacks.
+  "ops-kit": { amount: 997, label: "TMMT Ops Kit — setup", method: "Stripe", product_code: "ops_kit" },
+  "command-kit": { amount: 2997, label: "TMMT Command Kit — setup", method: "Stripe", product_code: "command_kit" },
+  "dealer-bundle": { amount: 3497, label: "Dealer Bundle — setup", method: "Stripe", product_code: "dealer_bundle" },
   "credit-guidance-active": {
     amount: 750,
     label: "Credit guidance program",
@@ -120,6 +125,51 @@ export function shouldRecordPayment(body: Record<string, unknown>, tags: string[
   const event = typeof body.event === "string" ? body.event : "";
   if (isPaymentEvent(event)) return true;
   return tags.some((t) => t in REVENUE_TAGS);
+}
+
+// Tags whose purchase enrolls the buyer as a student-operator.
+const OPERATOR_ENROLL_TAGS = new Set(["member-97", "ops-kit", "command-kit", "dealer-bundle"]);
+
+export function operatorEnrollTag(tags: string[]): string | null {
+  return tags.find((t) => OPERATOR_ENROLL_TAGS.has(t)) ?? null;
+}
+
+/**
+ * Payment → provisioning bridge: a paid operator-kit webhook queues a
+ * team_onboarding row so auto-provision (inline or cron sweep) picks the
+ * buyer up even if they never submit the /join form.
+ */
+export async function enqueueOperatorOnboarding(
+  supabase: SupabaseClient,
+  body: Record<string, unknown>,
+  email: string
+): Promise<{ queued: boolean; reason?: string }> {
+  const { data: existing } = await supabase
+    .from("team_onboarding")
+    .select("id")
+    .ilike("email", email)
+    .limit(1);
+  if (existing?.[0]?.id) return { queued: false, reason: "already onboarding" };
+
+  const name =
+    (typeof body.name === "string" && body.name) ||
+    (typeof body.full_name === "string" && body.full_name) ||
+    (typeof body.contact_name === "string" && body.contact_name) ||
+    email.split("@")[0];
+  const phone =
+    (typeof body.phone === "string" && body.phone) ||
+    (typeof body.contact_phone === "string" && body.contact_phone) ||
+    null;
+
+  const { error } = await supabase.from("team_onboarding").insert({
+    full_name: name,
+    email,
+    phone,
+    role: "operator",
+    status: "Queued",
+  });
+  if (error) return { queued: false, reason: error.message };
+  return { queued: true };
 }
 
 export async function recordGhlPayment(

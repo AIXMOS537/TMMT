@@ -582,7 +582,7 @@ export async function submitTeamOnboarding(formData: FormData): Promise<FormResu
 }
 
 // ─── 11. Dealer Application (the /apply front door + qualification gate) ──────
-// A dealer applies to deploy the empire (TMMT + AIXMOS + Moe Legacy) at their lot.
+// A dealer applies to deploy the empire (TMMT + AIXMOS) at their lot.
 // The "bouncer": the three non-negotiables (licensed, real lot, plays fair) plus
 // both agreements are REQUIRED — you cannot submit without them.
 
