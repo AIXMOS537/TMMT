@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "authority": "PROJECT X HAILMARY",
+  "canonical": {
+    "repo": "~/Projects/TMMT",
+    "fleet_hub": "~/Sync/rick",
+    "send_drop_desktop": "~/Desktop/★ SEND-TO-DEVICES",
+    "send_drop_sync": "~/Sync/empire-mesh",
+    "config": "~/.config/tmmt",
+    "vault": "~/Brain/vault",
+    "x_forever": "~/.config/tmmt"
+  },
+  "symlinks": {
+    "~/Desktop/★ ULTIMATE-DROP": "~/Desktop/★ SEND-TO-DEVICES",
+    "~/Desktop/BLIP-DROP-LATEST": "~/Desktop/★ SEND-TO-DEVICES",
+    "~/Sync/BLIP-DROP/ULTIMATE": "~/Sync/empire-mesh"
+  },
+  "never_delete": [
+    "~/.config/tmmt/litellm-master.env",
+    "~/.config/tmmt/.owner-only",
+    "~/.config/tmmt/forge.sh",
+    "~/.config/tmmt/x-forever.sh",
+    "~/Projects/TMMT",
+    "~/Sync/rick/FLEET-INBOX",
+    "~/Brain/vault"
+  ],
+  "archive_desktop_globs": [
+    "BLIP-DROP-LATEST 2",
+    "M1-ONE-SHOT-FOREVER",
+    "BLIP-SEND-TONIGHT",
+    "FABLE-FEED-TONIGHT",
+    "HAILMARY-V3-MASTER",
+    "GO-HOME-PACK",
+    "MOE-LEGACY-DELIVER",
+    "MOE-TEAM-POWERHOUSE-KIT",
+    "CARRY-FLEET-STATUS-*.txt"
+  ],
+  "archive_sync_paths": [
+    "BLIP-DROP/LATEST",
+    "BLIP-DROP/M1-ONE-SHOT-FOREVER"
+  ]
+}

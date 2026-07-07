@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# rebrand hygiene: strip AI-build tells from every commit message, always.
+f="$1"; [ -f "$f" ] || exit 0
+grep -vaE 'Co-Authored-By: *Claude|Generated with \[?Claude|🤖 Generated with|Co-authored-by: *Claude' "$f" > "$f.__x" 2>/dev/null && mv "$f.__x" "$f"
+exit 0

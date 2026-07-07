@@ -7,11 +7,21 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 export function loadProjectEnv() {
   const envLocal = join(root, ".env.local");
   const envDefault = join(root, ".env");
-  if (!existsSync(envLocal) && !existsSync(envDefault)) {
+  const home = process.env.HOME || process.env.USERPROFILE || "";
+  const ghlPaste = home ? join(home, ".config", "tmmt", "ghl-paste.env") : "";
+  if (!existsSync(envLocal) && !existsSync(envDefault) && !existsSync(ghlPaste)) {
     return false;
   }
   if (existsSync(envLocal)) loadDotEnvFile(envLocal);
   if (existsSync(envDefault)) loadDotEnvFile(envDefault);
+  if (ghlPaste && existsSync(ghlPaste)) loadDotEnvFile(ghlPaste);
+  const clickupEnv = home ? join(home, ".config", "tmmt", "clickup.env") : "";
+  if (clickupEnv && existsSync(clickupEnv)) {
+    loadDotEnvFile(clickupEnv);
+    if (process.env.CLICKUP_TOKEN && !process.env.CLICKUP_API_TOKEN) {
+      process.env.CLICKUP_API_TOKEN = process.env.CLICKUP_TOKEN;
+    }
+  }
   return true;
 }
 

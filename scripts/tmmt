@@ -64,5 +64,9 @@ case "$v" in
   rick|forge|queue) exec bash "$ROOT/scripts/mesh/m1-work-router.sh" status "$@";;
   v3|recompile|master) exec bash "$ROOT/scripts/recompile-v3-master.sh" "$@";;
   live|forever|army) exec bash "$ROOT/scripts/one-shot-live-forever.sh" "$@";;
+  autopilot|arm) exec bash "$ROOT/scripts/autopilot.sh" "${1:-go}" "${@:2}";;
+  send|m1|airdrop) exec bash "$ROOT/scripts/send-to-m1.sh" "$@";;
+  intake) exec bash "$ROOT/scripts/mesh/empire-intake.sh" "$@";;
+  ask) shift; exec bash "$ROOT/scripts/mesh/m1-work-router.sh" intake "$@";;
   *) exec bash "$ROOT/scripts/booyah-daily.sh" "$@";;
 esac

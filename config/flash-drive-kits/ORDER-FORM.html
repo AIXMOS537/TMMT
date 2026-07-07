@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TMMT / AIXMOS — Order &amp; Pay</title>
+  <style>
+    @media print { body { margin: 0.4in; } .pay { page-break-inside: avoid; } }
+    body { font-family: system-ui, sans-serif; max-width: 7.5in; margin: 0.75in auto; }
+    h1 { font-size: 1.4rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+    th { background: #eee; }
+    .qr { border: 2px dashed #1440C4; min-height: 140px; text-align: center; padding: 20px; margin: 8px 0; font-size: 0.85rem; color: #444; }
+    .note { font-size: 0.85rem; color: #555; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Order TMMT / AIXMOS USB Kits</h1>
+  <p>Scan the QR for your SKU or visit your GHL checkout link. Payment confirms your place in the ship queue.</p>
+
+  <table>
+    <tr><th>SKU</th><th>Product</th><th>Setup</th><th>Monthly</th></tr>
+    <tr><td>OPS-001</td><td>TMMT Ops Kit — dealership floor</td><td>$997</td><td>$297/mo</td></tr>
+    <tr><td>CMD-001</td><td>TMMT Command Kit — owner / partner</td><td>$2,997</td><td>$497/mo</td></tr>
+    <tr><td>GRW-001</td><td>AIXMOS Growth Kit — member / operator</td><td>$97*</td><td>$97/mo</td></tr>
+    <tr><td>DLR-BND</td><td>Dealer Bundle (Ops + Command USBs)</td><td>$3,497</td><td>$697/mo</td></tr>
+  </table>
+  <p class="note">*GRW-001 setup includes first month membership.</p>
+
+  <div class="pay">
+    <h2>Pay online (paste GHL links / QR before print)</h2>
+    <div class="qr">OPS-001 QR / link<br/>NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT</div>
+    <div class="qr">CMD-001 QR / link<br/>NEXT_PUBLIC_GHL_CHECKOUT_COMMAND_KIT</div>
+    <div class="qr">GRW-001 QR / link<br/>NEXT_PUBLIC_GHL_CHECKOUT_97</div>
+    <div class="qr">DLR-BND QR / link<br/>NEXT_PUBLIC_GHL_CHECKOUT_DEALER_BUNDLE</div>
+  </div>
+
+  <h2>After payment</h2>
+  <ol>
+    <li>We email login / onboarding within 1 business day.</li>
+    <li>USB ships with Kit ID sticker — track via email.</li>
+    <li>Plug in → START_HERE → live in ~15 minutes.</li>
+  </ol>
+
+  <p><strong>Company:</strong> TMMT Rentals / AIXMOS · <strong>Support:</strong> _________________________</p>
+</body>
+</html>

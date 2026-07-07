@@ -1,0 +1,185 @@
+{
+  "version": "1.1.0",
+  "updated": "2026-07-06",
+  "rule": "BLIP YOUR owned devices FIRST (right here, right now) → immediate family → Aayan → Isaac Scott. Never skip order without owner unlock.",
+  "blip_bundles": {
+    "owner_m1": {
+      "path": "~/Sync/BLIP-DROP/M1-ONE-SHOT-FOREVER",
+      "desktop": "~/Desktop/M1-ONE-SHOT-FOREVER",
+      "launcher": "★ DOUBLE-CLICK ME.command",
+      "build": "bash scripts/blip/make-m1-blip-bundle.sh"
+    },
+    "owner_general": {
+      "path": "~/Sync/BLIP-DROP/LATEST",
+      "desktop": "~/Desktop/BLIP-DROP-LATEST",
+      "launcher_mac": "GO.command",
+      "launcher_win": "GO.bat",
+      "build": "bash scripts/blip/make-blip-bundle.sh"
+    }
+  },
+  "phases": [
+    {
+      "id": "phase-1-owner-blip",
+      "order": 1,
+      "name": "YOUR devices — BLIP from Carry NOW",
+      "who": "Muhammad Taha · all owned hardware",
+      "gate": "Must complete before family",
+      "blip_now": true,
+      "devices": [
+        {
+          "id": "carry-m5",
+          "order": 1,
+          "label": "Carry M5 (this Mac — office now)",
+          "blip": false,
+          "mesh_role": "carry",
+          "tier": "sovereign",
+          "commands": [
+            "bash scripts/blip/rollout-now.sh build",
+            "bash ~/Desktop/X-FOREVER/RUN-X-FOREVER.sh",
+            "bash scripts/blip/office-mode.sh unlock",
+            "bash scripts/mesh/go-live-device.sh --role carry"
+          ]
+        },
+        {
+          "id": "forge-m1",
+          "order": 2,
+          "label": "M1 Max (Rick / forge)",
+          "blip": true,
+          "blip_bundle": "owner_m1",
+          "mesh_role": "forge",
+          "tier": "sovereign-operational",
+          "commands": [
+            "BLIP send: ~/Desktop/M1-ONE-SHOT-FOREVER",
+            "On M1: double-click ★ DOUBLE-CLICK ME.command",
+            "bash scripts/mesh/go-live-device.sh --role forge"
+          ]
+        },
+        {
+          "id": "brainiac-7",
+          "order": 3,
+          "label": "Brainiac-7 (Windows gateway)",
+          "blip": true,
+          "blip_bundle": "owner_general",
+          "tailscale_name": "brainiac-7",
+          "mesh_role": "brain",
+          "tier": "sovereign",
+          "commands": [
+            "BLIP send: ~/Desktop/BLIP-DROP-LATEST",
+            "On Brainiac: double-click GO.bat",
+            "bash scripts/mesh/go-live-device.sh --role brain"
+          ]
+        },
+        {
+          "id": "office-pc-owned",
+          "order": 4,
+          "label": "Office PCs you own (fleet / desktop-*)",
+          "blip": true,
+          "blip_bundle": "owner_general",
+          "optional": true,
+          "mesh_role": "forge",
+          "commands": [
+            "BLIP send: ~/Desktop/BLIP-DROP-LATEST to each PC",
+            "GO.bat → then office-mode lock when you leave desk"
+          ]
+        },
+        {
+          "id": "iphone-taha",
+          "order": 5,
+          "label": "Your iPhone / iPad (iphone171)",
+          "blip": false,
+          "tailscale_name": "iphone171",
+          "mesh_role": "owner-mobile",
+          "commands": [
+            "App Store: Tailscale + Enchanted",
+            "Enchanted → macbook-pro-2.tailceb455.ts.net:4001",
+            "Owner virtual key (not family key)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2-family",
+      "order": 2,
+      "name": "Immediate family",
+      "who": "Trusted inner circle · HAILMARY via Rick",
+      "gate": "Requires phase-1-owner-blip complete OR unlock-family",
+      "devices": [
+        {
+          "id": "family-member",
+          "label": "Family device (each person)",
+          "mesh_role": "family",
+          "tier": "family",
+          "commands": [
+            "god issue family",
+            "Tailscale + Enchanted (rick-safe virtual key only)",
+            "bash scripts/swarm-join.sh --name family-<name>",
+            "bash scripts/mesh/go-live-device.sh --role family"
+          ],
+          "never": ["master key", "vault", "hc god", "deploy"]
+        }
+      ]
+    },
+    {
+      "id": "phase-3-aayan",
+      "order": 3,
+      "name": "Aayan",
+      "who": "Aayan · team lane",
+      "gate": "Requires phase-2-family complete OR unlock-aayan",
+      "tier": "va-team",
+      "world": "aixmos-public",
+      "devices": [
+        {
+          "id": "aayan",
+          "label": "Aayan — all devices",
+          "mesh_role": "ops",
+          "mesh_name": "ops-aayan",
+          "tier": "va",
+          "commands": [
+            "god issue va  (Carry — LiteLLM virtual key: rick-safe + coder)",
+            "BLIP optional: ~/Desktop/BLIP-DROP-LATEST if laptop needs full stack",
+            "bash scripts/swarm-join.sh --name ops-aayan",
+            "bash scripts/mesh/go-live-device.sh --role ops",
+            "LibreChat or Enchanted with VA scoped key — NO vault · NO HAILMARY sovereign"
+          ],
+          "gets": ["rick-safe", "coder", "chummo-limited"],
+          "never": ["vault", "hc god", "FOUNDER key", "HAILMARY brand to public"]
+        }
+      ]
+    },
+    {
+      "id": "phase-4-isaac-scott",
+      "order": 4,
+      "name": "Isaac Scott",
+      "who": "Isaac Scott · Operator T1",
+      "gate": "Requires phase-3-aayan complete OR unlock-isaac",
+      "tier": "operator-t1",
+      "world": "aixmos-public",
+      "devices": [
+        {
+          "id": "isaac-scott",
+          "label": "Isaac Scott — operator fleet",
+          "mesh_role": "ops",
+          "mesh_name": "ops-isaac-scott",
+          "tier": "operator",
+          "commands": [
+            "Send fit test FIRST: https://tmmt-ops.vercel.app/fit-test",
+            "After pass → /join",
+            "god issue operator  (white-label scoped key · GHL sub under Taha)",
+            "bash scripts/swarm-join.sh --name ops-isaac-scott",
+            "bash scripts/mesh/go-live-device.sh --role ops",
+            "Portal: tmmt-command-center.vercel.app/operator/training",
+            "Earnings: /operator/earnings · 30% split · tracked links only"
+          ],
+          "gets": ["rick-safe", "coder", "chummo", "moose-scoped", "GHL sub-account"],
+          "never": ["vault", "master keys", "tailnet interior", "deploy authority"]
+        }
+      ]
+    }
+  ],
+  "progress_file": "~/.config/tmmt/.owner-only/onboard-progress.json",
+  "unlock_flags": {
+    "family": "~/.config/tmmt/.owner-only/family-onboard-unlocked",
+    "aayan": "~/.config/tmmt/.owner-only/aayan-onboard-unlocked",
+    "isaac": "~/.config/tmmt/.owner-only/isaac-onboard-unlocked"
+  }
+}

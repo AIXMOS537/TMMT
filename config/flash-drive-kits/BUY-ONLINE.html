@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buy TMMT &amp; AIXMOS Kits</title>
+  <style>
+    :root { --blue: #1440C4; --navy: #0A1628; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f4f7ff; color: var(--navy); }
+    header { background: var(--navy); color: #fff; padding: 2rem 1.5rem; text-align: center; }
+    header h1 { margin: 0; font-size: 1.75rem; }
+    header p { opacity: 0.85; max-width: 36rem; margin: 0.5rem auto 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    .grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+    .card h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }
+    .audience { font-size: 0.85rem; color: #666; margin-bottom: 0.75rem; }
+    .price { font-size: 1.5rem; font-weight: 700; color: var(--blue); margin: 0.5rem 0; }
+    .mo { font-size: 0.9rem; font-weight: 500; color: #444; }
+    ul { font-size: 0.9rem; padding-left: 1.1rem; flex: 1; }
+    .btn { display: block; text-align: center; background: var(--blue); color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 600; margin-top: 1rem; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.secondary { background: #fff; color: var(--blue); border: 2px solid var(--blue); margin-top: 0.5rem; font-size: 0.9rem; }
+    .note { text-align: center; font-size: 0.85rem; color: #555; margin-top: 2rem; }
+    .bundle { grid-column: 1 / -1; border: 2px solid var(--blue); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TMMT &amp; AIXMOS Systems</h1>
+    <p>Dealership ops, owner command center, and public growth funnel — buy online (instant access) or request a USB kit by mail.</p>
+  </header>
+  <main>
+    <div class="grid">
+      <article class="card">
+        <h2>TMMT Ops Kit</h2>
+        <p class="audience">Dealerships &amp; fleet operators</p>
+        <p class="price">$997 <span class="mo">+ $297/mo</span></p>
+        <ul>
+          <li>Fleet, customers, payments, tickets</li>
+          <li>Public intake forms</li>
+          <li>Staff logins on TMMT Ops</li>
+        </ul>
+        <a class="btn" href="#" id="link-ops">Buy online — instant access</a>
+        <a class="btn secondary" href="#" id="link-ops-usb">Buy + ship USB</a>
+      </article>
+      <article class="card">
+        <h2>TMMT Command Kit</h2>
+        <p class="audience">Owners, partners, investors</p>
+        <p class="price">$2,997 <span class="mo">+ $497/mo</span></p>
+        <ul>
+          <li>Portfolio &amp; /command hub</li>
+          <li>Role portals &amp; vendor assign</li>
+          <li>Owner brief &amp; escalation</li>
+        </ul>
+        <a class="btn" href="#" id="link-command">Buy online — instant access</a>
+        <a class="btn secondary" href="#" id="link-command-usb">Buy + ship USB</a>
+      </article>
+      <article class="card">
+        <h2>AIXMOS Growth Kit</h2>
+        <p class="audience">Members &amp; operator recruits</p>
+        <p class="price">$97 <span class="mo">/mo membership</span></p>
+        <ul>
+          <li>Credit guidance path</li>
+          <li>Business systems &amp; coaching</li>
+          <li>Operator apply funnel</li>
+        </ul>
+        <a class="btn" href="#" id="link-growth">Join AIXMOS — $97/mo</a>
+        <a class="btn secondary" href="#" id="link-operator">Apply as operator</a>
+      </article>
+      <article class="card bundle">
+        <h2>Dealer Bundle</h2>
+        <p class="audience">Full stack — Ops + Command (save $497 on setup)</p>
+        <p class="price">$3,497 <span class="mo">+ $697/mo</span></p>
+        <ul>
+          <li>Everything in Ops + Command kits</li>
+          <li>2 USBs shipped or full digital onboarding</li>
+        </ul>
+        <a class="btn" href="#" id="link-bundle">Buy dealer bundle</a>
+      </article>
+    </div>
+    <p class="note">Secure checkout powered by Stripe via GoHighLevel. Questions? _________________________</p>
+  </main>
+  <script>
+    // Paste GHL checkout URLs before deploy (or set via env on hosted page)
+    const LINKS = {
+      ops: '#PASTE_GHL_CHECKOUT_OPS_KIT',
+      opsUsb: '#PASTE_GHL_CHECKOUT_OPS_KIT_USB',
+      command: '#PASTE_GHL_CHECKOUT_COMMAND_KIT',
+      commandUsb: '#PASTE_GHL_CHECKOUT_COMMAND_KIT_USB',
+      growth: '#PASTE_GHL_CHECKOUT_97',
+      operator: '#PASTE_GHL_OPERATOR_APPLY',
+      bundle: '#PASTE_GHL_CHECKOUT_DEALER_BUNDLE',
+    };
+    document.getElementById('link-ops').href = LINKS.ops;
+    document.getElementById('link-ops-usb').href = LINKS.opsUsb;
+    document.getElementById('link-command').href = LINKS.command;
+    document.getElementById('link-command-usb').href = LINKS.commandUsb;
+    document.getElementById('link-growth').href = LINKS.growth;
+    document.getElementById('link-operator').href = LINKS.operator;
+    document.getElementById('link-bundle').href = LINKS.bundle;
+  </script>
+</body>
+</html>

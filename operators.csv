@@ -1,0 +1,5 @@
+# Founding operators — replace example.com with real emails before live provision
+#   npm run provision-operators -- --file operators.csv --dry-run
+#   npm run provision-operators -- --file operators.csv
+email,role,affiliate_code,name
+ayyan@example.com,operator,NIGHTWING,Ayyan Khan

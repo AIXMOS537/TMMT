@@ -1,0 +1,29 @@
+{
+  "version": "3.0.0",
+  "updated": "2026-07-06",
+  "description": "TMMT v3 soft launch — zero human staff, student-operators on lead splits",
+  "flags": {
+    "V3_AUTO_PROVISION_OPERATORS": "true",
+    "V3_AUTO_CERTIFY_OPERATORS": "true",
+    "V3_AI_CLOSES_LEADS": "true",
+    "V3_OWNER_HANDOFF_DISABLED": "false"
+  },
+  "cron": {
+    "auto_provision": "/api/cron/auto-provision-operators",
+    "interval": "every 5 minutes when queue non-empty"
+  },
+  "operator_network": {
+    "max_operators": 100,
+    "policy": "Lifetime cap — limited people, all through life",
+    "waitlist_when_full": true
+  },
+    "commission_rate": 0.3,
+    "payout_cadence": "monthly_on_collected"
+  },
+  "public_urls": {
+    "ops": "https://tmmt-ops.vercel.app",
+    "portal": "https://tmmt-command-center.vercel.app",
+    "join": "https://tmmt-ops.vercel.app/join",
+    "lead_magnet": "https://tmmt-ops.vercel.app/lp/aixmos/lead-magnet"
+  }
+}

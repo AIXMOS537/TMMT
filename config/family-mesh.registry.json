@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "authority": "PROJECT X HAILMARY",
+  "philosophy": "OWNER DEVICES FIRST at the office. Immediate family ONLY after Phase 1. Protect · Paid · Educate · With Taha · family first.",
+  "onboard_phases_config": "config/onboard-phases.json",
+  "onboard_command_owner": "bash scripts/mesh/owner-devices-first.sh",
+  "owner": {
+    "name": "Muhammad Taha",
+    "seat": "sovereign",
+    "devices": ["carry-m5", "macbook-pro-2", "macbook-pro-3", "iphone171"]
+  },
+  "immediate_family": [
+    {
+      "id": "family-001",
+      "relationship": "immediate",
+      "display_name": "Family Member (template — rename)",
+      "seat": "family",
+      "world": "hailmary-family",
+      "devices": [
+        {
+          "name": "iphone",
+          "platform": "ios",
+          "tailscale_name": null,
+          "chat_app": "Enchanted",
+          "endpoint": "http://macbook-pro-2.tailceb455.ts.net:4001",
+          "models": ["rick-safe"],
+          "key_tier": "litellm-virtual-family"
+        }
+      ],
+      "gets": {
+        "brand": "PROJECT X HAILMARY via Rick",
+        "agents": ["rick-safe", "chummo-limited"],
+        "stack": ["Enchanted", "Tailscale", "LibreChat-scoped"],
+        "never": ["hc god", "vault", "FOUNDER key", "deploy authority", "operator admin"]
+      },
+      "onboard_command": "bash scripts/mesh/go-live-device.sh --role family"
+    }
+  ],
+  "trusted_inner_circle": [
+    {
+      "id": "va-wania",
+      "relationship": "trusted-team",
+      "display_name": "Wania",
+      "seat": "va",
+      "world": "aixmos-public",
+      "note": "VA lane — AIXMOS tier, not HAILMARY sovereign"
+    }
+  ],
+  "mesh_nodes": {
+    "carry": {
+      "hostname": "macbook-pro-2",
+      "tailscale_ip": "100.77.126.8",
+      "role": "watchtower",
+      "harness_tasks": ["family_ping", "integration_probe", "sovereign_heal", "issue_keys"]
+    },
+    "forge": {
+      "hostname": "macbook-pro-2",
+      "alias": "m1-rick-station",
+      "role": "forge",
+      "harness_tasks": ["build_probe", "integration_probe", "rick_inbox"]
+    },
+    "brain": {
+      "hostname": "brainiac-7",
+      "tailscale_ip": "100.117.163.93",
+      "role": "brain",
+      "harness_tasks": ["brain_ping", "citizen_tiers", "memory_sync"]
+    },
+    "iphone": {
+      "hostname": "iphone171",
+      "tailscale_ip": "100.126.242.117",
+      "role": "family-mobile",
+      "harness_tasks": ["enchanted_reachability"]
+    }
+  },
+  "harness": {
+    "command": "bash scripts/mesh/family-harness.sh",
+    "test_command": "bash scripts/mesh/family-mesh-test.sh",
+    "forever_loop_role_tasks": {
+      "carry": "family_harness integration_probe sovereign_heal",
+      "family": "presence heartbeat enchanted_ping",
+      "forge": "build_probe integration_probe rick_inbox"
+    },
+    "online_check": "tailscale status",
+    "family_endpoint_health": "curl -sf --max-time 5 http://127.0.0.1:4001/health"
+  }
+}

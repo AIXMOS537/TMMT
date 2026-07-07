@@ -4,7 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { getDashboardData } from "@/lib/queries";
 import { Card, StatCard, StatusBadge } from "@/components/ui";
 import { MissionBoard } from "@/components/mission/mission-board";
+import { TrapRaceBoard } from "@/components/race/trap-race-board";
 import { buildOwnerMissionData } from "@/lib/mission/build";
+import { buildOwnerRaceData } from "@/lib/race/build-race-data";
 import { formatDate } from "@/lib/utils";
 import {
   Car,
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   }, []);
 
   const mission = useMemo(() => (data ? buildOwnerMissionData(data) : null), [data]);
+  const race = useMemo(() => (data ? buildOwnerRaceData(data) : null), [data]);
 
   if (loadError) {
     return (
@@ -52,6 +55,7 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">TMMT Rentals overview</p>
       </div>
 
+      {race && <TrapRaceBoard data={race} compact />}
       {mission && <MissionBoard data={mission} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

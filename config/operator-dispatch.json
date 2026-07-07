@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-06",
+  "philosophy": "Operators pay you. Call them only for local physical jobs they can finish 100%. AI handles digital.",
+  "operators": [
+    {
+      "id": "nightwing",
+      "name": "Ayyan Khan",
+      "affiliate_code": "NIGHTWING",
+      "available": false,
+      "area": "DMV",
+      "telegram_chat_id": null,
+      "skills": ["field-ops", "detail", "pickup"]
+    }
+  ],
+  "dispatch_command": "bash scripts/mesh/operator-dispatch.sh job",
+  "queue": "~/Sync/rick/FLEET-INBOX/OPERATOR-JOBS"
+}

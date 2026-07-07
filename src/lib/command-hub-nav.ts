@@ -36,6 +36,13 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         description: "Fleet, leads, tickets, and live KPIs",
         icon: LayoutDashboard,
       },
+      {
+        href: "/command/race",
+        label: "Race command (3D)",
+        description: "TRAP track — empire goal, racers, blockers, finish line",
+        icon: TrendingUp,
+        badge: "Watchtower",
+      },
     ],
   },
   {
