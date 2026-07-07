@@ -37,6 +37,9 @@
     "swarm:mesh": "bash scripts/swarm.sh mesh",
     "sync:aixmos-people": "node AIXMOS/scripts/sync-airtable-people.mjs",
     "smoke:dispatch": "bash scripts/smoke-dispatch.sh",
+    "smoke:integration": "bash scripts/mesh/go-live-integration-test.sh",
+    "smoke:stack": "bash scripts/stack-smoke-ytd.sh",
+    "smoke:stack:full": "bash scripts/stack-smoke-ytd.sh full",
     "dual-sync:doctor": "bash scripts/dual-sync/doctor.sh",
     "dual-sync:init": "bash scripts/dual-sync/init.sh owner",
     "dual-sync:upgrade": "python3 scripts/dual-sync/upgrade.py"
