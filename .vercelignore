@@ -4,21 +4,46 @@
 # Local ML face/voice assets (multi-GB; individual .pth files exceed 100 MB limit)
 .aixmos/
 
-# Owner-local runtime state (never ship)
-.hailmary/
-.swarm/
-.swarm-task.txt
-.superpowers/
+# Owner authority — seal hash + backups never on production servers
+auth/
 
-# Business docs / brain kit (local canonical copies)
+# Confidential business / ops playbooks (NOT for public host)
+config/
+config-from-lexar/
+docs/
 BrainKit/
 OPERATIONS_BRAIN.md
 OPERATIONS_BRAIN.pdf
 SKILLS_BRIEF.md
 
-# Local secrets / notify config
-scripts/phase9-notify/.env.notify
+# Operational scripts & tools (local mesh only)
+scripts/
+tools/
+deploy_brainkit_to_usb.sh
 
-# Claude local overrides
+# Separate apps / legacy trees (tmmt-ops builds from src/ + packages/)
+apps/
+AIXMOS/
+TMMT/
+imports/
+
+# Owner-local runtime state
+.hailmary/
+.swarm/
+.swarm-task.txt
+.superpowers/
 .claude.local.md
 .claude/
+
+# Secrets & key material
+.env*
+!.env.example
+!.env.legacy.example
+*.pem
+auth/*.bak*
+
+# Test / dev artifacts
+coverage/
+test-results/
+e2e/
+playwright-report/
