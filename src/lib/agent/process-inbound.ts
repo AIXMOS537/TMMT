@@ -69,7 +69,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   const flags: string[] = []
   let regenAttempts = 0
 
-  while (regenAttempts <= 2) {
+  while (regenAttempts <= 1) {
     try {
       llmResult = await callAgent({
         systemPrompt,
@@ -92,7 +92,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     regenAttempts++
   }
   if (regenAttempts > 0 && llmResult) flags.push('regenerated')
-  if (regenAttempts > 2) { outBody = SAFE_FALLBACK; flags.push('regen_exhausted_fallback') }
+  if (regenAttempts > 1) { outBody = SAFE_FALLBACK; flags.push('regen_exhausted_fallback') }
 
   // 3. CFPB disclaimers
   const disclaimed = applyDisclaimers(outBody)

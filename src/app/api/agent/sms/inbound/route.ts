@@ -10,6 +10,7 @@ import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
+import { isRateLimited } from '@/lib/rate-limit'
 
 function twiml(body: string): string {
   if (!body) return '<Response/>'
@@ -65,6 +66,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   const to = flat.To ?? ''
   const body = flat.Body ?? ''
   if (!from || !to || !body) return xmlResp(twiml(''))
+
+  if (isRateLimited(`sms-in:${from}`, { windowMs: 60 * 60 * 1000, maxHits: 30 })) {
+    console.warn('[agent/sms/inbound] rate limited:', from)
+    return xmlResp(twiml(''))
+  }
 
   let org
   try { org = await resolveOrgByTwilioNumber(to) }

@@ -1,12 +1,37 @@
 "use server";
 
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 import { createSSRClient } from "@/lib/supabase-server";
 import { fanOut } from "@/lib/notify";
+import { getTierForUser } from "@/lib/auth-roles";
 
 // ─── Shared helpers ──────────────────────────────
 
 type FormResult = { success: true } | { success: false; error: string };
+
+function isFleetOpsUser(user: User | null): boolean {
+  if (!user) return false;
+  const tier = getTierForUser(user);
+  return (
+    tier === "owner" ||
+    tier === "staff" ||
+    tier === "executive" ||
+    tier === "operator" ||
+    tier === "vendor"
+  );
+}
+
+async function requireFleetOps(): Promise<User | FormResult> {
+  const supabase = await createSSRClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!isFleetOpsUser(user)) {
+    return { success: false, error: "Unauthorized — fleet staff login required." };
+  }
+  return user!;
+}
 
 async function insertRow(table: string, record: Record<string, unknown>): Promise<FormResult> {
   const supabase = await createSSRClient();
@@ -235,6 +260,9 @@ const handoverSchema = z.object({
 });
 
 export async function submitHandover(formData: FormData): Promise<FormResult> {
+  const gate = await requireFleetOps();
+  if ("success" in gate) return gate;
+
   const raw = Object.fromEntries(formData);
   const parsed = handoverSchema.safeParse(raw);
   if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
@@ -277,6 +305,9 @@ const onboardingSchema = z.object({
 });
 
 export async function submitOnboardingInspection(formData: FormData): Promise<FormResult> {
+  const gate = await requireFleetOps();
+  if ("success" in gate) return gate;
+
   const raw = Object.fromEntries(formData);
   const parsed = onboardingSchema.safeParse(raw);
   if (!parsed.success) return { success: false, error: "Please check required fields and try again." };
