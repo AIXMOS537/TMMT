@@ -1,7 +1,9 @@
 /**
- * POST /api/cron/auto-provision-operators
+ * GET|POST /api/cron/auto-provision-operators
  * Processes queued student-operator applications without human review.
  * Auth: Bearer CRON_SECRET (or OPS_COMMAND_SECRET).
+ * GET exists because Vercel cron invokes with GET (it sends the same
+ * Authorization: Bearer CRON_SECRET header).
  */
 import { NextResponse } from 'next/server'
 import { processQueuedOnboardings } from '@/lib/v3/auto-provision'
@@ -14,6 +16,10 @@ function authorized(req: Request): boolean {
   if (!secret) return false
   const auth = req.headers.get('authorization')
   return auth === `Bearer ${secret}`
+}
+
+export async function GET(req: Request) {
+  return POST(req)
 }
 
 export async function POST(req: Request) {

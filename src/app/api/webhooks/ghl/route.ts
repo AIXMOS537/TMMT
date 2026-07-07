@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
+import {
+  enqueueOperatorOnboarding,
+  operatorEnrollTag,
+  recordGhlPayment,
+  shouldRecordPayment,
+} from "@/lib/ghl-payment-sync";
+import { isV3AutoProvisionEnabled, processQueuedOnboardings } from "@/lib/v3/auto-provision";
 import { isClickUpEnabled } from "@/lib/clickup/client";
 import { syncGhlEventToClickUp } from "@/lib/clickup/sync-case";
 import { dispatchGhlWebhook } from "@/lib/ghl/dispatch";
@@ -113,6 +119,21 @@ export async function POST(request: NextRequest) {
     paymentResult = await recordGhlPayment(supabase, body, tags);
   }
 
+  // Payment → provisioning bridge: an operator-kit purchase queues onboarding
+  // and (when the flag is on) provisions inline so the buyer isn't left waiting
+  // on the cron sweep. Failures here must never break payment recording.
+  let operatorQueued: { queued: boolean; reason?: string } | undefined;
+  if (paymentResult?.recorded && operatorEnrollTag(tags)) {
+    try {
+      operatorQueued = await enqueueOperatorOnboarding(supabase, body, email);
+      if (operatorQueued.queued && isV3AutoProvisionEnabled()) {
+        await processQueuedOnboardings(3);
+      }
+    } catch (e) {
+      console.error("[ghl provision]", e instanceof Error ? e.message : e);
+    }
+  }
+
   let clickupResult: { taskId: string; url: string } | null = null;
   if (isClickUpEnabled()) {
     try {
@@ -149,6 +170,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       updated: "active_customers",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(operatorQueued ? { operator: operatorQueued } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
     });
   }
@@ -167,6 +189,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       updated: "incoming_leads",
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(operatorQueued ? { operator: operatorQueued } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
     });
   }
@@ -175,6 +198,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
+      ...(operatorQueued ? { operator: operatorQueued } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
     });
   }

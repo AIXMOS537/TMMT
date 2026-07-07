@@ -19,7 +19,10 @@ export type ProvisionResult = {
   email?: string
   affiliateCode?: string
   authUserId?: string
+  /** True only when the login link was actually delivered (SMS). */
   magicLinkSent?: boolean
+  /** True when the login link was generated and stored on the onboarding row. */
+  loginLinkStored?: boolean
   error?: string
 }
 
@@ -120,11 +123,32 @@ export async function provisionOperatorFromOnboarding(
     updated_at: new Date().toISOString(),
   })
 
-  const { error: linkErr } = await db.auth.admin.generateLink({
+  // generateLink creates the link but sends NOTHING — capture it, store it on
+  // the onboarding row for admin delivery, and SMS it when Twilio is wired.
+  const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
     type: 'magiclink',
     email,
     options: { redirectTo: LOGIN_REDIRECT },
   })
+  const loginLink = linkData?.properties?.action_link ?? null
+
+  let smsSent = false
+  const smsFrom = process.env.PROVISION_SMS_FROM || process.env.TWILIO_FROM_NUMBER || ''
+  if (loginLink && row.phone && smsFrom && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    try {
+      const { sendSms } = await import('@/lib/agent/twilio-send')
+      const digits = row.phone.replace(/\D/g, '')
+      const to = digits.length === 10 ? `+1${digits}` : `+${digits}`
+      await sendSms({
+        from: smsFrom,
+        to,
+        body: `TMMT: you're in. Your operator login link (expires soon): ${loginLink} — reply STOP to opt out.`,
+      })
+      smsSent = true
+    } catch {
+      // Fail-safe: link is stored on the row for manual delivery.
+    }
+  }
 
   await db
     .from('team_onboarding')
@@ -133,6 +157,8 @@ export async function provisionOperatorFromOnboarding(
       affiliate_code: affiliateCode,
       auth_user_id: authUserId,
       provisioned_at: new Date().toISOString(),
+      login_link: loginLink,
+      login_link_sent_at: smsSent ? new Date().toISOString() : null,
       provision_error: linkErr?.message ?? null,
     })
     .eq('id', row.id)
@@ -143,7 +169,8 @@ export async function provisionOperatorFromOnboarding(
     email,
     affiliateCode,
     authUserId,
-    magicLinkSent: !linkErr,
+    magicLinkSent: smsSent,
+    loginLinkStored: !!loginLink,
     error: linkErr?.message,
   }
 }
