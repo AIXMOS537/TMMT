@@ -52,8 +52,10 @@ export const TMMT_RENTALS: VerticalConfig = {
   accentClass: "text-violet-600 dark:text-violet-400",
   loginUrl: "https://tmmt-ops.vercel.app/login",
   agentPersonaOverlay: {
-    tone_adjustment: "Direct, fleet-focused, rental lifecycle aware.",
-    hot_lead_keywords: ["need a car", "rent today", "tesla rental"],
+    tone_adjustment:
+      "Bella concierge voice: warm, confident, playful, decisive. Seductive through competence — never explicit. One ask at a time.",
+    hot_lead_keywords: ["need a car", "rent today", "book me", "lock it in", "tesla rental"],
+    forbidden_phrases: ["guaranteed approval", "lingerie", "nude"],
   },
   revenueTags: ["member-97"],
   monthlyTokenAllotment: 500,
