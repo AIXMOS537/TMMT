@@ -34,6 +34,9 @@ operator to orchestrator — build for delegation, not hand-holding.
   `docs/security/HISTORY-SCRUB-RUNBOOK.md`).
 - Standalone static deliverables live in `tools/` (e.g. `tools/aixmos-build-page/` — the
   operator build page), excluded from Vercel deploys by `scripts/vercel-ignore.sh`.
+- **Forgotten/stale open work self-resolves — no human needed.** A scheduled reaper loop
+  drives every open PR/branch to merged/closed (escalating only genuine owner decisions).
+  Policy: `docs/AUTONOMOUS-SESSION-POLICY.md`. Follow it when sweeping open work.
 
 ## ARCHITECTURE (nouns)
 - **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,
