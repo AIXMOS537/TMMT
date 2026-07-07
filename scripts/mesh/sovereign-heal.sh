@@ -10,7 +10,8 @@ NOTIFY="$ROOT/scripts/mesh/notify-owner.sh"
 UID_NUM="$(id -u 2>/dev/null || echo 501)"
 
 heal_label() {
-  local label="$1" plist="$HOME/Library/LaunchAgents/${label}.plist"
+  local label="${1:-}"
+  [[ -n "$label" ]] || return 0 plist="$HOME/Library/LaunchAgents/${label}.plist"
   [[ -f "$plist" ]] || return 0
   if ! launchctl list 2>/dev/null | grep -q "$label"; then
     launchctl bootstrap "gui/$UID_NUM" "$plist" 2>/dev/null \
@@ -21,7 +22,8 @@ heal_label() {
 }
 
 kickstart_label() {
-  local label="$1"
+  local label="${1:-}"
+  [[ -n "$label" ]] || return 0
   case "$label" in
     com.hailmary.litellm-local)
       curl -sf --max-time 2 http://127.0.0.1:4001/ >/dev/null 2>&1 && return 0
