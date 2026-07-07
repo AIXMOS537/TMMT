@@ -13,12 +13,14 @@ import { fileURLToPath } from "url";
 import { spawnSync } from "child_process";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const envPath = join(root, ".env");
 const scope = "aixmos537";
 const project = "tmmt-c919";
 
 const GHL_KEYS = [
   "GHL_WEBHOOK_SECRET",
+  "GHL_VOICE_WEBHOOK_SECRET",
+  "GHL_LOCATION_ID",
+  "ELEVENLABS_VOICE_ID",
   "NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT",
   "NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT_USB",
   "NEXT_PUBLIC_GHL_CHECKOUT_OPS_MONTHLY",
@@ -38,25 +40,28 @@ const GHL_KEYS = [
 ];
 
 function loadDotEnv() {
-  if (!existsSync(envPath)) {
-    console.error("Missing .env — copy .env.example and fill GHL checkout URLs.");
-    process.exit(1);
-  }
   const out = {};
-  for (const line of readFileSync(envPath, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const eq = t.indexOf("=");
-    if (eq === -1) continue;
-    const key = t.slice(0, eq).trim();
-    let val = t.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
+  for (const envPath of [join(root, ".env.local"), join(root, ".env")]) {
+    if (!existsSync(envPath)) continue;
+    for (const line of readFileSync(envPath, "utf8").split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const eq = t.indexOf("=");
+      if (eq === -1) continue;
+      const key = t.slice(0, eq).trim();
+      let val = t.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (val.length > 0) out[key] = val;
     }
-    out[key] = val;
+  }
+  if (Object.keys(out).length === 0) {
+    console.error("Missing .env / .env.local — copy .env.example and fill values.");
+    process.exit(1);
   }
   return out;
 }

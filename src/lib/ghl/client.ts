@@ -60,6 +60,48 @@ async function findGhlContactInLocation(
   return json.contact?.id ?? null;
 }
 
+async function findGhlContactByPhoneInLocation(
+  phone: string,
+  locationId: string
+): Promise<string | null> {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+
+  const params = new URLSearchParams({
+    locationId,
+    phone: digits.length === 10 ? `+1${digits}` : `+${digits}`,
+  });
+
+  const res = await fetch(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
+    headers: ghlHeaders(),
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+
+  const json = (await res.json()) as { contact?: { id?: string } };
+  return json.contact?.id ?? null;
+}
+
+/** Resolve GHL contact id by E.164 or national phone (voice / SMS inbound). */
+export async function findGhlContactByPhone(
+  phone: string,
+  options?: { location?: GhlLocationKind; tryFallbackLocation?: boolean }
+): Promise<string | null> {
+  const kind = options?.location ?? "rentals";
+  if (!isGhlConfigured(kind)) return null;
+
+  const primary = resolveGhlLocationId(kind)!;
+  const hit = await findGhlContactByPhoneInLocation(phone, primary);
+  if (hit) return hit;
+
+  if (!options?.tryFallbackLocation || kind === "rentals") return null;
+
+  const fallback = resolveGhlLocationId("rentals");
+  if (!fallback || fallback === primary) return null;
+  return findGhlContactByPhoneInLocation(phone, fallback);
+}
+
 export async function findGhlContactByEmail(
   email: string,
   options?: { location?: GhlLocationKind; tryFallbackLocation?: boolean }
