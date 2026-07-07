@@ -38,7 +38,7 @@ const kits = [
     monthly: "/mo membership",
     bullets: [
       "Run-your-fleet playbook + AIXMOS agents",
-      "Credit + funding path via Moe Legacy",
+      "Credit + funding path via AIXMOS Credit",
       "Operator apply funnel",
     ],
     buyOnline: kitCheckout.growth,

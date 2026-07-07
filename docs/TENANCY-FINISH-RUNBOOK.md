@@ -40,7 +40,7 @@ cd ~/Projects/tmmt
 npm run db:finish-tenancy -- --dry-run
 
 # apply items 1–3 + verify, AND onboard Umar in one shot:
-npm run db:finish-tenancy -- --op "umar47002@yahoo.com=Moe Legacy"
+npm run db:finish-tenancy -- --op "person@example.com=Org Name"
 ```
 
 You'll see each migration `applying ... OK`, then a `✓` verification line per change,
@@ -63,7 +63,7 @@ Open Claude Code in this repo and paste:
 Read docs/TENANCY-FINISH-RUNBOOK.md. I've put SUPABASE_ACCESS_TOKEN and
 SUPABASE_SERVICE_ROLE_KEY in .env.local. Run `npm run db:finish-tenancy -- --dry-run`
 first and show me the SQL. If it looks right, run
-`npm run db:finish-tenancy -- --op "umar47002@yahoo.com=Moe Legacy"`, then report the
+`npm run db:finish-tenancy -- --op "person@example.com=Org Name"`, then report the
 verification results and Umar's one-time password. Do not commit anything.
 ```
 
@@ -82,7 +82,7 @@ Then onboard Umar (still needs the service key locally, OR do it by hand):
 
 ```sql
 -- Umar must have signed up first (so a profiles row exists), then:
-select public.onboard_org_member('umar47002@yahoo.com',
+select public.onboard_org_member('person@example.com',
   (select id from public.organizations where name ilike 'Moe Legacy'), 'operator');
 ```
 

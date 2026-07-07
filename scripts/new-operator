@@ -5,7 +5,7 @@
 # across Arizona and beyond. Templates are not legal advice — counsel reviews once.
 #
 #   bash scripts/new-operator "Name" "Agency" "vertical" [monthly$] [email]
-#   e.g. bash scripts/new-operator "Muhammad Umar" "MoeLegacy" "credit + funding" 0 info@moelegacy.com
+#   e.g. bash scripts/new-operator "Alex Doe" "AcmeOps" "credit + funding" 0 ops@example.com
 #   (word: new-operator)
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,7 +17,7 @@ say(){ printf '%s\n' "$*"; }
 OPERATOR="${1:-}"; AGENCY="${2:-}"; VERTICAL="${3:-credit + funding}"; MONTHLY="${4:-}"; EMAIL="${5:-}"
 if [ -z "$OPERATOR" ] || [ -z "$AGENCY" ]; then
   say "  usage: new-operator \"Name\" \"Agency\" \"vertical\" [monthly\$] [email]"
-  say "  e.g.:  new-operator \"Muhammad Umar\" \"MoeLegacy\" \"credit + funding\" 0 info@moelegacy.com"
+  say "  e.g.:  new-operator \"Alex Doe\" \"AcmeOps\" \"credit + funding\" 0 ops@example.com"
   exit 1
 fi
 DATE="$(date +%Y-%m-%d)"

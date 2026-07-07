@@ -21,7 +21,7 @@
 - **Reporting:** they receive a usage/earnings statement each {{CADENCE}}.
 
 ## C. Founders / special terms (if applicable)
-- {{FOUNDER_TERMS}} (e.g., deferred until $50K collected — Ayyan, Umar per OFFER-STACK)
+- {{FOUNDER_TERMS}} (e.g., deferred until $50K collected — per OFFER-STACK)
 
 ## D. Honesty clause (non-negotiable)
 - We sell/again license a **system + persona + buildout** — **never guaranteed

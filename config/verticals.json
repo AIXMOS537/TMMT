@@ -8,8 +8,7 @@
     {
       "slug": "moe-legacy",
       "orgName": "Moe Legacy",
-      "loginUrl": "https://tmmt-ops.vercel.app/login",
-      "foundingAdminEmails": ["umar47002@yahoo.com"]
+      "loginUrl": "https://tmmt-ops.vercel.app/login"
     }
   ],
   "stages": {

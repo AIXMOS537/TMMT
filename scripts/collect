@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # collect — bundle YOUR work on THIS machine into one folder to hand off.
-# Run on the operator's machine (e.g. Moe Legacy's M5). It copies the folder(s)
+# Run on the operator's machine. It copies the folder(s)
 # you point at (originals untouched) into a dated handoff folder on the Desktop,
 # writes a file list, and opens Finder so you AirDrop/send it.
 #
@@ -68,7 +68,7 @@ _scrub "$DEST"
 ( cd "$DEST" && find . -type f ! -name 'FILE-LIST.txt' 2>/dev/null | sed 's|^\./||' | sort > FILE-LIST.txt )
 COUNT="$(grep -c . "$DEST/FILE-LIST.txt" 2>/dev/null || echo 0)"
 cat > "$DEST/READ-ME-FIRST.txt" <<EOF
-MOE LEGACY / operator work handoff — from: $NAME
+OPERATOR work handoff — from: $NAME
 Made: $(date)
 Files: $COUNT   (FILE-LIST.txt has the full list)
 
