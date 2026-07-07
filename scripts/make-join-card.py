@@ -80,7 +80,7 @@ d.text((90,1500),"curl the repo → bash scripts/join   (see GO.md for the full 
 # footer roster strip
 d.rectangle([0,H-150,W,H],fill=NAVY)
 ctext(H-130,"protected by AIXMOS Agents of Chaos · run by TMMT Operators",F(26),WHITE)
-ctext(H-92,"watched by  Cyborg · Brainiac · Batman · Red Hood · Nightwing",F(24,False),(190,196,224))
+ctext(H-92,"watched by  Cyborg · Brainiac · Batman · Nightwing",F(24,False),(190,196,224))
 ctext(H-52,"more operators pending down the pipeline",F(22,False),(150,156,200))
 
 png=os.path.join(OUT,"GLOBAL-MESH-JOIN.png"); im.save(png)

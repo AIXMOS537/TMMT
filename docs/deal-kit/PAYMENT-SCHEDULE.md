@@ -6,7 +6,7 @@
 
 **Effective:** {{DATE}}   **Operator:** {{OPERATOR}} — {{AGENCY}}
 
-## A. Founder track (if applicable — e.g. Umar / MoeLegacy, operator #1)
+## A. Founder track (if applicable)
 - **Platform/brain cost is deferred until $50,000 is collected** by/through the
   Operator's business, settled via {{FOUNDER_SETTLEMENT}} (hours / salary /
   commission / revenue share — pick one).

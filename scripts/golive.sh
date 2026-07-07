@@ -61,41 +61,12 @@ printf '  Have you REVOKED the Airtable token (pat8mah6k…)?  [y/N] '
 IFS= read -r REV || true
 [ "$REV" = "y" ] || [ "$REV" = "Y" ] && ok "token revoked — the lock is set" || printf '  %s▸ do this from any browser before sending links — it is the real lock.%s\n' "$Y" "$X"
 
-# 4. Assemble founder send-packs.
-step "4/6  Founder send-packs (Ayyan + Umar)"
-CH="$ROOT/docs/cheatsheets"
-make_pack(){ # name  tag  vertical
-  local name="$1" tag="$2" vert="$3" slug; slug="$(printf '%s' "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
-  local out="$ROOT/.hailmary/outbox/$slug"; mkdir -p "$out"
-  [ -f "$CH/FOUNDER-WELCOME.pdf" ] && cp "$CH/FOUNDER-WELCOME.pdf" "$out/" 2>/dev/null
-  [ -f "$CH/GLOBAL-MESH-JOIN.png" ] && cp "$CH/GLOBAL-MESH-JOIN.png" "$out/" 2>/dev/null
-  cat > "$out/WELCOME-$slug.md" <<NOTE
-# Welcome, $name 🦾
-
-You're a **founding operator** on the network. Your brain is covered — settle the
-\$50K over time (hourly/salary/commission). Here's how you come online:
-
-1. Install **Tailscale** → sign in → I approve your device ($tag).
-2. Run the **partner installer** I send you (fenced — only your lane, no source code).
-3. Stand up your first local brain:  \`bash scripts/setup-llm.sh\`
-4. Install **RustDesk** so I can help you remotely (you see + end every session).
-5. You're live. Your vertical: **$vert**.
-
-Read: FOUNDER-WELCOME.pdf · scan: GLOBAL-MESH-JOIN.png
-Protect your peace. One step at a time. — HAILMARY
-NOTE
-  ok "pack ready: .hailmary/outbox/$slug/  (PDF + join card + welcome note)"
-}
-make_pack "Ayyan Khan" "tag:partner-ayyan" "TMMT / network (Nightwing — field ops)"
-make_pack "Muhammad Umar" "tag:partner-moelegacy" "MoeLegacy — credit guidance + funding"
+# 4. (retired) Founder send-packs — terminal cut 2026-07-06: no outside operators.
 
 # 5. The owner taps that only you can do.
 step "5/6  Your taps (only you can do these)"
 tap 1 "Revoke the Airtable token if you haven't — airtable.com/create/tokens"
-tap 2 "Issue licenses:  bash scripts/partner-deploy/owner/issue-license.sh   (Ayyan, then Umar)"
-tap 3 "Tailscale admin: approve their devices as tag:partner-ayyan / tag:partner-moelegacy"
-tap 4 "Send each their .hailmary/outbox/<name>/ pack + their one-shot token"
-tap 5 "(optional) purge old token-carrying branches:  bash scripts/golive.sh purge"
+tap 2 "(optional) purge old token-carrying branches:  bash scripts/golive.sh purge"
 
 # 6. Boot everything.
 step "6/6  Boot the base"

@@ -18,7 +18,7 @@
  *   node scripts/apply-tenancy-finish.mjs                 # apply DDL + verify
  *   node scripts/apply-tenancy-finish.mjs --dry-run       # print what would run
  *   node scripts/apply-tenancy-finish.mjs \
- *     --op "[email removed]=Moe Legacy"               # also onboard Umar
+ *     --op "person@example.com=Org Name"               # also onboard an org admin
  *
  * Safe: every statement is idempotent; re-running is a no-op. Nothing is dropped.
  */
@@ -153,7 +153,7 @@ async function main() {
     }
   } else {
     console.log(
-      '\nNext: onboard a founder with\n  node scripts/apply-tenancy-finish.mjs --op "[email removed]=Moe Legacy"'
+      '\nNext: onboard an org admin with\n  node scripts/apply-tenancy-finish.mjs --op "person@example.com=Org Name"'
     );
   }
 }

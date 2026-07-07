@@ -27,6 +27,5 @@ discovery → build → live.
 - Sell the **system + build + management** — never guaranteed income.
 - Credit = **"guidance," never "repair."**
 - Remote access is **consented + logged**, least-privilege.
-- Founders (Ayyan, Umar) defer — log hours/commission toward their $50K instead.
 
 Pricing source of truth: `docs/OFFER-STACK.md`.

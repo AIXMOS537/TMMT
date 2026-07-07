@@ -3,7 +3,6 @@
 # to your clipboard (macOS) so you just paste into Messages/WhatsApp/Mail.
 # No more asking Claude to "write the message."
 #
-#   invite operator [Name]    sovereign operator onboarding (e.g. Moe Legacy / Umar)
 #   invite immediate          inner-circle family welcome
 #   invite extended           extended-family welcome
 #   invite friends            friends welcome
@@ -11,29 +10,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd 2>/dev/null || echo "$PWD")"
 WHO="${1:-}"; NAME="${2:-}"
 SETUP1='curl -fsSL https://raw.githubusercontent.com/AIXMOS537/TMMT/master/scripts/setup-mac.command -o ~/Downloads/setup.command && bash ~/Downloads/setup.command'
-OP_START='curl -fsSL https://raw.githubusercontent.com/AIXMOS537/TMMT/master/scripts/operator-start.sh | bash'
 
-msg_operator(){ cat <<EOF
-${NAME:+$NAME — }You're my first operator. This makes MoeLegacy 100% YOURS — your own
-system, your own private network, your own everything. ~5 minutes, basically one paste:
-
-1) On your Mac (your carry M5), open Terminal (Cmd+Space → type Terminal → Enter).
-
-2) Paste this ONE line and press Enter — it does everything:
-
-   $OP_START
-
-3) It'll ask you to name your Mac and to log in with YOUR OWN Tailscale account
-   (a browser opens — use your own email). Just follow what it says.
-
-4) At the end it shows your machine name and ONE last tap: in the Tailscale app,
-   Share your machine to me + turn on "Tailscale SSH". You can un-share anytime.
-
-Then text me "done" with your machine name and I'll get you fully live.
-Welcome to MoeLegacy. 🐦‍⬛
-— Taha
-EOF
-}
 msg_immediate(){ cat <<EOF
 You're my inner circle, so you're the first I'm bringing in. This is yours —
 your own private helper on your own computer. ~5 min:
@@ -71,11 +48,10 @@ EOF
 }
 
 case "$WHO" in
-  operator|op|moe|umar) OUT="$(msg_operator)"; SUBJECT="MoeLegacy — your setup (about 5 minutes)";;
   immediate|family)     OUT="$(msg_immediate)"; SUBJECT="Welcome — your own private system";;
   extended)             OUT="$(msg_extended)";  SUBJECT="Welcome — your own private system";;
   friends|friend)       OUT="$(msg_friends)";   SUBJECT="For you — your own private system";;
-  *) echo "invite: operator [Name] [email] | immediate | extended | friends   (add an email to open Mail pre-written)"; exit 0;;
+  *) echo "invite: immediate | extended | friends   (add an email to open Mail pre-written)"; exit 0;;
 esac
 
 printf '\n%s\n' "$OUT"

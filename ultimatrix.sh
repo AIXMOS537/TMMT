@@ -48,7 +48,7 @@ install_files(){
 ## COMPLIANCE GATES (hard)  → specs/compliance-sms-gate.md
 1. A2P SMS: credit_repair / funding / debt_relief / lending = NO promotional SMS (carrier + CROA). Transactional-only or off.
 2. Owner-approval gate stays on all customer-facing/financial actions. Never bypass.
-3. credit_repair & funding feature flags stay disabled; unlock only by owner/umar after legal steps.
+3. credit_repair & funding feature flags stay disabled; unlock only by owner after legal steps.
 
 ## Engagement
 Reference config, never hardcode identity/contact. On credit/funding paths, assume the gate applies.
@@ -83,8 +83,8 @@ EOF
     "owner_approval_gate": "required for all customer-facing and financial actions"
   },
   "feature_flags": {
-    "credit_repair": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
-    "funding": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
+    "credit_repair": { "enabled": false, "unlock_roles": ["owner"], "requires_legal_steps": true },
+    "funding": { "enabled": false, "unlock_roles": ["owner"], "requires_legal_steps": true },
     "sms_marketing_credit_funding": { "enabled": false, "hard_locked": true,
       "reason": "A2P 10DLC carrier prohibition on lending/credit/debt promotional SMS + CROA" }
   }
@@ -122,7 +122,7 @@ EOF
 Read CLAUDE.md, config/identity.config.json, and specs/*. Update THIS repo to conform 1:1:
 1. Replace hardcoded contact (phone/email/address) in customer-facing code/templates/exports with config/identity.config.json → public_contact references.
 2. Implement the SMS Compliance Gate (specs/compliance-sms-gate.md) in the gate/middleware layer + tests.
-3. Wire feature flags: credit_repair & funding disabled, unlock only owner/umar; sms_marketing_credit_funding hard-locked.
+3. Wire feature flags: credit_repair & funding disabled, unlock only owner; sms_marketing_credit_funding hard-locked.
 4. Add privacy-invariant CI checks (specs/identity-privacy-invariants.md); source the PII denylist from vault at CI time — never commit PII.
 5. Preserve the owner-approval gate everywhere.
 HARD RULES: never write the owner's legal name, personal/work cell, personal email, or home address into any file; if found, replace with config/vault refs and list each. Don't enable restricted flags. If a step would violate an invariant/gate, STOP and report.

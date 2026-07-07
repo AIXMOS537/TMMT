@@ -1,6 +1,6 @@
 /**
  * Vertical registry — canonical config for each tenant on the shared spine.
- * Moe Legacy is vertical #2; TMMT Rentals is #1. Future verticals copy this shape.
+ * AIXMOS Credit (slug + orgName kept as moe-legacy/"Moe Legacy" — live org rows map to them) is vertical #2; TMMT Rentals is #1. Future verticals copy this shape.
  *
  * Spec: docs/superpowers/specs/2026-06-21-moe-legacy-agency-saas-design.md
  */
@@ -63,8 +63,8 @@ export const TMMT_RENTALS: VerticalConfig = {
 export const MOE_LEGACY: VerticalConfig = {
   slug: "moe-legacy",
   orgName: "Moe Legacy",
-  displayName: "Moe Legacy",
-  shortName: "Moe Legacy",
+  displayName: "AIXMOS Credit",
+  shortName: "AIXMOS Credit",
   tagline: "Credit guidance & business funding",
   complianceLabel: "Credit guidance — not credit repair; no guaranteed outcomes",
   portalTitle: "Agency portal",
@@ -90,7 +90,7 @@ export const MOE_LEGACY: VerticalConfig = {
   },
   revenueTags: ["member-97", "credit-guidance-active", "credit-consult-booked"],
   monthlyTokenAllotment: 500,
-  foundingAdminEmails: ["[email removed]"],
+  foundingAdminEmails: [],
 };
 
 /** All registered verticals in launch order */

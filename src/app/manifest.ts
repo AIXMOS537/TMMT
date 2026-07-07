@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "TMMT × AIXMOS — Operations",
     short_name: "TMMT",
-    description: "Run TMMT, AIXMOS & Moe Legacy from any device.",
+    description: "Run TMMT & AIXMOS from any device.",
     start_url: "/",
     display: "standalone",
     background_color: "#0A1628",
