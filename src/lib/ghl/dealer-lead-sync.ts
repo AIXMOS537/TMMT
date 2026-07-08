@@ -57,11 +57,15 @@ export async function syncDealerLeadFromGhl(args: {
   const email = args.customerEmail?.trim() || null;
   const phone = args.customerPhone?.replace(/\D/g, "") || null;
 
-  const { data: existing } = await db
-    .from("incoming_leads")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
+  let existing: { id: string } | null = null;
+  if (email) {
+    const { data } = await db.from("incoming_leads").select("id").eq("email", email).maybeSingle();
+    existing = data;
+  }
+  if (!existing?.id && phone && phone.length >= 10) {
+    const { data } = await db.from("incoming_leads").select("id").eq("phone", phone).maybeSingle();
+    existing = data;
+  }
 
   const row: Record<string, unknown> = {
     contact_name,

@@ -22,6 +22,7 @@
     "db:finish-tenancy": "node scripts/apply-tenancy-finish.mjs",
     "create-partner-test-user": "node scripts/create-partner-test-user.mjs",
     "provision-operators": "node scripts/provision-operators.mjs",
+    "provision-dealer": "node scripts/provision-dealer-instance.mjs",
     "go-live": "node scripts/go-live.mjs",
     "ghl:discover": "node scripts/ghl-discover-products.mjs",
     "export-operators": "node scripts/export-operators-from-airtable.mjs",

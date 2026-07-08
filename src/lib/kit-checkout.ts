@@ -17,6 +17,13 @@ export const kitCheckout = {
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "",
 } as const;
 
-export function checkoutHref(url: string, fallback = "#checkout-pending") {
-  return url.trim() || fallback;
+const LEAD_INTAKE = "/forms/lead-intake";
+
+/** When GHL checkout env is unset, route to lead intake — never a dead #anchor. */
+export function checkoutHref(url: string, kit?: string) {
+  const trimmed = url.trim();
+  if (trimmed) return trimmed;
+  const params = new URLSearchParams({ utm_source: "kits-page" });
+  if (kit) params.set("utm_campaign", `kit-${kit}`);
+  return `${LEAD_INTAKE}?${params.toString()}`;
 }
