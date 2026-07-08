@@ -60,12 +60,12 @@ export default function KitsLandingPage() {
           TMMT × AIXMOS
         </p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
-          Run cars. Run the business. Grow with AIXMOS.
+          Your lot. Your customers. Your system.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-          Three systems that work together — for dealerships and for people who
-          want to work with us. Buy online for instant access, or get a USB kit
-          by mail.
+          Built for independent dealerships and mom-and-pop lots — fleet desk,
+          intake forms, staff logins, and owner command center. Your own
+          instance. Not a shared login.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a
@@ -75,10 +75,16 @@ export default function KitsLandingPage() {
             View kits & pricing
           </a>
           <Link
-            href="/forms/lead-intake"
+            href="/forms/dealer-apply"
             className="rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
           >
-            Talk to us first
+            Apply as a dealer
+          </Link>
+          <Link
+            href="/forms/lead-intake"
+            className="rounded-lg border border-white/20 px-6 py-3 text-sm font-semibold text-white/90 hover:bg-white/10"
+          >
+            Rental inquiry
           </Link>
         </div>
       </header>
@@ -132,14 +138,14 @@ export default function KitsLandingPage() {
                 ))}
               </ul>
               <a
-                href={checkoutHref(kit.buyOnline)}
+                href={checkoutHref(kit.buyOnline, kit.id)}
                 className="mt-6 block rounded-lg bg-[#1440C4] py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
               >
                 Buy online — instant access
               </a>
               {kit.buyUsb ? (
                 <a
-                  href={checkoutHref(kit.buyUsb)}
+                  href={checkoutHref(kit.buyUsb, `${kit.id}-usb`)}
                   className="mt-2 block rounded-lg border-2 border-[#1440C4] py-2.5 text-center text-sm font-semibold text-[#1440C4] hover:bg-blue-50"
                 >
                   Buy + ship USB
@@ -169,7 +175,7 @@ export default function KitsLandingPage() {
               </p>
             </div>
             <a
-              href={checkoutHref(kitCheckout.dealerBundle)}
+              href={checkoutHref(kitCheckout.dealerBundle, "dealer-bundle")}
               className="shrink-0 rounded-lg bg-[#1440C4] px-8 py-3 text-center font-semibold text-white hover:bg-blue-700"
             >
               Get dealer bundle
@@ -178,7 +184,8 @@ export default function KitsLandingPage() {
         </article>
 
         <p id="checkout-pending" className="mt-10 text-center text-sm text-slate-500">
-          Checkout links activate after GHL products are connected. Questions: {support}
+          No checkout yet? Every button opens our intake form — we call you same
+          day. GHL checkout activates when billing is wired. Questions: {support}
         </p>
       </section>
 

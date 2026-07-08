@@ -3,10 +3,14 @@
 import { z } from "zod";
 import { createSSRClient } from "@/lib/supabase-server";
 import { fanOut } from "@/lib/notify";
+import { processUnifiedIntake } from "@/lib/intake/unified";
+import type { RequestType } from "@/lib/workflow/statuses";
 
 // ─── Shared helpers ──────────────────────────────
 
-type FormResult = { success: true } | { success: false; error: string };
+type FormResult =
+  | { success: true; refCode?: string }
+  | { success: false; error: string };
 
 async function insertRow(table: string, record: Record<string, unknown>): Promise<FormResult> {
   const supabase = await createSSRClient();
@@ -67,6 +71,107 @@ export async function submitLeadIntake(formData: FormData): Promise<FormResult> 
     utm_content: d.utm_content || null,
     utm_term: d.utm_term || null,
   });
+}
+
+// ─── 1b. Dealer Apply ────────────────────────────
+
+const dealerApplySchema = z.object({
+  dealership_name: z.string().min(1).max(200),
+  contact_name: z.string().min(1).max(200),
+  role: z.enum(["Owner", "GM", "F&I Manager", "Sales Manager", "Other"]),
+  phone: z.string().min(7).max(20),
+  email: z.string().email().max(254),
+  city: z.string().min(1).max(100),
+  state: z.string().min(2).max(2),
+  units_per_month: z.enum(["Under 25", "25-50", "50-100", "100+", ""]).optional(),
+  interested_package: z.enum(["Ops Kit", "Dealer Bundle", ""]).optional(),
+  notes: z.string().max(2000).optional(),
+}).merge(attributionSchema);
+
+export async function submitDealerApply(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = dealerApplySchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+  const dealerNotes = [
+    d.notes?.trim() || null,
+    `dealership=${d.dealership_name.trim()}`,
+    `role=${d.role}`,
+    `location=${d.city.trim()}, ${d.state.toUpperCase()}`,
+    d.units_per_month ? `units/mo=${d.units_per_month}` : null,
+    d.interested_package ? `package=${d.interested_package}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const result = await insertRow("incoming_leads", {
+    contact_name: d.contact_name.trim(),
+    phone: d.phone.replace(/\D/g, "") || null,
+    email: d.email.trim(),
+    opportunity_name: `Dealer Apply: ${d.dealership_name.trim()}`,
+    priority_level: d.role === "Owner" || d.role === "GM" ? "Urgent" : "Requires Follow Up",
+    notes: dealerNotes,
+    status: "New Lead",
+    source: d.source || "dealer-apply",
+    source_campaign: d.source_campaign || null,
+    source_medium: d.source_medium || null,
+    referrer_url: d.referrer_url || null,
+    landing_url: d.landing_url || null,
+    utm_source: d.utm_source || null,
+    utm_medium: d.utm_medium || null,
+    utm_campaign: d.utm_campaign || null,
+    utm_content: d.utm_content || null,
+    utm_term: d.utm_term || null,
+  });
+
+  if (result.success) {
+    const pkg = d.interested_package || "TBD";
+    fanOut(
+      `Dealer application\n${d.dealership_name.trim()} · ${d.city.trim()}, ${d.state.toUpperCase()}\n` +
+        `${d.contact_name.trim()} (${d.role}) · ${d.phone}\nPackage: ${pkg}\n` +
+        `Review: https://tmmt-ops.vercel.app/forms/dealer-apply`
+    ).catch((err) => console.warn("[dealer-apply] fanOut error:", err));
+  }
+
+  return result;
+}
+
+// ─── 1c. Business line intake (dealers, wholesale, verticals) ───
+
+const businessLineIntakeSchema = z.object({
+  business_line: z.string().min(1).max(80),
+  customer_name: z.string().min(1).max(200),
+  customer_phone: z.string().min(7).max(20),
+  customer_email: z.string().email().max(254).or(z.literal("")),
+  request_type: z.string().min(1).max(80),
+  subject: z.string().min(1).max(500),
+  details: z.string().max(5000).optional(),
+});
+
+export async function submitBusinessLineIntake(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = businessLineIntakeSchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+  try {
+    const result = await processUnifiedIntake({
+      customer_name: d.customer_name.trim(),
+      customer_phone: d.customer_phone.replace(/\D/g, "") || d.customer_phone,
+      customer_email: d.customer_email || null,
+      request_type: d.request_type as RequestType,
+      subject: d.subject.trim(),
+      details: d.details?.trim() || null,
+      source: `form:${d.business_line}`,
+      business_line: d.business_line,
+      tags: [d.request_type, d.business_line],
+    });
+    return { success: true, refCode: result.refCode };
+  } catch (err) {
+    console.error("[business_line_intake] failed:", err);
+    return { success: false, error: "Submission failed. Please try again." };
+  }
 }
 
 // ─── 2. Appointment ──────────────────────────────
