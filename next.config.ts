@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { withSentryConfig } from "@sentry/nextjs";
+
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@aixmos/core"],
+  turbopack: {
+    root: repoRoot,
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",
