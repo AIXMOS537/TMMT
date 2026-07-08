@@ -5,11 +5,13 @@ describe("checkoutHref", () => {
   it("returns a real URL unchanged", () => {
     expect(checkoutHref("https://link.gohighlevel.com/abc")).toBe("https://link.gohighlevel.com/abc");
   });
-  it("falls back to the pending sentinel for empty/whitespace (no dead button)", () => {
-    expect(checkoutHref("")).toBe("#checkout-pending");
-    expect(checkoutHref("   ")).toBe("#checkout-pending");
+  it("falls back to lead intake when checkout URL unset (no dead button)", () => {
+    expect(checkoutHref("")).toBe("/forms/lead-intake?utm_source=kits-page");
+    expect(checkoutHref("   ")).toBe("/forms/lead-intake?utm_source=kits-page");
   });
-  it("honors a custom fallback", () => {
-    expect(checkoutHref("", "/contact")).toBe("/contact");
+  it("tags kit interest in utm_campaign when kit id provided", () => {
+    expect(checkoutHref("", "dealer-bundle")).toBe(
+      "/forms/lead-intake?utm_source=kits-page&utm_campaign=kit-dealer-bundle"
+    );
   });
 });
