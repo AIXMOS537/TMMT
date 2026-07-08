@@ -7,6 +7,7 @@ paths=(
   "/login"
   "/forms/lead-intake"
   "/forms/dealer-apply"
+  "/dealers"
   "/forms/customer-intake"
   "/forms/waitlist"
   "/forms/appointment"
