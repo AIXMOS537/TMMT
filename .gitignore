@@ -105,3 +105,4 @@ dist/
 # never commit secrets, bonds, registration numbers, client PII
 secrets/
 *.pii
+.aider*
