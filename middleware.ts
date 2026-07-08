@@ -9,11 +9,13 @@ import { isOwnerHubHost } from "@/lib/site-domains";
 function isFunnelPublicPath(pathname: string) {
   return (
     pathname === "/join" ||
+    pathname === "/dealers" ||
     pathname === "/credit" ||
     pathname === "/funding" ||
     pathname.startsWith("/lp/") ||
     pathname.startsWith("/api/leads/") ||
     pathname === "/api/health" ||
+    pathname === "/api/agent/health" ||
     pathname === "/api/agent/_health" ||
     pathname.startsWith("/api/agent/sms/") ||
     pathname.startsWith("/api/agent/stripe/webhook/") ||
@@ -47,6 +49,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/robots.txt" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/dealers" ||
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
