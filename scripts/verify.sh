@@ -33,6 +33,8 @@ fi
 
 step "1/3 · Lint";  npm run lint  || fail "lint failed (errors must be fixed before shipping)"; pass "lint clean"
 step "2/3 · Tests"; npm test      || fail "unit tests failed"; pass "tests pass"
-step "3/3 · Build (production + typecheck)"; npm run build || fail "production build failed"; pass "build succeeded"
+step "3/3 · Build (production + typecheck)"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=12288}"
+npm run build || fail "production build failed"; pass "build succeeded"
 
 printf '\n%s✓ ALL LOCAL CHECKS PASSED — safe to go live.%s\n' "$G$B" "$X"
