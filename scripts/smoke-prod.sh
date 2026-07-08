@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="${SMOKE_BASE_URL:-https://tmmt-command-center.vercel.app}"
+BASE="${SMOKE_BASE_URL:-https://tmmt-ops.vercel.app}"
 paths=(
   "/"
   "/login"
