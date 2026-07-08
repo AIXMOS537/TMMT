@@ -75,6 +75,12 @@ export default function KitsLandingPage() {
             View kits & pricing
           </a>
           <Link
+            href="/dealers"
+            className="rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            Dealer packages
+          </Link>
+          <Link
             href="/forms/dealer-apply"
             className="rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
           >
