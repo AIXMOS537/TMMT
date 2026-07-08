@@ -1,0 +1,52 @@
+
+# 2026-07-07 22:28:54.587818
++# M1 WORK LAW — via watchtower 2153
++from: MacBook-Pro-3 · 2026-07-07T07:55:34Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-215343-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# via watchtower 2153
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
+
+# 2026-07-07 22:28:54.588560
++# M1 WORK LAW — via watchtower 2153
++from: MacBook-Pro-3 · 2026-07-07T07:55:34Z
++law: M1-WORK-LAW v1.0
++domain: business
++score: 2460
++dedupe_key: file-work-20260706-215343-
++
++## Mission
++---
++domain: business
++emergency: 2
++money: 2
++people_helped: 3
++time: 2
++energy: 4
++cost: 5
++owner_gate: false
++---
++
++# via watchtower 2153
++
++## Execute on M1
++cd ~/projects/TMMT || cd ~/Projects/TMMT
++bash scripts/mesh/m1-fleet-executor.sh
