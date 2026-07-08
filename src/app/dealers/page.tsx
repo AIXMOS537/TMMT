@@ -21,8 +21,8 @@ const objections = [
 ] as const;
 
 export default function DealersPage() {
-  const opsCheckout = checkoutHref(kitCheckout.ops);
-  const dealerBundle = checkoutHref(kitCheckout.dealerBundle);
+  const opsCheckout = checkoutHref(kitCheckout.ops, "ops");
+  const dealerBundle = checkoutHref(kitCheckout.dealerBundle, "dealer-bundle");
   const support =
     kitCheckout.supportPhone || kitCheckout.supportEmail
       ? [kitCheckout.supportPhone, kitCheckout.supportEmail].filter(Boolean).join(" · ")
