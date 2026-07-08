@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-role="sovereign">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>★ GO</title>
+  <style>
+    :root {
+      --accent: #FFD700;
+      --glow: #9933FF;
+      --bg: #050508;
+      --card: rgba(255,255,255,0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Barlow", "Helvetica Neue", system-ui, sans-serif;
+      background: var(--bg);
+      color: #f0f0f5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--glow) 35%, transparent), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, color-mix(in srgb, var(--accent) 15%, transparent), transparent);
+    }
+    .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 32px 20px 48px; text-align: center; }
+    .logo {
+      font-size: clamp(3.5rem, 12vw, 5rem);
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: #fff;
+      text-shadow: 0 0 30px var(--glow), 0 0 60px color-mix(in srgb, var(--accent) 50%, transparent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.92} }
+    .codename {
+      font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.25em;
+      color: var(--accent); margin: 8px 0 4px;
+      text-shadow: 0 0 20px var(--accent);
+    }
+    .tagline { color: #888; font-size: 1rem; margin-bottom: 36px; }
+    .mesh {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 28px;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #333; box-shadow: 0 0 8px #333;
+    }
+    .dot.up { background: #22C55E; box-shadow: 0 0 12px #22C55E; animation: blink 2s infinite; }
+    .dot.down { background: #ef4444; opacity: 0.5; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .grid { display: grid; gap: 14px; }
+    a.btn {
+      display: block;
+      padding: 22px 20px;
+      border-radius: 16px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-decoration: none;
+      color: #fff;
+      background: var(--card);
+      border: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--glow) 25%, transparent);
+      transition: transform 0.12s, box-shadow 0.2s;
+    }
+    a.btn:hover, a.btn:focus {
+      transform: scale(1.02);
+      box-shadow: 0 0 35px var(--glow), 0 0 15px var(--accent);
+    }
+    a.btn:active { transform: scale(0.98); }
+    a.btn.work { border-color: #22C55E; background: linear-gradient(135deg, #22C55E22, var(--card)); }
+    a.btn.chat { border-color: #00D4FF; }
+    a.btn.fix { border-color: #F5A623; }
+    a.btn.help { border-color: #9933FF; }
+    a.btn.boss { border-color: #FFD700; display: none; }
+    body.role-sovereign a.btn.boss { display: block; }
+    .links { margin-top: 32px; }
+    .links a {
+      display: block; color: var(--accent); text-decoration: none;
+      padding: 10px; font-size: 0.95rem; opacity: 0.9;
+    }
+    .links a:hover { text-shadow: 0 0 12px var(--accent); }
+    footer { margin-top: 40px; font-size: 0.75rem; color: #555; }
+  </style>
+</head>
+<body class="role-sovereign">
+  <div class="bg-glow"></div>
+  <div class="wrap">
+    <div class="logo">★ GO</div>
+    <div class="codename" id="codename">The Watchtower</div>
+    <p class="tagline" id="tagline">Boss lane · vault · approve</p>
+    <div class="mesh" id="mesh" title="Mesh nodes"></div>
+    <div class="grid">
+      <a class="btn work" href="#" id="btn-work">1 · WORK</a>
+      <a class="btn chat" href="https://brainiac-7.tailceb455.ts.net:9443" target="_blank">2 · CHAT</a>
+      <a class="btn fix" href="file:///Users/ceo.moe/Desktop/%E2%98%85%20GO.command">3 · FIX</a>
+      <a class="btn help" href="file:///Users/ceo.moe/Desktop/%E2%98%85%20GO%20%E2%80%94%20READ%20THIS.txt">4 · HELP</a>
+      <a class="btn boss" href="cursor://agent">5 · BOSS</a>
+    </div>
+    <div class="links">
+      <a href="https://tmmt-ops.vercel.app/kits" target="_blank">Shop kits →</a>
+      <a href="https://tmmt-ops.vercel.app/forms/credit-funding-intake" target="_blank">Credit help →</a>
+      <a href="https://tmmt-ops.vercel.app/join" target="_blank">Become an operator →</a>
+    </div>
+    <footer>TMMT × AIXMOS · Muhammad Taha · Press 1 every day</footer>
+  </div>
+  <script>
+    const THEMES = {
+      sovereign: { accent:'#FFD700', glow:'#9933FF', codename:'The Watchtower', tagline:'Boss lane · vault · approve', boss:true },
+      rick:      { accent:'#00D4FF', glow:'#3366FF', codename:'Rick Sorkin', tagline:'Build · ship · protect Taha', boss:false },
+      gateway:   { accent:'#22C55E', glow:'#00FF88', codename:'The Gateway', tagline:'Always-on AI for everyone', boss:false },
+      office:    { accent:'#F5A623', glow:'#FF8800', codename:'Office Forge', tagline:'Build bench · always ready', boss:false },
+      family:    { accent:'#FF6B9D', glow:'#FFD700', codename:'Family VIP', tagline:'Protected · loved · first', boss:false },
+      va:        { accent:'#2DD4BF', glow:'#14B8A6', codename:'VA Lane', tagline:'Learn · earn · support', boss:false },
+      operator:  { accent:'#FB923C', glow:'#F97316', codename:'Operator', tagline:'Your business · our engine', boss:false },
+      public:    { accent:'#00D4FF', glow:'#22C55E', codename:'AIXMOS', tagline:'Start here · grow forever', boss:false },
+      aixmos:    { accent:'#00D4FF', glow:'#22C55E', codename:'AIXMOS', tagline:'Start here · grow forever', boss:false }
+    };
+    const NODES = [
+      { id:'carry', label:'Carry', up:true },
+      { id:'m1', label:'M1', up:true },
+      { id:'brainiac', label:'Brainiac', up:true },
+      { id:'office', label:'Office', up:true },
+      { id:'iphone', label:'Phone', up:false }
+    ];
+    const params = new URLSearchParams(location.search);
+    let role = params.get('role') || document.documentElement.dataset.role || 'sovereign';
+    const t = THEMES[role] || THEMES.aixmos;
+    document.documentElement.style.setProperty('--accent', t.accent);
+    document.documentElement.style.setProperty('--glow', t.glow);
+    document.getElementById('codename').textContent = t.codename;
+    document.getElementById('tagline').textContent = t.tagline;
+    document.body.className = 'role-' + role;
+    if (t.boss) document.body.classList.add('role-sovereign');
+    const mesh = document.getElementById('mesh');
+    NODES.forEach(n => {
+      const d = document.createElement('span');
+      d.className = 'dot ' + (n.up ? 'up' : 'down');
+      d.title = n.label + (n.up ? ' online' : ' offline');
+      mesh.appendChild(d);
+    });
+    document.getElementById('btn-work').addEventListener('click', e => {
+      e.preventDefault();
+      alert('Mac: double-click ★ GO on Desktop\\n\\nOr open Terminal and type: go\\n\\nThen press 1.');
+    });
+  </script>
+</body>
+</html>
