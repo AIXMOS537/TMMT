@@ -12,6 +12,10 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+mkdir -p "$ROOT/.swarm"
+VERIFY_LOCK="$ROOT/.swarm/verify.lock"
+echo $$ > "$VERIFY_LOCK"
+trap 'rm -f "$VERIFY_LOCK"' EXIT
 
 if [ -t 1 ]; then G=$'\e[32m'; R=$'\e[31m'; Y=$'\e[33m'; B=$'\e[1m'; X=$'\e[0m'; else G=; R=; Y=; B=; X=; fi
 step(){ printf '\n%s== %s ==%s\n' "$B" "$*" "$X"; }
