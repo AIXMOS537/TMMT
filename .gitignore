@@ -97,6 +97,10 @@ __pycache__/
 .aixmos/heartbeat/
 .aixmos/integrity-*.txt
 .aixmos/secret-scan-report.txt
+.aixmos/verify-log.ndjson
+.aixmos/check-*.log
+.aixmos/factory-line.ndjson
+.aixmos/brainiac/
 
 # Sweep-archive dumps (one-time machine sweeps) — never commit; route real intake
 # files to imports/<area>/ instead. (See docs/security/HISTORY-SCRUB-RUNBOOK.md)
