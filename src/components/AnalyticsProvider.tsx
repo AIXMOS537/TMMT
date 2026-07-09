@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getTierForUser } from "@/lib/auth-roles";
 import {
@@ -10,7 +10,6 @@ import {
   registerAttribution,
   resetAnalytics,
   trackEvent,
-  trackPageView,
 } from "@/lib/analytics";
 
 const ATTRIBUTION_PARAMS = [
@@ -26,9 +25,7 @@ export default function AnalyticsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const lastPath = useRef<string | null>(null);
 
   useEffect(() => {
     initAnalytics();
@@ -43,12 +40,6 @@ export default function AnalyticsProvider({
       registerAttribution(attribution);
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    if (!pathname || pathname === lastPath.current) return;
-    lastPath.current = pathname;
-    trackPageView(pathname);
-  }, [pathname]);
 
   useEffect(() => {
     const {
