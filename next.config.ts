@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.supabase.co",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co https://*.sentry.io",
+              "connect-src 'self' https://*.supabase.co https://*.sentry.io https://api.mixpanel.com https://api-js.mixpanel.com",
               "frame-ancestors 'self'",
             ].join("; "),
           },
