@@ -28,9 +28,16 @@ Cloud agents run on **AIXMOS537/TMMT** (Next.js 15, Supabase, GHL webhooks).
 
 ### Bootstrap (first run on a fresh VM)
 
-1. Secrets must be set in **Dashboard → Cloud Agents → Environments → TMMT → Secrets** (or use self-hosted worker `macbook-pro-3` which reads local `.env.local`).
-2. After secrets exist: `npm install && npm run build && npm run test`
-3. Smoke: `npm run check-env` then `bash scripts/credit-engine-smoke.sh` (credit vertical)
+1. `npm install` (Node 22 / npm 10; the update script runs this automatically).
+2. `npm run lint`, `npm run test`, `npm run build`, and `npm run dev` all work with only **placeholder** Supabase values in `.env.local` — no real secrets needed for dev-readiness. The Supabase client is instantiated lazily, so the build never crashes on missing env; only DB-backed request paths fail at runtime.
+3. Real end-to-end (login, admin pages, public form writes) needs real Supabase secrets set in **Dashboard → Cloud Agents → Environments → TMMT → Secrets** (or self-hosted worker `macbook-pro-3` reading local `.env.local`). `npm run check-env` only passes against a **reachable** Supabase, so it fails with placeholders — expected.
+
+### Environment notes (verified 2026-07-09)
+
+- **Backend is remote Supabase.** The base table schema (`fleet`, `incoming_leads`, `customers`, …) is NOT in `supabase/migrations/` — those migrations only add RLS/partner/workflow objects on top of an out-of-repo Airtable-origin schema. So `supabase start` (local stack) would fail applying migrations against tables that don't exist. Don't rely on local Supabase; use real remote secrets for DB flows.
+- **No-backend smoke:** `GET /api/health` → `{ok:true}` and the public **`/try`** page (a 100% client-side scripted engine demo — no Supabase/keys) both work with placeholder env; good for confirming the dev server renders and is interactive.
+- `build` uses **webpack** (`next build --webpack`); `dev` uses Turbopack.
+- The `scripts/credit-engine-smoke.sh` / `scripts/credit-engine-az.sh` referenced below are **not present** in the current repo — guard for their existence before running.
 
 ### Dev server
 
