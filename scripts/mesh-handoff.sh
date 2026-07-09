@@ -94,7 +94,7 @@ notes:
 EOF
 
 git add HANDOFF.md
-git -c commit.gpgsign=false commit -q -m "handoff($FROM→$TO): $INTENT"
+git -c commit.gpgsign=false commit -q -m "handoff(${FROM}→${TO}): $INTENT"
 ok "HANDOFF.md committed on $BRANCH"
 
 PING="📤 handoff \`$BRANCH\` FROM $FROM TO $TO: $INTENT"

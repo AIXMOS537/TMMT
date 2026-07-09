@@ -41,6 +41,9 @@ PATTERNS=(
 )
 redact(){ if $RAW; then cat; else sed -E 's/([A-Za-z0-9]{6})[A-Za-z0-9._/+-]{8,}/\1…REDACTED/g'; fi; }
 EXCL='package-lock\.json|yarn\.lock|pnpm-lock\.yaml|\.gitleaksignore|node_modules/|\.min\.|secret-scan\.sh'
+# Env references (process.env.X / import.meta.env.X / Deno.env.get) are NOT literal
+# secrets — skip them so the generic pattern doesn't flag every config read.
+ENV_REF='[:=][>"'"'"'` ]*(await +)?(process\.env|import\.meta\.env|Deno\.env)'
 
 found=0
 {
@@ -53,6 +56,7 @@ found=0
 for entry in "${PATTERNS[@]}"; do
   name="${entry%%|*}"; re="${entry#*|}"
   hits="$(git ls-files | grep -vE "$EXCL" | while read -r f; do grep -EnHI "$re" "$f" 2>/dev/null; done)"
+  [ "$name" = "generic-secret" ] && [ -n "$hits" ] && hits="$(echo "$hits" | grep -vE "$ENV_REF" || true)"
   if [ -n "$hits" ]; then
     found=$((found+1))
     { echo "### [$name]"; echo "$hits" | redact; } | tee -a "$REPORT"
