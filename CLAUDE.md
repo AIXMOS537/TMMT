@@ -17,7 +17,7 @@ operator to orchestrator — build for delegation, not hand-holding.
   sign/ship/deploy unless `AIXMOS_OWNER_APPROVED=1`. Keep it installed. Runtime code
   paths still route approvals through `shared/owner-approval-gate/`.)
 - **LEGALLY GATED FEATURES STAY LOCKED.** Credit-repair and funding features ship
-  behind flags that ONLY Muhammad or Umar can unlock after the required legal steps.
+  behind flags that ONLY Muhammad Taha (owner) can unlock after the required legal steps.
   Do not enable, default-on, or remove these flags. See COMPLIANCE below.
 - **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
 - **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls. Loops/
@@ -89,7 +89,7 @@ data encrypted + owner-isolated per operator.
 
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
-without the flag owner (Muhammad or Umar) in the loop.
+without the flag owner (Muhammad Taha) in the loop.
 
 <!-- AIXMOS-LAUNCH-RULES:START -->
 <!-- Managed by aixmos-launch/install.sh. Edit the packet, re-run install to refresh. -->
