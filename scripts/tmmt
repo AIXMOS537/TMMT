@@ -90,6 +90,8 @@ case "$v" in
   everything|all|doall|everythingnow) exec bash "$ROOT/scripts/everything" "$@";;
   factory|line|assembly|loop) exec bash "$ROOT/scripts/factory-line.sh" "$@";;
   brainiac|fasttrack|fast-track) exec bash "$ROOT/scripts/brainiac-handoff.sh" "$@";;
+  agents|tools|toolbelt) exec bash "$ROOT/scripts/agents-setup.sh" "$@";;
+  anywhere|from-anywhere|x-anywhere) exec bash "$ROOT/scripts/anywhere.sh" "$@";;
   selftest|stress|prove) exec bash "$ROOT/scripts/selftest.sh" "$@";;
   barn|containment|airtight) exec bash "$ROOT/scripts/containment.sh" "$@";;
   autopilot|auto|cruise) exec bash "$ROOT/scripts/autopilot.sh" "${1:-cycle}" "${@:2}";;
