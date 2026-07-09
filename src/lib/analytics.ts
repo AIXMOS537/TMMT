@@ -16,7 +16,8 @@ export function initAnalytics(): void {
   mixpanel.init(TOKEN!, {
     debug: process.env.NODE_ENV !== "production",
     persistence: "localStorage",
-    track_pageview: false,
+    autocapture: true,
+    record_sessions_percent: 100,
     ignore_dnt: false,
   });
 
@@ -70,8 +71,4 @@ export function registerAttribution(properties: Record<string, string>): void {
   if (!canTrack()) return;
   if (!initialized) initAnalytics();
   mixpanel.register_once(properties);
-}
-
-export function trackPageView(path: string): void {
-  trackEvent("page_viewed", { path });
 }

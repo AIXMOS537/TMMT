@@ -71,8 +71,10 @@ TMMT uses **Mixpanel** (`mixpanel-browser`) for product analytics. Sentry remain
 | Item | Location |
 |------|----------|
 | SDK init + helpers | `src/lib/analytics.ts` |
-| Provider (auth identity, page views, UTM) | `src/components/AnalyticsProvider.tsx` (mounted in `src/app/layout.tsx`) |
+| Provider (auth identity, UTM) | `src/components/AnalyticsProvider.tsx` (mounted in `src/app/layout.tsx`) |
 | Token env var | `NEXT_PUBLIC_MIXPANEL_TOKEN` in `.env.local` / Vercel |
+
+Init options match Mixpanel dashboard snippet: **`autocapture: true`** (clicks, page views, rage clicks) and **`record_sessions_percent: 100`** (session replay). Uses `mixpanel-browser` npm package — not the CDN `<script>` tag — so the token stays in env vars.
 
 ### Identity
 
@@ -86,7 +88,7 @@ TMMT uses **Mixpanel** (`mixpanel-browser`) for product analytics. Sentry remain
 |-------|------|
 | `user_signed_in` | Supabase auth `SIGNED_IN` |
 | `lead_intake_submitted` | Lead intake form success (`/forms/lead-intake`) |
-| `page_viewed` | App Router navigation (`path` property) |
+| Autocapture events | `$mp_click`, page views, etc. (via `autocapture: true`) |
 
 ### Adding events
 
@@ -94,5 +96,5 @@ Use `trackEvent(name, properties)` from `@/lib/analytics`. Event names: `snake_c
 
 ### CSP
 
-`next.config.ts` allows `https://api.mixpanel.com` and `https://api-js.mixpanel.com` in `connect-src`.
+`next.config.ts` allows `https://cdn.mxpnl.com` in `script-src` (session recorder) and `https://api.mixpanel.com` / `https://api-js.mixpanel.com` in `connect-src`.
 
