@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
 import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
@@ -24,7 +26,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
         <PWARegister />
-        {children}
+        <Suspense fallback={null}>
+          <AnalyticsProvider>{children}</AnalyticsProvider>
+        </Suspense>
       </body>
     </html>
   );
