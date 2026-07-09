@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { submitLeadIntake } from "@/app/forms/actions";
+import { trackEvent } from "@/lib/analytics";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle } from "lucide-react";
 
@@ -61,6 +62,13 @@ export default function LeadIntakeForm() {
     const result = await submitLeadIntake(fd);
     setLoading(false);
     if (!result.success) { setError(result.error); return; }
+    trackEvent("lead_intake_submitted", {
+      platform: "web",
+      source: attribution.current.source ?? "direct",
+      source_medium: attribution.current.source_medium ?? "",
+      source_campaign: attribution.current.source_campaign ?? "",
+      priority_level: String(fd.get("priority_level") ?? ""),
+    });
     setSubmitted(true);
   };
 
