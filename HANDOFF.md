@@ -1,9 +1,9 @@
 # HANDOFF
 from: CARRY
 to: FORGE
-created: 2026-07-09T06:36:49Z
-intent: Factory-line green pass #2 from CARRY — continue the line
-context: green verify-gate pass #2; see .aixmos/factory-line.ndjson + .aixmos/brainiac/
+created: 2026-07-09T06:37:30Z
+intent: Factory-line green pass #3 from CARRY — continue the line
+context: green verify-gate pass #3; see .aixmos/factory-line.ndjson + .aixmos/brainiac/
 acceptance:
   - verify-gate passes on FORGE
   - brain log appended
