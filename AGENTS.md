@@ -1,6 +1,10 @@
 # AGENTS.md — TMMT / AIXMOS
 
 ## Learned User Preferences
+- Dual agentic Macs (Carry + M1) are always brain-connected; never ask Taha to re-explain YTD context that lives in vault, BRAIN-FEED, AGENTS.md, or CEO-BRIEF-TODAY — pick up mid-task from FLEET-INBOX/digests.
+- Margarita mode: Taha markets, records, lives, taps gates; overseas VAs and operators run scoped desks; army loops use cc/oc only (never Desktop Max/fable).
+- Continuity canon: `~/Brain/vault/00-Dashboard/MARGARITA-MODE-FOREVER.md` · `EMPIRE-MESH-OS-FOREVER.md`.
+
 
 - Muhammad Taha operates in ZERO-HUMAN mode permanently: never ask him to type suggestions, opinions, or clarifications; never present multiple-choice menus unless a legal/money/signature gate requires an explicit tap.
 - Taha's only job is market, record videos, and live life — the army does everything else.
