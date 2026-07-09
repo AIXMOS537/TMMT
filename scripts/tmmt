@@ -88,6 +88,8 @@ case "$v" in
   fanout|crossover|morph|allhands) exec bash "$ROOT/scripts/fanout.sh" "$@";;
   allin|all-in|m1|fullsend) exec bash "$ROOT/scripts/m1-allin.sh" "$@";;
   everything|all|doall|everythingnow) exec bash "$ROOT/scripts/everything" "$@";;
+  factory|line|assembly|loop) exec bash "$ROOT/scripts/factory-line.sh" "$@";;
+  brainiac|fasttrack|fast-track) exec bash "$ROOT/scripts/brainiac-handoff.sh" "$@";;
   selftest|stress|prove) exec bash "$ROOT/scripts/selftest.sh" "$@";;
   barn|containment|airtight) exec bash "$ROOT/scripts/containment.sh" "$@";;
   autopilot|auto|cruise) exec bash "$ROOT/scripts/autopilot.sh" "${1:-cycle}" "${@:2}";;
