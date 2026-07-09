@@ -34,6 +34,8 @@ Cloud agents run on **AIXMOS537/TMMT** (Next.js 15, Supabase, GHL webhooks).
 
 ### Environment notes (verified 2026-07-09)
 
+- **Environment is repo-managed** via `.cursor/environment.json` (highest priority — overrides the dashboard/snapshot wizard). Its `install` command (the dashboard "update script" equivalent) is idempotent and safe whether an agent is bound to TMMT directly (installs `.`) or a multi-repo root (installs each `repos/*`). Bind cloud-agent environments to **`aixmos537/TMMT`**; environment names must be lowercase slugs (no spaces), e.g. `project-x-hailmary`.
+
 - **Backend is remote Supabase.** The base table schema (`fleet`, `incoming_leads`, `customers`, …) is NOT in `supabase/migrations/` — those migrations only add RLS/partner/workflow objects on top of an out-of-repo Airtable-origin schema. So `supabase start` (local stack) would fail applying migrations against tables that don't exist. Don't rely on local Supabase; use real remote secrets for DB flows.
 - **No-backend smoke:** `GET /api/health` → `{ok:true}` and the public **`/try`** page (a 100% client-side scripted engine demo — no Supabase/keys) both work with placeholder env; good for confirming the dev server renders and is interactive.
 - `build` uses **webpack** (`next build --webpack`); `dev` uses Turbopack.
