@@ -1,4 +1,4 @@
 {
   "$schema": "https://www.cursor.com/schemas/environment.schema.json",
-  "install": "for d in . repos/*; do [ -f \"$d/package.json\" ] && npm install --prefix \"$d\"; done; true"
+  "install": "bash -c 'for d in . repos/*; do [ -f \"$d/package.json\" ] && npm install --prefix \"$d\"; done; true'"
 }
