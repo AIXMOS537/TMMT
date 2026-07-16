@@ -11,7 +11,7 @@ exact tree — step 1 is to discover it.
 I'm adding a public **build page** (`index.html` + `aixmos.config.json`, in this drop) to the
 AIXMOS repo. Every operator's machine renders as a permanent, shareable page (modules, tier,
 crew, owner-gated bays, scan-to-load QR). It must stay **1:1** with the platform: same module
-keys, same gated feature flags, same owner-approval rule (only Owner or Umar can clear the
+keys, same gated feature flags, same owner-approval rule (only the Owner can clear the
 credit/funding pair).
 
 ## TASK
@@ -28,7 +28,7 @@ credit/funding pair).
    - Confirm the two gated bays map to real flags: `credit_to_keys → credit_repair + funding`,
      `dispatch → dispatch_overdrive`. If your flag names differ, align the config to the
      repo's names and tell me what you changed.
-   - Verify approvers: credit/funding = `["owner","umar"]`, `dispatch_overdrive` =
+   - Verify approvers: credit/funding = `["owner"]`, `dispatch_overdrive` =
      `["owner"]`. Match these to the repo's owner-approval primitive.
 
 3. **Wire config as the single source of truth.** The `CONFIG` block embedded in `index.html`

@@ -24,8 +24,8 @@
     "owner_approval_gate": "required for all customer-facing and financial actions"
   },
   "feature_flags": {
-    "credit_repair": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
-    "funding": { "enabled": false, "unlock_roles": ["owner","umar"], "requires_legal_steps": true },
+    "credit_repair": { "enabled": false, "unlock_roles": ["owner"], "requires_legal_steps": true },
+    "funding": { "enabled": false, "unlock_roles": ["owner"], "requires_legal_steps": true },
     "sms_marketing_credit_funding": { "enabled": false, "hard_locked": true,
       "reason": "A2P 10DLC carrier prohibition on lending/credit/debt promotional SMS + CROA" }
   }
