@@ -25,7 +25,7 @@ own static host (see `DEPLOY.md`). `tools/` is excluded from Vercel deploys by
 
 - **Builds** = operator machines. Each has modules, crew tiers, tier/rate, and a colour.
 - **Gated bays** (`credit_to_keys`, `dispatch`) stay locked until granted through the
-  owner-approval modal. The grant records the approver (Owner / Umar) and travels with the
+  owner-approval modal. The grant records the approver (Owner) and travels with the
   build code. **The UI gate is not legal sign-off** — real CROA / licensing / insurance
   clearance happens off-platform; the unlock just records that it was done. Never auto-unlock.
 - **Share / QR** encodes the full build into a link (`#load=…`). Scanning or opening it

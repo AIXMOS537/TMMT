@@ -39,7 +39,7 @@ has its own `TASKS.md` with the granular checklist; this is the master sequence.
 - [ ] Confirm Virginia-only; `multistate_matrix_cleared` = false.
 - [ ] Security pass: no secrets committed; all PII paths land on NAS tier; approval gate on critical path everywhere.
 - [ ] Compliance pass: run `shared/compliance-gates/check.*`; no gated path reachable while its gate is false.
-- [ ] Hand the gate-flip checklist to Muhammad/Umar (which legal step unlocks which gate).
+- [ ] Hand the gate-flip checklist to Muhammad Taha (sole owner) (which legal step unlocks which gate).
 
 ---
 

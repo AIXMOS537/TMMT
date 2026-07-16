@@ -46,7 +46,7 @@ Keep `key`s stable — they map to the platform schema.
 | intake_gate | Intake Gate | — | — | — | AIXMOS Intake & Triage Gate (n8n) |
 | ai_brain | AI Brain | — | — | — | Ollama + Workers tiered routing |
 | dropnet | DropNet | — | — | — | AIXMOS DropNet (NAS file tier) |
-| credit_to_keys | Credit-to-Keys | ✅ | credit_repair, funding | owner, umar | workstream-2 credit-funding vertical |
+| credit_to_keys | Credit-to-Keys | ✅ | credit_repair, funding | owner | workstream-2 credit-funding vertical |
 | operator_network | Operator Net | — | — | — | workstream-3 operator network ($97/mo) |
 | dispatch | Dispatch | ✅ | dispatch_overdrive *(confirm)* | owner | Operation Overdrive (licensing gate) |
 | detail_bay | Detail Bay | — | — | — | TMMT Auto Detail |
@@ -56,7 +56,7 @@ Operator $97 (1–3 mods) · Builder $297 (4–5) · Node $997 (6+) · Partner $
 
 ## 4. OWNER-APPROVAL + COMPLIANCE BOUNDARY
 
-- Real legal flags: `credit_repair` + `funding`, unlockable **only** by `owner` or `umar` after
+- Real legal flags: `credit_repair` + `funding`, unlockable **only** by `owner` after
   the required legal steps.
 - A2P SMS: credit repair, funding, debt relief, lending verticals are prohibited from
   promotional SMS (carrier + CROA). Transactional-only.
@@ -85,7 +85,7 @@ aixmos-parts.ts, shared compliance/owner-approval gates).
 | What | Was | Now |
 |---|---|---|
 | Legal feature flags | `credit_funding` | `credit_repair` + `funding` |
-| Approver roles | `Owner` / `Umar` | `owner` / `umar` (display capitalized) |
+| Approver roles | `Owner` | `owner` (display capitalized) |
 | Pricing ladder | $97 / $297 / $697 / "from $50K" | **Operator $97 / Builder $297 / Node $997 / Partner $5K–$50K** |
 | DataRoom | `dataroom` | `dropnet` / "DropNet" (the real named NAS file tier) |
 | Module key | `operator_net` | `operator_network` |

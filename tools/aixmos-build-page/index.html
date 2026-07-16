@@ -349,7 +349,7 @@
      - key:       stable id, maps to your platform schema (do not rename)
      - gated:     bay requires owner approval before it can be installed
      - flag:      feature-flag this unlock corresponds to in your repo
-     - approvers: who is allowed to grant it (mirrors "only Muhammad/Umar")
+     - approvers: who is allowed to grant it (mirrors "only Muhammad Taha")
      ================================================================== */
   var CONFIG_VERSION='1.0.0';
   var MODULES=[
@@ -357,8 +357,8 @@
     {key:"intake_gate",    n:"Intake Gate",    s:"Every lead triaged at zero cost. Nothing slips.",          g:"funnel", cats:["Automation","Revenue Ops"]},
     {key:"ai_brain",       n:"AI Brain",       s:"Local agent swarm. Your data never leaves the floor.",     g:"chip",   cats:["Automation","Network"]},
     {key:"dropnet",        n:"DropNet",        s:"NAS drop zone. Every file routed, filed, backed up over the tailnet.", g:"folder", cats:["Automation","Compliance"]},
-    {key:"credit_to_keys", n:"Credit-to-Keys", s:"Five-rung funding ladder. Credit becomes keys.",           g:"key",    cats:["Revenue Ops","Compliance"], gated:true, flags:["credit_repair","funding"], approvers:["owner","umar"],
-      gate:"Locked under CROA and the Virginia Credit Services Businesses Act. Maps to the workstream-2 credit/funding vertical — flags credit_repair + funding. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."},
+    {key:"credit_to_keys", n:"Credit-to-Keys", s:"Five-rung funding ladder. Credit becomes keys.",           g:"key",    cats:["Revenue Ops","Compliance"], gated:true, flags:["credit_repair","funding"], approvers:["owner"],
+      gate:"Locked under CROA and the Virginia Credit Services Businesses Act. Maps to the workstream-2 credit/funding vertical — flags credit_repair + funding. Grant only after the operator completes the required legal steps with you; no advance fees, signed disclosures on file."},
     {key:"operator_network",n:"Operator Net",  s:"Plug in nodes. Every operator runs your playbook.",         g:"node",   cats:["Network"]},
     {key:"dispatch",       n:"Dispatch",       s:"Overdrive routing for couriers and emergency runs.",        g:"bolt",   cats:["Service","Network"], gated:true, flags:["dispatch_overdrive"], approvers:["owner"],
       gate:"Operation Overdrive runs on a grant and licensing track (operational gate, not part of the credit/funding legal pair). Grant only once dispatch, courier, and insurance requirements are cleared for the operator."},
@@ -650,7 +650,7 @@ Lives in `aixmos.config.json` and is mirrored in the `CONFIG` block at the top o
 | intake_gate | Intake Gate | — | — | — | AIXMOS Intake & Triage Gate (n8n) |
 | ai_brain | AI Brain | — | — | — | Ollama + Workers tiered routing |
 | dropnet | DropNet | — | — | — | AIXMOS DropNet (NAS file tier) |
-| credit_to_keys | Credit-to-Keys | ✅ | credit_repair, funding | owner, umar | workstream-2 credit-funding vertical |
+| credit_to_keys | Credit-to-Keys | ✅ | credit_repair, funding | owner | workstream-2 credit-funding vertical |
 | operator_network | Operator Net | — | — | — | workstream-3 operator network ($97/mo) |
 | dispatch | Dispatch | ✅ | dispatch_overdrive *(confirm)* | owner | Operation Overdrive (licensing gate) |
 | detail_bay | Detail Bay | — | — | — | TMMT Auto Detail |
@@ -673,10 +673,10 @@ Lives in `aixmos.config.json` and is mirrored in the `CONFIG` block at the top o
 
 ## 4. OWNER-APPROVAL + COMPLIANCE BOUNDARY
 
-- Real legal flags: `credit_repair` + `funding` in `shared/compliance-gates/gates.config.json`, unlockable **only** by `owner` or `umar` after the required legal steps.
+- Real legal flags: `credit_repair` + `funding` in `shared/compliance-gates/gates.config.json`, unlockable **only** by `owner` after the required legal steps.
 - Real owner-approval enforcement: `shared/owner-approval-gate/` **plus a `.claude/hooks/` PreToolUse hook** — CLAUDE.md is context, the hook is the hard block. Keep the hook installed.
 - A2P SMS: credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.
-- Gated bays require an approval grant; the approver (owner / umar) is recorded, shown in the build log, and carried inside the share code for provenance.
+- Gated bays require an approval grant; the approver (owner) is recorded, shown in the build log, and carried inside the share code for provenance.
 - **HARD LINE:** the build-page gate is *not* legal sign-off. Real CROA / Virginia credit-services / dispatch + courier licensing / insurance clearance stays in the actual compliance flow. The unlock records that those steps were done — it does not perform or replace them. Never auto-unlock.
 
 ---
@@ -713,7 +713,7 @@ Drop `aixmos-build-page.zip` into the AIXMOS repo and paste `CLAUDE_CODE_INTEGRA
 
 ## 9. OPEN ITEMS / DECISIONS
 
-*Reconciled in-session (v1.1): flags → `credit_repair`+`funding`; approvers → `owner`/`umar`; DataRoom → DropNet; pricing → real Operator/Builder/Node/Partner ladder; gate paths set. Remaining:*
+*Reconciled in-session (v1.1): flags → `credit_repair`+`funding`; approvers → `owner`; DataRoom → DropNet; pricing → real Operator/Builder/Node/Partner ladder; gate paths set. Remaining:*
 
 1. **Confirm `dispatch_overdrive`** — Operation Overdrive may be gated by licensing config rather than a feature flag. Verify the real name/mechanism in the repo.
 2. **Parts-registry mapping** — modules should map onto the registered parts in `aixmos-parts.ts` (doctrine: parts are registered, never coded into core), not be a second source of truth. Wire the build page to read the registry.
@@ -742,7 +742,7 @@ Reconciled the build-page config against the live AIXMOS Claude Code repo (aixmo
 | What | Was (my guess) | Now (real) |
 |---|---|---|
 | Legal feature flags | `credit_funding` | `credit_repair` + `funding` |
-| Approver roles | `Owner` / `Umar` | `owner` / `umar` (display capitalized) |
+| Approver roles | `Owner` | `owner` (display capitalized) |
 | Pricing ladder | Starter $97 / Operator $297 / Command $697 / Flagship "from $50K" | **Operator $97 / Builder $297 / Node $997 / Partner $5K–$50K** |
 | File: DataRoom | `dataroom` / "DataRoom" | `dropnet` / "DropNet" (the real named NAS file tier) |
 | Module key | `operator_net` | `operator_network` |
@@ -779,7 +779,7 @@ Module display names (Fleet Engine, Intake Gate, AI Brain, Credit-to-Keys, Opera
   "configVersion": "1.1.0",
   "note": "Single source of truth for AIXMOS build pages, RECONCILED against the live Claude Code repo (aixmos-packet / aixmos-core.ts / shared compliance gates). The embedded CONFIG block in index.html mirrors this. Keep module keys and flags identical to the platform schema.",
   "reconciledAgainst": [
-    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner/umar)",
+    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner)",
     "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse (real enforcement)",
     "aixmos-core.ts ascension ladder: Operator $97 -> Builder $297 -> Node $997 -> Partner $5K-$50K",
     "aixmos-parts.ts (car-mod parts registry — modules should map to registered parts)",
@@ -795,9 +795,9 @@ Module display names (Fleet Engine, Intake Gate, AI Brain, Credit-to-Keys, Opera
       "categories": ["Revenue Ops", "Compliance"],
       "gated": true,
       "flags": ["credit_repair", "funding"],
-      "approvers": ["owner", "umar"],
+      "approvers": ["owner"],
       "maps_to": "workstream-2 credit-funding vertical (intake -> dispute engine -> tradeline tracker -> funding desk)",
-      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."
+      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you; no advance fees, signed disclosures on file."
     },
     { "key": "operator_network","name": "Operator Net",   "blurb": "Plug in nodes. Every operator runs your playbook.",         "categories": ["Network"], "maps_to": "workstream-3 operator network ($97/mo, operator portal, commission engine, covenant)" },
     {
@@ -829,7 +829,7 @@ Module display names (Fleet Engine, Intake Gate, AI Brain, Credit-to-Keys, Opera
   "complianceGate": {
     "file": "shared/compliance-gates/gates.config.json",
     "legalFlags": ["credit_repair", "funding"],
-    "approvers": ["owner", "umar"],
+    "approvers": ["owner"],
     "enforcement": "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse hook (CLAUDE.md is context, NOT enforcement)",
     "a2pSmsRestriction": "credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.",
     "boundary": "The build-page gate records an approver for provenance. It is NOT legal sign-off. Real CROA / VA credit-services / dispatch licensing / insurance clearance stays in the actual compliance flow. Never auto-unlock."
@@ -900,7 +900,7 @@ Paste this whole file into Claude Code at the root of your AIXMOS repo. It tells
 
 ## CONTEXT
 
-I'm adding a public **build page** (`index.html` + `aixmos.config.json`, in this drop) to the AIXMOS repo. Every operator's machine renders as a permanent, shareable page (modules, tier, crew, owner-gated bays, scan-to-load QR). It must stay **1:1** with the platform: same module keys, same gated feature flags, same owner-approval rule (only Owner or Umar can clear `credit_funding`).
+I'm adding a public **build page** (`index.html` + `aixmos.config.json`, in this drop) to the AIXMOS repo. Every operator's machine renders as a permanent, shareable page (modules, tier, crew, owner-gated bays, scan-to-load QR). It must stay **1:1** with the platform: same module keys, same gated feature flags, same owner-approval rule (only the Owner can clear `credit_funding`).
 
 ## TASK
 
@@ -909,7 +909,7 @@ I'm adding a public **build page** (`index.html` + `aixmos.config.json`, in this
 2. **Reconcile the catalog — do not blind-overwrite.** Compare `aixmos.config.json` in this drop against the repo's real module list and flags:
    - If the repo already defines modules/flags, treat the repo as authoritative for **names and keys**, and update `aixmos.config.json` to match. Flag every diff for my review before changing keys.
    - Confirm the two gated bays map to real flags: `credit_to_keys → credit_funding`, `dispatch → dispatch_overdrive`. If your flag names differ, align the config to the repo's names and tell me what you changed.
-   - Verify approvers: `credit_funding` = `["Owner","Umar"]`, `dispatch_overdrive` = `["Owner"]`. Match these to the repo's owner-approval primitive.
+   - Verify approvers: `credit_funding` = `["Owner"]`, `dispatch_overdrive` = `["Owner"]`. Match these to the repo's owner-approval primitive.
 
 3. **Wire config as the single source of truth.** Generate the `CONFIG` block embedded in `index.html` **from** `aixmos.config.json` (a small codegen/build step or a documented manual mirror), so the page, the JSON, and the platform schema never drift. Add a check/test that fails if `index.html`'s CONFIG and `aixmos.config.json` disagree.
 
@@ -950,7 +950,7 @@ A permanent, shareable build page for every operator's AIXMOS machine — same i
 ## How it works
 
 - **Builds** = operator machines. Each has modules, crew tiers, tier/rate, and a colour.
-- **Gated bays** (`credit_to_keys`, `dispatch`) stay locked until granted through the owner-approval modal. The grant records the approver (Owner / Umar) and travels with the build code. **The UI gate is not legal sign-off** — real CROA / licensing / insurance clearance happens off-platform; the unlock just records that it was done.
+- **Gated bays** (`credit_to_keys`, `dispatch`) stay locked until granted through the owner-approval modal. The grant records the approver (owner) and travels with the build code. **The UI gate is not legal sign-off** — real CROA / licensing / insurance clearance happens off-platform; the unlock just records that it was done.
 - **Share / QR** encodes the full build into a link (`#load=…`). Scanning or opening it rebuilds that exact machine as its own page. No backend needed for handoff.
 - **Persistence**: saves per device via the artifact storage API when embedded, `localStorage` when standalone. Build codes are how a machine travels between devices.
 

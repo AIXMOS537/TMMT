@@ -17,7 +17,7 @@
 
 import config from './aixmos.config.json';
 
-export type ApproverRole = 'owner' | 'umar';
+export type ApproverRole = 'owner';
 
 export interface BuildPageModule {
   key: string;
@@ -61,7 +61,7 @@ export function isLegallyGated(m: BuildPageModule): boolean {
  * Adapter — register each module as a part in the real registry.
  * Replace `RegisterFn` with the real signature from aixmos-parts.ts and map the
  * fields onto the real Part shape. Gated bays get a gate; the part is NEVER
- * auto-enabled — unlock requires owner/umar after the legal/licensing steps.
+ * auto-enabled — unlock requires owner after the legal/licensing steps.
  */
 type RegisterFn = (part: {
   key: string;

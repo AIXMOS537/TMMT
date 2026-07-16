@@ -1,4 +1,4 @@
-# GATE-FLIP CHECKLIST (for Muhammad + Umar)
+# GATE-FLIP CHECKLIST (for Muhammad Taha — sole owner)
 
 The credit/funding features are built but DARK. Each gate below stays `false` in
 `shared/compliance-gates/gates.config.json` until you complete the legal step, then
