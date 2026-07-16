@@ -4,7 +4,7 @@
  * THE core AIXMOS primitive. No customer-facing message and no financial
  * action executes without explicit owner approval. See root CLAUDE.md section 2.
  *
- * Pattern: an action is created as PENDING, surfaced to the owner (Muhammad/Umar),
+ * Pattern: an action is created as PENDING, surfaced to the owner (Muhammad Taha — sole owner),
  * and only an APPROVED action may be executed. Anything else throws.
  */
 
