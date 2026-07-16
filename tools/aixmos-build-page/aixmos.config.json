@@ -2,7 +2,7 @@
   "configVersion": "1.1.0",
   "note": "Single source of truth for AIXMOS build pages, RECONCILED against the live Claude Code repo (aixmos-packet / aixmos-core.ts / shared compliance gates). The embedded CONFIG block in index.html mirrors this. Keep module keys and flags identical to the platform schema.",
   "reconciledAgainst": [
-    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner/umar)",
+    "shared/compliance-gates/gates.config.json (flags: credit_repair, funding — owner)",
     "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse (real enforcement)",
     "aixmos-core.ts ascension ladder: Operator $97 -> Builder $297 -> Node $997 -> Partner $5K-$50K",
     "aixmos-parts.ts (car-mod parts registry — modules should map to registered parts)",
@@ -18,9 +18,9 @@
       "categories": ["Revenue Ops", "Compliance"],
       "gated": true,
       "flags": ["credit_repair", "funding"],
-      "approvers": ["owner", "umar"],
+      "approvers": ["owner"],
       "maps_to": "workstream-2 credit-funding vertical (intake -> dispute engine -> tradeline tracker -> funding desk)",
-      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you or Umar; no advance fees, signed disclosures on file."
+      "gateReason": "Locked under CROA and the Virginia Credit Services Businesses Act. Grant only after the operator completes the required legal steps with you; no advance fees, signed disclosures on file."
     },
     { "key": "operator_network","name": "Operator Net",   "blurb": "Plug in nodes. Every operator runs your playbook.",         "categories": ["Network"], "maps_to": "workstream-3 operator network ($97/mo, operator portal, commission engine, covenant)" },
     {
@@ -52,7 +52,7 @@
   "complianceGate": {
     "file": "shared/compliance-gates/gates.config.json",
     "legalFlags": ["credit_repair", "funding"],
-    "approvers": ["owner", "umar"],
+    "approvers": ["owner"],
     "enforcement": "shared/owner-approval-gate/ + .claude/hooks/ PreToolUse hook (CLAUDE.md is context, NOT enforcement)",
     "a2pSmsRestriction": "credit repair, funding, debt relief, lending verticals are prohibited from promotional SMS (carrier + CROA). Transactional-only.",
     "boundary": "The build-page gate records an approver for provenance. It is NOT legal sign-off. Real CROA / VA credit-services / dispatch licensing / insurance clearance stays in the actual compliance flow. Never auto-unlock."

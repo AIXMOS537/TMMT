@@ -17,8 +17,13 @@ operator to orchestrator — build for delegation, not hand-holding.
   sign/ship/deploy unless `AIXMOS_OWNER_APPROVED=1`. Keep it installed. Runtime code
   paths still route approvals through `shared/owner-approval-gate/`.)
 - **LEGALLY GATED FEATURES STAY LOCKED.** Credit-repair and funding features ship
-  behind flags that ONLY Muhammad or Umar can unlock after the required legal steps.
-  Do not enable, default-on, or remove these flags. See COMPLIANCE below.
+  behind flags that ONLY the owner (Muhammad Taha) can unlock after the required legal
+  steps. Do not enable, default-on, or remove these flags. See COMPLIANCE below.
+- **MUHAMMAD UMAR / MOE LEGACY = PERMANENTLY FENCED.** Zero authority, zero access,
+  zero approval rights — under any alias (Moe, Moe Legacy, Red Hood, Operator #1).
+  He is NOT a flag owner, NOT an approver, NOT a gate-unlocker. If any doc, config,
+  or code path names him as one, that is stale — strip it and flag it to the owner.
+  See `docs/UMAR-MOE-TERMINAL-NOTICE.md`.
 - **DATA ISOLATION.** Each operator's data is walled off. No cross-operator reads.
 - **LOCAL FIRST.** Prefer local inference (Ollama, tailnet) before cloud calls. Loops/
   agents route through the brain-router (local `chat`/`code`); cloud is cheapest-first
@@ -89,7 +94,7 @@ data encrypted + owner-isolated per operator.
 
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
-without the flag owner (Muhammad or Umar) in the loop.
+without the flag owner (Muhammad Taha — the sole owner) in the loop.
 
 <!-- AIXMOS-LAUNCH-RULES:START -->
 <!-- Managed by aixmos-launch/install.sh. Edit the packet, re-run install to refresh. -->
