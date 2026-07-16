@@ -43,6 +43,9 @@ export async function middleware(request: NextRequest) {
   const isPublic =
     pathname === "/" ||
     pathname === "/track" ||
+    // Legal/compliance disclosures must be readable without an account:
+    // payment processors verify them during merchant review.
+    pathname.startsWith("/legal") ||
     pathname.startsWith("/intake") ||
     pathname.startsWith("/learn") ||
     pathname.startsWith("/marketplace") ||
