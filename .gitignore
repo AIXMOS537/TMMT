@@ -111,3 +111,6 @@ secrets/
 
 # aider scratch (local only)
 .aider*
+
+# Git worktrees created by agents (never commit — they are separate checkouts)
+.claude/worktrees/
