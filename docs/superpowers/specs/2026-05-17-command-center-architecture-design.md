@@ -14,7 +14,7 @@ The command center adds four capabilities on top of the existing app:
 
 1. **Ventures** — a top-level concept so the app can host many businesses without each one needing its own deploy
 2. **Per-team workspaces** — each team inside a venture gets a page with notes, links, and a lightweight message log (not real-time chat)
-3. **Scripts library** — a single browsable index of every Airtable, Cursor, Claude, and VS Code snippet you keep, backed by an on-disk folder tree that syncs both ways
+3. **Scripts library** — a single browsable index of every Airtable, Cursor, AIXMOS, and VS Code snippet you keep, backed by an on-disk folder tree that syncs both ways
 4. **Backup pipeline** — disciplined folder conventions and a bundle script that prepares everything for the flash-drive → 60 TB NAS round trip, with code and game libraries kept separate
 
 The existing TMMT Rentals admin pages keep working exactly as they do today. They become "Venture: TMMT Rentals" inside the new shell.
@@ -137,7 +137,7 @@ Each script gets a sibling `*.meta.json` with `{ title, description, tags, categ
 
 **UI: `/scripts`**
 
-- Sidebar filter by source (Airtable / Cursor / Claude / VS Code) and by tag
+- Sidebar filter by source (Airtable / Cursor / AIXMOS / VS Code) and by tag
 - Full-text search across titles + descriptions + body (Postgres `tsvector` on the metadata table)
 - Result rows show title, language pill, last-used date, and a "Copy" button
 - Click a row → detail view with rendered body in a code block, "Copy", "Open in editor" (uses `cursor://` or `vscode://` URI), and the script's tags/notes

@@ -66,7 +66,7 @@ Use this file as the master map of important business knowledge.
 | Captain America | `AI_BRAIN/PROMPTS/CAPTAIN_AMERICA.md` | Accountability — daily shield check, pattern detection, scoring | Wonder Woman |
 | Wonder Woman | `AI_BRAIN/PROMPTS/WONDER_WOMAN.md` | Execution — message drafts, tasks, SOPs, follow-up sequences | Captain America |
 
-**How to activate:** Copy the full contents of the agent file and paste as the system prompt in Claude or Codex.
+**How to activate:** Copy the full contents of the agent file and paste as the system prompt in AIXMOS or Codex.
 
 **The loop:** Cap reads the daily brief → flags overdue items → Wonder Woman drafts the actions → Muhammad approves → Cap logs it done.
 

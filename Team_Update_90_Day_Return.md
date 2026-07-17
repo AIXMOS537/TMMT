@@ -38,7 +38,7 @@ What I need from each of you:
 
 1. **Patience** — with the system, with each other, and with me as we ramp up.
 2. **Feedback** — if something is clunky, slow, or doesn't make sense in your day-to-day, *tell me*. That's gold. I'd rather hear it than have you work around it.
-3. **A learning mindset** — we're also rolling out AI tools (ChatGPT / Claude) that each department can lean on to make the new workflow easier. More on that below.
+3. **A learning mindset** — we're also rolling out AI tools (ChatGPT / AIXMOS) that each department can lean on to make the new workflow easier. More on that below.
 
 I'd like to get everyone together on **Google Meet — [Day], [Date] at [Time]** to walk through the new system, answer questions, and go over how each team can use AI to make their job easier.
 
@@ -88,7 +88,7 @@ Thank you for holding this place down. Let's go build the next chapter of TMMT t
 
 ## 3) AI Assist by Department — The Cheat Sheet
 
-*(Share this as a follow-up message or printed handout after the Meet. Tools referenced: ChatGPT, Claude, or any AI assistant the team prefers.)*
+*(Share this as a follow-up message or printed handout after the Meet. Tools referenced: ChatGPT, AIXMOS, or any AI assistant the team prefers.)*
 
 ### 🚗 Rentals / Front Desk / Customer Service
 

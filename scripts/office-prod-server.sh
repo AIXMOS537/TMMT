@@ -32,5 +32,5 @@ if [[ ! -f .next/BUILD_ID ]]; then
   npm run build
 fi
 
-echo "${LOG_TAG} Starting Next.js (production) on 0.0.0.0:${PORT}"
-exec npm run start -- --hostname 0.0.0.0 --port "$PORT"
+echo "${LOG_TAG} Starting Next.js (production) on 127.0.0.1:${PORT}"
+exec npm run start -- --hostname 127.0.0.1 --port "$PORT"
