@@ -34,5 +34,5 @@ if curl -sf -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}" 2>/dev/null; th
   exit 0
 fi
 
-echo "${LOG_TAG} Starting Next.js on 0.0.0.0:${PORT}"
-exec npm run dev -- --hostname 0.0.0.0 --port "$PORT"
+echo "${LOG_TAG} Starting Next.js on 127.0.0.1:${PORT}"
+exec npm run dev -- --hostname 127.0.0.1 --port "$PORT"

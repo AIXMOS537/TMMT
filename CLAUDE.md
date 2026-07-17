@@ -1,4 +1,4 @@
-# TMMT Rentals — Claude Code Context
+# TMMT Rentals — AIXMOS Engine Context
 
 ## Project
 
@@ -141,7 +141,7 @@ node scripts/sync-airtable.mjs --dry-run # preview only (no writes)
 - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - Optional: `NEXT_PUBLIC_SENTRY_DSN` — Sentry error monitoring (inactive when empty)
 - Optional (sync only): `AIRTABLE_PAT` — required for `scripts/sync-airtable.mjs`
-- Personal Claude overrides: use `.claude.local.md` (gitignored) — not shared with team
+- Personal AIXMOS overrides: use `.claude.local.md` (gitignored) — not shared with team
 
 ### Vercel (deployment)
 

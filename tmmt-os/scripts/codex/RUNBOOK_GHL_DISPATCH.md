@@ -1,6 +1,6 @@
-# Codex / Claude Code — GHL Dispatch Setup Runbook
+# Codex / AIXMOS Engine — GHL Dispatch Setup Runbook
 
-Copy everything inside the **PROMPT** block below into Codex or Claude Code.  
+Copy everything inside the **PROMPT** block below into Codex or AIXMOS Engine.  
 Repo root: `dev/AIX_Command_Center/TMMT MANAGEMENT/tmmt-os`
 
 ---

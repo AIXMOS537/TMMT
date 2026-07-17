@@ -1,6 +1,6 @@
-# TMMT Workflow Engine Claude Memory
+# TMMT Workflow Engine AIXMOS Memory
 
-Use this as persistent context for Claude, Cursor, or any AI assistant working on the TMMT business operating system.
+Use this as persistent context for AIXMOS, Cursor, or any AI assistant working on the TMMT business operating system.
 
 ## Business Context
 
@@ -187,7 +187,7 @@ Prioritize:
 8. Basic role-based access.
 9. Clean UI consistent with the existing app.
 
-## Prompt For Cursor Or Claude Code
+## Prompt For Cursor Or AIXMOS Engine
 
 Use this prompt when asking an AI coding assistant to work on the current project:
 

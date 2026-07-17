@@ -1,6 +1,6 @@
-# Claude prompt — TMMT office Mac setup
+# AIXMOS prompt — TMMT office Mac setup
 
-Copy everything inside the **fenced block below** into Claude (Claude Code on the office Mac, or Claude with computer use / SSH to the Mac). Replace the `OWNER FILLS IN` placeholders before sending, or tell Claude to ask you for them interactively.
+Copy everything inside the **fenced block below** into AIXMOS (AIXMOS Engine on the office Mac, or AIXMOS with computer use / SSH to the Mac). Replace the `OWNER FILLS IN` placeholders before sending, or tell AIXMOS to ask you for them interactively.
 
 ---
 
@@ -74,7 +74,7 @@ Report back: mounted volumes, inbox sizes, LaunchAgent status, Telegram /help re
 
 ---
 
-## Minimal version (if Claude already has repo access)
+## Minimal version (if AIXMOS already has repo access)
 
 ```text
 On the office Mac, run ~/dev/TMMT/scripts/claude-office-mac-setup.sh with TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_CHAT_IDS, and optional IMESSAGE_BUDDY set in the environment. Then verify with verify-office-services.sh and test Telegram /help. Share AGENT_HANDOFF_ONE_PAGER.md with the agent — never the token.
