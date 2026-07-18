@@ -90,7 +90,12 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
         !pathname.startsWith("/partner") &&
         !pathname.startsWith("/command") &&
         !pathname.startsWith("/executive") &&
-        !pathname.startsWith("/operator")
+        !pathname.startsWith("/operator") &&
+        // Money Meter = business-wide financial telemetry. Owner-only (its ledger
+        // has org-member RLS, so a non-owner member could otherwise see their
+        // own org's used/saved). Owner tier returns true above; everyone else is
+        // redirected to their home.
+        !pathname.startsWith("/money")
       );
   }
 }

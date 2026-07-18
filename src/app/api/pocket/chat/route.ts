@@ -11,8 +11,17 @@ import {
 import { askPocketBrain } from "@/lib/pocket-brain";
 import { enforceCompliance } from "@/lib/compliance";
 import { isRateLimited } from "@/lib/rate-limit";
+import { recordMoneyEventSafe, reconcileFreeForeverByEmail } from "@/lib/money-meter";
 
 export const runtime = "nodejs";
+
+// What one Pocket job would have cost on a cloud model. We serve it on the
+// OWNER'S local brain instead, so the money meter books this as money SAVED.
+// Tunable via env (no code change); default ~2¢/job matches docs/COST-AND-CAPACITY.md.
+const CLOUD_EQUIV_USD_PER_JOB = (() => {
+  const n = Number(process.env.POCKET_CLOUD_EQUIV_USD);
+  return Number.isFinite(n) && n >= 0 ? n : 0.02;
+})();
 
 // AIXMOS Pocket assistant — metered in TMMT TOKENS, served by the OWNER'S brain.
 // No Anthropic at runtime. The $97/mo membership tops up the org's token stack
@@ -80,6 +89,18 @@ export async function POST(request: Request) {
     });
   }
 
+  // 4b. Free-forever reconcile: if this member's email is on the owner/family
+  // allowlist (MONEY_METER_FREE_FOREVER_EMAILS) but their org isn't marked yet,
+  // mark it now — money + tokens — BEFORE spending, so they're never metered.
+  // Best-effort; a hiccup here must not block the chat.
+  try {
+    await reconcileFreeForeverByEmail(service, email, orgId);
+  } catch (e) {
+    console.error("pocket/chat: free-forever reconcile failed (non-fatal)", {
+      error: (e as Error).message,
+    });
+  }
+
   // 5. SPEND a TMMT token (atomic; owner/operators are unlimited).
   const spend = await spendTokens(service, { orgId, jobRef: "pocket-chat" });
   if (!spend.allowed) {
@@ -120,6 +141,17 @@ export async function POST(request: Request) {
       blocked: safe.blocked,
     });
   }
+
+  // Money meter: serving on the owner's local brain avoided a cloud API charge.
+  // Best-effort — a metering hiccup must never fail a member's chat.
+  await recordMoneyEventSafe(service, {
+    orgId,
+    direction: "saved",
+    category: "ai_llm",
+    amountUsd: CLOUD_EQUIV_USD_PER_JOB,
+    source: "pocket-chat",
+    meta: { reason: "local_inference_vs_cloud" },
+  });
 
   return NextResponse.json({
     reply: safe.text,
