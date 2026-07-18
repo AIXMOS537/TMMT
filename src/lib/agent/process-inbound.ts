@@ -13,6 +13,8 @@ import { isQuietHours } from './compliance/quiet-hours'
 import { applyDisclaimers, hasBlockingPhrase } from './compliance/disclaimers'
 import { findBannedPhrases } from './compliance/banned-phrases'
 import { emitAudit } from './audit'
+import { createServiceSupabase } from './supabase-server'
+import { recordMoneyEventSafe } from '@/lib/money-meter'
 
 export interface ProcessInboundArgs {
   org: OrgContext
@@ -140,6 +142,24 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
       output_tokens: llmResult?.outputTokens,
     }
   })
+
+  // 5a. Money meter: book the real cloud LLM spend as money USED. Free-forever
+  // orgs (owner + family) are stamped non-billable by the DB. Best-effort so a
+  // metering hiccup never breaks the SMS reply path.
+  if (llmResult && llmResult.costUsd > 0) {
+    await recordMoneyEventSafe(createServiceSupabase(), {
+      orgId: args.org.id,
+      direction: 'used',
+      category: 'ai_llm',
+      amountUsd: llmResult.costUsd,
+      source: 'sms-agent',
+      meta: {
+        model: llmResult.model,
+        input_tokens: llmResult.inputTokens,
+        output_tokens: llmResult.outputTokens,
+      },
+    })
+  }
 
   // 5b. BAT-outlier audit. A jailbroken LLM coerced into returning all-max
   // confidence (B+A+T ≈ 3, confidence ≈ 1) is the signature pattern for
