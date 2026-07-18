@@ -6,10 +6,9 @@ import { getPayments } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatCard, ErrorBanner, Card } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import {
-  getMoneyEvents,
-  summarizeMoney,
-  summarizeByCategory,
-  type MoneyEvent,
+  getMoneySummary,
+  getMoneySummaryByCategory,
+  type MoneySummary,
   type CategoryBreakdown,
 } from "@/lib/money-meter";
 import { revenueSummary } from "@/lib/revenue";
@@ -17,12 +16,19 @@ import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Gift, Scale } from "lucide-r
 
 /**
  * Money Meter — one unified view of every dollar the platform touches, like
- * OmniRouter's live meter but for the whole business. Collected comes from the
- * payments ledger (the revenue source of truth); Used + Saved come from the
- * money_meter_events ledger. Owner + family usage is recorded but free forever.
+ * OmniRouter's live meter but for the whole business. Owner-only (see middleware).
+ *
+ * Used + Saved are summed server-side in SQL (RLS-scoped, no row cap) via
+ * getMoneySummary. Collected comes from the payments ledger (the revenue source
+ * of truth) so revenue is never double-counted.
  */
+const EMPTY_SUMMARY: MoneySummary = {
+  collected: 0, usedBillable: 0, usedAll: 0, saved: 0, net: 0, freeForeverValue: 0,
+};
+
 export default function MoneyMeterPage() {
-  const [events, setEvents] = useState<MoneyEvent[]>([]);
+  const [meter, setMeter] = useState<MoneySummary>(EMPTY_SUMMARY);
+  const [byCategory, setByCategory] = useState<CategoryBreakdown[]>([]);
   const [payments, setPayments] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +36,14 @@ export default function MoneyMeterPage() {
   const load = () => {
     setLoading(true);
     setError(null);
-    Promise.all([getMoneyEvents(supabase), getPayments()])
-      .then(([ev, pay]) => {
-        setEvents(ev);
+    Promise.all([
+      getMoneySummary(supabase),
+      getMoneySummaryByCategory(supabase),
+      getPayments(),
+    ])
+      .then(([summary, cats, pay]) => {
+        setMeter(summary);
+        setByCategory(cats);
         setPayments(pay as Record<string, unknown>[]);
         setLoading(false);
       })
@@ -43,12 +54,9 @@ export default function MoneyMeterPage() {
   };
   useEffect(load, []);
 
-  // Used + saved come from the meter ledger; collected comes from payments so we
-  // never double-count revenue that already lives in customer_payments.
-  const meter = useMemo(() => summarizeMoney(events), [events]);
+  // Collected comes from the payments ledger (revenue source of truth); used +
+  // saved come from the meter summary. Net = collected − billable used.
   const rev = useMemo(() => revenueSummary(payments), [payments]);
-  const byCategory = useMemo(() => summarizeByCategory(events), [events]);
-
   const collected = rev.collectedAllTime;
   const net = collected - meter.usedBillable;
 

@@ -8,6 +8,9 @@ import {
   recordMoneyEvent,
   recordMoneyEventSafe,
   getMoneyEvents,
+  getMoneySummary,
+  getMoneySummaryByCategory,
+  reconcileFreeForeverByEmail,
   type MoneyEvent,
 } from "./money-meter";
 
@@ -163,6 +166,75 @@ describe("recordMoneyEventSafe", () => {
     const res = await recordMoneyEventSafe(client, { direction: "used", category: "ai_llm", amountUsd: 1 });
     expect(res).toBeNull();
     spy.mockRestore();
+  });
+});
+
+describe("getMoneySummary", () => {
+  it("maps the SQL-aggregated jsonb into a MoneySummary (net + free value derived)", async () => {
+    const { client, rpc } = rpcStub({ data: { collected: 3847, usedBillable: 3, usedAll: 8, saved: 8 } });
+    const s = await getMoneySummary(client, { since: "2026-07-01" });
+    expect(s).toEqual({ collected: 3847, usedBillable: 3, usedAll: 8, saved: 8, freeForeverValue: 5, net: 3844 });
+    expect(rpc).toHaveBeenCalledWith("money_meter_summary", { p_since: "2026-07-01" });
+  });
+
+  it("treats a null/empty result as all zeros", async () => {
+    const { client } = rpcStub({ data: null });
+    expect(await getMoneySummary(client)).toEqual({
+      collected: 0, usedBillable: 0, usedAll: 0, saved: 0, freeForeverValue: 0, net: 0,
+    });
+  });
+
+  it("throws when the RPC errors", async () => {
+    const { client } = rpcStub({ error: { message: "nope" } });
+    await expect(getMoneySummary(client)).rejects.toThrow(/money_meter_summary failed: nope/);
+  });
+});
+
+describe("getMoneySummaryByCategory", () => {
+  it("maps snake_case rows to CategoryBreakdown", async () => {
+    const { client, rpc } = rpcStub({
+      data: [{ category: "ai_llm", collected: 0, used_billable: 4, used_all: 10, saved: 20 }],
+    });
+    const rows = await getMoneySummaryByCategory(client);
+    expect(rows).toEqual([{ category: "ai_llm", collected: 0, usedBillable: 4, usedAll: 10, saved: 20 }]);
+    expect(rpc).toHaveBeenCalledWith("money_meter_summary_by_category", { p_since: null });
+  });
+});
+
+describe("reconcileFreeForeverByEmail", () => {
+  const OLD = process.env.MONEY_METER_FREE_FOREVER_EMAILS;
+  afterEach(() => {
+    if (OLD === undefined) delete process.env.MONEY_METER_FREE_FOREVER_EMAILS;
+    else process.env.MONEY_METER_FREE_FOREVER_EMAILS = OLD;
+  });
+
+  it("no-ops (no DB writes) when the email is not free-forever", async () => {
+    delete process.env.MONEY_METER_FREE_FOREVER_EMAILS;
+    const from = vi.fn();
+    const client = { from } as unknown as SupabaseClient;
+    expect(await reconcileFreeForeverByEmail(client, "stranger@example.com", ORG)).toBe(false);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("marks the org free-forever (money + tokens) when the email is on the allowlist", async () => {
+    process.env.MONEY_METER_FREE_FOREVER_EMAILS = "wife@example.com";
+    // money_meter_accounts upsert → ok; tmmt_token_balances update → existing row.
+    const calls: string[] = [];
+    const from = vi.fn().mockImplementation((table: string) => {
+      calls.push(table);
+      if (table === "money_meter_accounts") {
+        return { upsert: vi.fn().mockResolvedValue({ error: null }) };
+      }
+      // tmmt_token_balances: update().eq().select() resolves to an existing row
+      const select = vi.fn().mockResolvedValue({ data: [{ org_id: ORG }], error: null });
+      const eq = vi.fn().mockReturnValue({ select });
+      const update = vi.fn().mockReturnValue({ eq });
+      return { update };
+    });
+    const client = { from } as unknown as SupabaseClient;
+    expect(await reconcileFreeForeverByEmail(client, "wife@example.com", ORG)).toBe(true);
+    expect(calls).toContain("money_meter_accounts");
+    expect(calls).toContain("tmmt_token_balances");
   });
 });
 
