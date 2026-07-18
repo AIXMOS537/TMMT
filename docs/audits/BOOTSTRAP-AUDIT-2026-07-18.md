@@ -24,7 +24,19 @@ to self-update was frozen at whatever it cloned.
 ref exists after fetch, and print an honest "couldn't reach…" line instead of lying
 when offline. Behavior on success is unchanged.
 
-### C2 — Missing `m1-fleet-executor.sh` dead-ends every routed mission **[FLAG]**
+### C2 — Missing `m1-fleet-executor.sh` dead-ends every routed mission **[FIXED — Option A]**
+**Resolved:** owner chose Option A. Built `scripts/mesh/m1-fleet-executor.sh` as a
+surface-for-approval checkpoint that honors the OWNER-APPROVAL GATE:
+- default `surface` shows the top-scored mission and pings the owner rail — never acts;
+- `approve` **refuses without an interactive TTY** (exit 2) and requires typing the
+  literal phrase `APPROVE`; on approval it only *stages* the mission to
+  `FLEET-INBOX/approved/` and logs the owner-only ledger — it does **not** run any
+  send/pay/sign/ship itself (the PreToolUse gate stays the backstop);
+- honors the `.swarm/DARK` kill-switch; `list`/`show`/`reject`/`status` round it out.
+Verified end-to-end (surface, non-interactive refusal, TTY approve/cancel, ledger).
+Original finding below for the record.
+
+
 `scripts/mesh/m1-work-router.sh` writes each mission to `FLEET-INBOX` ending with:
 
 ```
@@ -114,10 +126,11 @@ no logic, and defaults to a safe "setup only" role when run unattended.
 
 ## Fixed in this branch
 - **C1** — `scripts/oneshot.sh` now updates from `origin/master` and reports honestly.
+- **C2** — `scripts/mesh/m1-fleet-executor.sh` built (Option A, surface-for-approval);
+  "send work to the M1" now completes instead of dead-ending.
 - **L3** — `AIXMOS-INSTALL.command` added as the single canonical installer.
 
 ## Needs an owner decision (nothing auto-applied)
-- **C2** — what `m1-fleet-executor.sh` may do (Option A vs B) before I build it.
 - **H1** — pin/verify the AIXMOS-AGENTS auto-`npm start`.
 - **H2** — gate policy for queue-sourced P0 missions.
 - **M1** — whether operator Macs get full production `.env`.
