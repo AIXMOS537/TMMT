@@ -4,16 +4,24 @@
 # Run it anytime. Safe: only refreshes tools, never touches your other work.
 # ───────────────────────────────────────────────────────────────────────────
 set -uo pipefail
-BR="claude/team-absence-notification-0rYgo"
+# Refresh tools from the repo's default branch. Override only if you're intentionally
+# previewing a tools branch:  TMMT_UPDATE_BRANCH=my-branch bash scripts/oneshot.sh
+BR="${TMMT_UPDATE_BRANCH:-master}"
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; cd "$ROOT"
 
 printf "\033[2m⏳ updating your tools…\033[0m\n"
-git fetch origin -q 2>/dev/null || true
-# checkout each path INDEPENDENTLY so one missing path can't abort the rest
-for p in scripts dist docs content config; do
-  git checkout "origin/$BR" -- "$p" 2>/dev/null || true
-done
-chmod +x scripts/*.sh dist/*.command 2>/dev/null || true
+# Only refresh if we can actually reach the branch — otherwise say so instead of
+# silently doing nothing and claiming success.
+if git fetch origin -q 2>/dev/null && git rev-parse --verify -q "origin/$BR" >/dev/null 2>&1; then
+  # checkout each path INDEPENDENTLY so one missing path can't abort the rest
+  for p in scripts dist docs content config; do
+    git checkout "origin/$BR" -- "$p" 2>/dev/null || true
+  done
+  chmod +x scripts/*.sh dist/*.command 2>/dev/null || true
+  printf "\033[2m   ✓ tools refreshed from origin/%s\033[0m\n" "$BR"
+else
+  printf "\033[33m   ! couldn't reach origin/%s — showing your board with the tools already on this Mac.\033[0m\n" "$BR"
+fi
 
 clear 2>/dev/null || true
 cat <<'B'
