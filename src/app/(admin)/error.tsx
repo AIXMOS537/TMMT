@@ -1,5 +1,7 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
 import { Button } from "@/components/ui";
 
 export default function AdminError({
@@ -9,6 +11,10 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
