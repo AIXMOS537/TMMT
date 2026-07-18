@@ -6,6 +6,24 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const DRY_RUN = process.argv.includes('--dry-run')
 
+// SAFETY GUARD (2026-07): Supabase is now the system of record. This legacy
+// Airtable -> Supabase sync is retired. Each run makes hundreds of Airtable API
+// calls (list bases + list tables + full record pagination across 18 tables), and
+// on a partial failure it can leave a Supabase table EMPTY after clearing it
+// (see the "TABLE IS NOW EMPTY" path below). Repeated/automated runs exhausted the
+// Airtable monthly API quota. It now refuses to run unless a human explicitly
+// unlocks it for a deliberate one-off:
+//   AIRTABLE_SYNC_ENABLED=1 node scripts/sync-airtable.mjs
+if (process.env.AIRTABLE_SYNC_ENABLED !== '1') {
+  console.error(
+    'sync-airtable.mjs is DISABLED. Supabase is the system of record; this legacy\n' +
+    'Airtable->Supabase sync is retired to protect the Airtable API quota and to\n' +
+    'prevent destructive table reloads. For a deliberate one-off run, set\n' +
+    'AIRTABLE_SYNC_ENABLED=1 explicitly.'
+  )
+  process.exit(0)
+}
+
 if (!AIRTABLE_PAT || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required env vars: AIRTABLE_PAT, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
