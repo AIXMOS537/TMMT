@@ -72,6 +72,10 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   let outBody = ''
   const flags: string[] = []
   let regenAttempts = 0
+  // Cloud spend accrues across EVERY attempt — each banned-phrase regeneration is
+  // a real billed call, not just the final one. The money meter books the total.
+  let llmCostAccruedUsd = 0
+  let llmCalls = 0
 
   while (regenAttempts <= 2) {
     try {
@@ -80,6 +84,8 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
         userMessage: args.inboundBody,
         model: pickModel('qualify'),
       })
+      llmCostAccruedUsd += llmResult.costUsd
+      llmCalls += 1
     } catch {
       // LLM schema failure exhausted retries — fall back safely
       outBody = SAFE_FALLBACK
@@ -143,20 +149,21 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     }
   })
 
-  // 5a. Money meter: book the real cloud LLM spend as money USED. Free-forever
-  // orgs (owner + family) are stamped non-billable by the DB. Best-effort so a
-  // metering hiccup never breaks the SMS reply path.
-  if (llmResult && llmResult.costUsd > 0) {
+  // 5a. Money meter: book the real cloud LLM spend as money USED — the TOTAL
+  // across all regen attempts, not just the final call. Free-forever orgs (owner
+  // + family) are stamped non-billable by the DB. Best-effort so a metering
+  // hiccup never breaks the SMS reply path.
+  if (llmCostAccruedUsd > 0) {
     await recordMoneyEventSafe(createServiceSupabase(), {
       orgId: args.org.id,
       direction: 'used',
       category: 'ai_llm',
-      amountUsd: llmResult.costUsd,
+      amountUsd: llmCostAccruedUsd,
       source: 'sms-agent',
       meta: {
-        model: llmResult.model,
-        input_tokens: llmResult.inputTokens,
-        output_tokens: llmResult.outputTokens,
+        model: llmResult?.model,
+        llm_calls: llmCalls,
+        regen_attempts: regenAttempts,
       },
     })
   }

@@ -11,7 +11,7 @@ import {
 import { askPocketBrain } from "@/lib/pocket-brain";
 import { enforceCompliance } from "@/lib/compliance";
 import { isRateLimited } from "@/lib/rate-limit";
-import { recordMoneyEventSafe } from "@/lib/money-meter";
+import { recordMoneyEventSafe, reconcileFreeForeverByEmail } from "@/lib/money-meter";
 
 export const runtime = "nodejs";
 
@@ -86,6 +86,18 @@ export async function POST(request: Request) {
   if (!orgId) {
     return err(402, "Activate your membership to use the coach.", {
       reason: "no_membership",
+    });
+  }
+
+  // 4b. Free-forever reconcile: if this member's email is on the owner/family
+  // allowlist (MONEY_METER_FREE_FOREVER_EMAILS) but their org isn't marked yet,
+  // mark it now — money + tokens — BEFORE spending, so they're never metered.
+  // Best-effort; a hiccup here must not block the chat.
+  try {
+    await reconcileFreeForeverByEmail(service, email, orgId);
+  } catch (e) {
+    console.error("pocket/chat: free-forever reconcile failed (non-fatal)", {
+      error: (e as Error).message,
     });
   }
 
