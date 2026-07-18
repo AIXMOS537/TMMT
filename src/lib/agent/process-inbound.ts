@@ -13,6 +13,8 @@ import { isQuietHours } from './compliance/quiet-hours'
 import { applyDisclaimers, hasBlockingPhrase } from './compliance/disclaimers'
 import { findBannedPhrases } from './compliance/banned-phrases'
 import { emitAudit } from './audit'
+import { createServiceSupabase } from './supabase-server'
+import { recordMoneyEventSafe } from '@/lib/money-meter'
 
 export interface ProcessInboundArgs {
   org: OrgContext
@@ -70,6 +72,10 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   let outBody = ''
   const flags: string[] = []
   let regenAttempts = 0
+  // Cloud spend accrues across EVERY attempt — each banned-phrase regeneration is
+  // a real billed call, not just the final one. The money meter books the total.
+  let llmCostAccruedUsd = 0
+  let llmCalls = 0
 
   while (regenAttempts <= 2) {
     try {
@@ -78,6 +84,8 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
         userMessage: args.inboundBody,
         model: pickModel('qualify'),
       })
+      llmCostAccruedUsd += llmResult.costUsd
+      llmCalls += 1
     } catch {
       // LLM schema failure exhausted retries — fall back safely
       outBody = SAFE_FALLBACK
@@ -140,6 +148,25 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
       output_tokens: llmResult?.outputTokens,
     }
   })
+
+  // 5a. Money meter: book the real cloud LLM spend as money USED — the TOTAL
+  // across all regen attempts, not just the final call. Free-forever orgs (owner
+  // + family) are stamped non-billable by the DB. Best-effort so a metering
+  // hiccup never breaks the SMS reply path.
+  if (llmCostAccruedUsd > 0) {
+    await recordMoneyEventSafe(createServiceSupabase(), {
+      orgId: args.org.id,
+      direction: 'used',
+      category: 'ai_llm',
+      amountUsd: llmCostAccruedUsd,
+      source: 'sms-agent',
+      meta: {
+        model: llmResult?.model,
+        llm_calls: llmCalls,
+        regen_attempts: regenAttempts,
+      },
+    })
+  }
 
   // 5b. BAT-outlier audit. A jailbroken LLM coerced into returning all-max
   // confidence (B+A+T ≈ 3, confidence ≈ 1) is the signature pattern for

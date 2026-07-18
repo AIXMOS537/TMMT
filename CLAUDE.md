@@ -79,7 +79,17 @@ data encrypted + owner-isolated per operator.
   within 30 days for profits-interest grants. Don't bundle equity into product offers.
 - **Monitoring:** screen-watcher requires per-person consent + monitoring policy.
 
-## KNOWN GAPS (as of 2026-07-04 — keep current)
+## KNOWN GAPS (as of 2026-07-18 — keep current)
+- **MONEY METER is LIVE** (was a gap: money tracking was fragmented + AI cost was
+  computed-but-never-stored). One unified ledger tracks every dollar USED / SAVED /
+  COLLECTED across the platform — `src/lib/money-meter.ts`, migration
+  `20260718000000_money_meter.sql`, dashboard at `/money`. Owner + family are
+  **free forever** (usage recorded, `billable=false`, net $0); the owner org is
+  seeded free-forever and its TMMT-token `unlimited` bypass is now wired (was
+  designed but never set). Recording sites so far: SMS agent cloud cost (`used`),
+  Pocket local-brain savings (`saved`). Residual: add `recordMoneyEventSafe(...)`
+  at new money paths as they land (Stripe/GHL collected, ad spend, commission
+  payouts). Full doc: `docs/MONEY-METER.md`.
 - **SMS gate is now WIRED into the send path** (was a gap). `sendSms()` calls
   `assertSmsAllowed()` first (default `transactional`), so promotional SMS to restricted
   verticals (credit/funding/debt/lending) BLOCKs at the boundary — unit-tested. Residual:
