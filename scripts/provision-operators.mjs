@@ -21,7 +21,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 import { randomBytes } from "crypto";
-import { loadProjectEnv, root } from "./load-env.mjs";
+import { loadProjectEnv } from "./load-env.mjs";
 
 const ALLOWED_ROLES = new Set([
   "operator",
