@@ -26,6 +26,7 @@ import {
   Ban,
   ClipboardCheck,
   Siren,
+  Gauge,
   ChevronDown,
   Menu,
   X,
@@ -40,6 +41,7 @@ const navGroups = [
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
       { href: "/revenue", label: "Revenue", icon: TrendingUp },
+      { href: "/money", label: "Money Meter", icon: Gauge },
       { href: "/dispatch", label: "Dispatch", icon: Siren },
     ],
   },
