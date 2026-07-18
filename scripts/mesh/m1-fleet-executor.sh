@@ -49,9 +49,22 @@ log_ledger() { # verb  file
   printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$HOST" "$2" >> "$LEDGER" 2>/dev/null || true
 }
 
-# Highest score first: score is the zero-padded first field of law-<score>-<ts>-<key>.md,
-# so a reverse lexical sort is a reverse numeric sort.
-top_mission() { ls -1 "$INBOX"/law-*.md 2>/dev/null | sort -r | head -1; }
+# Extract the numeric score from a mission basename, or empty if unscored.
+# Router missions are law-<score>-<ts>-<key>.md; heartbeat pings are law-go-wake-*
+# (no numeric score) and must sink to the bottom, not float to the top.
+score_of() { printf '%s' "$1" | sed -n 's/^law-\([0-9]\{1,\}\)-.*/\1/p'; }
+
+# Print mission paths in TRUE priority order: highest numeric score first,
+# unscored (go-wake heartbeat) pings last, newest-first as the tie-break.
+sorted_missions() {
+  local f base s
+  for f in "$INBOX"/law-*.md; do
+    [[ -e "$f" ]] || continue
+    base="$(basename "$f")"; s="$(score_of "$base")"
+    printf '%s\t%s\n' "${s:-0}" "$f"
+  done | sort -t"$(printf '\t')" -k1,1nr -k2,2r | cut -f2-
+}
+top_mission() { sorted_missions | head -1; }
 
 # Resolve a selector ("", "top", a basename, or a full path) to a real file.
 resolve() {
@@ -69,14 +82,34 @@ cmd_list() {
   hdr "FLEET-INBOX — pending missions (highest priority first)"
   local n; n="$(pending_count)"
   if [[ "$n" == "0" ]]; then say "  ${G}✓ inbox clear — nothing waiting.${X}"; return 0; fi
-  local f base score
+  local f base score wakes=0
   while IFS= read -r f; do
     base="$(basename "$f")"
-    score="$(printf '%s' "$base" | sed -n 's/^law-\([0-9]\{1,\}\)-.*/\1/p')"
-    printf "  ${BD}[%s]${X}  %s\n" "${score:-????}" "$base"
-  done < <(ls -1 "$INBOX"/law-*.md 2>/dev/null | sort -r)
+    score="$(score_of "$base")"
+    [[ -z "$score" ]] && wakes=$((wakes + 1))
+    printf "  ${BD}[%5s]${X}  %s\n" "${score:-0}" "$base"
+  done < <(sorted_missions)
   say ""
-  say "  $n waiting. Review the top one:  ${BD}m1-fleet-executor.sh show top${X}"
+  say "  $n waiting ($wakes are 'go-wake' heartbeat pings, score 0)."
+  say "  Review real work:  ${BD}m1-fleet-executor.sh show top${X}"
+  [[ "$wakes" -gt 0 ]] && say "  Clear the pings:   ${BD}m1-fleet-executor.sh drain${X}  (moves them to done/, never touches scored work)"
+}
+
+# Queue hygiene: move the unscored go-wake heartbeat pings out to done/. This ONLY
+# touches law-go-wake-* files that have no numeric score — scored missions are never
+# moved. The wake loop re-emits a fresh ping next cycle if a node still needs waking.
+cmd_drain() {
+  local done_dir="$INBOX/done" n=0 f base
+  mkdir -p "$done_dir"
+  for f in "$INBOX"/law-go-wake-*.md; do
+    [[ -e "$f" ]] || continue
+    base="$(basename "$f")"
+    [[ -n "$(score_of "$base")" ]] && continue   # safety: skip anything numerically scored
+    mv "$f" "$done_dir/$base" 2>/dev/null && n=$((n + 1))
+  done
+  log_ledger "DRAINED" "$n go-wake ping(s)"
+  say "  ${G}✓ drained $n heartbeat 'go-wake' ping(s)${X} → $done_dir"
+  say "  Scored missions untouched. Now:  ${BD}m1-fleet-executor.sh surface${X}"
 }
 
 cmd_show() {
@@ -167,6 +200,7 @@ case "${1:-surface}" in
   show|view)      shift; cmd_show "${1:-top}" ;;
   approve|ok)     shift; cmd_approve "${1:-top}" ;;
   reject|no)      shift; cmd_reject "${1:-top}" ;;
+  drain|drain-wakes) cmd_drain ;;
   status)         cmd_status ;;
-  *) say "usage: m1-fleet-executor.sh [surface|list|show|approve|reject|status] [top|<file>]"; exit 1 ;;
+  *) say "usage: m1-fleet-executor.sh [surface|list|show|approve|reject|drain|status] [top|<file>]"; exit 1 ;;
 esac
