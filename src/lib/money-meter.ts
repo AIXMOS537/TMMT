@@ -193,7 +193,54 @@ export async function recordMoneyEventSafe(
   }
 }
 
-/** Read the raw ledger for the meter dashboard (RLS scopes it to the caller). */
+/**
+ * Accurate top-line totals, summed in SQL (no PostgREST row cap) and RLS-scoped
+ * to the caller. Prefer this over summarizeMoney(getMoneyEvents(...)) for the
+ * dashboard — the latter is capped at ~1000 rows and under-reports at scale.
+ */
+export async function getMoneySummary(
+  supabase: SupabaseClient,
+  opts: { since?: string | null } = {}
+): Promise<MoneySummary> {
+  const { data, error } = await supabase.rpc("money_meter_summary", { p_since: opts.since ?? null });
+  if (error) throw new Error(`money_meter_summary failed: ${error.message}`);
+  const d = (data ?? {}) as Partial<MoneySummary>;
+  const collected = Number(d.collected ?? 0);
+  const usedBillable = Number(d.usedBillable ?? 0);
+  const usedAll = Number(d.usedAll ?? 0);
+  const saved = Number(d.saved ?? 0);
+  return {
+    collected,
+    usedBillable,
+    usedAll,
+    saved,
+    freeForeverValue: usedAll - usedBillable,
+    net: collected - usedBillable,
+  };
+}
+
+type CategoryRow = { category: string; collected: number; used_billable: number; used_all: number; saved: number };
+
+/** Accurate per-category totals, summed in SQL (no row cap), RLS-scoped. */
+export async function getMoneySummaryByCategory(
+  supabase: SupabaseClient,
+  opts: { since?: string | null } = {}
+): Promise<CategoryBreakdown[]> {
+  const { data, error } = await supabase.rpc("money_meter_summary_by_category", { p_since: opts.since ?? null });
+  if (error) throw new Error(`money_meter_summary_by_category failed: ${error.message}`);
+  return ((data as CategoryRow[]) ?? []).map((r) => ({
+    category: r.category,
+    collected: Number(r.collected ?? 0),
+    usedBillable: Number(r.used_billable ?? 0),
+    usedAll: Number(r.used_all ?? 0),
+    saved: Number(r.saved ?? 0),
+  }));
+}
+
+/**
+ * Read the raw ledger (e.g. a detail list). RLS scopes it to the caller.
+ * NOTE: row-capped — do NOT sum this for totals; use getMoneySummary instead.
+ */
 export async function getMoneyEvents(
   supabase: SupabaseClient,
   opts: { orgId?: string | null; since?: string | null; limit?: number } = {}
@@ -210,14 +257,60 @@ export async function getMoneyEvents(
   return (data as MoneyEvent[]) ?? [];
 }
 
-/** Designate an org as free-forever (owner + family). Service-role only. */
+/**
+ * Designate an org as free-forever (owner + family). Service-role only.
+ *
+ * "Free forever" spans BOTH meters: money (billable=false on 'used' events) AND
+ * TMMT tokens. So this also flips the org's token balance to `unlimited` — an
+ * update-then-insert that never clobbers an existing balance/allotment.
+ */
 export async function setOrgFreeForever(
   supabase: SupabaseClient,
   orgId: string,
   label?: string
 ): Promise<void> {
+  const nowIso = new Date().toISOString();
+
   const { error } = await supabase
     .from("money_meter_accounts")
-    .upsert({ org_id: orgId, free_forever: true, label: label ?? null, updated_at: new Date().toISOString() });
+    .upsert({ org_id: orgId, free_forever: true, label: label ?? null, updated_at: nowIso });
   if (error) throw new Error(`setOrgFreeForever failed: ${error.message}`);
+
+  // Also make them unlimited in TMMT tokens. Update first (leaves balance/
+  // allotment untouched); insert a fresh unlimited row only if none exists.
+  const { data: updated, error: updErr } = await supabase
+    .from("tmmt_token_balances")
+    .update({ unlimited: true, updated_at: nowIso })
+    .eq("org_id", orgId)
+    .select("org_id");
+  if (updErr) throw new Error(`setOrgFreeForever (token unlimited) failed: ${updErr.message}`);
+
+  if (!updated || updated.length === 0) {
+    const { error: insErr } = await supabase.from("tmmt_token_balances").insert({
+      org_id: orgId,
+      balance: 0,
+      monthly_allotment: 0,
+      plan_tier: "free_forever",
+      unlimited: true,
+      status: "active",
+    });
+    if (insErr) throw new Error(`setOrgFreeForever (token unlimited insert) failed: ${insErr.message}`);
+  }
+}
+
+/**
+ * Reconcile the env allowlist (MONEY_METER_FREE_FOREVER_EMAILS) into the DB — the
+ * durable source of truth. If `email` is free-forever but its org isn't marked
+ * yet, mark it (money + tokens). Idempotent no-op otherwise. Call at a runtime
+ * point where both the actor email and their org id are known (e.g. Pocket chat),
+ * so env-listed owner/family accounts actually stop being metered. Service-role only.
+ */
+export async function reconcileFreeForeverByEmail(
+  supabase: SupabaseClient,
+  email: string | null | undefined,
+  orgId: string
+): Promise<boolean> {
+  if (!isFreeForever(email)) return false;
+  await setOrgFreeForever(supabase, orgId, "free-forever (email allowlist)");
+  return true;
 }
