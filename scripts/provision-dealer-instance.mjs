@@ -9,7 +9,7 @@
  *
  * After GHL payment webhook tags kit-ordered-* — run with --apply to create admin + handoff pack.
  */
-import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { loadProjectEnv, root } from "./load-env.mjs";
 

@@ -5,7 +5,7 @@
  *
  * Usage: node scripts/ghl-voice-ai-provision.mjs [--dry-run]
  */
-import { readFileSync, existsSync } from "fs";
+import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { loadProjectEnv } from "./load-env.mjs";
