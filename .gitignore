@@ -114,3 +114,7 @@ secrets/
 
 # Git worktrees created by agents (never commit — they are separate checkouts)
 .claude/worktrees/
+
+# Nested Next.js build outputs (monorepo subprojects)
+apps/engine/.next/
+apps/engine/node_modules/

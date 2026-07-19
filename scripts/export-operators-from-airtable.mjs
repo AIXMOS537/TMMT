@@ -16,7 +16,6 @@ const apply = process.argv.includes("--apply");
 if (!loadProjectEnv()) process.exit(1);
 
 const { AIRTABLE_PAT, AIRTABLE_BASE_ID } = process.env;
-const BASE_ID = AIRTABLE_BASE_ID || process.env.AIRTABLE_BASE_NAME;
 if (!AIRTABLE_PAT) {
   console.error("Need AIRTABLE_PAT in .env.local");
   process.exit(1);

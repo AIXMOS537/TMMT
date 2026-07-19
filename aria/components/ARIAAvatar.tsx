@@ -12,7 +12,7 @@ export default function ARIAAvatar({ responding, responseText, onSpeechEnd }: AR
   const audioRef = useRef<HTMLAudioElement>(null)
   const [hasPortrait, setHasPortrait] = useState(false)
   const [animating, setAnimating] = useState(false)
-  const [portraitUrl, setPortraitUrl] = useState('/api/avatar/portrait')
+  const portraitUrl = '/api/avatar/portrait'
 
   // Check if portrait exists on mount
   useEffect(() => {
