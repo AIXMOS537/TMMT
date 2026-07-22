@@ -82,7 +82,7 @@ EXCLUDE=(
   "DEPLOY.md"                           # owner three-app deploy (they use LEGACY-DEPLOY-MOE.md)
   "scripts/aixmos.sh"                   # mesh operator CLI (wraps stripped scripts)
   "scripts/build-projectaixmos-legacy.sh" # the builder itself — don't ship it
-  "scripts/oneshot.sh"                  # owner control board
+  "scripts/start.sh"                    # owner control board (START-HERE front door)
   "scripts/grant.sh"                    # owner-only: granting access
   "scripts/onboard-tonight.sh"          # owner-only: onboarding orchestrator
   "scripts/onboard-interview.sh"        # owner-only interview (Moe gets moe-oneshot)
