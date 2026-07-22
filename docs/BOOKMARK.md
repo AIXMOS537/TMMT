@@ -23,7 +23,14 @@ START-HERE is the only front door anyone needs.**
   `detail_jobs`, `detail_memberships` with standard RLS.
 - **Collections truth:** ~$7K+ quantified past-due, sorted safe-to-contact vs DND vs verify —
   Google Sheet "TMMT Collections Tracker (auto-built 2026-07)".
-- **Lead net designed:** `docs/LEAD-NET-SPEC.md` (GHL build spec, ready to implement).
+- **Lead net BUILT** (`docs/LEAD-NET-SPEC.md` → implemented):
+  - DB (live now, site-independent): `incoming_leads.lane`, `lead_followups` clock table,
+    auto-trigger on every new lead, pg_cron sweep every 15 min (escalates untouched leads),
+    daily 9am ET Slack digest, `leadnet_config` on/off switches.
+  - App code: `createGhlContact`/`createGhlContactTask` (src/lib/ghl/client.ts),
+    intake→GHL bridge with phone dedupe + lane tags (src/lib/leadnet/net.ts, wired into
+    /api/leads/webhook), inbound-message reply clock (webhooks/ghl route). Unit-tested.
+  - Remaining: UI clicking + env vars → `docs/LEAD-NET-RUNBOOK.md` (~45 min, owner/team).
 - **Phase 0 stack audit** complete across Airtable/ClickUp/Quo/Gmail/Calendar/Drive/
   Supabase/Vercel/Slack (findings summarized in session notes + below).
 
@@ -34,10 +41,11 @@ START-HERE is the only front door anyone needs.**
 3. **Arlington RFQ N1121-4** (Car Sharing, closes **Aug 21 5pm ET**): download
    `N1121-4_SUPPLIER.pdf` from the Oracle portal → hand to Claude → full bid gets drafted.
 4. **Collections:** bless the outreach wording (see Tracker sheet) → team works it top-down.
-5. Approve the Lead-Net build in GHL (`docs/LEAD-NET-SPEC.md`).
+5. Work `docs/LEAD-NET-RUNBOOK.md`: GHL env keys + click the workflows together
+   (cadences ship as DRAFT), paste the Slack webhook into `leadnet_config`.
 
 ## 🔜 NEXT UP (in order)
-1. Build Lead Net in GHL per spec (drafts-only mode).
+1. Owner works LEAD-NET-RUNBOOK (45 min) → lead net fully live.
 2. Populate detail tables + first membership tiers.
 3. Fleet availability calendar + turnover blocks (Phase 3/4 of the overhaul script).
 4. Re-light the website (after Vercel cleanup) — two doors: Rentals / Detailing.

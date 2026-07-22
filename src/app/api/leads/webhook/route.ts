@@ -11,6 +11,7 @@ import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 import { isRateLimited } from '@/lib/rate-limit'
 import { routeIncomingLead } from '@/lib/lead-pool'
+import { netLeadIntoGhl } from '@/lib/leadnet/net'
 
 const SKU_PRICE_CENTS: Record<string, number> = {
   'lead-magnet': 0,
@@ -134,6 +135,20 @@ export async function POST(req: Request): Promise<NextResponse> {
     ip: req.headers.get('x-forwarded-for') ?? null,
     payload: { lead_id: leadId, sku, phone_e164, utm_source: body.utm_source, utm_campaign: body.utm_campaign },
   })
+
+  // Lead net → GHL: dedupe by phone, lane-tag, start the 1h first-touch clock.
+  // Fail-open (netLeadIntoGhl never throws); lane is stamped back on the lead so
+  // the DB-side sweep/digest (pg_cron) can report by lane. See docs/LEAD-NET-SPEC.md.
+  try {
+    const net = await netLeadIntoGhl({
+      name: body.name ?? null,
+      phone: phone_e164,
+      email: body.email ?? null,
+      source: body.source ?? 'webform',
+      signals: [sku, body.utm_campaign, body.utm_content, body.landing_url],
+    })
+    await db.from('incoming_leads').update({ lane: net.lane }).eq('id', leadId)
+  } catch { /* fail-open — lead is already saved + audited */ }
 
   // Capture → shared lead pool (fail-open: never blocks intake; no-ops until the
   // lead_pool migration is applied + routes exist). See src/lib/lead-pool.ts.
