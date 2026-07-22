@@ -222,6 +222,74 @@ export async function updateOpportunityStage(args: {
   }
 }
 
+/** Create a contact in GHL (lead-net intake). Returns the new contact id, or null when unconfigured. */
+export async function createGhlContact(args: {
+  name?: string;
+  phone?: string;
+  email?: string;
+  source?: string;
+  tags?: string[];
+  locationKind?: GhlLocationKind;
+}): Promise<string | null> {
+  const kind = args.locationKind ?? "rentals";
+  if (!isGhlConfigured(kind)) return null;
+
+  const body: Record<string, unknown> = {
+    locationId: resolveGhlLocationId(kind),
+  };
+  if (args.name?.trim()) body.name = args.name.trim();
+  if (args.phone?.trim()) body.phone = args.phone.trim();
+  if (args.email?.trim()) body.email = args.email.trim().toLowerCase();
+  if (args.source?.trim()) body.source = args.source.trim();
+  if (args.tags?.length) body.tags = args.tags;
+
+  const res = await fetch(`${GHL_BASE}/contacts/`, {
+    method: "POST",
+    headers: ghlHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GHL createGhlContact failed (${res.status}): ${text}`);
+  }
+
+  const json = (await res.json()) as { contact?: { id?: string } };
+  return json.contact?.id ?? null;
+}
+
+/** Create a follow-up task on a contact (the lead-net first-touch clock inside GHL). */
+export async function createGhlContactTask(args: {
+  contactId: string;
+  title: string;
+  body?: string;
+  dueAt: Date;
+  assignedTo?: string;
+  locationKind?: GhlLocationKind;
+}): Promise<void> {
+  const kind = args.locationKind ?? "rentals";
+  if (!isGhlConfigured(kind)) return;
+
+  const body: Record<string, unknown> = {
+    title: args.title,
+    dueDate: args.dueAt.toISOString(),
+    completed: false,
+  };
+  if (args.body?.trim()) body.body = args.body.trim();
+  if (args.assignedTo?.trim()) body.assignedTo = args.assignedTo.trim();
+
+  const res = await fetch(`${GHL_BASE}/contacts/${args.contactId}/tasks`, {
+    method: "POST",
+    headers: ghlHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GHL createGhlContactTask failed (${res.status}): ${text}`);
+  }
+}
+
 export type GhlMessageType = "SMS" | "Email";
 
 /** Send SMS or email through GHL Conversations (routes via your LC phone / mail — e.g. OpenPhone for SMS). */

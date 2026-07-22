@@ -13,6 +13,10 @@ import {
   isFormPayload,
   isOpportunityStagePayload,
 } from "@/lib/ghl/payload";
+import {
+  handleInboundMessage,
+  isInboundMessagePayload,
+} from "@/lib/ghl/handlers/inbound-message";
 
 /**
  * GoHighLevel webhook entry point (merged).
@@ -46,6 +50,12 @@ export async function POST(request: NextRequest) {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // --- Lead net: inbound customer message → start the reply clock (spec §4) ---
+  if (isInboundMessagePayload(body)) {
+    const result = await handleInboundMessage(body);
+    return NextResponse.json(result.body, { status: result.status });
   }
 
   // --- CRM sync events take priority: route recognized payloads to dispatch ---
