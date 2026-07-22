@@ -98,9 +98,12 @@ data encrypted + owner-isolated per operator.
 - **Founding-admin email is an inline literal** in `src/lib/verticals/registry.ts` +
   `config/verticals.json`. Move to an env-sourced value before broad launch (needs the prod
   env var set so onboarding doesn't break — coordinate with owner).
-- Lexar sweep-archive PDFs were removed from HEAD (#104) but remain in git **history** —
-  finish with `scripts/scrub-history.sh --apply` from a full clone. NOTE: the pre-push guard
-  (#123) blocks master force-push unless `ALLOW_FORCE_MASTER=1`; the scrub script sets it.
+- **History scrub COMPLETED 2026-07-22.** The lexar sweep-archive PDFs (third-party
+  financials) and the revoked Airtable PAT value were purged from ALL git history via
+  git-filter-repo (path purge + replace-text) and force-pushed — verified 0 matching
+  objects across all refs. Every device must re-sync once (`git fetch && git reset --hard
+  origin/<branch>`); a machine pushing pre-scrub history would resurrect it — the pre-push
+  guard + gitleaks allowlist stay in place as backstops.
 
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
