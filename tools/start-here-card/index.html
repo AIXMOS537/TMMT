@@ -1,0 +1,159 @@
+<title>TMMT — START HERE card</title>
+<style>
+  :root{
+    --paper:#F6F4EF; --ink:#16191C; --muted:#5B6167; --line:#E4DFD5;
+    --chip:#16191C; --chip-ink:#F6F4EF; --accent:#B07A16; --accent-soft:#F0E4CC;
+    --good:#2F7D4F;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101315; --ink:#EFEBE3; --muted:#9BA1A7; --line:#262B2F;
+      --chip:#EFEBE3; --chip-ink:#101315; --accent:#E3A63A; --accent-soft:#2A2317;
+      --good:#5FB584;
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#F6F4EF; --ink:#16191C; --muted:#5B6167; --line:#E4DFD5;
+    --chip:#16191C; --chip-ink:#F6F4EF; --accent:#B07A16; --accent-soft:#F0E4CC; --good:#2F7D4F;
+  }
+  :root[data-theme="dark"]{
+    --paper:#101315; --ink:#EFEBE3; --muted:#9BA1A7; --line:#262B2F;
+    --chip:#EFEBE3; --chip-ink:#101315; --accent:#E3A63A; --accent-soft:#2A2317; --good:#5FB584;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+    padding:32px 20px;
+  }
+  .card{
+    max-width:780px; margin:0 auto;
+    border:1px solid var(--line); border-radius:18px;
+    background:var(--paper);
+    padding:34px 38px 30px;
+    box-shadow:0 1px 0 var(--line);
+  }
+
+  .eyebrow{
+    font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; margin:0 0 10px;
+  }
+  h1{
+    font-size:clamp(2.4rem,7vw,3.6rem); line-height:.95; margin:0;
+    letter-spacing:-.02em; font-weight:800; text-transform:uppercase; text-wrap:balance;
+  }
+  .steps{
+    display:flex; flex-wrap:wrap; gap:10px 22px; align-items:baseline;
+    margin:16px 0 4px; padding-bottom:22px; border-bottom:2px solid var(--ink);
+    font-size:1.06rem;
+  }
+  .steps b{ font-weight:800; }
+  .steps .k{
+    display:inline-block; font-weight:800; color:var(--accent);
+    font-variant-numeric:tabular-nums; margin-right:.35em;
+  }
+
+  ul.menu{ list-style:none; margin:20px 0 0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  li.row{
+    display:grid; grid-template-columns:58px 1fr; align-items:center;
+    gap:18px; padding:11px 6px; border-bottom:1px solid var(--line);
+  }
+  li.row:last-child{ border-bottom:none; }
+  .num{
+    width:52px; height:52px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--chip); color:var(--chip-ink);
+    font-weight:800; font-size:1.6rem; font-variant-numeric:tabular-nums;
+  }
+  .row.quit .num{ background:transparent; color:var(--muted); border:2px dashed var(--line); }
+  .label{ font-weight:800; font-size:1.16rem; letter-spacing:.01em; }
+  .desc{ color:var(--muted); font-size:1.0rem; }
+  .label .em{ color:var(--accent); }
+
+  .foot{
+    margin-top:24px; padding-top:20px; border-top:2px solid var(--ink);
+    display:flex; flex-wrap:wrap; gap:18px 28px; justify-content:space-between; align-items:flex-start;
+  }
+  .reassure{ font-size:1.12rem; font-weight:800; }
+  .reassure .dot{ color:var(--good); }
+  .open{ font-size:.95rem; color:var(--muted); }
+  .open b{ color:var(--ink); }
+  .open code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--accent-soft); color:var(--ink); padding:.08em .4em; border-radius:5px; font-size:.9em;
+  }
+  .stuck{ margin-top:6px; font-size:.95rem; color:var(--muted); }
+  .stuck b{ color:var(--ink); }
+
+  @media print{
+    @page{ margin:14mm; }
+    body{ padding:0; background:#fff; color:#111; }
+    .card{ border:none; box-shadow:none; max-width:none; padding:0; }
+    :root{
+      --paper:#fff; --ink:#111; --muted:#444; --line:#ccc;
+      --chip:#111; --chip-ink:#fff; --accent:#8a5e10; --accent-soft:#eee; --good:#1f6b3f;
+    }
+    li.row{ break-inside:avoid; }
+  }
+</style>
+
+<div class="card">
+  <p class="eyebrow">TMMT Auto Services &middot; One-button guide</p>
+  <h1>Start&nbsp;Here</h1>
+
+  <div class="steps">
+    <span><span class="k">1.</span><b>Double-click</b> the <b>START&#8209;HERE</b> icon</span>
+    <span><span class="k">2.</span><b>Press a number</b>, then Enter</span>
+  </div>
+
+  <ul class="menu">
+    <li class="row">
+      <span class="num">1</span>
+      <span><span class="label">Turn it <span class="em">on</span></span> &nbsp; <span class="desc">— set up this device and connect it</span></span>
+    </li>
+    <li class="row">
+      <span class="num">2</span>
+      <span><span class="label">See everyone</span> &nbsp; <span class="desc">— which devices are online right now</span></span>
+    </li>
+    <li class="row">
+      <span class="num">3</span>
+      <span><span class="label">Get help</span> &nbsp; <span class="desc">— buzz the owner to come help you</span></span>
+    </li>
+    <li class="row">
+      <span class="num">4</span>
+      <span><span class="label">Do work</span> &nbsp; <span class="desc">— start the helper agents</span></span>
+    </li>
+    <li class="row">
+      <span class="num">5</span>
+      <span><span class="label">Open the app</span> &nbsp; <span class="desc">— run the TMMT app on this device</span></span>
+    </li>
+    <li class="row">
+      <span class="num">6</span>
+      <span><span class="label">Update</span> &nbsp; <span class="desc">— get the very latest</span></span>
+    </li>
+    <li class="row">
+      <span class="num">7</span>
+      <span><span class="label">Check</span> &nbsp; <span class="desc">— is everything okay and safe?</span></span>
+    </li>
+    <li class="row quit">
+      <span class="num">0</span>
+      <span><span class="label">Done</span> &nbsp; <span class="desc">— close this menu</span></span>
+    </li>
+  </ul>
+
+  <div class="foot">
+    <div>
+      <div class="reassure"><span class="dot">&#9679;</span> You can&rsquo;t break anything.</div>
+      <div class="stuck">Not sure? Just press <b>3</b> and the owner comes to help.</div>
+    </div>
+    <div class="open">
+      <div><b>How to open it</b></div>
+      <div>Mac &mdash; double-click <code>START-HERE.command</code></div>
+      <div>Windows &mdash; double-click <code>START-HERE.cmd</code></div>
+      <div>Anything else &mdash; <code>bash scripts/start.sh</code></div>
+    </div>
+  </div>
+</div>
