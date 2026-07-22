@@ -49,7 +49,7 @@ fi
 
 # ── 3. SCRIPTS — every tool on the board must exist, run, and parse ─────────
 h "SCRIPTS (the board)"
-BOARD=$(grep -oE 'scripts/[a-z0-9-]+\.(sh|mjs)' scripts/oneshot.sh 2>/dev/null | sort -u)
+BOARD=$(grep -oE 'scripts/[a-z0-9-]+\.(sh|mjs)' scripts/tmmt 2>/dev/null | sort -u)
 missing=0
 for s in $BOARD; do
   if [ ! -f "$s" ]; then bad "$s referenced by board but missing" "restore it: git checkout origin/$BR -- $s"; missing=1
@@ -57,7 +57,7 @@ for s in $BOARD; do
   elif [ ! -x "$s" ]; then warn "$s not executable" "chmod +x $s"; fi
 done
 [ "$missing" = 0 ] && ok "all board scripts present + parse clean ($(echo "$BOARD" | wc -w | tr -d ' ') tools)"
-for entry in scripts/oneshot.sh scripts/booyah.sh; do
+for entry in scripts/start.sh scripts/tmmt; do
   [ -f "$entry" ] && bash -n "$entry" 2>/dev/null && ok "entry point ok: $(basename "$entry")" || bad "$entry broken/missing" "this is a front door — restore it"
 done
 
@@ -84,7 +84,7 @@ else bad "node_modules missing" "run: npm install"; fi
 printf "\n\033[1m── VERDICT ──\033[0m\n"
 printf "  \033[32m%s pass\033[0m · \033[33m%s warn\033[0m · \033[31m%s fail\033[0m\n" "$PASS" "$WARN" "$FAIL"
 if [ "$FAIL" -eq 0 ]; then
-  printf "  \033[42;30m READY TO OPEN \033[0m everything plug-and-play. boot with: \033[1mbash scripts/booyah.sh\033[0m\n"
+  printf "  \033[42;30m READY TO OPEN \033[0m everything plug-and-play. start with: \033[1mdouble-click START-HERE (or: bash scripts/start.sh)\033[0m\n"
   exit 0
 else
   printf "  \033[41;97m NOT READY \033[0m fix the ✗ above (in order), then re-run \033[1mbash scripts/doctor.sh\033[0m\n"

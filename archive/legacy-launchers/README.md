@@ -12,6 +12,12 @@ location.
 - `TMMT-MENU.command` — old numbered menu; replaced by `START-HERE` (same 6 actions, friendlier).
 - `EVERYTHING.command` — thin wrapper around `scripts/everything`; reachable via the router.
 - `family-mesh-loop.sh`, `claude-family-mesh.sh`, `brainiac-handoff.sh` — empty (0-byte) stubs.
+- `oneshot.sh`, `booyah.sh`, `launch.sh`, `ceo.sh` — the old stale "control board / go-live
+  dashboard / morning brief" cluster. They only referenced each other. `scripts/doctor.sh` was
+  repointed to validate `scripts/tmmt` + `scripts/start.sh` as the real front doors, and
+  `scripts/build-projectaixmos-legacy.sh` was repointed to `scripts/start.sh`, so nothing live
+  depends on these anymore. (Note: `scripts/ceo`, `scripts/one-shot.sh`, and `scripts/setter-oneshot.sh`
+  are DIFFERENT, still-live files — not these.)
 
 ## Still live on purpose (NOT archived)
 - `scripts/tmmt` — the real engine (all ~70 commands). START-HERE just calls it.
