@@ -17,6 +17,9 @@ info() { printf '  %s›%s %s\n' "$D" "$X" "$*"; }
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 ROOT="${TMMT_ROOT:-$HOME/Projects/TMMT}"
+# Directory this installer lives in — used to find a payload/ bundled beside it
+# (USB drop, downloaded kit folder) so no private-repo access is ever required.
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo ".")"
 
 say "  ╔══════════════════════════════════════════════════════╗"
 say "  ║   TMMT TRAPTOP INSTALLER — PROJECT X HAILMARY       ║"
@@ -28,16 +31,47 @@ info "The engine will not start until X activates it with the master keys."
 echo ""
 
 # ── 1. CLONE / UPDATE REPO ───────────────────────────────────────────────────────
-if [ ! -d "$ROOT/.git" ]; then
-  info "Cloning TMMT engine..."
-  git clone --depth 1 https://github.com/AIXMOS537/TMMT.git "$ROOT" 2>/dev/null \
-  || git clone --depth 1 https://github.com/AIXMOS537/TMMT "$ROOT" 2>/dev/null \
-  || { warn "Could not clone — is this device running offline? Copy the repo manually to $ROOT"; }
+# PAYLOAD RESOLUTION (2026-07-18) — the old code hard-cloned the PRIVATE repo
+# AIXMOS537/TMMT, which no operator can access: it always failed with a confusing
+# git error. Resolve a payload from whatever the operator actually has, in order,
+# and if none is available continue in STANDALONE mode — the local-AI stack (the
+# real product value) does not depend on the repo at all.
+STANDALONE=0
+if [ -d "$ROOT/.git" ]; then
+  info "Engine already present at $ROOT — updating…"
+  git -C "$ROOT" pull --ff-only 2>/dev/null || info "(offline or detached — keeping what's here)"
+  ok "Engine at $ROOT"
+elif [ -n "${TRAPTOP_PAYLOAD_DIR:-}" ] && [ -d "$TRAPTOP_PAYLOAD_DIR" ]; then
+  info "Installing from local payload: $TRAPTOP_PAYLOAD_DIR"
+  mkdir -p "$ROOT" && cp -R "$TRAPTOP_PAYLOAD_DIR/." "$ROOT/" && ok "Engine installed from local payload"
+elif [ -d "$SELF_DIR/payload" ]; then
+  info "Installing from payload beside this installer…"
+  mkdir -p "$ROOT" && cp -R "$SELF_DIR/payload/." "$ROOT/" && ok "Engine installed from bundled payload"
+elif [ -n "${TRAPTOP_PAYLOAD_URL:-}" ]; then
+  info "Downloading payload…"
+  mkdir -p "$ROOT"
+  if curl -fsSL "$TRAPTOP_PAYLOAD_URL" | tar -xz -C "$ROOT" 2>/dev/null; then
+    ok "Engine installed from $TRAPTOP_PAYLOAD_URL"
+  else
+    warn "Payload download failed — continuing in standalone mode"; STANDALONE=1
+  fi
+elif [ -n "${TRAPTOP_REPO:-}" ]; then
+  info "Cloning $TRAPTOP_REPO…"
+  git clone --depth 1 "$TRAPTOP_REPO" "$ROOT" 2>/dev/null \
+    && ok "Engine cloned" \
+    || { warn "Clone failed — continuing in standalone mode"; STANDALONE=1; }
 else
-  info "Repo already present at $ROOT — pulling latest..."
-  git -C "$ROOT" pull --ff-only 2>/dev/null || true
+  STANDALONE=1
 fi
-ok "Repo at $ROOT"
+
+if [ "$STANDALONE" = "1" ]; then
+  mkdir -p "$ROOT"
+  info "STANDALONE mode — no engine payload supplied."
+  info "Local AI still installs fully; this device works offline and private."
+  info "To add the engine later, re-run with ONE of:"
+  info "  TRAPTOP_PAYLOAD_DIR=/path/to/payload  bash traptop-install.sh"
+  info "  TRAPTOP_PAYLOAD_URL=https://…/payload.tar.gz  bash traptop-install.sh"
+fi
 
 # ── 2. DEPENDENCIES (Ollama + openssl) ──────────────────────────────────────────
 info "Checking dependencies..."
