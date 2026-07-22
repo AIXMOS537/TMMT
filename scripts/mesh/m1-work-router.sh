@@ -82,6 +82,14 @@ log_ledger() {
 
 emit_mission() {
   local key="$1" score="$2" domain="$3" title="$4" body="$5" owner_gate="${6:-false}"
+  # ── PAUSE-EMIT kill-switch (Rick, 2026-07-18) ──────────────────────────────
+  # Single choke point for every file-*/law-* mission this router emits. Honors
+  # a flag so the boomerang re-ingestion storm stays OFF regardless of what
+  # re-bootstraps the pipeline. Reverse: rm ~/.config/tmmt/.swarm/PAUSE-EMIT
+  if [[ -f "$HOME/.config/tmmt/.swarm/PAUSE-EMIT" ]]; then
+    log_ledger "PAUSED" "$score" "$domain" "$title" "$key" "$HOST" 2>/dev/null || true
+    return 0
+  fi
   recently_sent "$key" && return 0
   if [[ "$owner_gate" == "true" || "$owner_gate" == "yes" || "$owner_gate" == "1" ]]; then
     warn "owner_gate — stays on Carry: $title"
