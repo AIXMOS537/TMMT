@@ -68,7 +68,7 @@ Anchored in [`docs/sops/FUNDING-HANDOFF-SOP.md`](../sops/FUNDING-HANDOFF-SOP.md)
 1. **Handoff package assembly** — we collect the documents listed in section 6 below
 2. **Profile narrative** — a one-page story we write describing your operational discipline (TMMT rental history is gold here — it shows you make payments, run a fleet, manage customers)
 3. **Partner selection** — owner picks the funding partner from the approved vendor list based on your profile fit
-4. **Warm intro email** — CHUMMO-voice intro from us to the partner, single CTA to book your partner call
+4. **Warm intro email** — a personal intro email from our team to the partner, single CTA to book your partner call
 5. **Partner call** — you and the lender / broker, with our package already in their hands
 6. **Stage progression** — GHL stage moves to `Funding Prep` → `Funded / Closed Won` when the partner confirms
 

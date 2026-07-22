@@ -35,7 +35,7 @@ TMMT Lease-to-Own. Three tiers. One promise: **every payment builds equity in yo
 - **No credit minimum.** Income is what matters.
 - **Maintenance and GPS included** so the car keeps running and you keep moving.
 - **Split-pay option on the down payment** — half at signing, half within 30 days — so you can start sooner.
-- **Backed by the AIXMOS funnel.** If you want to fix your credit and build a business while you're paying off your car, we have a path for that. (Decks 2 and 3.)
+- **Backed by the AIXMOS funnel.** If you want to improve your credit and build a business while you're paying off your car, we have a path for that. (Decks 2 and 3.)
 
 ---
 

@@ -31,7 +31,7 @@ If a customer says "so you're a credit repair company?", the right answer is:
 Variants for ad copy:
 - "Stop guessing at your credit. Get a real plan, from people who've done it."
 - "Tired of YouTube credit hacks that go nowhere? Try guidance from someone who's worked with hundreds of profiles."
-- "Your credit profile is fixable. We don't promise scores — we promise honest work."
+- "Your credit profile is workable. We don't promise scores — we promise honest work."
 
 ---
 
