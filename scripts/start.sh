@@ -55,6 +55,7 @@ while true; do
   printf '%s\n' "   ${G}5${R})   ${B}OPEN THE APP${R}     run the TMMT app on this device"
   printf '%s\n' "   ${G}6${R})   ${B}UPDATE${R}           get the very latest"
   printf '%s\n' "   ${G}7${R})   ${B}CHECK${R}            is everything okay and safe?"
+  printf '%s\n' "   ${G}8${R})   ${B}WHERE ARE WE${R}     the bookmark: what's done, what's next"
   printf '%s\n' "   ${G}0${R})   ${B}DONE${R}             close this menu"
   printf '\n'
   [ -n "$NEED" ] && printf '%s\n\n' "  ${Y}Heads up: '${NEED}' is not installed yet. Option 7 (Check) will guide you.${R}"
@@ -68,6 +69,7 @@ while true; do
     5) run local ;;
     6) run sync ;;
     7) run fix ;;
+    8) clear 2>/dev/null || true; ${PAGER:-less} "$ROOT/docs/BOOKMARK.md" 2>/dev/null || cat "$ROOT/docs/BOOKMARK.md" 2>/dev/null || printf '%s\n' "${Y}Bookmark not found — press 6 (UPDATE) first.${R}"; pause ;;
     0|q|Q|"") clear 2>/dev/null || true; printf '%s\n' "${G}All good. See you next time!${R}"; exit 0 ;;
     *) : ;;
   esac
