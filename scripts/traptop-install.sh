@@ -69,15 +69,25 @@ elif [ -f /proc/meminfo ]; then
   RAM_GB=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1048576 ))
 fi
 
+# ── AIXMOS TIER MATRIX (2026-07-18) ──────────────────────────────────────────
+# Old logic handed every machine >=16GB the same llama3.2:3b (2GB, Sept 2024) —
+# so a 64GB workstation ran the same brain as a netbook. Tier by real capacity.
+# First pull stays modest so setup finishes fast; the rest of the tier stack is
+# recorded to ~/.aixmos/tier.env and fetched later by `traptop upgrade`.
 if command -v ollama >/dev/null 2>&1; then
-  if (( RAM_GB >= 16 )); then
-    MODEL="llama3.2:3b"; info "RAM: ${RAM_GB}GB → pulling $MODEL (full)"
-  elif (( RAM_GB >= 8 )); then
-    MODEL="qwen2.5:1.5b"; info "RAM: ${RAM_GB}GB → pulling $MODEL (standard)"
-  else
-    MODEL="qwen2.5:0.5b"; info "RAM: ${RAM_GB}GB → pulling $MODEL (lite)"
+  if   (( RAM_GB >= 96 )); then TIER="T4-BEAST"; MODEL="qwen3.6:27b"; FULL="gpt-oss:20b gemma4:12b qwen3.5:4b"
+  elif (( RAM_GB >= 48 )); then TIER="T3-POWER"; MODEL="gpt-oss:20b"; FULL="qwen3.6:27b gemma4:12b qwen3.5:4b"
+  elif (( RAM_GB >= 32 )); then TIER="T2-PRO";   MODEL="gpt-oss:20b"; FULL="gemma4:12b qwen3.5:4b"
+  elif (( RAM_GB >= 16 )); then TIER="T1-STD";   MODEL="qwen3.5:9b";  FULL="qwen3.5:4b"
+  elif (( RAM_GB >= 8  )); then TIER="T0-LITE";  MODEL="qwen3.5:4b";  FULL=""
+  else                          TIER="T0-MICRO"; MODEL="qwen3.5:2b";  FULL=""
   fi
+  info "RAM: ${RAM_GB}GB → tier ${TIER} → primary model ${MODEL}"
   ollama pull "$MODEL" 2>/dev/null && ok "Model $MODEL ready" || warn "Model pull failed — run manually: ollama pull $MODEL"
+  mkdir -p "$HOME/.aixmos"
+  printf 'TIER=%s\nRAM_GB=%s\nPRIMARY=%s\nFULL_STACK=%s\n' \
+    "$TIER" "$RAM_GB" "$MODEL" "$FULL" > "$HOME/.aixmos/tier.env"
+  [ -n "$FULL" ] && info "Tier stack queued (run 'traptop upgrade'): $FULL"
 fi
 
 # ── 4. MAKE SCRIPTS EXECUTABLE ───────────────────────────────────────────────────
