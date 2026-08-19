@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
       { source: "/products", destination: "/learn/products" },
       { source: "/questionnaire/:path*", destination: "/learn/questionnaire/:path*" },
       { source: "/application/:path*", destination: "/learn/application/:path*" },
+      // src/app/api/agent/_health/route.ts can never be reached on its own:
+      // the App Router treats a leading underscore as a private folder and
+      // excludes it from routing entirely. External monitors already point at
+      // this URL, so map it onto the real handler rather than moving it and
+      // breaking them.
+      { source: "/api/agent/_health", destination: "/api/agent/health" },
     ];
   },
   async redirects() {
