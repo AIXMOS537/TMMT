@@ -11,6 +11,33 @@ import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 import { isRateLimited } from '@/lib/rate-limit'
 import { routeIncomingLead } from '@/lib/lead-pool'
+import { isAixmosCorsOrigin } from '@/lib/site-domains'
+
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  }
+}
+
+function json(body: unknown, status: number, origin: string | null): NextResponse {
+  const res = NextResponse.json(body, { status })
+  if (origin && isAixmosCorsOrigin(origin)) {
+    for (const [k, v] of Object.entries(corsHeaders(origin))) res.headers.set(k, v)
+  }
+  return res
+}
+
+export async function OPTIONS(req: Request): Promise<NextResponse> {
+  const origin = req.headers.get('origin')
+  if (!isAixmosCorsOrigin(origin)) {
+    return new NextResponse(null, { status: 403 })
+  }
+  return new NextResponse(null, { status: 204, headers: corsHeaders(origin!) })
+}
 
 const SKU_PRICE_CENTS: Record<string, number> = {
   'lead-magnet': 0,
@@ -43,39 +70,42 @@ interface WebhookBody {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const origin = req.headers.get('origin')
+  const fail = (body: unknown, status: number) => json(body, status, origin)
+
   const url = new URL(req.url)
   const slug = url.searchParams.get('org') ?? ''
-  if (!slug) return NextResponse.json({ error: 'org query param required' }, { status: 400 })
+  if (!slug) return fail({ error: 'org query param required' }, 400)
 
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() || 'unknown'
   if (isRateLimited(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 })) {
-    return NextResponse.json({ error: 'too many requests' }, { status: 429 })
+    return fail({ error: 'too many requests' }, 429)
   }
   if (isRateLimited(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 })) {
-    return NextResponse.json({ error: 'too many requests' }, { status: 429 })
+    return fail({ error: 'too many requests' }, 429)
   }
 
   let org
   try { org = await resolveOrgBySlugPublic(slug) }
   catch (e) {
-    if (e instanceof OrgNotFoundError) return NextResponse.json({ error: 'org not found' }, { status: 404 })
+    if (e instanceof OrgNotFoundError) return fail({ error: 'org not found' }, 404)
     throw e
   }
 
   try { await guardOrganization(org.id) }
   catch (e) {
     if (e instanceof LicenseDisabledError) {
-      return NextResponse.json({ error: 'service temporarily unavailable' }, { status: 503 })
+      return fail({ error: 'service temporarily unavailable' }, 503)
     }
     throw e
   }
 
   let body: WebhookBody
   try { body = (await req.json()) as WebhookBody }
-  catch { return NextResponse.json({ error: 'invalid json' }, { status: 400 }) }
+  catch { return fail({ error: 'invalid json' }, 400) }
 
   const phone_e164 = normalizePhone(body.phone || '')
-  if (!phone_e164) return NextResponse.json({ error: 'invalid phone' }, { status: 400 })
+  if (!phone_e164) return fail({ error: 'invalid phone' }, 400)
 
   const sku = body.sku || 'lead-magnet'
   const sku_price_cents = SKU_PRICE_CENTS[sku] ?? 0
@@ -147,5 +177,5 @@ export async function POST(req: Request): Promise<NextResponse> {
     })
   } catch { /* fail-open — lead is already saved + audited */ }
 
-  return NextResponse.json({ ok: true, lead_id: leadId })
+  return json({ ok: true, lead_id: leadId }, 200, origin)
 }

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIXMOS Credit — $97 Credit + Funding Audit</title>
+  <meta name="description" content="Education and funding-readiness review only — not credit repair. No score change is promised or guaranteed." />
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .wrap { max-width: 480px; width: 100%; }
+    .brand { font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+    h1 { font-size: 32px; font-weight: 700; line-height: 1.1; margin: 0 0 12px; }
+    .sub { font-size: 17px; opacity: 0.85; margin: 0 0 24px; line-height: 1.4; }
+    ul { list-style: none; padding: 0; margin: 0 0 24px; }
+    li { padding: 8px 0; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 10px; font-size: 15px; }
+    li:first-child { border-top: 1px solid #222; }
+    .check { color: #7fffd4; }
+    input, button { padding: 16px; font-size: 18px; border-radius: 10px; width: 100%; box-sizing: border-box; }
+    input { border: 1px solid #333; background: #111; color: #fff; }
+    button { border: none; cursor: pointer; background: #7fffd4; color: #000; font-weight: 600; margin-top: 12px; }
+    button:disabled { background: #444; color: #ccc; cursor: default; }
+    .proof { font-size: 13px; opacity: 0.6; margin-top: 16px; text-align: center; }
+    .legal { font-size: 11px; opacity: 0.5; margin-top: 32px; line-height: 1.5; }
+    .ok { background: #7fffd4; color: #000; padding: 20px 16px; border-radius: 12px; text-align: center; font-size: 18px; font-weight: 600; }
+    .err { font-size: 14px; color: #ff7f7f; margin-top: 8px; }
+    a { color: #7fffd4; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">AIXMOS Credit</div>
+    <h1>Credit + Funding Audit — $97</h1>
+    <p class="sub">Real human eyes on your report + a 30-minute call with an AIXMOS Credit advisor.</p>
+    <ul>
+      <li><span class="check">✓</span> Personalized review of your full credit file</li>
+      <li><span class="check">✓</span> 30-minute strategy call (recorded for you)</li>
+      <li><span class="check">✓</span> Written action plan emailed within 24 hours</li>
+    </ul>
+    <form id="f">
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="[phone removed]" />
+      <button type="submit" id="go">Start my $97 audit</button>
+      <div class="err" id="err" hidden></div>
+    </form>
+    <p class="proof">Education and funding-readiness review only — not credit repair. No score change is promised or guaranteed.</p>
+    <p class="legal">
+      By submitting your phone, you consent to receive SMS messages from AIXMOS Credit. Msg &amp; data rates may apply. Reply STOP to opt out.
+      Credit decisions are made by lenders, not us. Funding amounts are estimates; actual amounts depend on lender review.
+      We provide education and funding-readiness review — we do not perform credit repair, dispute items on your behalf, or promise any credit score result. Individual outcomes differ and past client experiences do not predict yours.
+      <br /><a href="/">Back to AIXMOS</a>
+    </p>
+  </div>
+  <script>
+    const LEAD_URL = "https://tmmt-ops.vercel.app/api/leads/webhook?org=aixmos";
+    const form = document.getElementById("f");
+    const err = document.getElementById("err");
+    const go = document.getElementById("go");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById("phone").value;
+      if (phone.replace(/\D/g, "").length < 10) {
+        err.hidden = false;
+        err.textContent = "Please enter a valid phone number.";
+        return;
+      }
+      go.disabled = true;
+      go.textContent = "Sending…";
+      err.hidden = true;
+      const params = new URLSearchParams(window.location.search);
+      try {
+        const resp = await fetch(LEAD_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            phone,
+            sku: "intro-97",
+            source: "landing_page",
+            utm_source: params.get("utm_source") || "",
+            utm_medium: params.get("utm_medium") || "",
+            utm_campaign: params.get("utm_campaign") || "",
+            utm_content: params.get("utm_content") || "",
+            utm_term: params.get("utm_term") || "",
+            landing_url: window.location.href,
+            referrer_url: document.referrer || "",
+          }),
+        });
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}));
+          throw new Error(data.error || "Submit failed (" + resp.status + ").");
+        }
+        form.outerHTML = '<div class="ok">Got it. Texting you now — check your messages.</div>';
+      } catch (ex) {
+        go.disabled = false;
+        go.textContent = "Start my $97 audit";
+        err.hidden = false;
+        err.textContent = ex.message || "Network error — try again.";
+      }
+    });
+  </script>
+</body>
+</html>
