@@ -9,6 +9,7 @@ import { isOwnerHubHost, isTmmtPublicHost, aixmosCreditRedirectUrl } from "@/lib
 function isFunnelPublicPath(pathname: string) {
   return (
     pathname === "/join" ||
+    pathname === "/upgrade" ||
     pathname === "/dealers" ||
     pathname === "/credit" ||
     pathname === "/funding" ||

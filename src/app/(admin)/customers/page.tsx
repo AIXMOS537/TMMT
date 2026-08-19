@@ -73,7 +73,7 @@ export default function CustomersPage() {
 
   return (
     <div>
-      <PageHeader title="Active Customers" description={`${data.length} customers`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="active-customers" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Customer</Button></div>} />
+      <PageHeader title="Active Customers" description={`${data.length} customers`} action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="active-customers" /><a href="/upgrade" className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Offer AIXMOS</a><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />Add Customer</Button></div>} />
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search customers...">
         <select className={selectClass + " sm:w-48"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>

@@ -1,18 +1,17 @@
+import { ghlOffer } from "@/lib/ghl-offers";
+
 /**
  * High-ticket SaaS / done-for-you build catalog ($3,750–$50,000 tiers).
  *
  * Money is collected as a DEPOSIT via a GHL-hosted checkout link (Stripe under
  * the hood), with the balance invoiced after the build kicks off. The top tier
  * is consult-first ("Book a call"). Checkout URLs come from Vercel env; until
- * they're set, the CTA falls back to the consult/book-a-call link so the page
- * never shows a dead button. See docs/HIGH-TICKET-GO-LIVE.md to turn it on.
+ * they're set, the CTA falls back to the All In One Management GHL site so the
+ * page never shows a dead button. See docs/HIGH-TICKET-GO-LIVE.md to turn it on.
  */
 
 // Book-a-call / consult link — also the universal fallback for unset checkouts.
-export const consultUrl =
-  process.env.NEXT_PUBLIC_GHL_CONSULT_CALL ??
-  process.env.NEXT_PUBLIC_GHL_OPERATOR_APPLY ??
-  "";
+export const consultUrl = ghlOffer("consult");
 
 export const supportContact = [
   process.env.NEXT_PUBLIC_SUPPORT_PHONE ?? "",

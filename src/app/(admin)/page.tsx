@@ -52,6 +52,21 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">TMMT Rentals overview</p>
       </div>
 
+      <div className="rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold text-gray-900 dark:text-white">Move TMMT clients into AIXMOS</p>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Membership, credit guidance, then builds — all via GoHighLevel, tagged as existing TMMT clients.
+          </p>
+        </div>
+        <Link
+          href="/upgrade"
+          className="inline-flex items-center rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+        >
+          Open upgrade ladder
+        </Link>
+      </div>
+
       {mission && <MissionBoard data={mission} />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

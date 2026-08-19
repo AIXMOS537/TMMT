@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { tierActionUrl, highTicketTiers, type HighTicketTier } from "./high-ticket";
+import { tierActionUrl, highTicketTiers, type HighTicketTier, consultUrl } from "./high-ticket";
+import { GHL_PUBLIC_SITE } from "./ghl-offers";
 
-// consultUrl is read from env at import; it's unset under test, so reserve tiers
-// with no checkout URL fall back to the "#reserve-pending" sentinel (no dead/live
-// button) and call tiers fall back to "#book-a-call".
 const base: HighTicketTier = {
   id: "x", name: "X", tagline: "", audience: "", priceLabel: "", depositAmount: 0,
   depositLabel: "", balanceNote: "", bullets: [], outcome: "", cta: "reserve",
@@ -16,14 +14,15 @@ describe("tierActionUrl", () => {
       .toBe("https://pay.example/x");
   });
 
-  it("falls back to the reserve-pending sentinel when no checkout URL is set", () => {
-    expect(tierActionUrl({ ...base, cta: "reserve", checkoutUrl: "  " }))
-      .toBe("#reserve-pending");
+  it("falls back to GHL when no product checkout URL is set", () => {
+    const url = tierActionUrl({ ...base, cta: "reserve", checkoutUrl: "  " });
+    expect(url.startsWith("https://")).toBe(true);
+    expect(url).toContain(new URL(GHL_PUBLIC_SITE).host);
   });
 
-  it("routes call tiers to the book-a-call fallback", () => {
-    expect(tierActionUrl({ ...base, cta: "call", checkoutUrl: "" }))
-      .toBe("#book-a-call");
+  it("routes call tiers to the GHL consult offer", () => {
+    expect(tierActionUrl({ ...base, cta: "call", checkoutUrl: "" })).toBe(consultUrl);
+    expect(consultUrl).toContain("utm_campaign=strategy-call");
   });
 });
 
