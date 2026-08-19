@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { getAppRole } from "@/lib/auth-roles";
+import { ghlOffer } from "./ghl-offers";
 
 // AIXMOS Pocket — the productized, cross-platform "taste" of the AIXMOS ecosystem.
 // The $97/mo Credit Guidance membership unlocks the assistant + member tiles.
@@ -26,9 +27,12 @@ export function isActivePocketMember(user: User | null): boolean {
   return user.app_metadata?.pocket_member === true;
 }
 
-/** Checkout link for the $97/mo membership (GHL). Falls back to the Learn face. */
+/**
+ * Checkout link for the $97/mo membership (GHL).
+ * Always a live GHL URL — All In One Management site if the product checkout env is unset.
+ */
 export function pocketCheckoutUrl(): string {
-  return process.env.NEXT_PUBLIC_GHL_CHECKOUT_97 || "/learn";
+  return ghlOffer("member97", { utm_content: "pocket" });
 }
 
 export interface PocketTile {

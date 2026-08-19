@@ -6,15 +6,17 @@ import { isOperatorUser, isOwnerUser } from "@/lib/auth-roles";
 
 export const metadata = { title: "Climb · AIXMOS Pocket" };
 
+import { tmmtClientUpgradeUrl } from "@/lib/ghl-offers";
+
 // The rungs ahead — grounded in docs/OFFER-STACK.md. Member -> operator -> owner.
 const RUNGS = [
-  { label: "$97/mo member", note: "Learn the system, earn as you refer." },
-  { label: "Active earner", note: "Steady, honest referrals on collected sales." },
-  { label: "TMMT operator (invited)", note: "Your own fenced scope. Promotion is earned, not automatic." },
-  { label: "$1,875 — your first taste build", note: "Your own ecosystem starter + leads/funnels set up." },
-  { label: "$15K — car-rental vertical", note: "Front-end, design, and AIXMOS agents for rentals." },
-  { label: "$25K — credit guidance + funding + rentals", note: "The full vertical, done with you." },
-  { label: "$45–50K — full done-for-you ecosystem", note: "Managed store, backend support, your brain built." },
+  { label: "$97/mo member", note: "Learn the system, earn as you refer.", href: tmmtClientUpgradeUrl("member97", "pocket-climb") },
+  { label: "Credit + funding audit", note: "Education only — not credit repair.", href: tmmtClientUpgradeUrl("credit", "pocket-climb") },
+  { label: "TMMT operator (invited)", note: "Your own fenced scope. Promotion is earned, not automatic.", href: "/operator" },
+  { label: "$3,750 — base infrastructure", note: "GHL, site, automations. Your first taste build.", href: tmmtClientUpgradeUrl("base", "pocket-climb") },
+  { label: "$15K — car-rental vertical", note: "The TMMT playbook as your own fleet system.", href: tmmtClientUpgradeUrl("carbox", "pocket-climb") },
+  { label: "$25K — credit + funding + rentals", note: "The full vertical, booked on a call.", href: tmmtClientUpgradeUrl("ecommerce", "pocket-climb") },
+  { label: "$45–50K — full done-for-you ecosystem", note: "Managed stack. Terms in writing first.", href: tmmtClientUpgradeUrl("ecosystem", "pocket-climb") },
 ];
 
 export default async function ClimbPage() {
@@ -81,6 +83,23 @@ export default async function ClimbPage() {
                       {here && <span className="ml-2 text-xs font-normal text-blue-600 dark:text-blue-400">you are here</span>}
                     </p>
                     <p className="mt-0.5 text-sm text-gray-500 dark:text-slate-400">{r.note}</p>
+                    {r.href.startsWith("http") ? (
+                      <a
+                        href={r.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                      >
+                        Continue in GHL <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <Link
+                        href={r.href}
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                      >
+                        Open <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </Card>
