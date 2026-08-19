@@ -3,7 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import { isOwnerHubHost } from "@/lib/site-domains";
+import { isOwnerHubHost, isTmmtPublicHost, aixmosCreditRedirectUrl } from "@/lib/site-domains";
 
 /** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio, dealer demos). */
 function isFunnelPublicPath(pathname: string) {
@@ -109,6 +109,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
   const ownerHub = isOwnerHubHost(host);
+
+  // Credit + funding landings belong on AIXMOS (All In One Management), not TMMT rentals.
+  if (isTmmtPublicHost(host)) {
+    const dest = aixmosCreditRedirectUrl(pathname);
+    if (dest) {
+      return withRobotsHeader(NextResponse.redirect(dest, 301));
+    }
+  }
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
