@@ -4,6 +4,7 @@ import {
   isOwnerHubHost,
   ownerHubOrigin,
   isTmmtPublicHost,
+  shouldBounceTmmtCreditToAixmos,
   aixmosCreditPath,
   aixmosCreditRedirectUrl,
   isAixmosCorsOrigin,
@@ -71,6 +72,18 @@ describe("isTmmtPublicHost", () => {
     expect(isTmmtPublicHost("aixmos-landing.vercel.app")).toBe(false);
     expect(isTmmtPublicHost("allinonemanagementsolutions.com")).toBe(false);
     expect(isTmmtPublicHost("localhost:3000")).toBe(false);
+  });
+});
+
+describe("shouldBounceTmmtCreditToAixmos", () => {
+  it("bounces a person who typed a TMMT credit URL", () => {
+    expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "tmmt-ops.vercel.app")).toBe(true);
+    expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", null)).toBe(true);
+  });
+  it("does not bounce when AIXMOS landing rewrote the form here", () => {
+    expect(
+      shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "aixmos-landing.vercel.app"),
+    ).toBe(false);
   });
 });
 
