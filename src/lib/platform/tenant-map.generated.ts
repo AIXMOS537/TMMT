@@ -33,28 +33,6 @@ export type TenantBrand = {
 };
 
 export const TENANTS: Record<string, TenantBrand> = {
-  "acme-freight": {
-    id: "acme-freight",
-    slug: "acme-freight",
-    aliases: ["acme-freight"],
-    displayName: "Acme Freight",
-    legalName: "Acme Freight",
-    tagline: "",
-    initials: "AF",
-    licenseTier: "tenant",
-    hasCustomLogo: false,
-    theme: {
-      mode: "dark",
-      primary: "#22d3ee",
-      accent: "#0891b2",
-      background: "#0a0a0a",
-      foreground: "#ffffff",
-      logoPath: "/brands/acme-freight/logo.svg",
-      markPath: "/brands/acme-freight/mark.svg",
-      faviconPath: "/brands/acme-freight/favicon.svg",
-    },
-    domains: { marketing: "acmefreight.com" },
-  },
   "aixmos": {
     id: "aixmos",
     slug: "aixmos",
@@ -133,7 +111,6 @@ export const TENANT_ALIASES: Record<string, string> = {
 
 /** hostname (no port, lowercase) -> canonical slug */
 export const TENANT_HOSTS: Record<string, string> = {
-  "acmefreight.com": "acme-freight",
   "aixmos.com": "aixmos",
   "aixmos-landing.vercel.app": "aixmos",
   "credit.aixmos.internal": "moe_legacy",
