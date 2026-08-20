@@ -40,6 +40,7 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/forms/") ||
     pathname.startsWith("/api/agent/") ||
     isFunnelPublicPath(pathname)
   );
@@ -57,6 +58,7 @@ function isPitchPublicPath(pathname: string) {
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/forms/") ||
     pathname.startsWith("/api/agent/") ||
     isFunnelPublicPath(pathname)
   );
