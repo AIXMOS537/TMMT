@@ -3,7 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import { isOwnerHubHost, isTmmtPublicHost, aixmosCreditRedirectUrl } from "@/lib/site-domains";
+import { isOwnerHubHost, shouldBounceTmmtCreditToAixmos, aixmosCreditRedirectUrl } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG } from "@/lib/platform/tenant-resolve";
 
 /** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio, dealer demos). */
@@ -126,8 +126,9 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Credit + funding landings belong on AIXMOS (All In One Management), not TMMT rentals.
-  if (isTmmtPublicHost(host)) {
+  // Credit + funding landings belong on AIXMOS, not TMMT rentals.
+  // Skip when the AIXMOS landing rewrote here (x-forwarded-host) or we loop.
+  if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
     const dest = aixmosCreditRedirectUrl(pathname);
     if (dest) {
       return withRobotsHeader(NextResponse.redirect(dest, 301));

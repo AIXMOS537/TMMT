@@ -16,6 +16,7 @@ import {
   readdirSync,
   existsSync,
   mkdirSync,
+  rmSync,
 } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -333,9 +334,39 @@ export const TENANT_SLUGS: readonly string[] = Object.keys(TENANTS);
 `;
 }
 
+/** Empty leftover dirs (e.g. a deleted dry-run tenant) must not linger as a fake brand. Never delete a dir that still has files — that could be a client's logo sitting without JSON. */
+function pruneOrphanBrandDirs(tenantIds, report) {
+  if (!existsSync(BRANDS_DIR)) return;
+  const known = new Set(tenantIds);
+  for (const name of readdirSync(BRANDS_DIR)) {
+    if (name.startsWith(".")) continue;
+    if (known.has(name)) continue;
+    const dir = join(BRANDS_DIR, name);
+    let kids = [];
+    try {
+      kids = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    if (kids.length > 0) {
+      console.warn(
+        `brand-sync: leftover public/brands/${name} has files but no tenant JSON — not deleting (logo permanence).`,
+      );
+      continue;
+    }
+    if (CHECK_ONLY) {
+      report.stale.push(`public/brands/${name} (orphan empty dir)`);
+      continue;
+    }
+    rmSync(dir, { recursive: true });
+    report.wrote.push(`public/brands/${name}/ (orphan empty dir removed)`);
+  }
+}
+
 function main() {
   const tenants = loadTenants();
   const report = { wrote: [], stale: [] };
+  pruneOrphanBrandDirs(tenants.map((t) => t.id), report);
   for (const t of tenants) t.hasCustomLogo = syncBrandAssets(t, report);
   const platform = tenants.find((t) => t.licenseTier === "platform");
   const defaultSlug = (platform ?? tenants[0]).slug;

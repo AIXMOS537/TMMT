@@ -54,6 +54,19 @@ export function isTmmtPublicHost(host: string | null): boolean {
   return TMMT_PUBLIC_HOSTS.has(h);
 }
 
+/**
+ * Direct TMMT hits bounce credit URLs to AIXMOS. Requests proxied from the
+ * AIXMOS landing (rewrite, x-forwarded-host) must still render the form.
+ */
+export function shouldBounceTmmtCreditToAixmos(
+  host: string | null,
+  forwardedHost: string | null,
+): boolean {
+  if (!isTmmtPublicHost(host)) return false;
+  const original = (forwardedHost ?? host)?.split(",")[0]?.trim() ?? host;
+  return isTmmtPublicHost(original);
+}
+
 const AIXMOS_CORS_ORIGINS = new Set([
   "https://aixmos-landing.vercel.app",
   "https://www.aixmos-landing.vercel.app",
