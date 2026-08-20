@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
+import BrandLogo from "@/components/brand/BrandLogo";
+import { useBrand } from "@/components/brand/BrandProvider";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -112,6 +114,7 @@ const navGroups = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const brand = useBrand();
   const [open, setOpen] = useState(false);
 
   // "Less is more": open lean. Every group except Overview starts collapsed;
@@ -161,9 +164,11 @@ export default function Sidebar() {
         )}
       >
         <div className="p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-            <Car className="h-7 w-7 text-blue-600 dark:text-blue-400" />
-            <span className="text-xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+          <Link href="/" className="flex items-center gap-2 min-w-0" onClick={() => setOpen(false)}>
+            <BrandLogo brand={brand} variant="mark" size={28} />
+            <span className="text-lg font-bold text-gray-900 dark:text-white truncate">
+              {brand.displayName}
+            </span>
           </Link>
           <ThemeToggle />
         </div>

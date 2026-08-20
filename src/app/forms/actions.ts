@@ -5,6 +5,7 @@ import { createSSRClient } from "@/lib/supabase-server";
 import { fanOut } from "@/lib/notify";
 import { processUnifiedIntake } from "@/lib/intake/unified";
 import type { RequestType } from "@/lib/workflow/statuses";
+import { linkFormToPerson } from "@/lib/people/upsert";
 
 // ─── Shared helpers ──────────────────────────────
 
@@ -12,12 +13,34 @@ type FormResult =
   | { success: true; refCode?: string }
   | { success: false; error: string };
 
-async function insertRow(table: string, record: Record<string, unknown>): Promise<FormResult> {
+type PersonStamp = {
+  formSlug: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+async function insertRow(
+  table: string,
+  record: Record<string, unknown>,
+  person?: PersonStamp,
+): Promise<FormResult> {
   const supabase = await createSSRClient();
-  const { error } = await supabase.from(table).insert(record);
+  const { data, error } = await supabase.from(table).insert(record).select("id").maybeSingle();
   if (error) {
     console.error(`[${table}] insert failed:`, error.message);
     return { success: false, error: "Submission failed. Please try again." };
+  }
+  if (person) {
+    void linkFormToPerson({
+      fullName: person.name,
+      email: person.email,
+      phone: person.phone,
+      formSlug: person.formSlug,
+      destinationTable: table,
+      destinationId: typeof data?.id === "string" ? data.id : null,
+      payload: record,
+    }).catch((err) => console.warn("[people] link failed:", err));
   }
   return { success: true };
 }
@@ -70,6 +93,11 @@ export async function submitLeadIntake(formData: FormData): Promise<FormResult> 
     utm_campaign: d.utm_campaign || null,
     utm_content: d.utm_content || null,
     utm_term: d.utm_term || null,
+  }, {
+    formSlug: "lead-intake",
+    name: d.contact_name.trim(),
+    email: d.email || null,
+    phone: d.phone,
   });
 }
 
@@ -123,6 +151,11 @@ export async function submitDealerApply(formData: FormData): Promise<FormResult>
     utm_campaign: d.utm_campaign || null,
     utm_content: d.utm_content || null,
     utm_term: d.utm_term || null,
+  }, {
+    formSlug: "dealer-apply",
+    name: d.contact_name.trim(),
+    email: d.email.trim(),
+    phone: d.phone,
   });
 
   if (result.success) {
@@ -167,6 +200,15 @@ export async function submitBusinessLineIntake(formData: FormData): Promise<Form
       business_line: d.business_line,
       tags: [d.request_type, d.business_line],
     });
+    void linkFormToPerson({
+      fullName: d.customer_name.trim(),
+      email: d.customer_email || null,
+      phone: d.customer_phone,
+      formSlug: d.business_line,
+      destinationTable: "customer_intake_forms",
+      destinationId: result.intakeId,
+      payload: { refCode: result.refCode, request_type: d.request_type },
+    }).catch((err) => console.warn("[people] link failed:", err));
     return { success: true, refCode: result.refCode };
   } catch (err) {
     console.error("[business_line_intake] failed:", err);
@@ -202,6 +244,11 @@ export async function submitAppointment(formData: FormData): Promise<FormResult>
     notes: d.notes || null,
     status: "Scheduled",
     created_at: new Date().toISOString(),
+  }, {
+    formSlug: "appointment",
+    name: d.customer_name.trim(),
+    email: d.email || null,
+    phone: d.phone,
   });
 }
 
@@ -231,6 +278,11 @@ export async function submitBackgroundCheck(formData: FormData): Promise<FormRes
     insurance_check_status: "Pending",
     earnings_verification_status: "Pending",
     verification_form_submitted: true,
+  }, {
+    formSlug: "background-check",
+    name: d.customer_name.trim(),
+    email: d.email,
+    phone: d.phone_number,
   });
 }
 
@@ -266,6 +318,11 @@ export async function submitWaitlist(formData: FormData): Promise<FormResult> {
     desired_specs_notes: d.desired_specs_notes || null,
     status: "Waiting",
     date_added: new Date().toISOString().split("T")[0],
+  }, {
+    formSlug: "waitlist",
+    name: d.customer_name.trim(),
+    email: d.customer_email || null,
+    phone: d.customer_phone,
   });
 }
 
@@ -297,6 +354,10 @@ export async function submitTicket(formData: FormData): Promise<FormResult> {
     location: d.location || null,
     status: "Open",
     created_at: new Date().toISOString(),
+  }, {
+    formSlug: "ticket",
+    name: d.customer_name.trim(),
+    phone: d.phone,
   });
 }
 
@@ -321,6 +382,9 @@ export async function submitInspection(formData: FormData): Promise<FormResult> 
     exterior_clean: raw.exterior_clean === "on",
     confirmation: true,
     date_time: new Date().toISOString(),
+  }, {
+    formSlug: "inspection",
+    name: d.full_name.trim(),
   });
 }
 
@@ -363,6 +427,9 @@ export async function submitHandover(formData: FormData): Promise<FormResult> {
     handover_type: d.handover_type,
     status: "Completed",
     handover_date: new Date().toISOString().split("T")[0],
+  }, {
+    formSlug: "handover",
+    name: d.customer_name.trim(),
   });
 }
 
@@ -413,7 +480,10 @@ export async function submitOnboardingInspection(formData: FormData): Promise<Fo
     record[k] = numericFields.includes(k) ? Number(v) : v;
   }
 
-  return insertRow("vehicle_onboarding_inspections", record);
+  return insertRow("vehicle_onboarding_inspections", record, {
+    formSlug: "onboarding-inspection",
+    name: d.inspector_name.trim(),
+  });
 }
 
 // ─── 9. Credit & Funding Intake (Phase 9) ────────
@@ -577,6 +647,9 @@ export async function submitCreditFundingIntake(formData: FormData): Promise<For
     channel: d.channel || "web_form",
     operator_handoff_requested: handoffRequested,
     routing_tier: tier,
+  }, {
+    formSlug: "credit-funding-intake",
+    name: d.first_name?.trim() || null,
   });
 
   // Fan out a notification to Slack + iMessage when the user asks for human follow-up.
@@ -597,4 +670,64 @@ export async function submitCreditFundingIntake(formData: FormData): Promise<For
   }
 
   return result;
+}
+
+const PROGRAM_SKUS: Record<string, { sku: string; priceCents: number; title: string }> = {
+  apply: { sku: "lead-magnet", priceCents: 0, title: "AIXMOS CHUMMO intake" },
+  "academy-join": { sku: "intro-97", priceCents: 9700, title: "Academy $97" },
+  "operator-apply": { sku: "operator-seat", priceCents: 29700, title: "Operator seat $297" },
+  sovereign: { sku: "flagship", priceCents: 5000000, title: "Sovereign $50K" },
+};
+
+const programSchema = z.object({
+  form_slug: z.enum(["apply", "academy-join", "operator-apply", "sovereign"]),
+  contact_name: z.string().min(1).max(200),
+  phone: z.string().min(7).max(20),
+  email: z.string().email().max(254),
+  notes: z.string().max(4000).optional(),
+  lane: z.string().max(80).optional(),
+  needs: z.string().max(500).optional(),
+}).merge(attributionSchema);
+
+export async function submitProgramIntake(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = programSchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+  const spec = PROGRAM_SKUS[d.form_slug];
+  const notes = [
+    d.notes?.trim() || null,
+    d.needs ? `needs=${d.needs}` : null,
+    d.lane ? `lane=${d.lane}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return insertRow("incoming_leads", {
+    contact_name: d.contact_name.trim(),
+    phone: d.phone.replace(/\D/g, "") || null,
+    email: d.email.trim(),
+    opportunity_name: spec.title,
+    priority_level: d.form_slug === "sovereign" ? "Urgent" : "Requires Follow Up",
+    notes: [notes || null, `price=${spec.priceCents}`].filter(Boolean).join("\n") || null,
+    status: "New Lead",
+    source: d.source || d.form_slug,
+    source_campaign: d.source_campaign || null,
+    source_medium: d.source_medium || null,
+    referrer_url: d.referrer_url || null,
+    landing_url: d.landing_url || null,
+    utm_source: d.utm_source || null,
+    utm_medium: d.utm_medium || null,
+    utm_campaign: d.utm_campaign || null,
+    utm_content: d.utm_content || null,
+    utm_term: d.utm_term || null,
+    sku: spec.sku,
+    lane: d.lane || (d.form_slug === "operator-apply" ? "operator" : "aixmos"),
+  }, {
+    formSlug: d.form_slug,
+    name: d.contact_name.trim(),
+    email: d.email.trim(),
+    phone: d.phone,
+  });
 }

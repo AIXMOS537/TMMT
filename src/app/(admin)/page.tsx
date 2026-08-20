@@ -16,10 +16,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useBrand } from "@/components/brand/BrandProvider";
 
 type DashData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function DashboardPage() {
+  const brand = useBrand();
   const [data, setData] = useState<DashData | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -49,7 +51,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">TMMT Rentals overview</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{brand.displayName} overview</p>
       </div>
 
       <div className="rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-4 flex flex-wrap items-center justify-between gap-3">
