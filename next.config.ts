@@ -41,12 +41,12 @@ const nextConfig: NextConfig = {
       // Permanent (308) so browsers cache; UTM defaults can be overridden by callers passing their own.
       {
         source: "/funding",
-        destination: "/forms/credit-funding-intake?utm_source=shortlink&utm_medium=direct&utm_campaign=funding_alias",
+        destination: "https://aixmos-landing.vercel.app/forms",
         permanent: true,
       },
       {
         source: "/credit",
-        destination: "/forms/credit-funding-intake?utm_source=shortlink&utm_medium=direct&utm_campaign=credit_alias",
+        destination: "https://aixmos-landing.vercel.app/forms",
         permanent: true,
       },
     ];
