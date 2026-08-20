@@ -354,6 +354,7 @@
 
       const needs = Array.from(form.querySelectorAll('input[name="needs"]:checked')).map((c) => c.value);
       const payload = {
+        form_slug: "apply",
         name: form.name.value.trim(),
         email: form.email.value.trim(),
         phone: form.phone.value.trim(),
@@ -374,17 +375,19 @@
       const webhook = window.AIXMOS_GHL && window.AIXMOS_GHL.webhookUrl;
 
       try {
-        if (!webhook || webhook.startsWith("YOUR_GHL_")) {
-          sessionStorage.setItem("aixmos_intake", JSON.stringify(payload));
-          window.location.href = "thankyou.html";
-          return;
-        }
-        const res = await fetch(webhook, {
+        const spine = await fetch("https://tmmt-ops.vercel.app/api/forms/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error("Webhook failed");
+        if (!spine.ok) throw new Error("Supabase spine failed");
+        if (webhook && !webhook.startsWith("YOUR_GHL_")) {
+          await fetch(webhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }).catch(() => undefined);
+        }
         window.location.href = "thankyou.html";
       } catch {
         btnSubmit.disabled = false;

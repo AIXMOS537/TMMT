@@ -76,11 +76,12 @@ describe("isTmmtPublicHost", () => {
 
 describe("aixmosCreditPath", () => {
   it("moves AIXMOS Credit SKUs off TMMT", () => {
-    expect(aixmosCreditPath("/lp/moe_legacy/intro-97")).toBe("/lp/intro-97");
-    expect(aixmosCreditPath("/lp/aixmos/intro-97")).toBe("/lp/intro-97");
+    expect(aixmosCreditPath("/lp/moe_legacy/intro-97")).toBe("/forms/academy-join");
+    expect(aixmosCreditPath("/lp/aixmos/intro-97")).toBe("/forms/academy-join");
     expect(aixmosCreditPath("/lp/moe_legacy/lead-magnet")).toBe("/lp/playbook");
-    expect(aixmosCreditPath("/credit")).toBe("/lp/intro-97");
-    expect(aixmosCreditPath("/funding")).toBe("/lp/intro-97");
+    expect(aixmosCreditPath("/credit")).toBe("/forms");
+    expect(aixmosCreditPath("/funding")).toBe("/forms");
+    expect(aixmosCreditPath("/forms/credit-funding-intake")).toBe("/forms/credit-funding-intake");
   });
   it("does not steal rental SKUs", () => {
     expect(aixmosCreditPath("/lp/tmmt_property/rental-in-a-box")).toBeNull();
@@ -90,7 +91,7 @@ describe("aixmosCreditPath", () => {
   });
   it("points the redirect at the AIXMOS public origin", () => {
     expect(aixmosCreditRedirectUrl("/lp/moe_legacy/intro-97")).toBe(
-      "https://aixmos-landing.vercel.app/lp/intro-97",
+      "https://aixmos-landing.vercel.app/forms/academy-join",
     );
   });
 });

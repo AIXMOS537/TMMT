@@ -4,6 +4,7 @@ import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost, isTmmtPublicHost, aixmosCreditRedirectUrl } from "@/lib/site-domains";
+import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG } from "@/lib/platform/tenant-resolve";
 
 /** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio, dealer demos). */
 function isFunnelPublicPath(pathname: string) {
@@ -102,14 +103,28 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const withRobotsHeader = (res: NextResponse): NextResponse => {
-    res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    return res;
-  };
-
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
   const ownerHub = isOwnerHubHost(host);
+
+  // Annotate the request with the client brand. Pure config lookup — never
+  // changes auth, redirects, or tier routing below.
+  const tenant = resolveTenant({
+    host,
+    forwardedHost: request.headers.get("x-forwarded-host"),
+    pathname,
+    fallbackSlug: OPS_FALLBACK_SLUG,
+  });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(TENANT_HEADER, tenant.slug);
+  const nextWithTenant = () =>
+    NextResponse.next({ request: { headers: requestHeaders } });
+
+  const withRobotsHeader = (res: NextResponse): NextResponse => {
+    res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    res.headers.set(TENANT_HEADER, tenant.slug);
+    return res;
+  };
 
   // Credit + funding landings belong on AIXMOS (All In One Management), not TMMT rentals.
   if (isTmmtPublicHost(host)) {
@@ -133,11 +148,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPitchPublicPath(pathname)) {
-    return withRobotsHeader(NextResponse.next({ request }));
+    return withRobotsHeader(nextWithTenant());
   }
 
-  const response = NextResponse.next({ request });
+  const response = nextWithTenant();
   response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  response.headers.set(TENANT_HEADER, tenant.slug);
 
   // Auth gate. If Supabase is unreachable or misconfigured (e.g. a preview
   // deploy missing env vars), FAIL CLOSED: treat the request as signed-out so
