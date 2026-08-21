@@ -96,6 +96,12 @@ function evaluate(check, result) {
     if ([301, 302, 307, 308].includes(result.status) && /\/login/.test(result.location || "")) {
       return { ok: false, why: `AUTH-WALLED: expected ${check.expect.join("/")}, got ${result.status}${landed}` };
     }
+    if (check.path.includes("__probe_nonexistent__") && (result.status === 500 || result.status === 503)) {
+      return {
+        ok: false,
+        why: `${result.status} — SUPABASE_SERVICE_ROLE_KEY missing/wrong on Vercel; leads with a real slug are dropping. Restore the env, then this check must return 404.`,
+      };
+    }
     return { ok: false, why: `expected ${check.expect.join("/")}, got ${result.status}${landed}` };
   }
 
