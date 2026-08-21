@@ -1,7 +1,9 @@
 /**
- * GHL / Stripe checkout URLs for kit sales (USB + online).
- * Set in Vercel env — see docs/SALES-CHANNELS.md
+ * GHL checkout URLs for kit sales (USB + online).
+ * Set in Vercel env — see docs/GHL-FLAGSHIP-ENV-MAP.md
  */
+import { ghlOffer, type GhlOfferId } from "./ghl-offers";
+
 export const kitCheckout = {
   ops: process.env.NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT ?? "",
   opsUsb: process.env.NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT_USB ?? "",
@@ -17,13 +19,19 @@ export const kitCheckout = {
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "",
 } as const;
 
-const LEAD_INTAKE = "/forms/lead-intake";
+const KIT_OFFER: Record<string, GhlOfferId> = {
+  ops: "opsKit",
+  "ops-usb": "opsKit",
+  command: "commandKit",
+  "command-usb": "commandKit",
+  growth: "member97",
+  "dealer-bundle": "dealerBundle",
+};
 
-/** When GHL checkout env is unset, route to lead intake — never a dead #anchor. */
+/** When GHL product URL is unset, land on the live GHL site with campaign — never a dead #anchor. */
 export function checkoutHref(url: string, kit?: string) {
   const trimmed = url.trim();
   if (trimmed) return trimmed;
-  const params = new URLSearchParams({ utm_source: "kits-page" });
-  if (kit) params.set("utm_campaign", `kit-${kit}`);
-  return `${LEAD_INTAKE}?${params.toString()}`;
+  const offerId = kit && KIT_OFFER[kit] ? KIT_OFFER[kit] : "member97";
+  return ghlOffer(offerId, { utm_source: "kits-page", utm_content: kit ?? "unknown" });
 }

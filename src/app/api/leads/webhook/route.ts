@@ -89,6 +89,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   try { org = await resolveOrgBySlugPublic(slug) }
   catch (e) {
     if (e instanceof OrgNotFoundError) return fail({ error: 'org not found' }, 404)
+    // Missing/wrong SUPABASE_SERVICE_ROLE_KEY throws here — do NOT 404 that,
+    // or probe-prod would go green while real slugs still drop. 503 = env wall.
+    if (e instanceof Error && /SERVICE_ROLE_KEY|not configured/i.test(e.message)) {
+      return fail({ error: 'service temporarily unavailable' }, 503)
+    }
     throw e
   }
 
