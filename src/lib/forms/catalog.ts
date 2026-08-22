@@ -74,7 +74,7 @@ export const PUBLIC_FORMS: readonly PublicForm[] = [
     slug: "sovereign",
     href: "/forms/sovereign",
     title: "AIXMOS on your machine",
-    kid: "Their computer. Their memory. Desk nickname: Crimson Shadow.",
+    kid: "Their computer. Their memory. AIXMOS on their machine.",
     family: "engine",
     cost: "$50,000 once + $97 / agent / mo",
     time: "Box talks same day after model download · white-glove week",

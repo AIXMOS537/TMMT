@@ -12,6 +12,8 @@ describe("ghlOffer", () => {
     expect(ghlOffer("member97")).toMatch(/^https:\/\//);
     expect(ghlOffer("credit")).toContain("utm_campaign=credit-guidance");
     expect(ghlOffer("carbox")).toContain("utm_source=aixmos");
+    expect(ghlOffer("opsKit")).toContain("utm_campaign=ops-kit");
+    expect(ghlOffer("dealerBundle")).toContain("utm_campaign=dealer-bundle");
   });
   it("falls back to the All In One Management GHL site when env is empty", () => {
     expect(ghlOffer("member97").startsWith(GHL_PUBLIC_SITE)).toBe(true);
