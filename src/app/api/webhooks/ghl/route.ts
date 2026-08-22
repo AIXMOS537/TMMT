@@ -13,6 +13,10 @@ import {
   isFormPayload,
   isOpportunityStagePayload,
 } from "@/lib/ghl/payload";
+import { consumeGhlEventId, verifyGhlWebhook } from "@/lib/ghl/webhook-auth";
+import { dealerProvisionCommand, dealerSkuFromTags } from "@/lib/ghl/dealer-provision-queue";
+
+const INTERNAL_CONSUMED_HEADER = "x-tmmt-ghl-consumed";
 
 /**
  * GoHighLevel webhook entry point (merged).
@@ -29,23 +33,36 @@ import {
  *    payment recording, ClickUp task sync, and service_notes / lead-notes
  *    stamping. This logic is preserved verbatim below.
  *
- * Header: x-ghl-webhook-secret must match GHL_WEBHOOK_SECRET (existing GHL
- * workflows). The dispatch sub-handlers additionally honor x-ghl-secret via
- * their dedicated routes; this merged route gates on x-ghl-webhook-secret to
- * keep existing workflows working.
+ * Auth: custom header secret (existing GHL workflows) OR HMAC-SHA256 of the
+ * raw body when x-ghl-signature / x-wh-signature is present. Replay is
+ * enforced only when a timestamp is sent.
  */
 export async function POST(request: NextRequest) {
   // Fail closed: a missing secret must reject, never allow all.
-  const secret = process.env.GHL_WEBHOOK_SECRET;
-  if (!secret || request.headers.get("x-ghl-webhook-secret") !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const rawBody = await request.text();
+  const auth = verifyGhlWebhook(request, rawBody);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 400 ? "Stale webhook" : "Unauthorized" },
+      { status: auth.status }
+    );
   }
+  const secret = process.env.GHL_WEBHOOK_SECRET;
 
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("invalid");
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const idem = consumeGhlEventId(body);
+  if (!idem.ok) {
+    return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
   }
 
   // --- CRM sync events take priority: route recognized payloads to dispatch ---
@@ -93,10 +110,14 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         ...(secret ? { "x-ghl-webhook-secret": secret } : {}),
+        [INTERNAL_CONSUMED_HEADER]: idem.eventId,
       },
       body: JSON.stringify(body),
     });
     const programJson = await programRes.json();
+    if (programRes.status === 409 || programJson?.duplicate) {
+      return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
+    }
     if (programRes.ok && programJson.learnUrl) {
       return NextResponse.json({ ok: true, program: programJson });
     }
@@ -134,6 +155,17 @@ export async function POST(request: NextRequest) {
   }
   const tokenLine =
     tokenTopup?.topped_up ? { tokens: tokenTopup } : {};
+
+  const dealerSku = dealerSkuFromTags(tags);
+  const provisionLine = dealerSku
+    ? {
+        provision: {
+          sku: dealerSku,
+          email,
+          next: dealerProvisionCommand(dealerSku, email.split("@")[0] || "dealer", email),
+        },
+      }
+    : {};
 
   // Referral earnings: a COLLECTED sale that carries a referral code pays the
   // referrer a single-tier commission. Idempotent on the payment ref; a no-op
@@ -194,6 +226,7 @@ export async function POST(request: NextRequest) {
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
       ...referralLine,
+      ...provisionLine,
     });
   }
 
@@ -214,16 +247,18 @@ export async function POST(request: NextRequest) {
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
       ...referralLine,
+      ...provisionLine,
     });
   }
 
-  if (paymentResult?.recorded || clickupResult || tokenTopup?.topped_up) {
+  if (paymentResult?.recorded || clickupResult || tokenTopup?.topped_up || dealerSku) {
     return NextResponse.json({
       ok: true,
       ...(paymentResult?.recorded ? { payment: paymentResult } : {}),
       ...(clickupResult ? { clickup: clickupResult } : {}),
       ...tokenLine,
       ...referralLine,
+      ...provisionLine,
     });
   }
 

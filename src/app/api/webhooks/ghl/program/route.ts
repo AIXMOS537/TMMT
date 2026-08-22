@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createProgramApplicationFromGhl } from "@/lib/program-applications-server";
+import { consumeGhlEventId, deriveGhlEventId, verifyGhlWebhook } from "@/lib/ghl/webhook-auth";
+
+const INTERNAL_CONSUMED_HEADER = "x-tmmt-ghl-consumed";
 
 const PROGRAM_TAGS = new Set([
   "ready-for-aixmos",
@@ -18,16 +21,32 @@ const PROGRAM_TAGS = new Set([
  */
 export async function POST(request: NextRequest) {
   // Fail closed: a missing secret must reject, never allow all.
-  const secret = process.env.GHL_WEBHOOK_SECRET;
-  if (!secret || request.headers.get("x-ghl-webhook-secret") !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const rawBody = await request.text();
+  const auth = verifyGhlWebhook(request, rawBody);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 400 ? "Stale webhook" : "Unauthorized" },
+      { status: auth.status }
+    );
   }
 
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("invalid");
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const hopId = request.headers.get(INTERNAL_CONSUMED_HEADER);
+  if (hopId !== deriveGhlEventId(body)) {
+    const idem = consumeGhlEventId(body);
+    if (!idem.ok) {
+      return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
+    }
   }
 
   const email =
