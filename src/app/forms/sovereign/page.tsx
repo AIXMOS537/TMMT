@@ -5,7 +5,7 @@ export default function SovereignFormPage() {
     <ProgramIntakeForm
       formSlug="sovereign"
       title="AIXMOS on your machine"
-      kid="Their computer. Their memory. Desk nickname: Crimson Shadow."
+      kid="Their computer. Their memory. AIXMOS on their machine."
       cost="$50,000 once + $97 / agent / mo"
       time="Box talks same day after models land · white-glove week"
     />

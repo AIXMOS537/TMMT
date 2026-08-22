@@ -10,7 +10,25 @@ type RevenueTagMeta = {
 };
 
 const REVENUE_TAGS: Record<string, RevenueTagMeta> = {
-  "member-97": { amount: 97, label: "TMMT Academy ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
+  "member-97": { amount: 97, label: "AIXMOS Operator ($97/mo)", method: "Stripe", product_code: "97_rental_enrollment" },
+  "kit-ordered-ops-kit": {
+    amount: 997,
+    label: "AIXMOS Ops Kit",
+    method: "Stripe",
+    product_code: "ops_001",
+  },
+  "kit-ordered-ops": {
+    amount: 997,
+    label: "AIXMOS Ops Kit",
+    method: "Stripe",
+    product_code: "ops_001",
+  },
+  "kit-ordered-dealer-bundle": {
+    amount: 3497,
+    label: "AIXMOS Dealer Bundle",
+    method: "Stripe",
+    product_code: "dlr_bnd",
+  },
   "credit-guidance-active": {
     amount: 750,
     label: "Credit guidance program",

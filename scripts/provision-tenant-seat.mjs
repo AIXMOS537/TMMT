@@ -19,6 +19,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { join } from "path";
 import { randomBytes } from "crypto";
+import { createInterface } from "readline/promises";
 import { loadProjectEnv, root } from "./load-env.mjs";
 
 const CONFIG_PATH = join(root, "config/verticals.json");
@@ -40,6 +41,7 @@ function parseArgs() {
     dryRun: true,
     planOnly: false,
     output: null,
+    assumeYes: false,
   };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--vertical" && argv[i + 1]) out.vertical = argv[++i];
@@ -51,12 +53,17 @@ function parseArgs() {
     else if (argv[i] === "--plan-only") { out.dryRun = true; out.planOnly = true; }
     else if (argv[i] === "--apply") out.dryRun = false;
     else if (argv[i] === "--output" && argv[i + 1]) out.output = argv[++i];
+    else if (argv[i] === "--yes" || argv[i] === "--force") out.assumeYes = true;
     else if (argv[i] === "--help" || argv[i] === "-h") {
       console.log(`Usage:
   node scripts/provision-tenant-seat.mjs --vertical moe-legacy --email u@x.com --stage admin [--dry-run|--apply]
   node scripts/provision-tenant-seat.mjs --file seats.csv [--dry-run|--apply]
 
-Stages: learn | earn | admin | graduate`);
+Stages: learn | earn | admin | graduate
+
+--apply prompts for a typed confirmation of the target org/vertical before any live
+write (guards against a stale/forgotten env file writing into the wrong Supabase
+project). Pass --yes or --force to skip the prompt for scripted/CI use.`);
       process.exit(0);
     }
   }
@@ -91,6 +98,32 @@ function parseCsv(text) {
 }
 
 const genPassword = () => randomBytes(12).toString("base64url") + "Aa1!";
+
+/** Guard against a stale/forgotten env file silently writing a dealer's admin seat
+ * into the wrong (e.g. shared production) Supabase project. Prints the resolved
+ * project URL and target org/vertical(s), then requires the operator to type the
+ * dealer slug/org name to confirm — unless --yes/--force was passed for scripted/CI use.
+ * Mirrors confirm_live_write() in ~/dev/AIX_Command_Center/AIX_AI_COMMAND_SYSTEM/aix_operator.py. */
+async function confirmLiveWrite(url, rows, bySlug, assumeYes) {
+  if (assumeYes) return;
+  const targets = [...new Set(rows.map((r) => `${r.vertical} (${bySlug[r.vertical].orgName})`))];
+  const expected = [...new Set(rows.map((r) => r.vertical))].sort().join(",");
+  console.log(`\n⚠️  About to WRITE live seat data.`);
+  console.log(`Target Supabase project: ${url}`);
+  console.log(`Target org/vertical(s): ${targets.join(", ")}`);
+  console.log(`Rows (${rows.length}): ${rows.map((r) => r.email).join(", ")}`);
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  let reply;
+  try {
+    reply = (await rl.question(`Type "${expected}" to confirm, or anything else to abort: `)).trim();
+  } finally {
+    rl.close();
+  }
+  if (reply !== expected) {
+    console.error("Confirmation did not match — aborting, no records written.");
+    process.exit(1);
+  }
+}
 
 async function findUserByEmail(adminClient, email) {
   let page = 1;
@@ -188,6 +221,10 @@ const supabase = createClient(url, serviceKey, {
 
 console.log(`\n=== Provision tenant seats (${rows.length} row(s)) ===`);
 console.log(`Mode: ${args.dryRun ? "DRY-RUN (no writes)" : "APPLY (live writes)"}\n`);
+
+if (!args.dryRun) {
+  await confirmLiveWrite(url, rows, bySlug, args.assumeYes);
+}
 
 const results = [];
 
