@@ -2930,7 +2930,7 @@ gh pr create --title "Task 20: acceptance tests" --body "AT-1..AT-8 per spec."
 
 - [ ] **Step 1: Read `~/projects/ai-command-center/scripts/fasttrack-macbook.sh`** and identify any logic not already in the owner installers (Tasks 12 & 13).
 
-- [ ] **Step 2: If unique logic exists** (e.g. OpenClaw install option), add it to the appropriate owner installer in `~/projects/aixmos-kit/`. Commit on a new branch in aixmos-kit, push, PR.
+- [ ] **Step 2: If unique logic exists**, add it to the appropriate owner installer in `~/projects/aixmos-kit/`. Commit on a new branch in aixmos-kit, push, PR. Local-first: Ollama + GHL only — no third-party agent gateways.
 
 - [ ] **Step 3: In `~/projects/ai-command-center/`** delete the fasttrack script, commit `chore: remove fasttrack-macbook.sh (absorbed into AIXMOS537/aixmos-kit owner roles)`, push, PR.
 
