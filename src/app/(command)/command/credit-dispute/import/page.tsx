@@ -40,13 +40,12 @@ export default function CreditDisputeImportPage() {
           const report = MfsnReportSchema.parse(parsed);
           setPreview({ name: report.client?.fullName ?? "Unknown", count: parseMfsnReport(report).length });
         }
+      } else if (source === "disputefox") {
+        const report = parseDisputeFoxCsv(rawInput);
+        setPreview({ name: report.client.fullName, count: parseDisputeFoxReport(report).length });
       } else {
-        const report = source === "disputefox" ? parseDisputeFoxCsv(rawInput) : parseMfsnCsv(rawInput);
-        const negatives = source === "disputefox" ? parseDisputeFoxReport(report) : parseMfsnReport(report);
-        setPreview({
-          name: source === "disputefox" ? report.client.fullName : report.client?.fullName ?? "Unknown",
-          count: negatives.length,
-        });
+        const report = parseMfsnCsv(rawInput);
+        setPreview({ name: report.client?.fullName ?? "Unknown", count: parseMfsnReport(report).length });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Parse failed");
@@ -99,11 +98,18 @@ export default function CreditDisputeImportPage() {
             currentAddress: report.client?.address ?? { street: "", city: "", state: "", zip: "" },
           };
         }
-      } else {
-        const report = source === "disputefox" ? parseDisputeFoxCsv(rawInput) : parseMfsnCsv(rawInput);
-        negatives = source === "disputefox" ? parseDisputeFoxReport(report) : parseMfsnReport(report);
+      } else if (source === "disputefox") {
+        const report = parseDisputeFoxCsv(rawInput);
+        negatives = parseDisputeFoxReport(report);
         profileData = {
-          fullName: source === "disputefox" ? report.client.fullName : report.client?.fullName ?? "Unknown",
+          fullName: report.client.fullName,
+          currentAddress: { street: "", city: "", state: "", zip: "" },
+        };
+      } else {
+        const report = parseMfsnCsv(rawInput);
+        negatives = parseMfsnReport(report);
+        profileData = {
+          fullName: report.client?.fullName ?? "Unknown",
           currentAddress: { street: "", city: "", state: "", zip: "" },
         };
       }
