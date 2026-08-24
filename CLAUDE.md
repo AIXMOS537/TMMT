@@ -1,10 +1,12 @@
 # TMMT Rentals — Claude Code Context
 
+**Failover:** If Cursor/Claude die or resume mid-work, read Desktop `WORK-BATON.md` first. Local door = `WORK.bat`. Cloud resume = `CONTINUE.bat`. Push = `work-baton.ps1 -Mode Push`. Do not pull this repo's `master` blindly (diverged from origin/master). Origin is `https://github.com/AIXMOS537/TMMT.git`.
+
 ## Project
 
 TMMT Rentals is a **production-grade vehicle rental management system** built with Next.js 16 App Router, TypeScript, Tailwind CSS 4, and Supabase. It replaced an Airtable-based workflow. The goal is a fully production-ready admin platform.
 
-**Repo:** https://github.com/Metavibez4L/TMMT
+**Repo:** https://github.com/AIXMOS537/TMMT
 
 ## Engineering Philosophy
 
