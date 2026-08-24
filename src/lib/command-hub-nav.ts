@@ -14,6 +14,7 @@ import {
   Users,
   TrendingUp,
   ExternalLink,
+  Scale,
 } from "lucide-react";
 
 export type CommandHubLink = {
@@ -69,6 +70,13 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         description: "Credit & funding readiness — staff review queue",
         icon: TrendingUp,
         badge: "Cube",
+      },
+      {
+        href: "/command/credit-dispute",
+        label: "Credit dispute command",
+        description: "Dispute Fox + MyFreeScoreNow → deep audit → FCRA letters → funding",
+        icon: Scale,
+        badge: "AIXMOS",
       },
       {
         href:
