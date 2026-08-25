@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   consumeGhlEventId,
@@ -158,45 +158,88 @@ describe("verifyGhlWebhook", () => {
   });
 });
 
-describe("consumeGhlEventId", () => {
+describe("consumeGhlEventId — in-memory fallback (no supabase client passed)", () => {
   afterEach(() => {
     resetGhlEventIdsForTests();
   });
 
-  it("accepts the first event and rejects the duplicate (409)", () => {
+  it("accepts the first event and rejects the duplicate (409)", async () => {
     const body = { webhookId: "evt-idem-1", email: "dup@test.com" };
-    expect(consumeGhlEventId(body)).toEqual({ ok: true, eventId: "evt-idem-1" });
-    expect(consumeGhlEventId(body)).toEqual({
+    await expect(consumeGhlEventId(body)).resolves.toEqual({ ok: true, eventId: "evt-idem-1" });
+    await expect(consumeGhlEventId(body)).resolves.toEqual({
       ok: false,
       status: 409,
       duplicate: true,
     });
   });
 
-  it("uses eventId then id when webhookId is absent", () => {
-    expect(consumeGhlEventId({ eventId: "evt-2" })).toEqual({
+  it("uses eventId then id when webhookId is absent", async () => {
+    await expect(consumeGhlEventId({ eventId: "evt-2" })).resolves.toEqual({
       ok: true,
       eventId: "evt-2",
     });
-    expect(consumeGhlEventId({ id: "evt-3" })).toEqual({ ok: true, eventId: "evt-3" });
+    await expect(consumeGhlEventId({ id: "evt-3" })).resolves.toEqual({
+      ok: true,
+      eventId: "evt-3",
+    });
   });
 
-  it("hashes email+event+contact_id+timestamp when no explicit id", () => {
+  it("hashes email+event+contact_id+timestamp when no explicit id", async () => {
     const body = {
       email: "hash@test.com",
       event: "tag_added",
       contact_id: "c-1",
       timestamp: "1710000000000",
     };
-    const first = consumeGhlEventId(body);
+    const first = await consumeGhlEventId(body);
     expect(first.ok).toBe(true);
     if (first.ok) {
       expect(first.eventId).toMatch(/^[a-f0-9]{64}$/);
     }
-    expect(consumeGhlEventId(body)).toEqual({
+    await expect(consumeGhlEventId(body)).resolves.toEqual({
       ok: false,
       status: 409,
       duplicate: true,
     });
+  });
+});
+
+describe("consumeGhlEventId — Supabase-backed (survives cold starts / cross-instance)", () => {
+  function fakeSupabase(insertImpl: (row: { event_id: string }) => { error: { code?: string; message: string } | null }) {
+    return {
+      from: () => ({
+        insert: async (row: { event_id: string }) => insertImpl(row),
+      }),
+    } as unknown as Parameters<typeof consumeGhlEventId>[1];
+  }
+
+  it("accepts on a clean insert", async () => {
+    const supabase = fakeSupabase(() => ({ error: null }));
+    await expect(consumeGhlEventId({ id: "evt-db-1" }, supabase)).resolves.toEqual({
+      ok: true,
+      eventId: "evt-db-1",
+    });
+  });
+
+  it("treats a unique_violation (23505) as a duplicate", async () => {
+    const supabase = fakeSupabase(() => ({ error: { code: "23505", message: "duplicate key" } }));
+    await expect(consumeGhlEventId({ id: "evt-db-2" }, supabase)).resolves.toEqual({
+      ok: false,
+      status: 409,
+      duplicate: true,
+    });
+  });
+
+  it("falls back to in-memory (not a hard failure) when the table doesn't exist yet", async () => {
+    const supabase = fakeSupabase(() => ({
+      error: { code: "42P01", message: 'relation "ghl_webhook_events" does not exist' },
+    }));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(consumeGhlEventId({ id: "evt-db-3" }, supabase)).resolves.toEqual({
+      ok: true,
+      eventId: "evt-db-3",
+    });
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

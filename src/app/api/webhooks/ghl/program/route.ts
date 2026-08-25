@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { createProgramApplicationFromGhl } from "@/lib/program-applications-server";
 import { consumeGhlEventId, deriveGhlEventId, verifyGhlWebhook } from "@/lib/ghl/webhook-auth";
 
@@ -43,7 +44,11 @@ export async function POST(request: NextRequest) {
 
   const hopId = request.headers.get(INTERNAL_CONSUMED_HEADER);
   if (hopId !== deriveGhlEventId(body)) {
-    const idem = consumeGhlEventId(body);
+    const idemSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const idemServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const idemSupabase =
+      idemSupabaseUrl && idemServiceKey ? createClient(idemSupabaseUrl, idemServiceKey) : undefined;
+    const idem = await consumeGhlEventId(body, idemSupabase);
     if (!idem.ok) {
       return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
     }

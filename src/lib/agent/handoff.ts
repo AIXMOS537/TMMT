@@ -1,4 +1,5 @@
 import type { OrgContext } from './tenant'
+import { redactPii } from './redact-pii'
 
 /**
  * Hostname allowlist for Slack incoming webhooks. If the per-tenant
@@ -78,7 +79,7 @@ async function sendImessageHandoff(target: string, text: string): Promise<void> 
 export async function handoffToHuman(args: HandoffArgs): Promise<void> {
   const summary = args.recentMessages
     .slice(-10)
-    .map((m) => `${m.direction === 'in' ? '👤 Lead' : '🤖 Agent'}: ${m.body}`)
+    .map((m) => `${m.direction === 'in' ? '👤 Lead' : '🤖 Agent'}: ${redactPii(m.body)}`)
     .join('\n')
 
   const text = `🆘 Hot lead handoff — ${args.org.name}\nReason: ${args.reason}\nLead phone: ${redactPhone(args.phone)}\nLead id: ${args.leadId}\n\n${summary}`
