@@ -24,12 +24,12 @@ export async function handleGhlWebhookPost(
     return NextResponse.json({ error: "invalid json body" }, { status: 400 });
   }
 
-  const idem = consumeGhlEventId(json);
+  const supabase = createServiceRoleClient();
+  const idem = await consumeGhlEventId(json, supabase);
   if (!idem.ok) {
     return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
   }
 
-  const supabase = createServiceRoleClient();
   const result = await dispatchGhlWebhook(supabase, json, force);
   return NextResponse.json(result.body, { status: result.status });
 }
