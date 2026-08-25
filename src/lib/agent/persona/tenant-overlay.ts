@@ -1,6 +1,7 @@
 import { BASE_PROMPT } from './base-prompt'
 import { VOICE_CHANNEL_ADDENDUM } from './bella-voice'
 import type { OrgContext } from '../tenant'
+import { redactPii } from '../redact-pii'
 
 export type AgentChannel = 'sms' | 'voice'
 
@@ -24,7 +25,7 @@ export function buildSystemPrompt(org: OrgContext, ctx: ConversationContext): st
     ? `If the lead says any of: ${overlay.hot_lead_keywords.join(', ')} — escalate to human immediately.`
     : ''
   const turns = ctx.lastTurns.slice(-10)
-    .map((t) => `${t.direction === 'in' ? 'Lead' : 'You'}: ${t.body}`)
+    .map((t) => `${t.direction === 'in' ? 'Lead' : 'You'}: ${redactPii(t.body)}`)
     .join('\n')
 
   const channelBlock = ctx.channel === 'voice' ? VOICE_CHANNEL_ADDENDUM : ''
