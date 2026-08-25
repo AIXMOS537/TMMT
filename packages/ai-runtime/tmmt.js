@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const readline = require('readline');
-const { readDeviceRole } = require('./lib/device');
+const { readDeviceRole, validateDeviceConfig } = require('./lib/device');
 const { loadAgents, filterAgents, findAgent } = require('./lib/agents');
 const { renderMenu, parseSelection } = require('./lib/menu');
 const { runAgent } = require('./lib/run');
@@ -42,6 +42,13 @@ async function main() {
   const deviceConfig = readDeviceRole(RUNTIME_DIR);
   if (!deviceConfig) {
     console.error('No DEVICE_ROLE.md found. Run:  node setup.js   (or: tmmt setup)');
+    process.exit(1);
+  }
+  try {
+    validateDeviceConfig(deviceConfig);
+  } catch (err) {
+    console.error(err.message);
+    console.error('Fix DEVICE_ROLE.md, or re-run:  node setup.js   (or: tmmt setup)');
     process.exit(1);
   }
 

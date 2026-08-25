@@ -38,3 +38,29 @@ test('findAgent locates by id and returns undefined otherwise', () => {
   assert.strictEqual(findAgent(agents, 'tank').id, 'tank');
   assert.strictEqual(findAgent(agents, 'nope'), undefined);
 });
+
+function writeManifest(agents) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tmmt-agents-'));
+  fs.writeFileSync(path.join(dir, 'tmmt.agents.json'), JSON.stringify({ agents }));
+  return dir;
+}
+
+test('loadAgents rejects an entry with a script that would not survive npm run', () => {
+  const dir = writeManifest([{ id: 'x', label: 'X', script: 'rm -rf /' }]);
+  assert.throws(() => loadAgents(dir), /"script" must match/);
+});
+
+test('loadAgents rejects an entry missing a label', () => {
+  const dir = writeManifest([{ id: 'x', script: 'x' }]);
+  assert.throws(() => loadAgents(dir), /missing string "label"/);
+});
+
+test('loadAgents rejects requiresDocker that is not a boolean', () => {
+  const dir = writeManifest([{ id: 'x', label: 'X', script: 'x', requiresDocker: 'yes' }]);
+  assert.throws(() => loadAgents(dir), /"requiresDocker" must be a boolean/);
+});
+
+test('loadAgents accepts a script with allowed colon/dash/underscore characters', () => {
+  const dir = writeManifest([{ id: 'x', label: 'X', script: 'tank:up_v2' }]);
+  assert.strictEqual(loadAgents(dir)[0].script, 'tank:up_v2');
+});

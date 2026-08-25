@@ -58,6 +58,26 @@ function formatDeviceRole(config) {
   return lines.join('\n');
 }
 
+const KNOWN_ROLES = ['home', 'work', 'carry'];
+
+function validateDeviceConfig(config) {
+  if (!config || typeof config !== 'object') {
+    throw new Error('DEVICE_ROLE.md produced no config');
+  }
+  for (const field of ['role', 'aixmosPath', 'ollamaHost', 'ollamaModel']) {
+    if (!config[field] || typeof config[field] !== 'string') {
+      throw new Error(`DEVICE_ROLE.md is missing required field "${field}"`);
+    }
+  }
+  if (!KNOWN_ROLES.includes(config.role)) {
+    throw new Error(`DEVICE_ROLE.md has unknown role "${config.role}" (expected one of: ${KNOWN_ROLES.join(', ')})`);
+  }
+  if (!/^https?:\/\//.test(config.ollamaHost)) {
+    throw new Error(`DEVICE_ROLE.md ollamaHost "${config.ollamaHost}" must be a full http(s) URL`);
+  }
+  return config;
+}
+
 function deviceRolePath(runtimeDir) {
   return path.join(runtimeDir, 'DEVICE_ROLE.md');
 }
@@ -76,6 +96,7 @@ module.exports = {
   detectRole,
   parseDeviceRole,
   formatDeviceRole,
+  validateDeviceConfig,
   deviceRolePath,
   readDeviceRole,
   writeDeviceRole,

@@ -5,6 +5,7 @@
   "description": "Unified launcher for the AIXMOS agents across the TMMT machine fleet",
   "bin": { "tmmt": "tmmt.js" },
   "scripts": {
-    "test": "node --test"
+    "check": "node --check tmmt.js && node --check setup.js",
+    "test": "npm run check && node --test"
   }
 }

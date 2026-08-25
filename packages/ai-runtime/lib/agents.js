@@ -25,7 +25,29 @@ function loadAgents(aixmosPath) {
     throw new Error(`Agent manifest must contain an "agents" array: ${file}`);
   }
 
+  data.agents.forEach((agent, i) => validateAgentEntry(agent, i, file));
+
   return data.agents;
+}
+
+const SCRIPT_PATTERN = /^[A-Za-z0-9:_-]+$/;
+
+function validateAgentEntry(agent, index, file) {
+  const where = `${file} (agents[${index}])`;
+  if (!agent || typeof agent.id !== 'string' || !agent.id) {
+    throw new Error(`Invalid agent manifest entry, missing string "id": ${where}`);
+  }
+  if (typeof agent.label !== 'string' || !agent.label) {
+    throw new Error(`Invalid agent manifest entry "${agent.id}", missing string "label": ${where}`);
+  }
+  if (typeof agent.script !== 'string' || !SCRIPT_PATTERN.test(agent.script)) {
+    throw new Error(
+      `Invalid agent manifest entry "${agent.id}": "script" must match ${SCRIPT_PATTERN} (this is fed to \`npm run <script>\`): ${where}`
+    );
+  }
+  if ('requiresDocker' in agent && typeof agent.requiresDocker !== 'boolean') {
+    throw new Error(`Invalid agent manifest entry "${agent.id}", "requiresDocker" must be a boolean: ${where}`);
+  }
 }
 
 function filterAgents(agents, deviceConfig) {

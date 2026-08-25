@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { detectRole, parseDeviceRole, formatDeviceRole } = require('../lib/device');
+const { detectRole, parseDeviceRole, formatDeviceRole, validateDeviceConfig } = require('../lib/device');
 
 test('detectRole maps known host nicknames, null otherwise', () => {
   assert.strictEqual(detectRole('Brainiac-7'), 'home');
@@ -46,4 +46,32 @@ test('formatDeviceRole round-trips through parseDeviceRole', () => {
   assert.strictEqual(parsed.role, 'carry');
   assert.strictEqual(parsed.dockerAvailable, false);
   assert.strictEqual(parsed.aixmosPath, '/Users/x/AIXMOS-AGENTS');
+});
+
+const VALID_CONFIG = {
+  role: 'home', aixmosPath: '/x/AIXMOS-AGENTS',
+  ollamaHost: 'http://localhost:11434', ollamaModel: 'llama3.2:3b',
+};
+
+test('validateDeviceConfig accepts a complete, well-formed config', () => {
+  assert.deepStrictEqual(validateDeviceConfig(VALID_CONFIG), VALID_CONFIG);
+});
+
+test('validateDeviceConfig throws when a required field is missing', () => {
+  const { role, ...rest } = VALID_CONFIG;
+  assert.throws(() => validateDeviceConfig(rest), /missing required field "role"/);
+});
+
+test('validateDeviceConfig throws on an unknown role', () => {
+  assert.throws(
+    () => validateDeviceConfig({ ...VALID_CONFIG, role: 'laptop' }),
+    /unknown role "laptop"/
+  );
+});
+
+test('validateDeviceConfig throws when ollamaHost is not a URL', () => {
+  assert.throws(
+    () => validateDeviceConfig({ ...VALID_CONFIG, ollamaHost: 'localhost:11434' }),
+    /must be a full http\(s\) URL/
+  );
 });
