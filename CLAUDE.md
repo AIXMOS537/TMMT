@@ -1,6 +1,6 @@
 # TMMT Rentals — Claude Code Context
 
-**Failover:** If Cursor/Claude die or resume mid-work, read Desktop `WORK-BATON.md` first. Local door = `WORK.bat`. Cloud resume = `CONTINUE.bat`. Push = `work-baton.ps1 -Mode Push`. Do not pull this repo's `master` blindly (diverged from origin/master). Origin is `https://github.com/AIXMOS537/TMMT.git`.
+**Failover:** Always read Desktop `WORK-BATON.md` + `WORK-NEXT.md` and continue **Next** — do not wait for Taha to say carry. Local door = `WORK.bat`. Cloud resume = `CONTINUE.bat` / `work-baton.ps1 -Mode Carry`. Claude usage out = Cursor (paid) keeps going. Claude back = same Next. Push = `work-baton.ps1 -Mode Push`. Do not pull this repo's `master` blindly (diverged from origin/master). Origin is `https://github.com/AIXMOS537/TMMT.git`.
 
 ## Project
 
