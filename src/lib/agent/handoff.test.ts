@@ -126,6 +126,21 @@ describe('handoffToHuman — iMessage Bearer auth', () => {
   })
 })
 
+describe('handoffToHuman — PII boundary', () => {
+  it('redacts an SSN appearing in the conversation before it reaches Slack', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchSpy)
+    await handoffToHuman({
+      ...baseArgs,
+      recentMessages: [{ direction: 'in', body: 'my ssn is 123-45-6789' }],
+      org: { ...baseOrg, handoffSlackWebhook: 'https://hooks.slack.com/services/T/B/x' },
+    })
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body) as { text: string }
+    expect(body.text).toContain('[redacted-ssn]')
+    expect(body.text).not.toContain('123-45-6789')
+  })
+})
+
 describe('handoffToHuman — fan-out resilience', () => {
   it('does not throw when Slack fetch rejects (resilient handoff)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('net down')))

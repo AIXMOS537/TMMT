@@ -1,12 +1,21 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const GHL_REPLAY_WINDOW_MS = 300_000;
 const IDEMPOTENCY_MAX = 2_000;
 const SIG_HEADERS = ["x-ghl-signature", "x-wh-signature"] as const;
 
-/** In-memory FIFO of recent event ids (Vercel-friendly; last ~2000). */
+/**
+ * In-memory FIFO of recent event ids. This is the fallback path only -- it
+ * does not survive a Vercel cold start and is not shared across instances,
+ * so it cannot dedupe a retry that lands on a different instance. It stays
+ * as a safety net for when the ghl_webhook_events table (migration
+ * 20260825120000) hasn't been applied yet, so shipping this code ahead of
+ * running that migration is not a regression from today's behavior.
+ */
 const seenEventIds = new Map<string, true>();
+let warnedNoDbTable = false;
 
 export type GhlWebhookAuthOk = { ok: true };
 export type GhlWebhookAuthFail = { ok: false; status: 401 | 400 };
@@ -165,14 +174,7 @@ export function deriveGhlEventId(body: Record<string, unknown>): string {
     .digest("hex");
 }
 
-/**
- * First sight of an event id → ok. Duplicate → 409 / duplicate.
- * Id is webhookId || eventId || id || sha256(email+event+contact_id+timestamp).
- */
-export function consumeGhlEventId(
-  body: Record<string, unknown>
-): GhlEventConsumeOk | GhlEventConsumeDup {
-  const eventId = deriveGhlEventId(body);
+function consumeGhlEventIdInMemory(eventId: string): GhlEventConsumeOk | GhlEventConsumeDup {
   if (seenEventIds.has(eventId)) {
     return { ok: false, status: 409, duplicate: true };
   }
@@ -182,6 +184,52 @@ export function consumeGhlEventId(
     if (oldest !== undefined) seenEventIds.delete(oldest);
   }
   return { ok: true, eventId };
+}
+
+/**
+ * First sight of an event id → ok. Duplicate → 409 / duplicate.
+ * Id is webhookId || eventId || id || sha256(email+event+contact_id+timestamp).
+ *
+ * Backed by the ghl_webhook_events table (see migration 20260825120000) so
+ * dedup survives cold starts and is shared across instances -- the in-memory
+ * Map alone can't do either on Vercel. Falls back to the old in-memory-only
+ * check if the table doesn't exist yet (migration not applied) or the DB is
+ * unreachable, so this never makes webhook delivery worse than it is today.
+ */
+export async function consumeGhlEventId(
+  body: Record<string, unknown>,
+  supabase?: SupabaseClient
+): Promise<GhlEventConsumeOk | GhlEventConsumeDup> {
+  const eventId = deriveGhlEventId(body);
+
+  if (!supabase) {
+    return consumeGhlEventIdInMemory(eventId);
+  }
+
+  const { error } = await supabase
+    .from("ghl_webhook_events")
+    .insert({ event_id: eventId });
+
+  if (!error) {
+    return { ok: true, eventId };
+  }
+
+  // Postgres unique_violation on the event_id primary key = genuine duplicate.
+  if (error.code === "23505") {
+    return { ok: false, status: 409, duplicate: true };
+  }
+
+  // Any other error (table doesn't exist yet, network blip, etc.) -- fall
+  // back rather than fail the webhook. Warn once per instance so this isn't
+  // silent, but don't spam logs on every request.
+  if (!warnedNoDbTable) {
+    warnedNoDbTable = true;
+    console.warn(
+      "[ghl.webhook-auth] ghl_webhook_events insert failed, falling back to in-memory idempotency:",
+      error.message
+    );
+  }
+  return consumeGhlEventIdInMemory(eventId);
 }
 
 /** Test-only: drop the in-memory idempotency window. */

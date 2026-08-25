@@ -60,7 +60,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const idem = consumeGhlEventId(body);
+  const idemSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const idemServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const idemSupabase =
+    idemSupabaseUrl && idemServiceKey ? createClient(idemSupabaseUrl, idemServiceKey) : undefined;
+  const idem = await consumeGhlEventId(body, idemSupabase);
   if (!idem.ok) {
     return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
   }
