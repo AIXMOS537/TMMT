@@ -11,8 +11,9 @@ node_modules/
 health-check.txt
 setup-complete.txt
 ClosedLoop/SCOREBOARD.md
-ClosedLoop/*.log
+ClosedLoop/logs/
 *.log
+*.jsonl
 
 # Never. The ops scripts read credentials from the environment; nothing here
 # should ever hold one.
