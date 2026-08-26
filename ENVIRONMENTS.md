@@ -124,7 +124,7 @@ sources drifted apart.
 | project | serving | deploys from | source branch today |
 |---|---|---|---|
 | `tmmt-ops` | **200** | `m1/aixmos-credit-host` @ `2bf09b1e` | exists |
-| `tmmt-command-center` | **200** | `cursor/tmmt-management-initial-setup` @ `0cfcadd`, **`gitDirty=1`** | **DELETED** |
+| `tmmt-command-center` | **200** | `cursor/tmmt-management-initial-setup` @ `0cfcadd`, **`gitDirty=1`** | **DELETED** — project **RETIRED**, see below |
 | `tmmt-training-site` | 503 | `swarm-coord` (bot loop, 20 straight `BLOCKED`) | **DELETED** |
 | `aixmos-landing` | 503 | — | — |
 | `aixmos-offer` | 503 | — | — |
@@ -161,3 +161,39 @@ but deployments pinned to code that no longer exists.
    `master` too if a second hostname is genuinely wanted.
 4. Decide whether `aixmos-landing` and `aixmos-offer` are still wanted before
    spending effort on them.
+
+## `tmmt-command-center` is RETIRED (decided 2026-08-26)
+
+`tmmt-ops` is the single app. Do not deploy to `tmmt-command-center`, and do not
+recreate it. The owner-vs-operator distinction is a **role inside `tmmt-ops`**,
+not a second deployment — both hostnames served a byte-identical sign-in page.
+
+### Its history was orphaned — and is now tagged
+
+The commit it deployed, `0cfcadd`, has **no common ancestor with `master`**. It is
+the tip of a **separate ~100-commit lineage** running from 2026-03-25 to
+2026-05-18 ("Add Supabase Auth implementation plan" through "Add 24/7 office dev
+server LaunchAgent"), including a portfolio command center with venture-scoped
+routes, an ops command assistant, GHL auto-ops, and a client rental hub.
+
+**No branch pointed at it.** It survived only because Vercel pinned a deployment
+to that SHA, which meant it was one garbage-collection away from being gone.
+
+It is now preserved as an immutable tag:
+
+    archive/command-center-2026-05-18  ->  0cfcadd
+
+Recover any of that work with `git log archive/command-center-2026-05-18`, or
+cherry-pick from it. **Never delete that tag.** Because the build was also made
+from a dirty tree (`gitDirty=1`), the tag is the closest reproducible record —
+it is not byte-identical to what was served.
+
+### Teardown steps (owner — needs the Vercel dashboard)
+
+The MCP toolset exposes no pause or delete for projects, so this is manual:
+
+1. Confirm nothing you care about points at `tmmt-command-center.vercel.app`.
+2. Vercel → project `tmmt-command-center` → Settings → **Pause** (reversible)
+   rather than Delete, until `tmmt-ops` has served canon for a while.
+3. Only then Delete, if you want the name freed.
+4. Leave the archive tag alone regardless.
