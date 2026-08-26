@@ -1,0 +1,18 @@
+{
+  "source_channel": "telegram | slack | ghl | whatsapp | imessage | email | manual",
+  "sender_id": "string",
+  "sender_name": "string",
+  "business": "tmmt_rentals | ecommerce | credit_education | unknown",
+  "command_text": "string",
+  "detected_intent": "create_task | create_lead | follow_up | send_message_draft | move_pipeline | create_content | save_note | money_entry | unknown",
+  "title": "string",
+  "description": "string",
+  "priority": "low | medium | high | urgent",
+  "due_at": "ISO-8601 datetime or null",
+  "assignee": "string",
+  "approval_required": true,
+  "target_systems": ["clickup", "gohighlevel", "supabase", "airtable", "slack"],
+  "status": "received | planned | needs_approval | executed | failed",
+  "response_text": "string"
+}
+
