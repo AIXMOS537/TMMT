@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getBackgroundChecks } from "@/lib/queries";
+import { getBackgroundChecks, isPlatformAdmin } from "@/lib/queries";
+import StaffReviewQueue from "./StaffReviewQueue";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
@@ -24,8 +25,21 @@ export default function BackgroundChecksPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // background_checks is admin-only in the database. Staff get the review queue
+  // instead, which reads masked data through the bg_check_queue RPC.
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
   const load = () => { setLoading(true); setError(null); getBackgroundChecks().then((d) => { setData(d as BgCheck[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
-  useEffect(load, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    isPlatformAdmin().then((admin) => {
+      if (cancelled) return;
+      setIsAdmin(admin);
+      if (admin) load();
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = useMemo(() => {
     return data.filter((r) => {
@@ -65,6 +79,16 @@ export default function BackgroundChecksPage() {
     if (!result.success) { setSaving(false); setError(result.error); return; }
     setSaving(false); setModalOpen(false); setEditing(null); load();
   };
+
+  if (isAdmin === null) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) return <StaffReviewQueue />;
 
   return (
     <div>
