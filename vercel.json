@@ -1,9 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "bash scripts/vercel-ignore.sh",
-  "git": {
-    "deploymentEnabled": false
-  },
+  "git": { "deploymentEnabled": { "master": true } },
   "rewrites": [
     { "source": "/learn", "destination": "/learn/onboarding" },
     { "source": "/work", "destination": "/work/program" }
