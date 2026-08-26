@@ -29,7 +29,7 @@
 Open `.env` and add this line (replace the token with your actual PAT):
 
 ```
-AIRTABLE_PAT=pat8mah6kKOJVxLMX.f4d3384f36fca9d768f2cf3a75e3aae9f9a68b6c0042ce6327eb2cd5e9a059b1
+AIRTABLE_PAT=<YOUR_AIRTABLE_PAT>  # never commit a real token
 ```
 
 > **Security note:** Rotate this token at airtable.com/account after the sync — it was shared in plain text. Generate a new PAT and update `.env`.
