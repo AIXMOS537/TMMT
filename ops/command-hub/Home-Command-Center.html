@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0a0f1a" />
+  <title>Home Command Center — Muhammad Taha</title>
+
+  <script src="os/kernel.js"></script>
+  <script src="os/theme.js"></script>
+  <link rel="stylesheet" href="brand/console.css" />
+
+  <!-- Page-specific LAYOUT and the three zone hues. Colours, tiles, motion and
+       the effect budget all live in brand/console.css. Do not paste a second
+       copy of the token block in here. -->
+  <style>
+    .hero {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 0.7rem;
+      max-width: var(--shell);
+      margin: 0 auto 1.4rem;
+    }
+    .hero a {
+      display: flex; flex-direction: column; justify-content: center; gap: 0.35rem;
+      padding: 1.15rem 1.1rem;
+      border-radius: 16px;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--border);
+      min-height: 110px;
+    }
+    .hero h3 { font-size: 1.05rem; font-weight: 700; }
+    .hero p { font-size: 0.76rem; color: var(--muted); }
+    .hero .talk { background: linear-gradient(145deg, rgba(167,139,250,0.28), rgba(59,130,246,0.14)); border-color: rgba(167,139,250,0.5); }
+    .hero .brief { background: linear-gradient(145deg, rgba(52,211,153,0.18), rgba(52,211,153,0.05)); border-color: rgba(52,211,153,0.4); }
+    .hero .ops { background: linear-gradient(145deg, rgba(59,130,246,0.2), rgba(59,130,246,0.05)); border-color: rgba(59,130,246,0.4); }
+
+    .badge.home { color: #a78bfa; border-color: rgba(167,139,250,0.35); }
+
+    .prompts {
+      max-width: var(--shell);
+      margin: -0.6rem auto 1.4rem;
+      display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center;
+    }
+    .prompt {
+      font-size: 0.74rem; color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+    }
+
+    /* The three zones are colour-coded so the eye finds the right one fast. */
+    .zone-fam h2 { color: var(--green); }
+    .zone-friends h2 { color: #f472b6; }
+    .zone-work h2 { color: #4f8cff; }
+    section h2 .zone-note { color: var(--muted); font-weight: 400; }
+
+    .tile.ghl { border-color: rgba(255, 194, 75, 0.25); }
+
+    html[data-effects~="motion"] .hero a {
+      transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.14s var(--ease);
+    }
+    html[data-effects~="motion"] .hero a:hover { transform: translateY(-2px); }
+    html[data-effects~="shadow"] .hero a:hover { box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); }
+
+    @media (max-width: 620px) { .hero { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="greeting">Home Command Center</h1>
+    <p class="sub">Muhammad Taha · Family · Friends · Work — all in one place</p>
+    <div class="meta">
+      <span class="badge home">🏠 Home daily driver</span>
+      <span class="badge live">● TMMT live</span>
+      <span class="badge mono" id="clock">—</span>
+    </div>
+    <div class="os-statebar">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="os-state">idle</span>
+      <span aria-hidden="true">·</span>
+      <span id="os-machine">detecting hardware</span>
+      <button id="os-graphics" type="button" title="Cycle graphics: auto → lite → standard → full">graphics</button>
+    </div>
+    <div id="voice-status" class="os-status idle" role="status" aria-live="polite">Press Ctrl+K for the command palette</div>
+  </header>
+
+  <!-- HERO: talk to your bot + briefings -->
+  <div class="hero">
+    <a class="talk" href="http://localhost:8770" data-say="bot, crimson, shadow, talk, good morning">
+      <h3>Talk to your bot</h3>
+      <p>Opens Crimson Shadow (local, offline). Say “good morning” and get today across family, friends &amp; work.</p>
+    </a>
+    <a class="brief" href="https://tmmt-ops.vercel.app/internal/briefing" target="_blank" rel="noopener" data-say="briefing, brief, work day">
+      <h3>Briefing</h3>
+      <p>Work day at a glance</p>
+    </a>
+    <a class="ops" href="https://tmmt-ops.vercel.app/internal/dashboard" target="_blank" rel="noopener" data-say="ops, command, dashboard">
+      <h3>TMMT Ops</h3>
+      <p>Full command</p>
+    </a>
+  </div>
+
+  <div class="prompts">
+    <span class="prompt">“What's on for the family today?”</span>
+    <span class="prompt">“Who's working this weekend?”</span>
+    <span class="prompt">“Remind me to call ___”</span>
+    <span class="prompt">“Add my employee ___ to the systems”</span>
+    <span class="prompt">“Any birthdays coming up?”</span>
+  </div>
+
+  <!-- FAMILY -->
+  <section class="zone-fam">
+    <h2>👨‍👩‍👧 Family</h2>
+    <div class="grid">
+      <a class="tile" href="https://calendar.google.com/calendar/u/0/r/day" target="_blank" rel="noopener" data-say="family calendar, calendar, today"><span class="icon" aria-hidden="true">📅</span>Family calendar<span class="small">today</span></a>
+      <a class="tile" href="https://photos.google.com" target="_blank" rel="noopener" data-say="photos, pictures"><span class="icon" aria-hidden="true">🖼️</span>Photos</a>
+      <a class="tile" href="https://messages.google.com/web" target="_blank" rel="noopener" data-say="messages, texts"><span class="icon" aria-hidden="true">💬</span>Messages</a>
+      <a class="tile" href="https://maps.google.com" target="_blank" rel="noopener" data-say="maps, directions"><span class="icon" aria-hidden="true">🗺️</span>Maps</a>
+      <div class="empty"><strong>Your family lives here once you introduce them.</strong> Tell the bot: <em>“My wife is ___, kids ___ with school/activities ___”</em> — then this zone shows today's family schedule, pickups &amp; reminders.</div>
+    </div>
+  </section>
+
+  <!-- FRIENDS & PERSONAL -->
+  <section class="zone-friends">
+    <h2>🤝 Friends &amp; Personal</h2>
+    <div class="grid">
+      <a class="tile" href="https://web.whatsapp.com" target="_blank" rel="noopener" data-say="whatsapp, chat"><span class="icon" aria-hidden="true">🟢</span>WhatsApp</a>
+      <a class="tile" href="https://mail.google.com" target="_blank" rel="noopener" data-say="mail, email, gmail"><span class="icon" aria-hidden="true">✉️</span>Personal mail</a>
+      <a class="tile" href="https://open.spotify.com" target="_blank" rel="noopener" data-say="spotify, music"><span class="icon" aria-hidden="true">🎵</span>Spotify</a>
+      <a class="tile" href="https://www.youtube.com" target="_blank" rel="noopener" data-say="youtube, video"><span class="icon" aria-hidden="true">▶️</span>YouTube</a>
+      <a class="tile" href="https://www.google.com/search?q=weather" target="_blank" rel="noopener" data-say="weather, forecast"><span class="icon" aria-hidden="true">🌤️</span>Weather</a>
+      <div class="empty"><strong>Keep up with friends &amp; the personal stuff.</strong> Tell the bot about friends, birthdays, and things you want to stay on top of — it'll remind you to reach out and flag dates here.</div>
+    </div>
+  </section>
+
+  <!-- WORK -->
+  <section class="zone-work">
+    <h2>💼 Work — TMMT</h2>
+    <div class="grid">
+      <a class="tile" href="http://localhost:3000" target="_blank" rel="noopener" data-say="rentals, local app, tmmt rentals"><span class="icon" aria-hidden="true">🚗</span>TMMT Rentals<span class="small">local app · ops dev</span></a>
+      <a class="tile" href="http://localhost:8770" target="_blank" rel="noopener" data-say="crimson, shadow, local ai"><span class="icon" aria-hidden="true">🧠</span>Crimson Shadow<span class="small">local AI</span></a>
+      <a class="tile" href="https://tmmt-ops.vercel.app/internal/dispatch" target="_blank" rel="noopener" data-say="dispatch, jobs"><span class="icon" aria-hidden="true">🚀</span>Dispatch</a>
+      <a class="tile" href="https://tmmt-ops.vercel.app/internal/cases" target="_blank" rel="noopener" data-say="cases, files"><span class="icon" aria-hidden="true">📁</span>Cases</a>
+      <a class="tile" href="https://tmmt-ops.vercel.app/internal/agency" target="_blank" rel="noopener"><span class="icon" aria-hidden="true">🏢</span>Agency</a>
+      <a class="tile" href="https://tmmt-ops.vercel.app/internal/operators" target="_blank" rel="noopener" data-say="operators, crew, staff"><span class="icon" aria-hidden="true">👥</span>Operators</a>
+      <a class="tile" href="https://tmmt-ops.vercel.app/internal/billing" target="_blank" rel="noopener" data-say="billing, invoice, money"><span class="icon" aria-hidden="true">💳</span>Billing</a>
+      <a class="tile ghl" href="https://app.gohighlevel.com/v2/location/Xcd8DZt5T4GWnBtBEC5V/launchpad" target="_blank" rel="noopener" data-say="ghl, high level, pipeline"><span class="icon" aria-hidden="true">🏠</span>GHL Rentals</a>
+      <a class="tile ghl" href="https://app.gohighlevel.com/v2/location/Xcd8DZt5T4GWnBtBEC5V/conversations/conversations" target="_blank" rel="noopener" data-say="conversations, inbox"><span class="icon" aria-hidden="true">💬</span>Conversations</a>
+      <a class="tile" href="https://app.slack.com/client" target="_blank" rel="noopener" data-say="slack"><span class="icon" aria-hidden="true">💼</span>Slack</a>
+    </div>
+  </section>
+
+  <!-- PEOPLE & SYSTEMS -->
+  <section>
+    <h2>👤 People &amp; systems <span class="zone-note">— where the bot plugs people in</span></h2>
+    <div class="grid">
+      <a class="tile" href="https://supabase.com/dashboard/project/uapxakmlwnpfsftfeezx/editor" target="_blank" rel="noopener" data-say="users, supabase, database"><span class="icon" aria-hidden="true">🗄</span>TMMT users<span class="small">profiles / access</span></a>
+      <a class="tile" href="https://app.slack.com/client" target="_blank" rel="noopener"><span class="icon" aria-hidden="true">#️⃣</span>Slack team</a>
+      <a class="tile" href="https://app.clickup.com" target="_blank" rel="noopener" data-say="clickup, tasks"><span class="icon" aria-hidden="true">✅</span>ClickUp</a>
+      <a class="tile" href="https://my.openphone.com" target="_blank" rel="noopener" data-say="phone, openphone, calls"><span class="icon" aria-hidden="true">📞</span>OpenPhone</a>
+      <a class="tile ghl" href="https://app.gohighlevel.com/v2/location/Xcd8DZt5T4GWnBtBEC5V/contacts/smart_list/All" target="_blank" rel="noopener" data-say="contacts, customers"><span class="icon" aria-hidden="true">📒</span>GHL contacts</a>
+    </div>
+  </section>
+
+  <footer>
+    Home Command Center · Family · Friends · Work — one screen, from home<br />
+    Ctrl+K for the command palette · Talk to your bot to fill the Family &amp; Friends zones · TMMT runs live at tmmt-ops.vercel.app
+  </footer>
+
+  <script src="os/command-engine.js"></script>
+  <script>
+    (function () {
+      var h = new Date().getHours();
+      var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('greeting').textContent = greet + ', Muhammad';
+      var el = document.getElementById('clock');
+      function tick() {
+        el.textContent = new Date().toLocaleString(undefined, {
+          weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        });
+      }
+      tick();
+      setInterval(tick, 30000);
+    })();
+
+    (function () {
+      /* This is the owner's home screen, so it wears the owner accent. */
+      if (window.AIXOS && window.AIXOS.theme) { window.AIXOS.theme.apply('owner'); }
+      if (!window.AIXOS || !window.AIXOS.os) { return; }
+      var os = window.AIXOS.os;
+
+      /* Hero cards are targets too — the palette should reach everything. */
+      os.indexTiles('a.tile, .hero a');
+      os.configure({
+        allowAssistant: false,
+        statusEl: document.getElementById('voice-status'),
+        stateEl: document.getElementById('os-state')
+      });
+
+      var machine = document.getElementById('os-machine');
+      var gfxBtn = document.getElementById('os-graphics');
+      if (window.AIXOS.kernel) {
+        window.AIXOS.kernel.on(function () { machine.textContent = window.AIXOS.kernel.describe(); });
+        gfxBtn.addEventListener('click', function () {
+          window.AIXOS.kernel.cycle();
+          machine.textContent = window.AIXOS.kernel.describe();
+        });
+      } else {
+        machine.textContent = 'kernel not loaded';
+        gfxBtn.style.display = 'none';
+      }
+    })();
+  </script>
+</body>
+</html>
