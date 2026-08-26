@@ -6,7 +6,9 @@
  * CSV columns (header required):
  *   email,role[,affiliate_code[,name]]
  *
- * Roles (app_metadata.role): operator | partner | admin | va | executive | vendor | investor
+ * Roles (app_metadata.role): operator | partner | va | executive | vendor | investor | customer
+ * NOTE: admin / internal_team are intentionally NOT allowed here (RLS bypass risk) —
+ * create staff accounts by hand in Supabase Auth, never via this bulk CSV script.
  *
  * Usage:
  *   node scripts/provision-operators.mjs --file operators.csv --dry-run
@@ -23,14 +25,17 @@ import { basename, join } from "path";
 import { randomBytes } from "crypto";
 import { loadProjectEnv } from "./load-env.mjs";
 
+// ROLE TIERS ARE LAW: this script provisions the $97 operator ladder (students,
+// operators, dealers) plus arm's-length partners/vendors/investors. It must never
+// be able to mint "admin" or "internal_team" — those bypass RLS via is_staff() and
+// have leaked into student hands before. Provision real staff by hand in Supabase
+// Auth (Add user) per OPERATOR-ONBOARDING-RUNBOOK.md, never through this bulk CSV path.
 const ALLOWED_ROLES = new Set([
   "operator",
   "partner",
-  "admin",
   "va",
   "executive",
   "executive_va",
-  "internal_team",
   "vendor",
   "investor",
   "customer",
