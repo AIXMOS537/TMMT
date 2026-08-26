@@ -317,7 +317,7 @@ export async function submitWaitlist(formData: FormData): Promise<FormResult> {
     desired_weekly_payment: d.desired_weekly_payment ? Number(d.desired_weekly_payment) : null,
     desired_specs_notes: d.desired_specs_notes || null,
     status: "Waiting",
-    date_added: new Date().toISOString().split("T")[0],
+    date_added_to_waitlist: new Date().toISOString().split("T")[0],
   }, {
     formSlug: "waitlist",
     name: d.customer_name.trim(),

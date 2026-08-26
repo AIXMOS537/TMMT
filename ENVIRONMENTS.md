@@ -54,6 +54,39 @@ together afterwards.
   log events. `unpause_project` returns 403. Only `tmmt-ops` still serves, frozen
   on `2bf09b1e`. Likely Hobby-plan commercial-use enforcement — the team plan is
   `hobby` and this is a commercial product. Owner must check the dashboard.
+
+  **Correction, verified 2026-08-26.** That reading was too broad, and the
+  Hobby-enforcement theory is unsupported. `tmmt-ops-aixmos537.vercel.app`
+  answers **302** — alive — and so does the READY deployment `tmmt-pvfkndc1a`.
+  Only `tmmt-command-center.vercel.app` returns **503**, and that is the project
+  being retired. The serving project serves.
+
+- **THE PUBLIC CANNOT REACH PRODUCTION.** `tmmt-ops` has Vercel SSO Deployment
+  Protection switched on:
+
+  ```
+  ssoProtection: { enabled: true, deploymentType: "all_except_custom_domains" }
+  ```
+
+  Every route — including `/forms/waitlist`, `/forms/lead-intake` and
+  `/legal/privacy` — answers `302 → vercel.com/sso-api`. A customer meets a
+  Vercel login wall, not the app. **No lead can be submitted.**
+
+  This is why `fix(forms): keep public intake API off the login wall` and
+  `fix(forms): serve AIXMOS-proxied credit forms without a bounce loop` did not
+  settle it: Vercel intercepts *before* any app code runs, so no middleware or
+  route change can open that door.
+
+  The setting exempts custom domains. `tmmt-ops` has none attached — only
+  `tmmt-ops-aixmos537.vercel.app` — and neither `tmmtrentals.net` nor
+  `tmmtrentals.com` resolves at all. There is currently no public door.
+
+  Two ways out, owner's call: attach the real custom domain (it bypasses SSO
+  under the current setting), or switch SSO off. Attaching the domain is the
+  better answer if the intent in `.env.example` still holds — *staff-only .net
+  on Vercel, .com marketing on GHL* — because it opens the real URL while
+  leaving preview URLs protected.
+
 - **No Vercel CLI credentials on BRAINIAC-7.** `vercel whoami` → logged out. No
   token in env or config. Blocks any CLI-driven preview deploy.
 - **`master` is not wired to Vercel.** Merging to `master` triggers no build.
