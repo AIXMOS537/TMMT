@@ -17,6 +17,53 @@ Create these tags before automations:
 | `credit-consult-booked` | Consult scheduled |
 | `credit-guidance-active` | Paid credit guidance program |
 | `funding-prep` | Ready for funding partner handoff |
+| `aixmos-prequal` | **Second door.** Declined on their own profile before ever renting — see *Phase 0* |
+| `market-waitlist` | Declined on geography only. **Not a credit lead** — hold for market expansion |
+| `tmmt-requalified` | Finished AIXMOS work and is eligible again — hand back to TMMT |
+
+## Phase 0 — the second door (declined applicants)
+
+Everything below Phase 1 assumes the person **completed a rental happily**.
+`ready-for-aixmos` is explicitly gated on `rental-completed`, which means a
+person who was never approved for a car can never enter the funnel — even
+though they are exactly who AIXMOS was built for.
+
+`aixmos-prequal` is that second entrance. It runs off
+`background_checks.eligibility_status`, decided in code by
+`decidePrequalRoute()` in `src/lib/aixmos-prequal.ts`.
+
+**Not every decline is a credit problem.** Live counts across 299 checks:
+
+| eligibility_status | people | routes to | tag |
+|---|---:|---|---|
+| `Eligible` | 81 | nothing — Phase 1 owns them | — |
+| `Need Manager's Review` | 69 | wait for the human | — |
+| *(null)* | 67 | nothing | — |
+| `out of radius` | 49 | market expansion, **not credit** | `market-waitlist` |
+| `Not Eligible` | 24 | AIXMOS prequal | `aixmos-prequal` |
+| `Not found` | 9 | re-run the check | — |
+
+Selling credit guidance to the 49 people whose only problem is distance would
+be wrong and would read as spam. They get held, not pitched.
+
+**Trigger:** Tag `aixmos-prequal` added
+**Actions:**
+
+1. SMS — acknowledge the decline plainly, offer the path. No score promises.
+2. On reply, book the credit consult → `credit-consult-booked`
+3. Paid program → `credit-guidance-active` — rejoins the main pipeline at stage 9
+4. When `funding_ready` or `elite` → add `tmmt-requalified` and route **back**
+   to TMMT as a fresh rental applicant
+
+**Consent gate.** The database function that moves a person between the two
+companies — `request_handoff(...)` — takes a `p_consent_channel` argument, and
+`handoffArgs()` returns `null` without it. Capture consent on the decline SMS
+before any cross-company handoff. This is not optional plumbing; it is why the
+argument exists.
+
+**Do not** let `aixmos-prequal` and `ready-for-aixmos` share a workflow. They
+describe opposite situations — one has never rented, the other rented and
+loved it — and the copy for each is different.
 
 ## Pipeline stages (recommended)
 
