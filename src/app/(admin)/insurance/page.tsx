@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getInsurance } from "@/lib/queries";
+import { getInsurance, isPlatformAdmin } from "@/lib/queries";
+import AdminOnlyNotice from "@/components/AdminOnlyNotice";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
@@ -23,8 +24,20 @@ export default function InsurancePage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // insurance is admin-only in the database; staff get an explanation, not a blank table.
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
   const load = () => { setLoading(true); setError(null); getInsurance().then((d) => { setData(d as Ins[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
-  useEffect(load, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    isPlatformAdmin().then((admin) => {
+      if (cancelled) return;
+      setIsAdmin(admin);
+      if (admin) load();
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = useMemo(() => data.filter((r) => {
     const matchSearch = !search || [r.insured_vehicle, r.insured_customer, r.insurance_company_name, r.policy_number].filter(Boolean).some((v) => String(v).toLowerCase().includes(search.toLowerCase()));
@@ -63,6 +76,18 @@ export default function InsurancePage() {
     if (!result.success) { setSaving(false); setError(result.error); return; }
     setSaving(false); setModalOpen(false); setEditing(null); load();
   };
+
+  if (isAdmin === null) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <AdminOnlyNotice title="Insurance" what="Viewing insurance policies" />;
+  }
 
   return (
     <div>
