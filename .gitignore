@@ -122,3 +122,10 @@ secrets/
 # Nested Next.js build outputs (monorepo subprojects)
 apps/engine/.next/
 apps/engine/node_modules/
+
+# audit harness - every artifact of a run stays local. The report names live
+# hostnames, table structure and specific failures, so it is generated on
+# demand (npm run audit) rather than committed.
+/audit/
+/test-results/
+/playwright-report/
