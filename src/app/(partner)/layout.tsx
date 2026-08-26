@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PartnerPortalChrome from "./PartnerPortalChrome";
+import BrandScope from "@/components/brand/BrandScope";
 
 export const metadata: Metadata = {
   title: "Partner portal · TMMT Rentals",
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 export default function PartnerLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <PartnerPortalChrome>{children}</PartnerPortalChrome>;
+  return (
+    <BrandScope>
+      <PartnerPortalChrome>{children}</PartnerPortalChrome>
+    </BrandScope>
+  );
 }

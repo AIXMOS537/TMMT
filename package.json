@@ -7,6 +7,9 @@
   "name": "tmmt-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
@@ -16,6 +19,9 @@
     "test:watch": "vitest",
     "verify": "bash scripts/verify.sh",
     "ship": "bash scripts/ship.sh",
+    "brand:sync": "node scripts/brand-sync.mjs",
+    "brand:check": "node scripts/brand-sync.mjs --check",
+    "tenant:new": "node scripts/new-tenant.mjs",
     "check-env": "node scripts/check-env.mjs",
     "check-env:revenue": "node scripts/check-env.mjs --revenue",
     "ghl:check": "node scripts/ghl-activation-check.mjs",
