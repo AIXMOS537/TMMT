@@ -258,6 +258,10 @@ function Cmd-GoLive {
     & (Join-Path $PSScriptRoot 'golive.ps1') @Rest
 }
 
+function Cmd-Sync {
+    & (Join-Path $PSScriptRoot 'sync.ps1') @Rest
+}
+
 function Cmd-Dev {
     Hd 'DEV SERVER'
     Warn 'Auth is OFF under next dev - see docs\AUDIT.md. Judge auth on a build.'
@@ -401,6 +405,7 @@ function Cmd-Help {
         'ops audit'                = 'browser-crawl the TMMT app and write findings'
         'ops snapshot'             = 'pack app+build state for the next agent'
         'ops golive'               = 'is the public door open and the admin still gated?'
+        'ops sync'                 = 'mirror the tablet onto every attached flashdrive'
         'ops help'                 = 'this list'
     }
     foreach ($k in $rows.Keys) {
@@ -431,6 +436,7 @@ switch -Regex ($Command.ToLower()) {
     '^audit$'               { Cmd-Audit }
     '^snapshot$'            { Cmd-Snapshot }
     '^go-?live$'            { Cmd-GoLive }
+    '^sync$'                { Cmd-Sync }
     '^(help|-h|--help|\?)$' { Cmd-Help }
     default { Bad "Unknown command: $Command"; Cmd-Help }
 }
