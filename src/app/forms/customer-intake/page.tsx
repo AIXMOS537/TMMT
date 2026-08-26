@@ -12,6 +12,7 @@ import {
 } from "@/components/ui";
 import { INTAKE_REQUEST_TYPES } from "@/lib/workflow";
 import { ClipboardList, CheckCircle } from "lucide-react";
+import BrandName from "@/components/brand/BrandName";
 
 const priorityOptions = ["Urgent", "Moderate", "Standard"];
 
@@ -67,7 +68,7 @@ export default function CustomerIntakePage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <ClipboardList className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT</span>
+            <BrandName className="text-2xl font-bold text-gray-900 dark:text-white" />
           </div>
           <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">
             Customer intake

@@ -5,6 +5,7 @@ import { submitLeadIntake } from "@/app/forms/actions";
 import { trackEvent } from "@/lib/analytics";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle } from "lucide-react";
+import BrandName from "@/components/brand/BrandName";
 
 const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
 
@@ -91,7 +92,7 @@ export default function LeadIntakeForm() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+            <BrandName className="text-2xl font-bold text-gray-900 dark:text-white" />
           </div>
           <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Vehicle Rental Inquiry</h1>
           <p className="text-gray-500 text-sm mt-1">Fill out the form below and we&apos;ll get back to you</p>

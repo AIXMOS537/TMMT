@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/forms/:path*", "destination": "https://tmmt-ops.vercel.app/forms/:path*" },
+    { "source": "/api/forms/:path*", "destination": "https://tmmt-ops.vercel.app/api/forms/:path*" }
+  ]
+}

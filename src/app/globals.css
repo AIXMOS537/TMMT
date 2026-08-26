@@ -14,6 +14,19 @@
   --border: #e2e8f0;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
+  /* Ops fallback (TMMT) so `var(--brand-*)` never renders empty outside BrandProvider. */
+  --brand-primary: #a78bfa;
+  --brand-primary-ink: #ffffff;
+  --brand-primary-soft: #1a1428;
+  --brand-accent: #7c3aed;
+  --brand-accent-ink: #ffffff;
+  --brand-bg: #0a0a0a;
+  --brand-fg: #ffffff;
+  --brand-surface: #191919;
+  --brand-surface-2: #282828;
+  --brand-border: #383838;
+  --brand-muted-fg: #a6a6a6;
+  --brand-ring: #a78bfa;
 }
 
 .dark {

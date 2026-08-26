@@ -14,8 +14,9 @@
     "accent": "#6366f1",
     "background": "#0a0a0a",
     "foreground": "#ffffff",
-    "logoPath": "/brands/your-slug/logo.svg",
-    "faviconPath": "/brands/your-slug/favicon.ico"
+    "logoPath": "/brands/your-tenant-id/logo.svg",
+    "markPath": "/brands/your-tenant-id/mark.svg",
+    "faviconPath": "/brands/your-tenant-id/favicon.svg"
   },
   "domains": {
     "marketing": "yourbrand.com",
