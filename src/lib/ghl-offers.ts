@@ -51,7 +51,10 @@ export type GhlOfferId =
   | "ecosystem"
   | "operator"
   | "consult"
-  | "aixmode";
+  | "aixmode"
+  | "opsKit"
+  | "commandKit"
+  | "dealerBundle";
 
 type OfferDef = {
   campaign: string;
@@ -89,6 +92,18 @@ function defs(): Record<GhlOfferId, OfferDef> {
     aixmode: {
       campaign: "aixmode",
       env: process.env.NEXT_PUBLIC_GHL_CONSULT_CALL,
+    },
+    opsKit: {
+      campaign: "ops-kit",
+      env: process.env.NEXT_PUBLIC_GHL_CHECKOUT_OPS_KIT,
+    },
+    commandKit: {
+      campaign: "command-kit",
+      env: process.env.NEXT_PUBLIC_GHL_CHECKOUT_COMMAND_KIT,
+    },
+    dealerBundle: {
+      campaign: "dealer-bundle",
+      env: process.env.NEXT_PUBLIC_GHL_CHECKOUT_DEALER_BUNDLE,
     },
   };
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { submitInspection } from "@/app/forms/actions";
 import { Card, FormField, inputClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, Camera } from "lucide-react";
+import BrandName from "@/components/brand/BrandName";
 
 export default function CustomerInspectionForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -40,7 +41,7 @@ export default function CustomerInspectionForm() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+            <BrandName className="text-2xl font-bold text-gray-900 dark:text-white" />
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
             <Camera className="h-5 w-5 text-blue-600 dark:text-blue-400" />

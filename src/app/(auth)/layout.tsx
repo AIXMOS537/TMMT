@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import BrandScope from "@/components/brand/BrandScope";
 
 export const metadata: Metadata = {
   title: "Sign in · Partner portal & operations",
-  description:
-    "TMMT Rentals — sign in for the operations dashboard or the partner portal.",
+  description: "Sign in for the operations dashboard or the partner portal.",
 };
 
 export default function AuthLayout({
@@ -12,8 +12,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      {children}
-    </div>
+    <BrandScope>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        {children}
+      </div>
+    </BrandScope>
   );
 }

@@ -31,9 +31,12 @@ if [ ! -d node_modules ]; then
   pass "dependencies installed"
 fi
 
-step "1/3 · Lint";  npm run lint  || fail "lint failed (errors must be fixed before shipping)"; pass "lint clean"
-step "2/3 · Tests"; npm test      || fail "unit tests failed"; pass "tests pass"
-step "3/3 · Build (production + typecheck)"
+step "1/4 · Brands"
+npm run brand:check || fail "tenant brand map is stale — run 'npm run brand:sync' and commit the result"
+pass "tenant brand map in sync"
+step "2/4 · Lint";  npm run lint  || fail "lint failed (errors must be fixed before shipping)"; pass "lint clean"
+step "3/4 · Tests"; npm test      || fail "unit tests failed"; pass "tests pass"
+step "4/4 · Build (production + typecheck)"
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=12288}"
 npm run build || fail "production build failed"; pass "build succeeded"
 

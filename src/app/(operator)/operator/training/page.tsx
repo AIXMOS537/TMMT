@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSSRClient } from "@/lib/supabase-server";
 import { Card, PageHeader, StatCard } from "@/components/ui";
+import { ACADEMY_MODULES } from "@/lib/operator/academy-modules";
 import {
   GraduationCap,
   Trophy,
@@ -55,7 +56,19 @@ export default async function OperatorTrainingPage() {
         .maybeSingle(),
     ]);
 
-  const mods = (modules ?? []) as ModuleRow[];
+  const mods = (
+    modules && modules.length > 0
+      ? modules
+      : ACADEMY_MODULES.map((m) => ({
+          id: m.id,
+          track: m.track,
+          slug: m.slug,
+          title: m.title,
+          objective: m.objective,
+          est_minutes: m.est_minutes,
+          sort_order: m.sort_order,
+        }))
+  ) as ModuleRow[];
   const prog = (progress ?? []) as ProgressRow[];
   const o = (me ?? null) as Op360 | null;
 
