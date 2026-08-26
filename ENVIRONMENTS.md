@@ -114,3 +114,50 @@ on `main` and is likewise far behind; its unpushed work is preserved on
 
 Rebasing any of these onto `master` is a project, not a chore. Decide
 per-branch whether the work is still wanted before spending the effort.
+
+## Vercel project inventory (audited 2026-08-26)
+
+Five projects on team `aixmos537` (plan: `hobby`). **None is git-linked** — every
+deploy has been pushed from a local checkout via `cursor-cli`, which is how the
+sources drifted apart.
+
+| project | serving | deploys from | source branch today |
+|---|---|---|---|
+| `tmmt-ops` | **200** | `m1/aixmos-credit-host` @ `2bf09b1e` | exists |
+| `tmmt-command-center` | **200** | `cursor/tmmt-management-initial-setup` @ `0cfcadd`, **`gitDirty=1`** | **DELETED** |
+| `tmmt-training-site` | 503 | `swarm-coord` (bot loop, 20 straight `BLOCKED`) | **DELETED** |
+| `aixmos-landing` | 503 | — | — |
+| `aixmos-offer` | 503 | — | — |
+
+### `tmmt-ops` and `tmmt-command-center` are the same app
+
+Both redirect to `/login`, both serve `<title>Sign in · Partner portal &
+operations</title>` and `<h1>Sign in to TMMT Rentals</h1>`. They are not an
+"ops engine" and a separate "owner cockpit" — they are **one codebase deployed
+twice from two different stale branches**. The owner-vs-operator split is a role
+inside the app, not a second deployment.
+
+**Consolidate to `tmmt-ops`.** It is the only one of the two whose source branch
+still exists, so it is the only one that can be rebuilt from source.
+
+### Two deployments are unreproducible
+
+`tmmt-command-center` and `tmmt-training-site` both deploy from branches that
+have since been **deleted from the repo**, and command-center's was additionally
+built from a dirty working tree (`gitDirty=1`). No commit in the repository
+reproduces what is currently running on either. They cannot be rebuilt as-is —
+only replaced from `master`.
+
+This is the concrete meaning of "the apps are out of sync": not version drift,
+but deployments pinned to code that no longer exists.
+
+### Rebuild order, once Vercel deploys are possible again
+
+1. Point `tmmt-ops` at `master` and deploy (see *Repointing checklist* above).
+2. Rebuild `tmmt-training-site` from `master` — the training surfaces already
+   live there at `src/app/(operator)/operator/training/**` and `src/app/try`.
+   Do **not** try to resurrect `swarm-coord`.
+3. Retire `tmmt-command-center` once `tmmt-ops` serves canon, or repoint it at
+   `master` too if a second hostname is genuinely wanted.
+4. Decide whether `aixmos-landing` and `aixmos-offer` are still wanted before
+   spending effort on them.
