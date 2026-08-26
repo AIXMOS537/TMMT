@@ -1,4 +1,4 @@
-# CANON — one product, one repo, one live app
+# CANON - one product, one repo, one live app
 
 Updated: 2026-08-25
 
@@ -25,12 +25,12 @@ Do not pull `TMMT-LIVE` master blindly.
 | Diverged TMMT history | `C:\dev\TMMT` + GitHub backup branch | 80 unique commits; merging would rewrite live |
 | AIX Command Center | https://github.com/AIXMOS537/AIX-Command-Center | Bootstrap workspace, not the product |
 | moe-legacy-coaching | https://github.com/AIXMOS537/moe-legacy-coaching | Unrelated public repo |
-| Extra Vercel projects | command-center, aixmos-landing, aixmos-offer, tmmt-training-site | Not canon. Pause (reversible) so only tmmt-ops serves. Do not delete. |
+| Extra Vercel projects | command-center, aixmos-landing, aixmos-offer, tmmt-training-site | Paused 2026-08-25 (reversible). Do not delete. |
 
 ## Commands (talk to this PC)
 
 - `open dispatch` / `dispatch queue` / `dispatch at <address>`
 - `run the business` / `catch me up` / `keep working`
-- Telegram: `dispatch` / `needs` / `status`
+- Telegram: `run the business` / `dispatch` / `needs` / `status`
 
 Money / send / sign / prod-deploy stay gated.
