@@ -6,9 +6,15 @@ When a contact is tagged in GHL, mirror activity into TMMT Supabase for owner vi
 
 ```
 POST https://<your-domain>/api/webhooks/ghl
+POST https://<your-domain>/api/webhooks/ghl/form
 Header: x-ghl-webhook-secret: <GHL_WEBHOOK_SECRET>
+        (x-ghl-secret is also accepted — same value)
 Content-Type: application/json
 ```
+
+Form workflows must hit `/api/webhooks/ghl/form` (or send `event` containing `form` / `form_id` to the merged `/ghl` route) so rows land in `ghl_form_submissions`.
+
+Dealer purchase tags `kit-ordered-ops-kit` / `kit-ordered-dealer-bundle` return a `provision` object with the dry-run command. See `docs/GHL-FLAGSHIP-ENV-MAP.md`.
 
 ## Payload (example)
 
@@ -75,5 +81,8 @@ Set `GHL_TEST_BASE_URL` (default `http://localhost:3000`) and `GHL_TEST_EMAIL` f
 
 ## Security
 
-- Always set `GHL_WEBHOOK_SECRET` in production  
-- Never expose service role key to GHL or the browser  
+- Always set `GHL_WEBHOOK_SECRET` in production. Fail-closed: missing env rejects every request.
+- GHL **workflow** webhooks keep working via `x-ghl-webhook-secret` / `x-ghl-secret` (header secret still required).
+- HMAC-SHA256 of the raw body is **optional** and only enforced when `x-ghl-signature` or `x-wh-signature` is present (marketplace/app webhooks).
+- Replay window (5 minutes) applies only when `x-ghl-timestamp` or JSON `timestamp` / `ts` is sent. Workflows that omit a timestamp are not rejected.
+- Never expose the service role key to GHL or the browser.

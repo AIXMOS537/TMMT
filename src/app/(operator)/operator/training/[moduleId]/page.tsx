@@ -5,6 +5,7 @@ import { createSSRClient } from "@/lib/supabase-server";
 import { Card, PageHeader } from "@/components/ui";
 import { ArrowLeft, Target, Dumbbell, ClipboardCheck } from "lucide-react";
 import { CompleteButton } from "./complete-button";
+import { academyModuleById } from "@/lib/operator/academy-modules";
 
 export const dynamic = "force-dynamic";
 
@@ -102,8 +103,9 @@ export default async function OperatorModulePage({
     .eq("active", true)
     .maybeSingle();
 
-  if (!mod) notFound();
-  const m = mod as ModuleRow;
+  const fallback = academyModuleById(moduleId);
+  if (!mod && !fallback) notFound();
+  const m = (mod ?? fallback) as ModuleRow;
 
   const { data: prog } = await supabase
     .from("operator_training_progress")

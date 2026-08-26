@@ -12,6 +12,9 @@
 
   window.AIXMOS_GHL = {
     checkout97: offer("member-97"),
+    checkoutOpsKit: offer("ops-kit"),
+    checkoutCommandKit: offer("command-kit"),
+    checkoutDealerBundle: offer("dealer-bundle"),
     checkoutLLC: offer("llc-397"),
     checkout3750: offer("build-3750"),
     checkout7500: offer("build-7500"),

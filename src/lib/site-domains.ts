@@ -54,6 +54,19 @@ export function isTmmtPublicHost(host: string | null): boolean {
   return TMMT_PUBLIC_HOSTS.has(h);
 }
 
+/**
+ * Direct TMMT hits bounce credit URLs to AIXMOS. Requests proxied from the
+ * AIXMOS landing (rewrite, x-forwarded-host) must still render the form.
+ */
+export function shouldBounceTmmtCreditToAixmos(
+  host: string | null,
+  forwardedHost: string | null,
+): boolean {
+  if (!isTmmtPublicHost(host)) return false;
+  const original = (forwardedHost ?? host)?.split(",")[0]?.trim() ?? host;
+  return isTmmtPublicHost(original);
+}
+
 const AIXMOS_CORS_ORIGINS = new Set([
   "https://aixmos-landing.vercel.app",
   "https://www.aixmos-landing.vercel.app",
@@ -75,11 +88,18 @@ export function isAixmosCorsOrigin(origin: string | null): boolean {
  * Rental SKUs (training, rental-in-a-box, flagship) stay on TMMT.
  */
 export function aixmosCreditPath(pathname: string): string | null {
-  if (pathname === "/credit" || pathname === "/funding") return "/lp/intro-97";
+  if (pathname === "/credit" || pathname === "/funding") return "/forms";
+  if (pathname.startsWith("/forms/credit-funding-intake")) return "/forms/credit-funding-intake";
+  if (pathname.startsWith("/forms/academy-join")) return "/forms/academy-join";
+  if (pathname.startsWith("/forms/operator-apply")) return "/forms/operator-apply";
+  if (pathname.startsWith("/forms/sovereign")) return "/forms/sovereign";
+  if (pathname.startsWith("/forms/apply")) return "/forms/apply";
+  if (pathname.startsWith("/forms/dealer-apply")) return "/forms/dealer-apply";
+  if (pathname.startsWith("/forms/affiliates")) return "/forms/affiliates";
   const m = /^\/lp\/(moe_legacy|moe-legacy|aixmos)\/([^/]+)\/?$/.exec(pathname);
   if (!m) return null;
   const sku = m[2];
-  if (sku === "intro-97") return "/lp/intro-97";
+  if (sku === "intro-97") return "/forms/academy-join";
   if (sku === "lead-magnet") return "/lp/playbook";
   return null;
 }

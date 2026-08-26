@@ -14,6 +14,7 @@
  */
 
 const BASE = (process.env.PROBE_BASE_URL || "https://tmmt-ops.vercel.app").replace(/\/$/, "");
+const AIXMOS = (process.env.NEXT_PUBLIC_AIXMOS_SITE_URL || "https://aixmos-landing.vercel.app").replace(/\/$/, "");
 const JSON_OUT = process.argv.includes("--json");
 const TIMEOUT_MS = Number(process.env.PROBE_TIMEOUT_MS || 20000);
 
@@ -28,12 +29,11 @@ const CHECKS = [
   { name: "build page", path: "/build", expect: [200] },
   { name: "join (operator funnel)", path: "/join", expect: [200] },
   { name: "dealers (dealer funnel)", path: "/dealers", expect: [200] },
-  { name: "aixmos lead magnet", path: "/lp/aixmos/lead-magnet", expect: [200] },
-  { name: "credit intake form", path: "/forms/credit-funding-intake", expect: [200] },
-
-  // Shortlink aliases legitimately redirect, but only to the intake form.
-  { name: "credit shortlink", path: "/credit", expect: [307, 308], redirectTo: "/forms/credit-funding-intake" },
-  { name: "funding shortlink", path: "/funding", expect: [307, 308], redirectTo: "/forms/credit-funding-intake" },
+  // Credit + AIXMOS landings must leave TMMT Ops (301 from middleware), not render here.
+  { name: "aixmos lead magnet", path: "/lp/aixmos/lead-magnet", expect: [301, 308], redirectTo: `${AIXMOS}/lp/playbook` },
+  { name: "credit intake form", path: "/forms/credit-funding-intake", expect: [301, 308], redirectTo: `${AIXMOS}/forms/credit-funding-intake` },
+  { name: "credit shortlink", path: "/credit", expect: [301, 308], redirectTo: `${AIXMOS}/forms` },
+  { name: "funding shortlink", path: "/funding", expect: [301, 308], redirectTo: `${AIXMOS}/forms` },
 
   // --- Machine surfaces: a redirect here is data loss, not a nuisance. ---
   { name: "agent health", path: "/api/agent/_health", expect: [200] },

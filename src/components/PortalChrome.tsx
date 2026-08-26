@@ -5,6 +5,8 @@ import CommandHubNav from "@/components/CommandHubNav";
 import { Button } from "@/components/ui";
 import { signOut } from "@/app/(admin)/actions";
 import { LogOut } from "lucide-react";
+import BrandLogo from "@/components/brand/BrandLogo";
+import { useBrand } from "@/components/brand/BrandProvider";
 
 export default function PortalChrome({
   title,
@@ -15,6 +17,7 @@ export default function PortalChrome({
   subtitle: string;
   children: React.ReactNode;
 }) {
+  const brand = useBrand();
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 border-b border-gray-200 dark:border-slate-700 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md">
@@ -23,7 +26,9 @@ export default function PortalChrome({
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
               {title}
             </p>
-            <p className="font-semibold text-gray-900 dark:text-white">TMMT</p>
+            <div className="mt-1">
+              <BrandLogo brand={brand} size={28} />
+            </div>
             <p className="text-xs text-gray-500 dark:text-slate-400">{subtitle}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
