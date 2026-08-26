@@ -45,7 +45,12 @@
     "smoke:dispatch": "bash scripts/smoke-dispatch.sh",
     "dual-sync:doctor": "bash scripts/dual-sync/doctor.sh",
     "dual-sync:init": "bash scripts/dual-sync/init.sh owner",
-    "dual-sync:upgrade": "python3 scripts/dual-sync/upgrade.py"
+    "dual-sync:upgrade": "python3 scripts/dual-sync/upgrade.py",
+    "audit": "npm run audit:login && npm run audit:crawl && npm run audit:report",
+    "audit:login": "node scripts/audit-login.mjs",
+    "audit:crawl": "node scripts/audit-reset.mjs && playwright test --project=audit",
+    "audit:report": "node scripts/audit-report.mjs",
+    "audit:static": "npm run lint && npm run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
