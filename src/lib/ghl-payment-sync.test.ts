@@ -68,6 +68,8 @@ describe("shouldRecordPayment", () => {
 
   it("records when a known revenue tag is present", () => {
     expect(shouldRecordPayment({ event: "contact.tagged" }, ["build-carbox-deposit"])).toBe(true);
+    expect(shouldRecordPayment({ event: "contact.tagged" }, ["kit-ordered-dealer-bundle"])).toBe(true);
+    expect(shouldRecordPayment({ event: "contact.tagged" }, ["kit-ordered-ops-kit"])).toBe(true);
   });
 
   it("skips non-payment events without a revenue tag", () => {

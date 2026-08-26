@@ -12,7 +12,7 @@ const objections = [
   },
   {
     q: "What about credit repair for our buyers?",
-    a: "We offer credit guidance (not repair). AIXMOS Growth stacks on after ops is running — legal disclaimers included.",
+    a: "Ops first. Credit guidance (not repair) is a later add-on after legal gates — we start by running your floor clean.",
   },
   {
     q: "How fast can we go live?",
@@ -32,15 +32,16 @@ export default function DealersPage() {
     <div className="min-h-screen bg-[#f4f7ff] text-[#0A1628]">
       <header className="bg-[#0A1628] px-6 py-16 text-center text-white">
         <p className="text-sm font-semibold uppercase tracking-widest text-blue-300">
-          Independent dealers · BHPH · small lot
+          AIXMOS Dealer · mom-and-pop flagship
         </p>
         <h1 className="mt-2 text-3xl font-bold sm:text-5xl">
-          Your lot. Your customers. Your system.
+          One operating system. Your lot. Your books.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-          Mom-and-pop dealerships get a dedicated TMMT stack — fleet desk, lead intake,
-          staff logins, and owner command center. Not a shared login where someone else
-          might see your books.
+          Replace the pile of follow-up tools, clipboards, and owner-blind dashboards
+          with one AIXMOS instance — fleet desk, lead intake, staff logins, and owner
+          command. Dedicated. Not a shared login. If it closes one extra deal a month,
+          it pays for itself.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a
@@ -184,7 +185,7 @@ export default function DealersPage() {
       </section>
 
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
-        <p>TMMT Rentals · Dedicated dealer instances · Credit guidance, not credit repair.</p>
+        <p>AIXMOS Dealer · dedicated instance · ops + intake + owner command. Not a DMS replacement.</p>
         <p className="mt-2">
           <Link href="/legal/rental" className="text-[#1440C4] hover:underline">
             Legal & disclaimers
