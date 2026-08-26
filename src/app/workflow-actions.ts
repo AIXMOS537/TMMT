@@ -16,6 +16,7 @@ import {
   VENDOR_FILES_BUCKET,
 } from "@/lib/vendor-storage";
 import { CASE_STATUSES, VENDOR_JOB_STATUSES } from "@/lib/workflow";
+import { linkFormToPerson } from "@/lib/people/upsert";
 
 type ActionResult = { success: true; id?: string } | { success: false; error: string };
 
@@ -54,6 +55,15 @@ export async function submitCustomerIntake(formData: FormData): Promise<ActionRe
   }
 
   const caseId = data as string;
+  void linkFormToPerson({
+    fullName: d.contact_name.trim(),
+    email: d.email || null,
+    phone: d.phone || null,
+    formSlug: "customer-intake",
+    destinationTable: "cases",
+    destinationId: caseId || null,
+    payload: { request_type: d.request_type, priority: d.priority },
+  }).catch((err) => console.warn("[people] link failed:", err));
   if (isClickUpEnabled() && caseId) {
     try {
       const service = createServiceRoleClient();

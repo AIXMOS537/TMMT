@@ -14,7 +14,8 @@
     "background": "#0a0a0a",
     "foreground": "#ffffff",
     "logoPath": "/brands/tmmt/logo.svg",
-    "faviconPath": "/brands/tmmt/favicon.ico"
+    "markPath": "/brands/tmmt/mark.svg",
+    "faviconPath": "/brands/tmmt/favicon.svg"
   },
   "domains": {
     "marketing": "tmmtrentals.com",

@@ -45,7 +45,7 @@ const slug = args.dealer
 const checklist = [
   { step: 1, task: "GHL payment received", tag: args.sku === "dealer" ? "kit-ordered-dealer-bundle" : "kit-ordered-ops", owner: "auto" },
   { step: 2, task: "Create Supabase project", ref: `dealer-${slug}`, owner: "ops" },
-  { step: 3, task: "Run migrations on new project", cmd: "npm run db:migrate", owner: "ops" },
+  { step: 3, task: "Run migrations on new project", cmd: "supabase db push", owner: "ops" },
   { step: 4, task: "Create Vercel projects (tmmt-ops + command-center)", ref: `dealer-${slug}`, owner: "ops" },
   { step: 5, task: "Set env: SUPABASE_*, GHL_WEBHOOK_SECRET, COMMAND_CENTER bridge", owner: "ops" },
   { step: 6, task: "Deploy + smoke", cmd: "npm run smoke:prod", owner: "ops" },
@@ -53,6 +53,7 @@ const checklist = [
   { step: 8, task: "GHL pipeline: Dealer Sales + tags dealer-prospect", owner: "ops" },
   { step: 9, task: "Hand off OPERATOR-START-HERE.md + login", owner: "success" },
   { step: 10, task: "14-day check-in scheduled", owner: "success" },
+  { step: 11, task: "BLOCK GO-LIVE if logo is a generated two-letter monogram — require real dealer mark (hasCustomLogo)", owner: "ops" },
 ];
 
 const handoffDir = join(root, "handoffs", slug);
@@ -63,6 +64,10 @@ const handoff = `# ${args.dealer} — Operator Start Here
 **SKU:** ${args.sku === "dealer" ? "Dealer Bundle ($3,497 + $697/mo)" : "Ops Kit ($997 + $297/mo)"}  
 **Admin email:** ${args.email}  
 **Provisioned:** ${new Date().toISOString()}
+
+## Logo (do not skip)
+
+Do **not** go live with a generated two-letter monogram. Drop the dealer's real mark into \`public/brands/<slug>/\` so \`hasCustomLogo\` is true.
 
 ## Your URLs (replace after deploy)
 
@@ -88,8 +93,9 @@ See kit insert · GHL inbox · TMMT support line (set NEXT_PUBLIC_SUPPORT_PHONE 
 console.log(`\n=== Dealer provision: ${args.dealer} (${slug}) ===`);
 console.log(`Mode: ${args.dryRun ? "DRY-RUN" : "APPLY"}\n`);
 
+const total = checklist.length;
 for (const item of checklist) {
-  console.log(`[${item.step}/10] ${item.task} (${item.owner})${item.cmd ? `\n       → ${item.cmd}` : ""}`);
+  console.log(`[${item.step}/${total}] ${item.task} (${item.owner})${item.cmd ? `\n       → ${item.cmd}` : ""}`);
 }
 
 if (args.dryRun) {

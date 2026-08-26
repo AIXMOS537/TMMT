@@ -1,6 +1,6 @@
 # Mom & Pop Dealership Offer — unified package (Phase 1)
 
-**Sell this first.** Software-only. No credit recovery promise until L1–L10 legal gates are signed.
+**AIXMOS Dealer is the flagship public door.** Software-only. No credit recovery promise until L1–L10 legal gates are signed. Entrepreneurs who are not lots go through the $97 Operator door — do not force them onto this SKU.
 
 ---
 

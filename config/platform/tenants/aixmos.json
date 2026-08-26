@@ -14,7 +14,8 @@
     "background": "#0a0a0a",
     "foreground": "#ffffff",
     "logoPath": "/brands/aixmos/logo.svg",
-    "faviconPath": "/brands/aixmos/favicon.ico"
+    "markPath": "/brands/aixmos/mark.svg",
+    "faviconPath": "/brands/aixmos/favicon.svg"
   },
   "domains": {
     "marketing": "aixmos.com",

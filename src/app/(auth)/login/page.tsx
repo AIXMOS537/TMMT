@@ -3,8 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "./actions";
+import BrandLogo from "@/components/brand/BrandLogo";
+import { useBrand } from "@/components/brand/BrandProvider";
 
 export default function LoginPage() {
+  const brand = useBrand();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,18 +29,21 @@ export default function LoginPage() {
     <div className="w-full max-w-sm">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 p-8">
         <div className="mb-8 text-center space-y-2">
+          <div className="flex justify-center mb-4">
+            <BrandLogo brand={brand} size={36} />
+          </div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
             Partner portal &amp; operations
           </p>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Sign in to TMMT Rentals
+            Sign in to {brand.displayName}
           </h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">
             Same login for everyone:{" "}
             <span className="text-gray-700 dark:text-slate-300">
               partners go to the partner portal
             </span>
-            ; TMMT staff go to the main dashboard.
+            ; staff go to the main dashboard.
           </p>
         </div>
 
