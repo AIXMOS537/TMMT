@@ -1,4 +1,5 @@
 import PortalChrome from "@/components/PortalChrome";
+import BrandScope from "@/components/brand/BrandScope";
 
 export const metadata = {
   title: "Vendor Portal — TMMT",
@@ -7,11 +8,13 @@ export const metadata = {
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PortalChrome
-      title="Vendor portal"
-      subtitle="Accept jobs, update status, upload photos and invoices"
-    >
-      {children}
-    </PortalChrome>
+    <BrandScope>
+      <PortalChrome
+        title="Vendor portal"
+        subtitle="Accept jobs, update status, upload photos and invoices"
+      >
+        {children}
+      </PortalChrome>
+    </BrandScope>
   );
 }

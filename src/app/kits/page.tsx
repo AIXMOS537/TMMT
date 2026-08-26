@@ -32,14 +32,14 @@ const kits = [
   },
   {
     id: "growth",
-    name: "TMMT Academy",
-    audience: "Members & operator recruits",
+    name: "AIXMOS Operator",
+    audience: "Entrepreneurs & operator recruits",
     setup: "$97",
     monthly: "/mo membership",
     bullets: [
-      "Run-your-fleet playbook + AIXMOS agents",
-      "Credit + funding path via AIXMOS Credit",
-      "Operator apply funnel",
+      "500 tokens / month + 15-module cert path",
+      "Playbooks, intake, and operator office hours",
+      "The low-cost door — one seat instead of ten SaaS bills",
     ],
     buyOnline: kitCheckout.growth,
     buyUsb: "",
@@ -57,15 +57,15 @@ export default function KitsLandingPage() {
     <div className="min-h-screen bg-[#f4f7ff] text-[#0A1628]">
       <header className="bg-[#0A1628] px-6 py-14 text-center text-white">
         <p className="text-sm font-semibold uppercase tracking-widest text-blue-300">
-          TMMT × AIXMOS
+          AIXMOS · one service · two doors
         </p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
-          Your lot. Your customers. Your system.
+          Dealer flagship or $97 operator seat.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-          Built for independent dealerships and mom-and-pop lots — fleet desk,
-          intake forms, staff logins, and owner command center. Your own
-          instance. Not a shared login.
+          One operating system for independent lots and everyday entrepreneurs.
+          Fleet desk, intake, staff logins, owner command, and the operator
+          academy — instead of paying five other tools.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a
@@ -99,9 +99,9 @@ export default function KitsLandingPage() {
         <h2 className="text-center text-xl font-semibold">How it fits together</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {[
-            { title: "TMMT Ops", desc: "Daily rental & fleet operations" },
-            { title: "Command Center", desc: "Owner strategy & partner hub" },
-            { title: "AIXMOS", desc: "Membership → credit guidance → funding" },
+            { title: "AIXMOS Dealer", desc: "Ops + command on your dedicated instance" },
+            { title: "AIXMOS Operator", desc: "$97/mo · 500 tokens · cert path" },
+            { title: "GHL hub", desc: "Checkout, CRM, follow-up — already included" },
           ].map((item) => (
             <div
               key={item.title}
@@ -190,13 +190,13 @@ export default function KitsLandingPage() {
         </article>
 
         <p id="checkout-pending" className="mt-10 text-center text-sm text-slate-500">
-          No checkout yet? Every button opens our intake form — we call you same
-          day. GHL checkout activates when billing is wired. Questions: {support}
+          Buy opens GoHighLevel checkout (or the live GHL site with your kit campaign
+          until product links are pasted). Questions: {support}
         </p>
       </section>
 
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
-        <p>TMMT Rentals · AIXMOS · Credit guidance, not credit repair.</p>
+        <p>AIXMOS · one operating system · dealer flagship or $97 operator seat.</p>
         <p className="mt-2">
           <Link href="/login" className="text-[#1440C4] hover:underline">
             Staff login

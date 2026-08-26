@@ -14,11 +14,12 @@
     "background": "#0a0a0a",
     "foreground": "#ffffff",
     "logoPath": "/brands/moe-legacy/logo.svg",
-    "faviconPath": "/brands/moe-legacy/favicon.ico"
+    "markPath": "/brands/moe-legacy/mark.svg",
+    "faviconPath": "/brands/moe-legacy/favicon.svg"
   },
   "domains": {
-    "marketing": "aixmos-landing.vercel.app",
-    "app": "aixmos-landing.vercel.app"
+    "marketing": "credit.aixmos.internal",
+    "app": "credit.aixmos.internal"
   },
   "contact": {
     "supportEmail": "tmmtautodetail@gmail.com",

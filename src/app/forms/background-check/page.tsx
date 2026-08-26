@@ -4,6 +4,7 @@ import { useState } from "react";
 import { submitBackgroundCheck } from "@/app/forms/actions";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, ShieldCheck } from "lucide-react";
+import BrandName from "@/components/brand/BrandName";
 
 const insuranceOptions = ["Yes", "No"];
 
@@ -41,7 +42,7 @@ export default function BackgroundCheckForm() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">TMMT Rentals</span>
+            <BrandName className="text-2xl font-bold text-gray-900 dark:text-white" />
           </div>
           <div className="flex items-center justify-center gap-2 mt-2">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
