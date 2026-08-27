@@ -134,6 +134,18 @@ export function decidePrequalRoute(
 }
 
 /**
+ * The two entity slugs `partner_referrals` accepts. NOT the `organizations.name`
+ * values ("TMMT RENTALS", "AIXMOS") — the table carries
+ *
+ *   CHECK (source_org = ANY (ARRAY['tmmt', 'aixmos']))
+ *   CHECK (dest_org   = ANY (ARRAY['tmmt', 'aixmos']))
+ *
+ * so anything else is rejected at insert time by request_handoff(). These are
+ * also the slugs /command/handoffs renders through its ENTITY label map.
+ */
+export const HANDOFF_ORG = { tmmt: "tmmt", aixmos: "aixmos" } as const;
+
+/**
  * Arguments for `request_handoff(p_source_org, p_dest_org, p_contact_ref,
  * p_reason, p_consent_channel, p_commission_cents)`.
  *
@@ -159,8 +171,8 @@ export function handoffArgs(args: {
   if (!contactRef.trim()) return null;
 
   return {
-    p_source_org: "TMMT RENTALS",
-    p_dest_org: "AIXMOS",
+    p_source_org: HANDOFF_ORG.tmmt,
+    p_dest_org: HANDOFF_ORG.aixmos,
     p_contact_ref: contactRef.trim(),
     p_reason: decision.reason,
     p_consent_channel: consentCapturedVia,
