@@ -167,15 +167,51 @@ export async function addContactTag(
 
 type PipelineStage = { id: string; name: string };
 
+export type GhlPipeline = { id: string; name: string; stages: PipelineStage[] };
+
+/**
+ * Every outbound call below takes an optional `locationId`.
+ *
+ * These three used to read `process.env.GHL_LOCATION_ID` directly, which pinned
+ * all outbound traffic to a single sub-account no matter which org it was for.
+ * Inbound was already multi-location aware — the contact and opportunity-stage
+ * webhook handlers have always captured `location_id` — so outbound was the
+ * only thing standing between us and running the agency's sub-accounts through
+ * one app.
+ *
+ * Pass the location resolved from `resolveGhlTargetForOrg()`; omit it and the
+ * env default applies, which keeps every existing caller behaving as before.
+ */
+function locationOr(locationId?: string, kind: GhlLocationKind = "rentals"): string | null {
+  return locationId?.trim() || resolveGhlLocationId(kind);
+}
+
+/** All pipelines in a location, with their stages. The app's view of "which pipeline". */
+export async function listPipelines(locationId?: string): Promise<GhlPipeline[]> {
+  const loc = locationOr(locationId);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return [];
+
+  const res = await fetch(
+    `${GHL_BASE}/opportunities/pipelines?locationId=${encodeURIComponent(loc)}`,
+    { headers: ghlHeaders(), cache: "no-store" }
+  );
+  if (!res.ok) return [];
+
+  const json = (await res.json()) as { pipelines?: GhlPipeline[] };
+  return json.pipelines ?? [];
+}
+
 /** Resolve GHL pipeline stage id by human-readable stage name. */
 export async function findPipelineStageId(
   pipelineId: string,
-  stageName: string
+  stageName: string,
+  locationId?: string
 ): Promise<string | null> {
-  if (!isGhlConfigured()) return null;
+  const loc = locationOr(locationId);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return null;
 
   const res = await fetch(
-    `${GHL_BASE}/opportunities/pipelines/${pipelineId}/stages?locationId=${process.env.GHL_LOCATION_ID}`,
+    `${GHL_BASE}/opportunities/pipelines/${pipelineId}/stages?locationId=${encodeURIComponent(loc)}`,
     { headers: ghlHeaders(), cache: "no-store" }
   );
 
@@ -193,12 +229,14 @@ export async function updateOpportunityStage(args: {
   pipelineId: string;
   stageId?: string;
   stageName?: string;
+  locationId?: string;
 }): Promise<void> {
-  if (!isGhlConfigured()) return;
+  const loc = locationOr(args.locationId);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return;
 
   let stageId = args.stageId;
   if (!stageId && args.stageName) {
-    stageId = (await findPipelineStageId(args.pipelineId, args.stageName)) ?? undefined;
+    stageId = (await findPipelineStageId(args.pipelineId, args.stageName, loc)) ?? undefined;
   }
   if (!stageId) {
     throw new Error(
@@ -212,7 +250,7 @@ export async function updateOpportunityStage(args: {
     body: JSON.stringify({
       pipelineId: args.pipelineId,
       pipelineStageId: stageId,
-      locationId: process.env.GHL_LOCATION_ID,
+      locationId: loc,
     }),
   });
 
@@ -231,14 +269,16 @@ export async function sendConversationMessage(args: {
   message: string;
   subject?: string;
   html?: string;
+  locationId?: string;
 }): Promise<void> {
-  if (!isGhlConfigured()) return;
+  const loc = locationOr(args.locationId);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return;
 
   const body: Record<string, unknown> = {
     type: args.type,
     contactId: args.contactId,
     message: args.message,
-    locationId: process.env.GHL_LOCATION_ID,
+    locationId: loc,
   };
 
   if (args.type === "Email") {
