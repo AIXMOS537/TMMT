@@ -262,6 +262,10 @@ function Cmd-Sync {
     & (Join-Path $PSScriptRoot 'sync.ps1') @Rest
 }
 
+function Cmd-Device {
+    & (Join-Path $PSScriptRoot 'device.ps1') @Rest
+}
+
 function Cmd-Dev {
     Hd 'DEV SERVER'
     Warn 'Auth is OFF under next dev - see docs\AUDIT.md. Judge auth on a build.'
@@ -406,6 +410,7 @@ function Cmd-Help {
         'ops snapshot'             = 'pack app+build state for the next agent'
         'ops golive'               = 'is the public door open and the admin still gated?'
         'ops sync'                 = 'mirror the tablet onto every attached flashdrive'
+        'ops device'               = 'what may this machine run? (and what should not be running)'
         'ops help'                 = 'this list'
     }
     foreach ($k in $rows.Keys) {
@@ -437,6 +442,7 @@ switch -Regex ($Command.ToLower()) {
     '^snapshot$'            { Cmd-Snapshot }
     '^go-?live$'            { Cmd-GoLive }
     '^sync$'                { Cmd-Sync }
+    '^device$'              { Cmd-Device }
     '^(help|-h|--help|\?)$' { Cmd-Help }
     default { Bad "Unknown command: $Command"; Cmd-Help }
 }
