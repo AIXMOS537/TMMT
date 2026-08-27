@@ -11,6 +11,60 @@ hand — `listPipelines(locationId)` is the source of truth.
 
 ---
 
+## Which pipeline is actually used
+
+Opportunity counts, pulled the same day. This settles what the names do not:
+
+| Pipeline | Opportunities | What it really is |
+|---|---:|---|
+| **UBER/LYFT** | **676** | The renter pipeline. All the volume is here. |
+| Joint Venture Leads | 74 | Owners putting a car into the fleet |
+| 2013 And Newer | 17 | Owners wanting to partner — the vehicle-year intake filter |
+| Testing Car Pro Pipeline | 1 | A test, despite modelling the whole lifecycle |
+| Active Customers | 1 | Effectively unused |
+
+Two consequences:
+
+1. **"Testing Car Pro Pipeline" is not live** — one opportunity. So the only
+   pipeline that models the rental lifecycle end to end is the one nobody uses,
+   and the pipeline holding every real renter stops at "Closed" without ever
+   representing the rental itself.
+2. **`2013 And Newer` is partner-side, not sales.** It and Joint Venture Leads
+   are two halves of one intake: owners with a qualifying vehicle who want to
+   partner. It is not a renter pipeline and must not be treated as one.
+
+### The stall
+
+Where the 676 renters sit:
+
+| Stage | Count |
+|---|---:|
+| New Lead | 7 |
+| **Verification Form Sent** | **377** |
+| **Verification Form Received** | **286** |
+| Qualified | 5 |
+| Proposal Sent | 1 |
+| On the Road | 0 |
+| Closed | 0 |
+
+Status: 669 open, 2 won, 2 lost, 3 abandoned.
+
+**98% of every renter lead is parked at verification.** 286 people returned the
+form and were never advanced. Nobody has ever reached "On the Road".
+
+Meanwhile `background_checks` holds the decisions the pipeline never received —
+81 `Eligible`, 69 `Need Manager's Review`, 24 `Not Eligible`. The database says
+81 people are approved; the pipeline shows 5 past verification. Those two facts
+cannot both describe a working handoff (they have not been joined person by
+person — that join is the next step, not a completed check). Closing this gap is
+worth more than any new stage.
+
+`background_checks.verification_form_submitted` is null on all but one row, so
+the app's own flag was never used: the fact of a returned form lives only in the
+GHL stage, and the outcome lives only in the database.
+
+---
+
 ## The app and GHL are already parallel models of one process
 
 This is the whole reason "a layer on top of GHL" is the right framing rather
@@ -33,8 +87,9 @@ lifecycle, in the same order, from two sides.
 ## 1. Testing Car Pro Pipeline — `Bm4xMGglRbTNh5ZEEndX`
 
 The full rental lifecycle, and the one the app's rental flow actually
-corresponds to. **Named "Testing" — confirm it is the live pipeline before
-wiring anything to these ids.**
+corresponds to — but **one opportunity, so it is genuinely a test.** The design
+is right and the volume is elsewhere. Treat these stages as the blueprint for
+the merged renter pipeline below; do not reference these ids as live.
 
 | # | Stage | Id |
 |---:|---|---|
@@ -91,7 +146,9 @@ and `unit_locations` (the tracker).
 
 ## 4. 2013 And Newer — `JK8AuiCz0Z9XDKYXH7vX`
 
-Generic four-stage sales pipeline, vehicle-year segmented.
+**Partner intake, not sales.** Owners with a qualifying vehicle (2013+) who want
+to partner. The front half of the same funnel Joint Venture Leads completes —
+this qualifies the car, that onboards it. 17 opportunities.
 
 | # | Stage | Id |
 |---:|---|---|
@@ -113,11 +170,47 @@ Post-rental. Corresponds to `active_customers`.
 
 ---
 
+## Proposed: one renter pipeline
+
+Today a renter's life is split across three pipelines and finishes in none of
+them. UBER/LYFT holds the intake and stops at "Closed"; Testing Car Pro models
+the rental but is unused; Active Customers holds the after. Below merges them,
+keeping every stage that carries real volume and adding only what is missing.
+
+Ordered by what actually happens to a person:
+
+| # | Stage | Comes from | Why it earns a place |
+|---:|---|---|---|
+| 0 | New Lead | UBER/LYFT · Testing | Where all 7 current new leads sit |
+| 1 | Verification Form Sent | UBER/LYFT (377) | The single busiest stage — keep the name people know |
+| 2 | Verification Form Received | UBER/LYFT (286) | Keep, but it must stop being terminal |
+| 3 | **Under Review** | *new* | **The missing stage.** `background_checks` has 69 in `Need Manager's Review` with nowhere to show it. Without this, "Received" absorbs both "waiting on us" and "we are working it" — which is how 286 people disappeared |
+| 4 | Approved | Testing (`☑️ Approved`) | Mirrors `eligibility_status = 'Eligible'` — 81 people who are already approved and cannot be seen |
+| 5 | Waitlisted — No Car | Testing (`⏳ Waitlisted`) | Approved but no vehicle. Distinct from waiting on paperwork; `waitlist` holds 104 |
+| 6 | Car Available | Testing (`✅ Car Available`) | Supply met demand — the handoff to booking |
+| 7 | Rental in Progress | Testing (`🚗💨`) | The revenue stage. Nothing in UBER/LYFT represents it |
+| 8 | Pending Return | Testing (`🔄🚗`) | Where damage, late fees and recovery live |
+| 9 | Rental Completed | Testing (`🎉✔️`) | **Gates `ready-for-aixmos`** — the AIXMOS upsell cannot fire without it |
+| 10 | Nurture | Testing (`Nurture`) | Repeat business; feeds `LANE_REENGAGE` in the outreach book |
+
+Branches off the main line, not stages in it:
+
+| Branch | Replaces | Why |
+|---|---|---|
+| **Out of Area** | — | 49 people are `out of radius`. Not a decline and not a credit lead — they belong on the market-expansion hold, tagged `market-waitlist` |
+| **Declined — Prequal** | `❌ Disqualified - Do not Reapply` | 24 are `Not Eligible` on their own profile. The prequal lane exists to fix exactly that and send them back; "do not reapply" contradicts a lane already shipped in #173 |
+
+Dropped: **Proposal Sent**, **Negotiation** (1 opportunity between them — a
+rental is not a negotiated sale) and **Qualified** (superseded by Approved).
+
+Three stages carry every renter today — 0, 1, 2. Everything from 3 onward is
+inventory the business already has and cannot currently see.
+
 ## Open questions before wiring stage ids into code
 
-1. **Is "Testing Car Pro Pipeline" the live one?** Everything in the app's
-   rental flow maps to it, and nothing maps to the other four as cleanly. If it
-   is live, it should be renamed; if it is not, the real one has not been found.
+1. ~~Is "Testing Car Pro Pipeline" the live one?~~ **Answered by the counts: no.**
+   One opportunity. Its stages are still the right design — they are the basis
+   of the merged pipeline above — but nothing may reference its ids as live.
 2. **Three pipelines start with "New Lead".** The routing engine decides which
    program a lead belongs to (`classify_program()`); that decision needs to pick
    the pipeline too, or leads land in whichever one a workflow happens to touch.
