@@ -43,8 +43,18 @@ function Step($t){ Write-Host "  [--] $t" -ForegroundColor DarkGray }
 $LANES = @(
   @{ Src = 'C:\Users\AIXMOS\TMMT-canon';    Dest = 'TMMT-WORK\TMMT-canon';    Name = 'TMMT canon repo' },
   @{ Src = 'C:\Users\AIXMOS\CommandCenter'; Dest = 'TMMT-WORK\CommandCenter'; Name = 'Command Center + ops' },
-  @{ Src = 'C:\Users\AIXMOS\AIXMOS-Brain';  Dest = 'AIXMOS-BRAIN';            Name = 'Brain (private)' }
+  @{ Src = 'C:\Users\AIXMOS\AIXMOS-Brain';  Dest = 'AIXMOS-BRAIN';            Name = 'Business brain' },
+  @{ Src = 'C:\Users\AIXMOS\Personal-Brain'; Dest = '_VAULT\personal-brain';  Name = 'Personal brain (vault)' }
 )
+
+# Files that used to live in the business brain and moved to the vault on
+# 2026-08-26. Earlier syncs already copied them into AIXMOS-BRAIN on the sticks,
+# and this script never deletes — so without this they would sit in the business
+# lane forever, and the business lane is the one that becomes a product.
+#
+# A move, not a delete: the file lands in the vault before it leaves the brain
+# lane, and nothing is removed unless the copy is verified in place.
+$RELOCATED = @('family.md', 'personal-and-friends.md', 'people-hub.md')
 
 # Build caches and run artifacts. Restore with `npm ci`, never worth the copy
 # time or the FAT32 file-count churn.
@@ -97,6 +107,24 @@ foreach ($t in $targets) {
     if ($code -ge 8) { Warn "$($lane.Name) - robocopy reported errors (code $code)" }
     elseif ($code -eq 0) { Ok "$($lane.Name) - already current" }
     else { Ok "$($lane.Name) - updated" }
+  }
+
+  # Reconcile the old layout: anything in $RELOCATED still sitting in the
+  # business-brain lane gets moved into the vault.
+  $vault = Join-Path "$letter`:" '_VAULT\personal-brain'
+  foreach ($name in $RELOCATED) {
+    $stale = Join-Path "$letter`:" "AIXMOS-BRAIN\$name"
+    if (-not (Test-Path $stale)) { continue }
+    if ($List) { Step "would move $name  ->  _VAULT\personal-brain"; continue }
+
+    New-Item -ItemType Directory -Path $vault -Force | Out-Null
+    Copy-Item $stale (Join-Path $vault $name) -Force
+    if (Test-Path (Join-Path $vault $name)) {
+      Remove-Item $stale -Force
+      Ok "moved $name out of the business brain"
+    } else {
+      Warn "$name - copy to vault failed, left in place"
+    }
   }
 
   if (-not $List) {
