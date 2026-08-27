@@ -65,6 +65,23 @@ argument exists.
 describe opposite situations — one has never rented, the other rented and
 loved it — and the copy for each is different.
 
+**Where this fires.** The call site is saving a background check in the admin —
+`saveBackgroundCheck()` in `src/app/(admin)/background-checks/actions.ts`, which
+calls `routeDeclinedApplicant()` in `src/lib/aixmos-prequal-act.ts`. Setting
+eligibility is the moment the lane exists; lead intake is too early, because a
+new lead has no eligibility outcome and no credit file to route on.
+
+The same form now carries an **AIXMOS handoff consent** field. Leave it at *Not
+captured yet* and the tag still goes out while the handoff waits — which is the
+normal path, since the tag is what starts the SMS that asks. Set it once the
+person says yes and the handoff is created on save.
+
+One naming trap worth writing down: `partner_referrals` CHECKs `source_org` and
+`dest_org` against `'tmmt'` and `'aixmos'` — the entity slugs, **not** the
+`organizations.name` values `TMMT RENTALS` and `AIXMOS`. Passing the names makes
+`request_handoff()` fail the constraint. `HANDOFF_ORG` in `aixmos-prequal.ts`
+holds the accepted values.
+
 ## Pipeline stages (recommended)
 
 **Pipeline name:** `TMMT → AIXMOS`

@@ -5,12 +5,19 @@ import { getBackgroundChecks } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { saveBackgroundCheck } from "./actions";
+import type { PrequalRouteOutcome } from "@/lib/aixmos-prequal-act";
 import { LicensePhotoControls } from "@/components/AdminDocumentControls";
 
 type BgCheck = Record<string, unknown>;
 
-const eligibilityOptions = ["Eligible", "Not Eligible", "Need Manager's Review", "ou", "out of radius", "Not found"];
+const eligibilityOptions = ["Eligible", "Not Eligible", "Need Manager's Review", "out of radius", "Not found"];
+const consentOptions = [
+  { value: "", label: "Not captured yet" },
+  { value: "sms", label: "By SMS reply" },
+  { value: "email", label: "By email reply" },
+  { value: "verbal", label: "Verbally, on a call" },
+];
 const bgStatusOptions = ["Pending", "Verified", "Failed"];
 const insuranceOwn = ["Yes", "No"];
 
@@ -23,6 +30,7 @@ export default function BackgroundChecksPage() {
   const [editing, setEditing] = useState<BgCheck | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [routing, setRouting] = useState<PrequalRouteOutcome | null>(null);
 
   const load = () => { setLoading(true); setError(null); getBackgroundChecks().then((d) => { setData(d as BgCheck[]); setLoading(false); }).catch(() => { setError("Failed to load data."); setLoading(false); }); };
   useEffect(load, []);
@@ -61,8 +69,13 @@ export default function BackgroundChecksPage() {
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.verification_form_submitted) record.verification_form_submitted = record.verification_form_submitted === "true";
     if (editing?.id) record.id = editing.id;
-    const result = await adminUpsert("background_checks", record);
+    const consent = (record.aixmos_consent as string) || null;
+    // Not a background_checks column — it only tells the prequal lane whether
+    // the person has already agreed to be handed to AIXMOS.
+    delete record.aixmos_consent;
+    const result = await saveBackgroundCheck(record, consent as "sms" | "email" | "verbal" | null);
     if (!result.success) { setSaving(false); setError(result.error); return; }
+    setRouting(result.routing);
     setSaving(false); setModalOpen(false); setEditing(null); load();
   };
 
@@ -73,6 +86,23 @@ export default function BackgroundChecksPage() {
         description={`${data.length} total checks`}
         action={<div className="flex gap-2"><ExportButton data={filtered} columns={columns} filename="background-checks" /><Button onClick={() => { setEditing(null); setModalOpen(true); }}><Plus size={16} />New Check</Button></div>}
       />
+
+      {routing && routing.action !== "none" && routing.action !== "await_review" && (
+        <div className="mb-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-sm">
+          <p className="font-medium text-blue-900 dark:text-blue-200">
+            {routing.tagApplied ? `Tagged ${routing.tagApplied} in GHL.` : "No GHL tag applied."}
+            {routing.handoff === "created" && " Handoff to AIXMOS created."}
+            {routing.handoff === "awaiting_consent" && " Handoff waits on consent."}
+            {routing.handoff === "already_open" && " A handoff for this person is already open."}
+            {routing.handoff === "failed" && " Handoff could not be created."}
+          </p>
+          <p className="mt-1 text-blue-800 dark:text-blue-300">{routing.decision.reason}</p>
+          {routing.errors.map((e) => (
+            <p key={e} className="mt-1 text-amber-700 dark:text-amber-300">{e}</p>
+          ))}
+          <button type="button" onClick={() => setRouting(null)} className="mt-2 text-xs underline text-blue-700 dark:text-blue-300">Dismiss</button>
+        </div>
+      )}
 
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search by name, email, phone...">
         <select className={selectClass + " sm:w-48"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
@@ -107,6 +137,16 @@ export default function BackgroundChecksPage() {
               <option value="">Select...</option>
               {eligibilityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+          </FormField>
+          <FormField label="AIXMOS handoff consent">
+            <select name="aixmos_consent" defaultValue="" className={selectClass}>
+              {consentOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Only used when eligibility is <em>Not Eligible</em>. Moving someone from TMMT to
+              AIXMOS needs their yes on record — without it they are tagged for the prequal SMS
+              and the handoff waits.
+            </p>
           </FormField>
           <FormField label="BG Check Status">
             <select name="background_check_status" defaultValue={editing?.background_check_status as string || ""} className={selectClass}>
