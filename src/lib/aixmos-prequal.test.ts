@@ -70,8 +70,9 @@ describe("handoffArgs", () => {
       consentCapturedVia: "sms",
     });
     expect(args).not.toBeNull();
-    expect(args!.p_source_org).toBe("TMMT RENTALS");
-    expect(args!.p_dest_org).toBe("AIXMOS");
+    // The slugs partner_referrals CHECKs against, not organizations.name.
+    expect(args!.p_source_org).toBe("tmmt");
+    expect(args!.p_dest_org).toBe("aixmos");
     expect(args!.p_consent_channel).toBe("sms");
     expect(args!.p_commission_cents).toBe(0);
     expect(args!.p_reason).toBe(declined.reason);
