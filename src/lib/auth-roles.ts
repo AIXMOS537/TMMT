@@ -19,7 +19,14 @@ export type AccessTier =
   | "operator"
   | "staff"
   | "investor"
-  | "vendor";
+  | "vendor"
+  /**
+   * Signed in with no recognised role. Entitled to nothing beyond the public
+   * pages and the everyone-surfaces (/clock, /pocket). This is the fallback,
+   * and it has to be: "staff" used to be, which meant an absent or unrecognised
+   * `app_metadata.role` silently granted staff.
+   */
+  | "none";
 
 export function getAppRole(user: User | null): string {
   if (!user) return "";
@@ -27,7 +34,18 @@ export function getAppRole(user: User | null): string {
   return typeof raw === "string" ? raw.trim() : "";
 }
 
-/** Route tier for middleware and post-login redirects */
+/**
+ * Route tier for middleware and post-login redirects.
+ *
+ * Every tier is granted by an EXPLICIT role. Anything unrecognised — including
+ * a missing `app_metadata.role`, `"customer"`, and a null user — falls to
+ * "none". It used to fall to "staff", and because no account in this project
+ * has ever had `app_metadata.role` set, that made `isStaffUser()` true for
+ * every signed-in user. Four server actions gate a service-role client (which
+ * bypasses RLS) on that check.
+ *
+ * Granting on absence is the bug. Do not reintroduce a permissive default here.
+ */
 export function getTierForUser(user: User | null): AccessTier {
   const role = getAppRole(user);
   if (role === "admin") return "owner";
@@ -35,7 +53,8 @@ export function getTierForUser(user: User | null): AccessTier {
   if (role === "operator") return "operator";
   if (role === "vendor") return "vendor";
   if (role === "investor" || role === "partner") return "investor";
-  return "staff";
+  if (role === "internal_team" || role === "va") return "staff";
+  return "none";
 }
 
 export function isOwnerUser(user: User | null): boolean {

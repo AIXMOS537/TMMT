@@ -29,11 +29,17 @@ export async function listOrgsForAssign(): Promise<{
   const c = await caller();
   if (!c || !isStaffUser(c.user)) return { operators: [], agencies: [] };
   const svc = createServiceRoleClient();
-  const { data } = await svc.from("organizations").select("id, name, org_kind").order("name", { ascending: true });
-  const rows = (data ?? []) as Array<{ id: string; name: string; org_kind: string | null }>;
+  // Live schema: `parent_agency_id`, not `org_kind`. There is no
+  // `kind = 'operator'` — an operator sub-account is one that has a parent.
+  // See the note in src/app/(command)/operators/actions.ts.
+  const { data } = await svc
+    .from("organizations")
+    .select("id, name, parent_agency_id")
+    .order("name", { ascending: true });
+  const rows = (data ?? []) as Array<{ id: string; name: string; parent_agency_id: string | null }>;
   return {
-    operators: rows.filter((o) => o.org_kind === "operator").map(({ id, name }) => ({ id, name })),
-    agencies: rows.filter((o) => o.org_kind !== "operator").map(({ id, name }) => ({ id, name })),
+    operators: rows.filter((o) => o.parent_agency_id !== null).map(({ id, name }) => ({ id, name })),
+    agencies: rows.filter((o) => o.parent_agency_id === null).map(({ id, name }) => ({ id, name })),
   };
 }
 
@@ -71,10 +77,10 @@ async function authorizeForPool(
   if (callerOrgId) {
     const { data: org } = await svc
       .from("organizations")
-      .select("parent_org_id")
+      .select("parent_agency_id")
       .eq("id", callerOrgId)
       .maybeSingle();
-    callerParentOrgId = (org?.parent_org_id as string | null) ?? null;
+    callerParentOrgId = (org?.parent_agency_id as string | null) ?? null;
   }
 
   const ok = canClaimFromAgency({ callerOrgId, callerParentOrgId, agencyOrgId, isStaff });
