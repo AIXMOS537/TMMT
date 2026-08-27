@@ -4,7 +4,8 @@ import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost, shouldBounceTmmtCreditToAixmos, aixmosCreditRedirectUrl } from "@/lib/site-domains";
-import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG } from "@/lib/platform/tenant-resolve";
+import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
+import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
 /** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio, dealer demos). */
 function isFunnelPublicPath(pathname: string) {
@@ -119,6 +120,22 @@ export async function middleware(request: NextRequest) {
   });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(TENANT_HEADER, tenant.slug);
+
+  // Host-based tenancy. The brand above says what to RENDER; the org says what
+  // data the request may TOUCH, and only the org is what RLS enforces.
+  //
+  // Only the house hosts are resolved here, from a static map — an operator's
+  // domain is looked up server-side from organization_domains, because Edge
+  // middleware runs on every request and must not carry a database round trip.
+  // Forwarding the normalized host is what makes that later lookup possible.
+  //
+  // Deliberately no fallback org: an unrecognised host gets no org header at
+  // all. Defaulting to the house org here would silently serve one tenant
+  // another tenant's data, which is precisely what this exists to prevent.
+  requestHeaders.set(HOST_HEADER, normalizeHost(host));
+  const staticOrgId = orgIdForHostStatic(host);
+  if (staticOrgId) requestHeaders.set(ORG_HEADER, staticOrgId);
+  else requestHeaders.delete(ORG_HEADER); // never trust an inbound org header
   const nextWithTenant = () =>
     NextResponse.next({ request: { headers: requestHeaders } });
 
