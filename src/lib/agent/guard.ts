@@ -26,8 +26,35 @@ export class LlmCapExceededError extends Error {
   }
 }
 
+/**
+ * The two house organizations. Spec B3 §12 says "TMMT and AIXMOS always safe",
+ * and until now that was a promise in a comment with nothing enforcing it.
+ *
+ * It matters: TMMT RENTALS' own licence row is `active: false` with no key
+ * issued, and the check below throws on an inactive licence. The moment public
+ * lead capture starts flowing through /api/leads/webhook, TMMT would have been
+ * rejecting its own leads. Nothing has broken yet only because that route is
+ * barely used - 8 leads in the last 30 days, none of them through it.
+ *
+ * Licensing exists to gate paying operators. Applying it to the house orgs is a
+ * self-inflicted outage, not a safety feature.
+ */
+const HOUSE_ORGS = new Set([
+  '8e651b25-e7c8-4356-af64-1716a82053b0', // TMMT RENTALS
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', // AIXMOS
+])
+
+export function isHouseOrg(organizationId: string): boolean {
+  return HOUSE_ORGS.has(organizationId)
+}
+
 export async function guardOrganization(organizationId: string): Promise<void> {
+  // The operational kill switch still applies to everyone, house included. It
+  // is the deliberate "stop everything" lever and must not have exceptions.
   if (process.env.B3_KILL_SWITCH === '1') throw new OperationalKillError()
+
+  // Licensing gates customers, never ourselves.
+  if (isHouseOrg(organizationId)) return
 
   const db = createServiceSupabase()
   const { data } = await db
