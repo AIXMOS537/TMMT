@@ -89,3 +89,34 @@ describe("outbound location routing", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("upsertOutboundGhlContact", () => {
+  it("creates a contact in the given location when none exists", async () => {
+    const { upsertOutboundGhlContact } = await import("./client");
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}), text: async () => "" })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ contact: { id: "new-1" } }),
+        text: async () => "",
+      });
+    const id = await upsertOutboundGhlContact({
+      name: "Ada Lovelace",
+      email: "ada@example.com",
+      tags: ["tmmt-customer"],
+      locationId: "SUB_E",
+    });
+    expect(id).toBe("new-1");
+    expect(url(1)).toContain("/contacts/");
+    expect(body(1).locationId).toBe("SUB_E");
+    expect(body(1).firstName).toBe("Ada");
+    expect(body(1).tags).toEqual(["tmmt-customer"]);
+  });
+
+  it("returns null when email and phone are both missing", async () => {
+    const { upsertOutboundGhlContact } = await import("./client");
+    const id = await upsertOutboundGhlContact({ name: "Nobody" });
+    expect(id).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

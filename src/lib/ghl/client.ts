@@ -305,3 +305,139 @@ export async function sendConversationMessage(args: {
     throw new Error(`GHL sendConversationMessage failed (${res.status}): ${text}`);
   }
 }
+
+function splitPersonName(name: string): { firstName: string; lastName: string } {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "Unknown", lastName: "" };
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+function toE164(phone: string): string | undefined {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  if (digits.length >= 11) return `+${digits}`;
+  return undefined;
+}
+
+/**
+ * Find-or-create a GHL contact and apply tags. Never sends SMS/email.
+ * Returns the contact id, or null when GHL is not configured / both identifiers missing.
+ */
+export async function upsertOutboundGhlContact(args: {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  tags?: string[];
+  source?: string;
+  locationKind?: GhlLocationKind;
+  locationId?: string;
+}): Promise<string | null> {
+  const kind = args.locationKind ?? "rentals";
+  const loc = locationOr(args.locationId, kind);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return null;
+
+  const email = args.email?.trim().toLowerCase() || "";
+  const phone = args.phone?.trim() || "";
+  if (!email && !phone) return null;
+
+  let contactId: string | null = null;
+  if (email) contactId = await findGhlContactInLocation(email, loc);
+  if (!contactId && phone) contactId = await findGhlContactByPhoneInLocation(phone, loc);
+
+  const { firstName, lastName } = splitPersonName(args.name || "Unknown");
+  const e164 = phone ? toE164(phone) : undefined;
+
+  if (!contactId) {
+    const body: Record<string, unknown> = {
+      firstName,
+      lastName,
+      name: args.name.trim() || "Unknown",
+      locationId: loc,
+      source: args.source?.trim() || "AIXMOS door",
+    };
+    if (email) body.email = email;
+    if (e164) body.phone = e164;
+    if (args.tags?.length) body.tags = args.tags;
+
+    const res = await fetch(`${GHL_BASE}/contacts/`, {
+      method: "POST",
+      headers: ghlHeaders(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`GHL upsertOutboundGhlContact create failed (${res.status}): ${text}`);
+    }
+
+    const json = (await res.json()) as { contact?: { id?: string } };
+    contactId = json.contact?.id ?? null;
+  } else if (args.tags?.length) {
+    for (const tag of args.tags) {
+      await addContactTag(contactId, tag, kind);
+    }
+  }
+
+  return contactId;
+}
+
+/**
+ * Open an opportunity on a named pipeline/stage. Resolves pipeline by name
+ * (case-insensitive includes) unless `pipelineId` is passed.
+ * Returns the opportunity id, or null if the pipeline cannot be resolved.
+ */
+export async function createOutboundGhlOpportunity(args: {
+  contactId: string;
+  name: string;
+  pipelineName?: string | null;
+  pipelineId?: string | null;
+  stageName?: string | null;
+  locationKind?: GhlLocationKind;
+  locationId?: string;
+}): Promise<string | null> {
+  const kind = args.locationKind ?? "rentals";
+  const loc = locationOr(args.locationId, kind);
+  if (!process.env.GHL_API_KEY?.trim() || !loc) return null;
+
+  const pipelines = await listPipelines(loc);
+  const wantId = args.pipelineId?.trim();
+  const wantName = (args.pipelineName ?? "").trim().toLowerCase();
+  const pipeline =
+    (wantId && pipelines.find((p) => p.id === wantId)) ||
+    (wantName
+      ? pipelines.find((p) => p.name.trim().toLowerCase() === wantName) ||
+        pipelines.find((p) => p.name.trim().toLowerCase().includes(wantName))
+      : undefined);
+
+  if (!pipeline) return null;
+
+  const stageWant = (args.stageName ?? "").trim().toLowerCase();
+  const stage =
+    (stageWant && pipeline.stages.find((s) => s.name.trim().toLowerCase() === stageWant)) ||
+    (stageWant && pipeline.stages.find((s) => s.name.trim().toLowerCase().includes(stageWant))) ||
+    pipeline.stages[0];
+  if (!stage) return null;
+
+  const res = await fetch(`${GHL_BASE}/opportunities/`, {
+    method: "POST",
+    headers: ghlHeaders(),
+    body: JSON.stringify({
+      locationId: loc,
+      contactId: args.contactId,
+      pipelineId: pipeline.id,
+      pipelineStageId: stage.id,
+      name: args.name.trim() || "New lead",
+      status: "open",
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GHL createOutboundGhlOpportunity failed (${res.status}): ${text}`);
+  }
+
+  const json = (await res.json()) as { opportunity?: { id?: string } };
+  return json.opportunity?.id ?? null;
+}
