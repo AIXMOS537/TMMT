@@ -12,6 +12,7 @@ import { emitAudit } from '@/lib/agent/audit'
 import { isRateLimited } from '@/lib/rate-limit'
 import { routeIncomingLead } from '@/lib/lead-pool'
 import { isAixmosCorsOrigin } from '@/lib/site-domains'
+import { enqueueDoorRoute } from '@/lib/intake/door-router'
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -176,6 +177,16 @@ export async function POST(req: Request): Promise<NextResponse> {
       signals: [body.source, body.utm_medium, body.utm_content, body.utm_term, sku],
     })
   } catch { /* fail-open — lead is already saved + audited */ }
+
+  enqueueDoorRoute({
+    sku,
+    orgSlug: slug,
+    name: body.name ?? "Unknown",
+    email: body.email,
+    phone: phone_e164,
+    opportunityName: sku,
+    source: body.source ?? "webform",
+  })
 
   return json({ ok: true, lead_id: leadId }, 200, origin)
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createSSRClient } from "@/lib/supabase-server";
 import { fanOut } from "@/lib/notify";
 import { processUnifiedIntake } from "@/lib/intake/unified";
+import { enqueueDoorRoute } from "@/lib/intake/door-router";
 import type { RequestType } from "@/lib/workflow/statuses";
 import { linkFormToPerson } from "@/lib/people/upsert";
 
@@ -18,6 +19,8 @@ type PersonStamp = {
   name?: string | null;
   email?: string | null;
   phone?: string | null;
+  sku?: string | null;
+  opportunityName?: string | null;
 };
 
 async function insertRow(
@@ -41,6 +44,15 @@ async function insertRow(
       destinationId: typeof data?.id === "string" ? data.id : null,
       payload: record,
     }).catch((err) => console.warn("[people] link failed:", err));
+    enqueueDoorRoute({
+      formSlug: person.formSlug,
+      sku: person.sku,
+      name: person.name ?? "Unknown",
+      email: person.email,
+      phone: person.phone,
+      opportunityName: person.opportunityName,
+      source: person.formSlug,
+    });
   }
   return { success: true };
 }
@@ -156,6 +168,7 @@ export async function submitDealerApply(formData: FormData): Promise<FormResult>
     name: d.contact_name.trim(),
     email: d.email.trim(),
     phone: d.phone,
+    opportunityName: `Dealer Apply: ${d.dealership_name.trim()}`,
   });
 
   if (result.success) {
@@ -729,5 +742,7 @@ export async function submitProgramIntake(formData: FormData): Promise<FormResul
     name: d.contact_name.trim(),
     email: d.email.trim(),
     phone: d.phone,
+    sku: spec.sku,
+    opportunityName: spec.title,
   });
 }

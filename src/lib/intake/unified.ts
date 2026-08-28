@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { syncContactPortalFields } from "@/lib/ghl/sync-contact-portal-fields";
 import { executeRouting } from "@/lib/routing/execute";
+import { enqueueDoorRoute } from "@/lib/intake/door-router";
 import { suggestedNextStatus, type RequestType } from "@/lib/workflow/statuses";
 
 export type UnifiedIntakeInput = {
@@ -153,6 +154,16 @@ export async function processUnifiedIntake(
         : typeof (input.payload?.ghl as { contact_id?: string } | undefined)?.contact_id === "string"
           ? (input.payload!.ghl as { contact_id: string }).contact_id
           : null,
+  });
+
+  enqueueDoorRoute({
+    formSlug: source,
+    businessLine: businessLine,
+    name: input.customer_name,
+    email: input.customer_email,
+    phone: input.customer_phone,
+    opportunityName: input.subject,
+    source,
   });
 
   return {
