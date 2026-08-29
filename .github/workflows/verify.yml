@@ -33,7 +33,15 @@ jobs:
         run: npm run brand:check
       - name: Lint
         run: npm run lint
+      # `next build` type-checks only what it bundles, which excludes *.test.ts.
+      # A widened type can therefore break the test fixtures while lint, vitest
+      # and the build all stay green — that is exactly how the `restricted` flag
+      # from #181 reached master. tsc over the whole tsconfig is the only check
+      # that sees it, so it runs on its own here rather than being implied by
+      # the build step's old "(+ typecheck)" label.
+      - name: Typecheck (tsc, includes tests)
+        run: npx tsc --noEmit
       - name: Unit tests
         run: npm test
-      - name: Production build (+ typecheck)
+      - name: Production build
         run: npm run build
