@@ -17,7 +17,7 @@ function dashboard(overrides: Partial<{
     waitlist: o.waitlist,
     customers: { total: 20, active: 18 },
     tickets: { total: 7, open: o.openTickets },
-    payments: { total: 30, overdue: o.overdue },
+    payments: { total: 30, overdue: o.overdue, restricted: false },
     recentLeads: [],
     recentTickets: [],
   };
