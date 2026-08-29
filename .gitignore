@@ -129,3 +129,10 @@ apps/engine/node_modules/
 /audit/
 /test-results/
 /playwright-report/
+
+# Fact-check gate output (scripts/verify-gate.sh writes these on every push).
+# .aixmos/queue and .aixmos/heartbeat ARE tracked — only the generated
+# per-run logs and reports are ignored.
+.aixmos/*.log
+.aixmos/verify-log.ndjson
+.aixmos/secret-scan-report.txt
