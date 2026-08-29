@@ -207,6 +207,7 @@ export async function decideBgCheck(
     throw new Error(error.message);
   }
 }
+export const getTasks = () => fetchTable("tasks", "*", "created_at");
 export const getWaitlist = () => fetchTable("waitlist", "*", "date_added_to_waitlist");
 export const getAppointments = () => fetchTable("appointments", "*", "appointment_date_time");
 export const getActiveCustomers = () => fetchTable("active_customers", "*", "created_at");
