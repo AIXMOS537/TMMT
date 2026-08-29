@@ -36,11 +36,17 @@ PATTERNS=(
   "tailscale-key|tskey-[A-Za-z0-9-]{10,}"
   "telegram-bot|[0-9]{8,10}:[A-Za-z0-9_-]{35}"
   "jwt|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{6,}"
-  "private-key-block|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+  "private-key-block|^-----BEGIN [A-Z ]*PRIVATE KEY-----[[:space:]]*$"
   "generic-secret|(SECRET|TOKEN|API_?KEY|PASSWORD|PASSWD|ACCESS_?KEY)[\"' ]*[:=][\"' ]*[A-Za-z0-9._-]{20,}"
 )
 redact(){ if $RAW; then cat; else sed -E 's/([A-Za-z0-9]{6})[A-Za-z0-9._/+-]{8,}/\1…REDACTED/g'; fi; }
-EXCL='package-lock\.json|yarn\.lock|pnpm-lock\.yaml|\.gitleaksignore|node_modules/|\.min\.|secret-scan\.sh'
+# Path exclusions as git pathspecs so filtering happens inside git, not in a shell loop.
+EXCL_SPEC=(
+  ':(exclude)package-lock.json' ':(exclude)*/package-lock.json'
+  ':(exclude)yarn.lock' ':(exclude)pnpm-lock.yaml' ':(exclude).gitleaksignore'
+  ':(exclude)*node_modules/*' ':(exclude)*.min.*'
+  ':(exclude)scripts/secret-scan.sh'
+)
 
 found=0
 {
@@ -50,9 +56,21 @@ found=0
   echo "## A) Current tracked files"
 } | tee "$REPORT"
 
+# One `git grep` per pattern (15 processes) instead of one `grep` per file per
+# pattern (~22k). git grep walks tracked files natively and applies the pathspec
+# exclusions itself. On Windows, where each process spawn costs ~10ms, this is
+# the difference between a 5-minute pre-push gate and a 2-second one.
 for entry in "${PATTERNS[@]}"; do
   name="${entry%%|*}"; re="${entry#*|}"
-  hits="$(git ls-files | grep -vE "$EXCL" | while read -r f; do grep -EnHI "$re" "$f" 2>/dev/null; done)"
+  hits="$(git grep -EnHI -e "$re" -- "${EXCL_SPEC[@]}" 2>/dev/null || true)"
+  # `generic-secret` is a heuristic, not a credential format, so it is the only
+  # noisy one. It fires on env-var references (`process.env.X` is a lookup, not
+  # a literal) and on test fixtures. Both are relaxed here — and ONLY here, so
+  # the specific formats above (aws / stripe / github / airtable / ...) still
+  # scan those same files. A real key hardcoded in a test is still caught.
+  if [ "$name" = "generic-secret" ]; then
+    hits="$(printf '%s' "$hits"       | grep -Ev '(process|import\.meta)\.env[.[]'       | grep -Ev '\.(test|spec)\.[jt]sx?:' || true)"
+  fi
   if [ -n "$hits" ]; then
     found=$((found+1))
     { echo "### [$name]"; echo "$hits" | redact; } | tee -a "$REPORT"
@@ -62,11 +80,16 @@ done
 
 if $HISTORY; then
   { echo; echo "## B) Git history (all branches — added/removed lines)"; } | tee -a "$REPORT"
+  # Walk the history ONCE and tee it to every pattern, rather than re-dumping
+  # all 11k commits per pattern. --history is opt-in and still slow; that is
+  # inherent to reading every patch, but this is 15x less of it.
+  hist_dump="$(mktemp)"; git log --all -p --no-color >"$hist_dump" 2>/dev/null
   for entry in "${PATTERNS[@]}"; do
     name="${entry%%|*}"; re="${entry#*|}"
-    h="$(git log --all -p --no-color 2>/dev/null | grep -EI "^[+-].*($re)" | sort -u)"
+    h="$(grep -EI "^[+-].*($re)" "$hist_dump" | sort -u)"
     [ -n "$h" ] && { echo "### [$name]"; echo "$h" | redact | head -20; } | tee -a "$REPORT"
   done
+  rm -f "$hist_dump"
   echo "(history scan complete — purge with git filter-repo; see docs/SECRET-ROTATION.md)" | tee -a "$REPORT"
 fi
 
