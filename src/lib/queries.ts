@@ -101,14 +101,33 @@ export async function getDashboardData() {
     fetchTable("tickets", "*", "date_created").then(r => r.slice(0, 5)),
   ]);
 
+  // background_checks and customer_payments are admin-only, so those two counts come back
+  // as 0 for staff. Rather than show a misleading zero, take the background-check numbers
+  // from the review queue staff can legitimately see, and flag payments as restricted.
+  const admin = await isPlatformAdmin();
+  let bgTotal = totalBgChecks;
+  let bgPending = pendingBgChecks;
+  if (!admin) {
+    try {
+      const queue = await getBgCheckQueue(undefined, 500);
+      bgTotal = queue.length;
+      bgPending = queue.filter(
+        (r) => !r.eligibility_status || r.eligibility_status === "Need Manager's Review"
+      ).length;
+    } catch {
+      bgTotal = 0;
+      bgPending = 0;
+    }
+  }
+
   return {
     fleet: { total: totalFleet, available: availableFleet, rented: rentedFleet, maintenance: maintenanceFleet },
     leads: { total: totalLeads, new: newLeads, qualified: qualifiedLeads },
-    bgChecks: { total: totalBgChecks, pending: pendingBgChecks },
+    bgChecks: { total: bgTotal, pending: bgPending },
     waitlist: waitlistCount,
     customers: { total: activeCustomers, active: activeCustomerCount },
     tickets: { total: totalTickets, open: openTickets },
-    payments: { total: totalPayments, overdue: overduePayments },
+    payments: { total: totalPayments, overdue: overduePayments, restricted: !admin },
     recentLeads: recentLeads as Record<string, unknown>[],
     recentTickets: recentTickets as Record<string, unknown>[],
   };
@@ -118,6 +137,76 @@ export async function getDashboardData() {
 export const getFleet = () => fetchTable("fleet", "*", "created_at");
 export const getLeads = () => fetchTable("incoming_leads", "*", "created_on");
 export const getBackgroundChecks = () => fetchTable("background_checks", "*", "created_at");
+
+/* ──────────── Background-check review (staff) ────────────
+   background_checks is admin-only at the database level. Staff review through
+   these two RPCs instead: the queue returns masked contact details and document
+   presence flags rather than the raw licence / paystub / insurance payloads. */
+
+export type BgCheckQueueRow = {
+  id: string;
+  customer_name: string | null;
+  email_masked: string | null;
+  phone_last4: string | null;
+  created_at: string | null;
+  verification_form_submitted: boolean | null;
+  has_license: boolean | null;
+  has_insurance_proof: boolean | null;
+  has_paystub: boolean | null;
+  has_screenshot: boolean | null;
+  key_details: string | null;
+  eligibility_status: string | null;
+  review_notes: string | null;
+  date_verified: string | null;
+  reviewed_at: string | null;
+};
+
+export const BG_CHECK_DECISIONS = [
+  "Eligible",
+  "Not Eligible",
+  "Need Manager's Review",
+  "out of radius",
+  "Not found",
+] as const;
+
+export type BgCheckDecision = (typeof BG_CHECK_DECISIONS)[number];
+
+export async function isPlatformAdmin(): Promise<boolean> {
+  const { data, error } = await supabase.rpc("is_platform_admin");
+  if (error) {
+    console.error("[is_platform_admin]", error.message);
+    return false;
+  }
+  return data === true;
+}
+
+export async function getBgCheckQueue(status?: string, limit = 300): Promise<BgCheckQueueRow[]> {
+  const { data, error } = await supabase.rpc("bg_check_queue", {
+    p_status: status || null,
+    p_limit: limit,
+  });
+  if (error) {
+    console.error("[bg_check_queue]", error.message);
+    throw new Error(error.message);
+  }
+  return (data ?? []) as BgCheckQueueRow[];
+}
+
+export async function decideBgCheck(
+  id: string,
+  decision: BgCheckDecision,
+  notes?: string
+): Promise<void> {
+  const { error } = await supabase.rpc("bg_check_decide", {
+    p_id: id,
+    p_decision: decision,
+    p_notes: notes?.trim() ? notes.trim() : null,
+  });
+  if (error) {
+    console.error("[bg_check_decide]", error.message);
+    throw new Error(error.message);
+  }
+}
 export const getWaitlist = () => fetchTable("waitlist", "*", "date_added_to_waitlist");
 export const getAppointments = () => fetchTable("appointments", "*", "appointment_date_time");
 export const getActiveCustomers = () => fetchTable("active_customers", "*", "created_at");
