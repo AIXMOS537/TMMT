@@ -81,7 +81,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Background Checks" value={data.bgChecks.total} icon={<ShieldCheck size={20} />} trend={`${data.bgChecks.pending} pending review`} />
         <StatCard label="Waitlist" value={data.waitlist} icon={<Clock size={20} />} />
-        <StatCard label="Payments" value={data.payments.total} icon={<CreditCard size={20} />} trend={`${data.payments.overdue} overdue`} />
+        <StatCard label="Payments" value={data.payments.restricted ? "—" : data.payments.total} icon={<CreditCard size={20} />} trend={data.payments.restricted ? "admins only" : `${data.payments.overdue} overdue`} />
         <StatCard label="Fleet Maintenance" value={data.fleet.maintenance} icon={<Car size={20} />} trend="vehicles under maintenance" />
       </div>
 
