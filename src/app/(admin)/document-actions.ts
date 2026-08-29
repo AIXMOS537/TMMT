@@ -4,7 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
-import { isStaffUser } from "@/lib/auth-roles";
+import { isStaffUser, isOwnerUser } from "@/lib/auth-roles";
 import { adminUpsert } from "@/app/(admin)/admin-actions";
 import {
   DOCUMENTS_BUCKET,
@@ -43,6 +43,17 @@ export async function getSignedDocumentUrl(
   if (!gate.success) return gate;
   if (!storagePath || storagePath.includes("..")) {
     return { success: false, error: "Invalid path." };
+  }
+  // Background-check licence images are admin-only, matching the row-level restriction
+  // on background_checks. Without this, a staff member holding a known storage path could
+  // still mint a signed URL for a driver's licence they can no longer see in the table.
+  // Contract PDFs and active_customers licences stay available to staff.
+  if (storagePath.startsWith("licenses/background_checks/")) {
+    const ssr = await createSSRClient();
+    const {
+      data: { user },
+    } = await ssr.auth.getUser();
+    if (!isOwnerUser(user)) return { success: false, error: "Not authorized." };
   }
   const svc = createServiceRoleClient();
   const { data, error } = await svc.storage
