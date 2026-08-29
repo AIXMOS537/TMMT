@@ -19,10 +19,21 @@ async function requireStaff() {
   return { user };
 }
 
+/**
+ * Live `organizations` has `kind` and `parent_agency_id`. It has no `org_kind`,
+ * `parent_org_id` or `org_type` — those belong to the parked lead_pool design
+ * (`supabase/migrations/_parked/`, marked DO-NOT-APPLY), which this file was
+ * written against. Every query below used to fail against prod.
+ *
+ * There is also no `kind = 'operator'`: the live values are 'tmmt', 'aixmos'
+ * and 'partner'. What makes an org an operator sub-account is having a parent,
+ * so `parent_agency_id is not null` is the test.
+ */
 export interface OrgOption {
   id: string;
   name: string;
-  org_kind: string | null;
+  kind: string | null;
+  parent_agency_id: string | null;
 }
 
 /** All orgs (for the parent-agency picker). Staff only. */
@@ -31,7 +42,7 @@ export async function listOrgs(): Promise<OrgOption[]> {
   const svc = createServiceRoleClient();
   const { data } = await svc
     .from("organizations")
-    .select("id, name, org_kind")
+    .select("id, name, kind, parent_agency_id")
     .order("name", { ascending: true });
   return (data ?? []) as OrgOption[];
 }
@@ -39,7 +50,7 @@ export async function listOrgs(): Promise<OrgOption[]> {
 export interface OperatorRow {
   id: string;
   name: string;
-  parent_org_id: string | null;
+  parent_agency_id: string | null;
   created_at: string;
   balance: number;
   unlimited: boolean;
@@ -52,8 +63,8 @@ export async function listOperators(): Promise<OperatorRow[]> {
   const svc = createServiceRoleClient();
   const { data: orgs } = await svc
     .from("organizations")
-    .select("id, name, parent_org_id, created_at")
-    .eq("org_kind", "operator")
+    .select("id, name, parent_agency_id, created_at")
+    .not("parent_agency_id", "is", null)
     .order("created_at", { ascending: false });
   if (!orgs?.length) return [];
   const ids = orgs.map((o) => o.id as string);
@@ -81,13 +92,22 @@ export async function provisionOperatorSubAccount(input: {
   if (!input.parentAgencyOrgId) return { success: false, error: "Pick a parent agency." };
 
   const svc = createServiceRoleClient();
+  // A sub-account belongs to the same side of the house as its parent, so
+  // inherit `kind` rather than inventing an 'operator' value the column has
+  // never held. The parent link is what marks it as an operator.
+  const { data: parent } = await svc
+    .from("organizations")
+    .select("kind")
+    .eq("id", input.parentAgencyOrgId)
+    .maybeSingle();
+  if (!parent) return { success: false, error: "That parent agency no longer exists." };
+
   const { data, error } = await svc
     .from("organizations")
     .insert({
       name,
-      org_type: "operator",
-      org_kind: "operator",
-      parent_org_id: input.parentAgencyOrgId,
+      kind: parent.kind,
+      parent_agency_id: input.parentAgencyOrgId,
     })
     .select("id")
     .single();
