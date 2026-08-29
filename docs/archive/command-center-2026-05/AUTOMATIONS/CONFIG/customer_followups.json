@@ -1,0 +1,26 @@
+{
+  "crm_tracker": "CUSTOMERS/CRM_TRACKER.md",
+  "message_templates": "CUSTOMERS/MESSAGE_TEMPLATE_LIBRARY.md",
+  "output_directory": "CUSTOMERS",
+  "log_directory": "AUTOMATIONS/LOGS",
+  "inactive_statuses": [
+    "do not contact",
+    "dnc",
+    "closed",
+    "inactive"
+  ],
+  "closed_statuses": [
+    "done",
+    "complete",
+    "completed",
+    "resolved"
+  ],
+  "followup_required_statuses": [
+    "lead",
+    "qualified",
+    "active",
+    "follow-up"
+  ],
+  "default_response_window": "15 minutes",
+  "approval_required": true
+}
