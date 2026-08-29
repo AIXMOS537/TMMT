@@ -18,10 +18,19 @@ describe("getTierForUser", () => {
     expect(getTierForUser(userWithRole("partner"))).toBe("investor");
   });
 
-  it("defaults unknown / missing roles to staff", () => {
-    expect(getTierForUser(userWithRole("nonsense"))).toBe("staff");
-    expect(getTierForUser(userWithRole())).toBe("staff");
-    expect(getTierForUser(null)).toBe("staff");
+  it("grants staff only on an explicit staff role", () => {
+    expect(getTierForUser(userWithRole("internal_team"))).toBe("staff");
+    expect(getTierForUser(userWithRole("va"))).toBe("staff");
+  });
+
+  // The hole this replaced: no account in this project has app_metadata.role
+  // set, so "default to staff" made isStaffUser() true for every signed-in
+  // user — and four server actions gate a service-role client on that check.
+  it("never grants a tier on an absent or unrecognised role", () => {
+    expect(getTierForUser(userWithRole("nonsense"))).toBe("none");
+    expect(getTierForUser(userWithRole("customer"))).toBe("none");
+    expect(getTierForUser(userWithRole())).toBe("none");
+    expect(getTierForUser(null)).toBe("none");
   });
 });
 
@@ -39,8 +48,15 @@ describe("homePathForTier", () => {
 describe("isStaffUser", () => {
   it("is true for staff and owner, false otherwise", () => {
     expect(isStaffUser(userWithRole("admin"))).toBe(true);
-    expect(isStaffUser(userWithRole())).toBe(true);
+    expect(isStaffUser(userWithRole("internal_team"))).toBe(true);
     expect(isStaffUser(userWithRole("vendor"))).toBe(false);
     expect(isStaffUser(userWithRole("investor"))).toBe(false);
+  });
+
+  // This is the assertion that matters: it gates service-role access.
+  it("is false for a signed-in user with no role, and for nobody", () => {
+    expect(isStaffUser(userWithRole())).toBe(false);
+    expect(isStaffUser(userWithRole("customer"))).toBe(false);
+    expect(isStaffUser(null)).toBe(false);
   });
 });

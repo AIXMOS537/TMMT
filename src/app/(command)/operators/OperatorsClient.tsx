@@ -50,7 +50,7 @@ export default function OperatorsClient() {
 
   const columns: Column<OperatorRow>[] = [
     { key: "name", label: "Operator" },
-    { key: "parent_org_id", label: "Agency", render: (r) => nameOf(r.parent_org_id) },
+    { key: "parent_agency_id", label: "Agency", render: (r) => nameOf(r.parent_agency_id) },
     {
       key: "balance",
       label: "Tokens",
@@ -120,7 +120,9 @@ function NewOperatorModal({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const agencies = orgs.filter((o) => o.org_kind !== "operator");
+  // An agency is a top-level org. Sub-accounts (those with a parent) cannot
+  // themselves be parents — that would nest operators under operators.
+  const agencies = orgs.filter((o) => o.parent_agency_id === null);
   const [name, setName] = useState("");
   const [parent, setParent] = useState("");
   const [tokens, setTokens] = useState("0");
