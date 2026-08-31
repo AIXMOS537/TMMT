@@ -5,7 +5,7 @@ import { getFormerCustomers } from "@/lib/queries";
 import { PageHeader, DataTable, Column, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 
 type FC = Record<string, unknown>;
 
