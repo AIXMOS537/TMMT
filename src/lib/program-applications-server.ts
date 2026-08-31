@@ -49,6 +49,29 @@ export async function fetchAuditLog(applicationId: string): Promise<AuditEntry[]
   }));
 }
 
+/**
+ * Just enough of a row to decide whether the caller may have the rest of it.
+ *
+ * Kept separate from loadProgramApplication so the authorization check never
+ * has to pull the payload — the thing it is deciding about — into memory first.
+ */
+export async function fetchApplicationGuard(
+  applicationId: string
+): Promise<{ email: string | null; accessToken: string | null } | null> {
+  const supabase = serviceClient();
+  const { data } = await supabase
+    .from("program_applications")
+    .select("email, access_token")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    email: (data.email as string | null) ?? null,
+    accessToken: (data.access_token as string | null) ?? null,
+  };
+}
+
 export async function loadProgramApplication(
   applicationId: string
 ): Promise<AppState | null> {
