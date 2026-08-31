@@ -28,7 +28,7 @@ export default function ProductsPage() {
             <p className="text-sm text-slate-600">
               Complete questionnaires to see product matches.
             </p>
-            <Link href="/questionnaire/personal" className="mt-2 inline-block text-teal-700 text-sm">
+            <Link href="/learn/questionnaire/personal" className="mt-2 inline-block text-teal-700 text-sm">
               Start questionnaire →
             </Link>
           </Card>
@@ -53,7 +53,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="mt-6">
-        <Link href="/application/review">
+        <Link href="/learn/application/review">
           <Button>Review application packet →</Button>
         </Link>
       </div>
