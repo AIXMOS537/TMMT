@@ -27,8 +27,9 @@ export default function RootLayout({
       <body className="antialiased bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
         <PWARegister />
         <Suspense fallback={null}>
-          <AnalyticsProvider>{children}</AnalyticsProvider>
+          <AnalyticsProvider />
         </Suspense>
+        {children}
       </body>
     </html>
   );

@@ -20,11 +20,15 @@ const ATTRIBUTION_PARAMS = [
   "utm_term",
 ] as const;
 
-export default function AnalyticsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * Renders nothing — it exists for its effects. Deliberately does NOT wrap the
+ * tree: useSearchParams() forces this into a Suspense boundary, and anything
+ * inside that boundary flushes the response shell before it renders, which
+ * locks the HTTP status at 200. When this wrapped {children}, every notFound()
+ * in the app returned "200 OK" with 404 content — invisible to uptime checks
+ * and indexable by Google. Keep it a sibling of {children}, not a parent.
+ */
+export default function AnalyticsProvider() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -68,5 +72,5 @@ export default function AnalyticsProvider({
     return () => subscription.unsubscribe();
   }, []);
 
-  return <>{children}</>;
+  return null;
 }
