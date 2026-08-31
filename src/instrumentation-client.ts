@@ -7,3 +7,6 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   enabled: process.env.NODE_ENV === "production",
 });
+
+/** Required for Sentry to see client-side navigations, not just the first load. */
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
