@@ -25,7 +25,9 @@ export default async function MePage() {
       >
         Open in Maps
       </Link>
-      <StatusTransitionBar incidentId={incident.id} current={incident.status} onChanged={() => {}} />
+      {/* No onChanged: this is a server component, and a function cannot cross
+          the boundary. The bar refreshes the route itself. */}
+      <StatusTransitionBar incidentId={incident.id} current={incident.status} />
     </div>
   );
 }
