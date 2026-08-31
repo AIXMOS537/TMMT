@@ -106,7 +106,7 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
       // the owner's provisioning console, and a bare startsWith handed them to
       // the operator tier. Those pages re-check for themselves, so nothing
       // leaked; the rule was simply wrong, and the next thing to lean on it
-      // would inherit it. Keeps the rentals-desk grant from origin/master.
+      // would inherit it. Operators also get the rentals desk.
       return (
         pathname === "/operator" ||
         pathname.startsWith("/operator/") ||
