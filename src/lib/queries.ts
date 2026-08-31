@@ -1,31 +1,45 @@
 import { supabase } from "@/lib/supabase";
+import { cacheRead, cacheReplace, isBrowserOffline } from "@/lib/offline/store";
 
 /* ──────────── Re-usable fetcher ──────────── */
 async function fetchTable<T>(table: string, select = "*", order?: string, limit = 1000): Promise<T[]> {
+  if (isBrowserOffline()) {
+    return (await cacheRead(table)) as T[];
+  }
   let q = supabase.from(table).select(select).limit(limit);
   if (order) q = q.order(order, { ascending: false });
   const { data, error } = await q;
   if (error) {
     console.error(`[${table}]`, error.message);
-    return [];
+    return (await cacheRead(table)) as T[];
   }
-  return (data ?? []) as T[];
+  const rows = (data ?? []) as T[];
+  await cacheReplace(table, rows as Record<string, unknown>[]);
+  return rows;
+}
+
+async function countFromCache(table: string, col?: string, val?: string): Promise<number> {
+  const rows = await cacheRead(table);
+  if (!col) return rows.length;
+  return rows.filter((r) => String(r[col] ?? "") === val).length;
 }
 
 async function count(table: string): Promise<number> {
+  if (isBrowserOffline()) return countFromCache(table);
   const { count: c, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true });
-  if (error) return 0;
+  if (error) return countFromCache(table);
   return c ?? 0;
 }
 
 async function countWhere(table: string, col: string, val: string): Promise<number> {
+  if (isBrowserOffline()) return countFromCache(table, col, val);
   const { count: c, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true })
     .eq(col, val);
-  if (error) return 0;
+  if (error) return countFromCache(table, col, val);
   return c ?? 0;
 }
 

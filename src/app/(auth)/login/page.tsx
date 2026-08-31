@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "./actions";
+import { signIn, signUp } from "./actions";
 import BrandLogo from "@/components/brand/BrandLogo";
 import { useBrand } from "@/components/brand/BrandProvider";
 
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const brand = useBrand();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"in" | "up">("in");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,7 +18,7 @@ export default function LoginPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const result = await signIn(formData);
+    const result = mode === "up" ? await signUp(formData) : await signIn(formData);
 
     if (result?.error) {
       setError(result.error);
@@ -39,15 +40,32 @@ export default function LoginPage() {
             Sign in to {brand.displayName}
           </h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            Same login for everyone:{" "}
-            <span className="text-gray-700 dark:text-slate-300">
-              partners go to the partner portal
-            </span>
-            ; staff go to the main dashboard.
+            Your own login. Fill the TMMT Rentals desk first — even offline — then merge into live when you are seated on an org.
           </p>
+          <div className="flex rounded-lg border border-gray-200 dark:border-slate-600 p-1 text-xs font-semibold">
+            <button type="button" onClick={() => setMode("in")} className={`flex-1 rounded-md py-1.5 ${mode === "in" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-slate-300"}`}>
+              Sign in
+            </button>
+            <button type="button" onClick={() => setMode("up")} className={`flex-1 rounded-md py-1.5 ${mode === "up" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-slate-300"}`}>
+              Create account
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {mode === "up" && (
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                Full name
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                autoComplete="name"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              />
+            </div>
+          )}
           <div>
             <label
               htmlFor="email"
@@ -100,7 +118,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Working…" : mode === "up" ? "Create my login" : "Sign in"}
           </button>
         </form>
       </div>

@@ -5,7 +5,7 @@ import { getActiveCustomers } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 import { LicensePhotoControls } from "@/components/AdminDocumentControls";
 
 type Cust = Record<string, unknown>;

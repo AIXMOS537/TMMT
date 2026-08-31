@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getVendors } from "@/lib/queries";
 import { PageHeader, DataTable, Column, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass } from "@/components/ui";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 
 type Vendor = Record<string, unknown>;
 
