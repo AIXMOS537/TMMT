@@ -1,13 +1,37 @@
 import { supabase } from "@/lib/supabase";
 
 /* ──────────── Re-usable fetcher ──────────── */
+
+/**
+ * A failed read is not an empty table, and these helpers used to say it was.
+ *
+ * They caught their own errors and returned [] or 0, which resolves the promise
+ * successfully — so the .catch(() => setError("Failed to load data.")) that
+ * nearly every consuming page already writes could never fire. A denied policy,
+ * a bad key, a dropped connection: all of them rendered as a clean, empty,
+ * apparently-correct table, and count() fed 0 into the dashboard's stat cards.
+ * There was no way for an operator to tell "no vehicles" from "that query was
+ * refused".
+ *
+ * So they throw now, and the error handling the pages already have starts
+ * working. 36 of the 38 files reading through this module have a .catch; the
+ * two that do not are server components, where the route's error boundary
+ * shows instead. Either way the failure is visible, which is the point.
+ */
+class QueryError extends Error {
+  constructor(table: string, message: string) {
+    super(`Could not read ${table}: ${message}`);
+    this.name = "QueryError";
+  }
+}
+
 async function fetchTable<T>(table: string, select = "*", order?: string, limit = 1000): Promise<T[]> {
   let q = supabase.from(table).select(select).limit(limit);
   if (order) q = q.order(order, { ascending: false });
   const { data, error } = await q;
   if (error) {
     console.error(`[${table}]`, error.message);
-    return [];
+    throw new QueryError(table, error.message);
   }
   return (data ?? []) as T[];
 }
@@ -16,7 +40,10 @@ async function count(table: string): Promise<number> {
   const { count: c, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true });
-  if (error) return 0;
+  if (error) {
+    console.error(`[${table}] count`, error.message);
+    throw new QueryError(table, error.message);
+  }
   return c ?? 0;
 }
 
@@ -25,7 +52,10 @@ async function countWhere(table: string, col: string, val: string): Promise<numb
     .from(table)
     .select("*", { count: "exact", head: true })
     .eq(col, val);
-  if (error) return 0;
+  if (error) {
+    console.error(`[${table}] count ${col}=${val}`, error.message);
+    throw new QueryError(table, error.message);
+  }
   return c ?? 0;
 }
 
@@ -51,7 +81,7 @@ async function leadPoolFeed(scope: "available" | "mine"): Promise<LeadPoolRow[]>
   const { data, error } = await supabase.rpc("lead_pool_feed", { p_scope: scope });
   if (error) {
     console.error(`[lead_pool_feed ${scope}]`, error.message);
-    return [];
+    throw new QueryError("lead_pool_feed", error.message);
   }
   return (data ?? []) as LeadPoolRow[];
 }
@@ -465,7 +495,7 @@ export async function getVendorJobsForStaff(caseId?: string) {
   const { data, error } = await q;
   if (error) {
     console.error("[vendor_jobs]", error.message);
-    return [];
+    throw new QueryError("vendor_jobs", error.message);
   }
   return data ?? [];
 }
@@ -477,7 +507,7 @@ export async function getCaseStatusHistory(caseId: string) {
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
     .limit(50);
-  if (error) return [];
+  if (error) throw new QueryError("case_status_history", error.message);
   return data ?? [];
 }
 
@@ -489,7 +519,7 @@ export async function getVendorPortalJobs() {
     .limit(200);
   if (error) {
     console.error("[vendor portal jobs]", error.message);
-    return [];
+    throw new QueryError("vendor_jobs", error.message);
   }
   return data ?? [];
 }
@@ -500,7 +530,7 @@ export async function getVendorJobUpdates(vendorJobId: string) {
     .select("*")
     .eq("vendor_job_id", vendorJobId)
     .order("created_at", { ascending: false });
-  if (error) return [];
+  if (error) throw new QueryError("vendor_job_updates", error.message);
   return data ?? [];
 }
 
@@ -510,7 +540,7 @@ export async function getVendorJobFiles(vendorJobId: string) {
     .select("*")
     .eq("vendor_job_id", vendorJobId)
     .order("created_at", { ascending: false });
-  if (error) return [];
+  if (error) throw new QueryError("vendor_files", error.message);
   return data ?? [];
 }
 
@@ -522,7 +552,7 @@ export async function getOpsThreads() {
     .limit(50);
   if (error) {
     console.error("[ops_threads]", error.message);
-    return [];
+    throw new QueryError("ops_threads", error.message);
   }
   return data ?? [];
 }
@@ -545,7 +575,7 @@ export async function getOpsMessages(filters?: {
   const { data, error } = await q;
   if (error) {
     console.error("[ops_messages]", error.message);
-    return [];
+    throw new QueryError("ops_messages", error.message);
   }
   return data ?? [];
 }
@@ -559,7 +589,7 @@ export async function getInvestorUpdates() {
     .limit(50);
   if (error) {
     console.error("[investor_updates]", error.message);
-    return [];
+    throw new QueryError("investor_updates", error.message);
   }
   return data ?? [];
 }
@@ -575,7 +605,7 @@ export async function getTimeClock() {
     .order("clock_in", { ascending: false });
   if (error) {
     console.error("[time_clock]", error.message);
-    return [];
+    throw new QueryError("time_clock_entries", error.message);
   }
   return data ?? [];
 }
