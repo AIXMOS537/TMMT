@@ -1,67 +1,46 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import type { User } from "@supabase/supabase-js";
 
 /**
  * These handlers run on a service-role client, so the database will not catch a
- * mistake here — the checks in the route are the only thing standing between a
- * request and someone's credit application. They shipped with none: GET returned
- * a whole application for any id in the query string and PUT upserted whatever
- * was posted, including the consent flags.
+ * mistake here — whether the gate is consulted at all is the whole safety
+ * property. They shipped without one: GET returned a complete application for
+ * any id in the query string and PUT upserted whatever was posted, including
+ * client_consent_given.
  *
- * Middleware bounces anonymous callers to /login, which is why this was easy to
- * miss — but middleware's tier rules put every signed-in account in the branch
- * that permits /api/cube/*, so "signed in as anyone" was the real exposure.
- * That is what these tests pin down: a session alone is not authorization.
+ * The gate's own rules live in src/lib/program-applications-server.test.ts.
+ * What this file pins down is the wiring: that every path asks first, that a
+ * refusal reaches nothing, and that a refusal is indistinguishable from an
+ * application that does not exist.
  */
 
-const guard = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 const load = vi.hoisted(() => vi.fn());
 const save = vi.hoisted(() => vi.fn());
-const getUser = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/program-applications-server", () => ({
-  fetchApplicationGuard: guard,
+  authorizeApplicationAccess: authorize,
   loadProgramApplication: load,
   saveProgramApplication: save,
-}));
-
-vi.mock("@/lib/supabase-server", () => ({
-  createSSRClient: async () => ({ auth: { getUser } }),
 }));
 
 import { GET, PUT } from "./route";
 
 const APP_ID = "11111111-1111-1111-1111-111111111111";
-const OWNER_EMAIL = "client@example.com";
 const TOKEN = "s3cret-access-token";
 
-/** The row exists and belongs to OWNER_EMAIL, guarded by TOKEN. */
-function applicationExists() {
-  guard.mockResolvedValue({ email: OWNER_EMAIL, accessToken: TOKEN });
-}
-
-function signedInAs(email: string, role?: string) {
-  getUser.mockResolvedValue({
-    data: {
-      user: { email, app_metadata: role ? { role } : {} } as unknown as User,
-    },
-  });
-}
-
-function signedOut() {
-  getUser.mockResolvedValue({ data: { user: null } });
-}
+const allow = () => authorize.mockResolvedValue({ ok: true, staff: false, userId: "u1" });
+const deny = () => authorize.mockResolvedValue({ ok: false });
 
 const getReq = (qs: string) =>
   new NextRequest(`http://localhost/api/cube/application${qs}`);
 
-const putReq = (id: string, qs = "") =>
+const putReq = (id: unknown, qs = "") =>
   new NextRequest(`http://localhost/api/cube/application${qs}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      application: { id },
+      application: id === undefined ? {} : { id },
       currentUser: { email: "attacker@example.com" },
     }),
   });
@@ -73,9 +52,8 @@ beforeEach(() => {
 });
 
 describe("GET /api/cube/application", () => {
-  it("refuses a signed-in stranger, and does not load the application", async () => {
-    applicationExists();
-    signedInAs("stranger@example.com");
+  it("does not load the application when access is refused", async () => {
+    deny();
 
     const res = await GET(getReq(`?id=${APP_ID}`));
 
@@ -83,66 +61,49 @@ describe("GET /api/cube/application", () => {
     expect(load).not.toHaveBeenCalled();
   });
 
-  it("refuses a signed-out caller with no token", async () => {
-    applicationExists();
-    signedOut();
+  it("passes the id and the token from the query string to the gate", async () => {
+    allow();
 
-    expect((await GET(getReq(`?id=${APP_ID}`))).status).toBe(404);
-    expect(load).not.toHaveBeenCalled();
+    await GET(getReq(`?id=${APP_ID}&token=${TOKEN}`));
+
+    expect(authorize).toHaveBeenCalledWith(APP_ID, TOKEN);
   });
 
-  it("refuses a wrong token without falling back to an unchecked read", async () => {
-    applicationExists();
-    signedOut();
+  it("asks the gate even when no token is supplied", async () => {
+    allow();
 
-    const res = await GET(getReq(`?id=${APP_ID}&token=wrong-guess`));
+    await GET(getReq(`?id=${APP_ID}`));
 
-    expect(res.status).toBe(404);
-    expect(load).not.toHaveBeenCalled();
+    expect(authorize).toHaveBeenCalledWith(APP_ID, null);
   });
 
-  it("allows the access token minted with the row", async () => {
-    applicationExists();
-    signedOut();
+  it("returns the application once access is granted", async () => {
+    allow();
 
-    const res = await GET(getReq(`?id=${APP_ID}&token=${TOKEN}`));
+    const res = await GET(getReq(`?id=${APP_ID}`));
 
     expect(res.status).toBe(200);
     expect(load).toHaveBeenCalledWith(APP_ID);
   });
 
-  it("allows the person the application belongs to, case-insensitively", async () => {
-    applicationExists();
-    signedInAs("CLIENT@Example.com ");
+  it("answers 404 for an application that resolves to nothing, same as a refusal", async () => {
+    // Identical status to the refusal above — a stranger must not be able to
+    // tell which application ids exist.
+    allow();
+    load.mockResolvedValue(null);
 
-    expect((await GET(getReq(`?id=${APP_ID}`))).status).toBe(200);
-  });
-
-  it("allows staff any application", async () => {
-    applicationExists();
-    signedInAs("va@tmmt.example", "internal_team");
-
-    expect((await GET(getReq(`?id=${APP_ID}`))).status).toBe(200);
-  });
-
-  it("answers 404 for an unknown id, the same as for a forbidden one", async () => {
-    guard.mockResolvedValue(null);
-    signedInAs("va@tmmt.example", "internal_team");
-
-    // Identical to the refusal above — a stranger must not be able to tell
-    // which application ids exist.
     expect((await GET(getReq(`?id=${APP_ID}`))).status).toBe(404);
   });
 
-  it("still rejects a missing id", async () => {
+  it("rejects a missing id before asking anything", async () => {
     expect((await GET(getReq(""))).status).toBe(400);
+    expect(authorize).not.toHaveBeenCalled();
   });
 });
 
 describe("PUT /api/cube/application", () => {
-  it("refuses a signed-in stranger, and writes nothing", async () => {
-    applicationExists();
-    signedInAs("attacker@example.com");
+  it("writes nothing when access is refused", async () => {
+    deny();
 
     const res = await PUT(putReq(APP_ID));
 
@@ -150,46 +111,42 @@ describe("PUT /api/cube/application", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  it("does not let the posted body name its own authority", async () => {
-    // The body claims to be the owner. Authorization must come from the session
-    // or the token, never from the payload being written.
-    applicationExists();
-    signedOut();
+  it("authorizes the id in the body, not anything else in it", async () => {
+    allow();
 
-    const req = new NextRequest("http://localhost/api/cube/application", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        application: { id: APP_ID },
-        currentUser: { email: OWNER_EMAIL },
-      }),
-    });
+    await PUT(putReq(APP_ID));
 
-    expect((await PUT(req)).status).toBe(404);
-    expect(save).not.toHaveBeenCalled();
+    expect(authorize).toHaveBeenCalledWith(APP_ID, null);
   });
 
-  it("allows the owner to save their own application", async () => {
-    applicationExists();
-    signedInAs(OWNER_EMAIL);
+  it("takes the token from the query string, never from the body", async () => {
+    // The body is the thing being authorized, so it cannot also be what
+    // authorizes it.
+    allow();
+
+    await PUT(putReq(APP_ID, `?token=${TOKEN}`));
+
+    expect(authorize).toHaveBeenCalledWith(APP_ID, TOKEN);
+  });
+
+  it("saves once access is granted", async () => {
+    allow();
 
     expect((await PUT(putReq(APP_ID))).status).toBe(200);
     expect(save).toHaveBeenCalledOnce();
   });
 
-  it("allows a token holder to save", async () => {
-    applicationExists();
-    signedOut();
-
-    expect((await PUT(putReq(APP_ID, `?token=${TOKEN}`))).status).toBe(200);
-    expect(save).toHaveBeenCalledOnce();
+  it("rejects a body with no application id before asking anything", async () => {
+    expect((await PUT(putReq(undefined))).status).toBe(400);
+    expect(authorize).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
   });
 
-  it("still rejects a body with no application id", async () => {
+  it("rejects a body that is not JSON", async () => {
     const req = new NextRequest("http://localhost/api/cube/application", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ application: {} }),
+      body: "not json",
     });
 
     expect((await PUT(req)).status).toBe(400);
