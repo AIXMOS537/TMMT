@@ -57,22 +57,22 @@ export default function ContractsInterface() {
       const matchSearch = !search || [r.customer_name, r.vehicle_name, r.contract_type].some((v) =>
         String(v ?? "").toLowerCase().includes(search.toLowerCase())
       );
-      const matchStatus = !statusFilter || r.status === statusFilter;
+      const matchStatus = !statusFilter || r.contract_status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [stats, search, statusFilter]);
 
   const kanbanItems: KanbanItem[] = useMemo(() => {
     if (!stats) return [];
-    return stats.all.filter((c) => c.id && c.status).map((c) => ({
-      id: String(c.id), status: String(c.status), ...c,
+    return stats.all.filter((c) => c.id && c.contract_status).map((c) => ({
+      id: String(c.id), status: String(c.contract_status), ...c,
     }));
   }, [stats]);
 
   const columns: Column<Contract>[] = [
     { key: "customer_name", label: "Customer", render: (r) => <span className="font-medium">{String(r.customer_name ?? "—")}</span> },
     { key: "vehicle_name", label: "Vehicle" },
-    { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status as string} /> },
+    { key: "contract_status", label: "Status", render: (r) => <StatusBadge status={r.contract_status as string} /> },
     { key: "start_date", label: "Start", render: (r) => formatDate(r.start_date as string) },
     { key: "end_date", label: "End", render: (r) => formatDate(r.end_date as string) },
     { key: "total_contract_amount", label: "Total", render: (r) => formatCurrency(Number(r.total_contract_amount) || null) },
@@ -99,7 +99,7 @@ export default function ContractsInterface() {
   }
 
   async function handleStatusChange(itemId: string, newStatus: string, _oldStatus?: string): Promise<boolean> {
-    const result = await adminUpsert("contracts", { id: itemId, status: newStatus });
+    const result = await adminUpsert("contracts", { id: itemId, contract_status: newStatus });
     if (result.success) { load(); return true; }
     setError(result.error);
     return false;
@@ -171,7 +171,7 @@ export default function ContractsInterface() {
                 <ErrorBanner message={error} onDismiss={() => setError(null)} />
                 <DetailSection title="Contract Info">
                   <DetailRow label="Type" value={String(selected.contract_type ?? "—")} />
-                  <DetailRow label="Status" value={<StatusBadge status={selected.status as string} />} />
+                  <DetailRow label="Status" value={<StatusBadge status={selected.contract_status as string} />} />
                   <DetailRow label="Start" value={formatDate(selected.start_date as string)} />
                   <DetailRow label="End" value={formatDate(selected.end_date as string)} />
                   <DetailRow label="Total" value={formatCurrency(Number(selected.total_contract_amount) || null)} />
@@ -204,7 +204,7 @@ export default function ContractsInterface() {
                   <input name="contract_type" defaultValue={String(selected.contract_type ?? "")} className={inputClass} />
                 </FormField>
                 <FormField label="Status">
-                  <select name="status" defaultValue={String(selected.status ?? "")} className={selectClass}>
+                  <select name="contract_status" defaultValue={String(selected.contract_status ?? "")} className={selectClass}>
                     {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </FormField>

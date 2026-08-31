@@ -67,15 +67,15 @@ export default function VehiclesInterface() {
       const matchSearch = !search || [r.vehicle_name, r.vehicle_make, r.vehicle_model, r.vin, r.license_plate].some((v) =>
         String(v ?? "").toLowerCase().includes(search.toLowerCase())
       );
-      const matchStatus = !statusFilter || r.status === statusFilter;
+      const matchStatus = !statusFilter || r.vehicle_status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [stats, search, statusFilter]);
 
   const kanbanItems: KanbanItem[] = useMemo(() => {
     if (!stats) return [];
-    return stats.all.filter((v) => v.id && v.status).map((v) => ({
-      id: String(v.id), status: String(v.status), ...v,
+    return stats.all.filter((v) => v.id && v.vehicle_status).map((v) => ({
+      id: String(v.id), status: String(v.vehicle_status), ...v,
     }));
   }, [stats]);
 
@@ -90,7 +90,7 @@ export default function VehiclesInterface() {
   const columns: Column<Vehicle>[] = [
     { key: "vehicle_name", label: "Vehicle", render: (r) => <span className="font-medium">{String(r.vehicle_name ?? "—")}</span> },
     { key: "license_plate", label: "Plate" },
-    { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status as string} /> },
+    { key: "vehicle_status", label: "Status", render: (r) => <StatusBadge status={r.vehicle_status as string} /> },
     { key: "weekly_rate", label: "Weekly Rate", render: (r) => formatCurrency(Number(r.weekly_rate) || null) },
     { key: "color", label: "Color" },
     { key: "odometer", label: "Odometer", render: (r) => r.odometer ? Number(r.odometer).toLocaleString() : "—" },
@@ -118,7 +118,7 @@ export default function VehiclesInterface() {
   }
 
   async function handleStatusChange(itemId: string, newStatus: string, _oldStatus?: string): Promise<boolean> {
-    const result = await adminUpsert("fleet", { id: itemId, status: newStatus });
+    const result = await adminUpsert("fleet", { id: itemId, vehicle_status: newStatus });
     if (result.success) { load(); return true; }
     setError(result.error);
     return false;
@@ -194,7 +194,7 @@ export default function VehiclesInterface() {
               <DetailRow label="Color" value={String(selected.color ?? "—")} />
               <DetailRow label="Odometer" value={selected.odometer ? Number(selected.odometer).toLocaleString() : "—"} />
               <DetailRow label="Weekly Rate" value={formatCurrency(Number(selected.weekly_rate) || null)} />
-              <DetailRow label="Status" value={<StatusBadge status={selected.status as string} />} />
+              <DetailRow label="Status" value={<StatusBadge status={selected.vehicle_status as string} />} />
             </DetailSection>
 
             {vehicleMaintenance.length > 0 && (
@@ -231,7 +231,7 @@ export default function VehiclesInterface() {
               <FormField label="Odometer"><input name="odometer" type="number" defaultValue={String(selected.odometer ?? "")} className={inputClass} /></FormField>
             </div>
             <FormField label="Status">
-              <select name="status" defaultValue={String(selected.status ?? "")} className={selectClass}>
+              <select name="vehicle_status" defaultValue={String(selected.vehicle_status ?? "")} className={selectClass}>
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </FormField>

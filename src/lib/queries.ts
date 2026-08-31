@@ -248,13 +248,18 @@ export async function getAppointmentStats() {
     const d = new Date(String(a.appointment_date_time ?? ""));
     return d >= weekStart && d <= now;
   });
-  const completed = all.filter((a) => a.status === "Completed").length;
-  const noShow = all.filter((a) => a.status === "No-Show").length;
+  // These tables name their status column after the entity — appointment_status,
+  // contract_status, vehicle_status, payment_status — not a bare `status`.
+  // Reading `.status` does not error: supabase-js hands back the row, the key is
+  // simply undefined, so every count lands on 0 and every bucket lands on
+  // "Unknown". Silent, and it looks exactly like an empty table.
+  const completed = all.filter((a) => a.appointment_status === "Completed").length;
+  const noShow = all.filter((a) => a.appointment_status === "No-Show").length;
   const total = all.length || 1;
 
   const statusCounts: Record<string, number> = {};
   all.forEach((a) => {
-    const s = String(a.status ?? "Unknown");
+    const s = String(a.appointment_status ?? "Unknown");
     statusCounts[s] = (statusCounts[s] || 0) + 1;
   });
 
@@ -289,11 +294,12 @@ export async function getContractStats() {
   const weekEnd = new Date(now);
   weekEnd.setDate(now.getDate() + 7);
 
-  const active = all.filter((c) => c.status === "Active").length;
-  const draft = all.filter((c) => c.status === "Draft").length;
+  // contracts.contract_status — see the note on getAppointmentStats.
+  const active = all.filter((c) => c.contract_status === "Active").length;
+  const draft = all.filter((c) => c.contract_status === "Draft").length;
 
   const expiringThisWeek = all.filter((c) => {
-    if (c.status !== "Active") return false;
+    if (c.contract_status !== "Active") return false;
     const end = new Date(String(c.end_date ?? ""));
     return end >= now && end <= weekEnd;
   }).length;
@@ -301,14 +307,14 @@ export async function getContractStats() {
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
   const terminatedThisMonth = all.filter((c) => {
-    if (c.status !== "Terminated") return false;
+    if (c.contract_status !== "Terminated") return false;
     const d = new Date(String(c.updated_at ?? c.created_at ?? ""));
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
   }).length;
 
   const statusCounts: Record<string, number> = {};
   all.forEach((c) => {
-    const s = String(c.status ?? "Unknown");
+    const s = String(c.contract_status ?? "Unknown");
     statusCounts[s] = (statusCounts[s] || 0) + 1;
   });
 
@@ -321,7 +327,7 @@ export async function getContractStats() {
       name: label,
       value: all.filter((c) => {
         const sd = String(c.signed_date ?? c.created_at ?? "");
-        return sd.startsWith(monthStr) && (c.status === "Signed" || c.status === "Active" || c.status === "Completed");
+        return sd.startsWith(monthStr) && (c.contract_status === "Signed" || c.contract_status === "Active" || c.contract_status === "Completed");
       }).length,
     });
   }
@@ -341,9 +347,10 @@ export async function getVehicleStats() {
   const fleet = await getFleet() as Record<string, unknown>[];
   const payments = await getPayments() as Record<string, unknown>[];
 
+  // fleet.vehicle_status, not .status — see the note on getAppointmentStats.
   const statusCounts: Record<string, number> = {};
   fleet.forEach((v) => {
-    const s = String(v.status ?? "Unknown");
+    const s = String(v.vehicle_status ?? "Unknown");
     statusCounts[s] = (statusCounts[s] || 0) + 1;
   });
 
