@@ -82,8 +82,13 @@ export function buildOwnerMissionData(
       { icon: "📣", title: "Reactivate the waitlist", detail: `${dash.waitlist} on the waitlist — convert them as cars free up.` },
       { icon: "🤝", title: "Lean on affiliates", detail: "Push the affiliate program to drive qualified referrals." },
     ],
+    // Every row here reports a real number off the dashboard. "Vision —
+    // Watching KPIs" used to sit at the top of this list with nothing behind
+    // it: a fixed string under a heading that reads "AIXMOS agents — on watch".
+    // The other four are a themed presentation of live counts, which is fine;
+    // that one was the panel telling you something was being watched when
+    // nothing was. Put it back when it has a number to report.
     agents: [
-      { key: "vision", label: "Vision", role: "Strategy", status: "Watching KPIs", tone: "good" },
       { key: "tank", label: "Tank", role: "Risk & checks", status: pendingChecks > 0 ? `${pendingChecks} to review` : "Clear", tone: checkTone },
       { key: "fly_guy", label: "Fly Guy", role: "Leads", status: newLeads > 0 ? `${newLeads} new` : "Quiet", tone: newLeads > 0 ? "info" : "neutral" },
       { key: "bob", label: "Bob", role: "Billing", status: overdue > 0 ? `${overdue} overdue` : "All paid", tone: overdueTone },
