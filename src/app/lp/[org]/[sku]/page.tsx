@@ -11,7 +11,8 @@ import { COPY } from './copy'
 import BrandLogo from '@/components/brand/BrandLogo'
 import BrandProvider from '@/components/brand/BrandProvider'
 import { brandMetadata, brandViewport } from '@/lib/platform/brand-metadata'
-import { tenantOrDefault } from '@/lib/platform/tenant-resolve'
+import { notFound } from 'next/navigation'
+import { resolveTenantBySlug, tenantOrDefault } from '@/lib/platform/tenant-resolve'
 
 const LP_FALLBACK_TENANT = 'tmmt_property'
 
@@ -33,8 +34,14 @@ export default async function LandingPage({ params, searchParams }: {
 }) {
   const { org: orgParam, sku: skuParam } = await params
   const sp = await searchParams
-  const copy = COPY[skuParam] ?? COPY['lead-magnet']
-  const brand = tenantOrDefault(orgParam, LP_FALLBACK_TENANT)
+  // A landing page only exists for a published (org, sku) pair. Falling back to
+  // a default brand and the lead-magnet offer meant every invented URL —
+  // /lp/anyone/anything — served a fully branded TMMT page with a live SMS
+  // opt-in on it: indexable junk, and consent captured for an org that does not
+  // exist. An unknown pair is a typo, a stale link, or a probe. 404 it.
+  const copy = Object.hasOwn(COPY, skuParam) ? COPY[skuParam] : undefined
+  const brand = resolveTenantBySlug(orgParam)
+  if (!brand || !copy) notFound()
   const utm = {
     utm_source: sp.utm_source ?? '',
     utm_medium: sp.utm_medium ?? '',
