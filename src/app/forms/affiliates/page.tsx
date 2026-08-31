@@ -2,7 +2,20 @@ import Link from "next/link";
 import { Card, Button } from "@/components/ui";
 import { Coins, Link2, ShieldCheck, ArrowRight } from "lucide-react";
 
-const APPLY_URL = process.env.NEXT_PUBLIC_AFFILIATE_APPLY_URL || "https://tally.so/r/REPLACE_ME";
+/**
+ * The fallback has to be somewhere real.
+ *
+ * This used to fall back to "https://tally.so/r/REPLACE_ME", and
+ * NEXT_PUBLIC_AFFILIATE_APPLY_URL appears nowhere else in the repo — not in
+ * .env.example, not in ENVIRONMENTS.md — so nothing would have told you it
+ * needed setting. The only call to action on the affiliate page opened a
+ * placeholder URL.
+ *
+ * lib/ghl-offers.ts already settled this pattern for every other money CTA:
+ * fall back to a live destination, never a dead one.
+ */
+const APPLY_URL =
+  process.env.NEXT_PUBLIC_AFFILIATE_APPLY_URL?.trim() || "/forms/apply?ref=affiliate";
 
 const bullets = [
   {
