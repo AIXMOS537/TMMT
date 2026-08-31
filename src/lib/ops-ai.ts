@@ -18,6 +18,13 @@ const REVIEW_SCHEMA = `Respond with ONLY valid JSON (no markdown):
   "summary": string
 }`;
 
+// 2026-08-31: the endpoint was hardcoded to api.anthropic.com (paid, per-token).
+// Made configurable so this can point at a free lane instead — the local LiteLLM
+// door, or any Anthropic-compatible free gateway — without touching this file again.
+// Defaults to the real Anthropic API, so behaviour is unchanged unless you set it.
+//   ANTHROPIC_OPS_BASE_URL=http://127.0.0.1:4001   (local only; Vercel cannot reach this)
+const OPS_AI_BASE = process.env.ANTHROPIC_OPS_BASE_URL || "https://api.anthropic.com";
+
 export async function reviewOpsMessage(
   body: string,
   context: { audience: string; messageKind: string; authorRole: string }
@@ -47,7 +54,7 @@ If not aligned, provide a corrected suggestedBody that fixes issues while keepin
 
 ${REVIEW_SCHEMA}`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(`${OPS_AI_BASE}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -116,7 +123,7 @@ ${rawTranscript}
 Respond JSON only:
 {"draft": "...", "notes": "brief note to owner about assumptions or questions"}`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(`${OPS_AI_BASE}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
