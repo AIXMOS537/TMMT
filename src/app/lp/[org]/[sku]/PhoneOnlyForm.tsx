@@ -60,7 +60,7 @@ export default function PhoneOnlyForm({ orgSlug, sku, cta, utm }: Props) {
         background: '#7fffd4', color: '#000', padding: '20px 16px',
         borderRadius: 12, textAlign: 'center', fontSize: 18, fontWeight: 600
       }}>
-        Got it. Texting you now — check your messages.
+        Got it. We&apos;ll text you shortly — keep an eye on your messages.
       </div>
     )
   }

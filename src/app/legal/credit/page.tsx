@@ -13,7 +13,7 @@ export default function CreditLegalPage() {
         <p className="text-sm text-blue-900 dark:text-blue-200 mb-2">
           Ready to take action? Start your <strong>Funding Readiness Profile</strong> — educational only, no credit pull, no SSN, takes ~5 minutes.
         </p>
-        <a href="/funding" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
+        <a href="/forms/credit-funding-intake" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
           Start the profile →
         </a>
       </aside>

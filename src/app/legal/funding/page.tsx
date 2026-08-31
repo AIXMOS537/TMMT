@@ -13,7 +13,7 @@ export default function FundingLegalPage() {
         <p className="text-sm text-blue-900 dark:text-blue-200 mb-2">
           Before any introduction we ask you to share a short readiness profile — non-intrusive and educational, no application.
         </p>
-        <a href="/funding" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
+        <a href="/forms/credit-funding-intake" className="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
           Start the profile →
         </a>
       </aside>
