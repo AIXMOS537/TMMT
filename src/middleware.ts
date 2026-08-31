@@ -247,11 +247,19 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (pathname.startsWith("/partner")) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace(/^\/partner/, "/investor") || "/investor";
-    return withRobotsHeader(NextResponse.redirect(url));
-  }
+  // /partner is a real portal, not an alias for /investor.
+  //
+  // This redirect sent every /partner request to /investor, unconditionally and
+  // after the tier check had already decided the investor tier was allowed
+  // through — so the allowance could never take effect and the page had never
+  // rendered for anyone. /investor does not show fleet data; /partner does, via
+  // the get_partner_fleet function and partner_fleet_access, both of which
+  // exist and carry their own row-level security.
+  //
+  // The line arrived inside the commit that moved middleware.ts into src/, not
+  // in a decision to retire the portal, so it reads as something carried across
+  // rather than chosen. Removed. The tier rule above already limits /partner to
+  // the investor tier, and the data is scoped in the database.
 
   return withRobotsHeader(response);
 }
