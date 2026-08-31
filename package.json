@@ -56,7 +56,8 @@
     "audit:login": "node scripts/audit-login.mjs",
     "audit:crawl": "node scripts/audit-reset.mjs && playwright test --project=audit",
     "audit:report": "node scripts/audit-report.mjs",
-    "audit:static": "npm run lint && npm run build"
+    "audit:static": "npm run lint && npm run build",
+    "invite": "node scripts/invite.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

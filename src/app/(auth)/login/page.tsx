@@ -40,7 +40,7 @@ export default function LoginPage() {
             Sign in to {brand.displayName}
           </h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            Your own login. Fill the TMMT Rentals desk first — even offline — then merge into live when you are seated on an org.
+            Your own login. Fill the TMMT Rentals desk first — even offline — then merge into live when you are seated on an org. New accounts need an invite code.
           </p>
           <div className="flex rounded-lg border border-gray-200 dark:border-slate-600 p-1 text-xs font-semibold">
             <button type="button" onClick={() => setMode("in")} className={`flex-1 rounded-md py-1.5 ${mode === "in" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-slate-300"}`}>
@@ -54,17 +54,36 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {mode === "up" && (
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Full name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                autoComplete="name"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-              />
-            </div>
+            <>
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Full name
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  autoComplete="name"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Invite code
+                </label>
+                <input
+                  id="inviteCode"
+                  name="inviteCode"
+                  required
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="XXXX-XXXX-XXXX-XXXX"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm font-mono tracking-wide uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  Accounts are by invitation. Ask TMMT for your code — each one works once.
+                </p>
+              </div>
+            </>
           )}
           <div>
             <label
@@ -95,7 +114,7 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              autoComplete="current-password"
+              autoComplete={mode === "up" ? "new-password" : "current-password"}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
           </div>
