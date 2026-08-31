@@ -5,7 +5,7 @@ import { getMaintenance } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, StatusPill, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 
 type Maint = Record<string, unknown>;
 

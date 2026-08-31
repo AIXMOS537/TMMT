@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { cacheRead, cacheReplace, isBrowserOffline } from "@/lib/offline/store";
 
 /* ──────────── Re-usable fetcher ──────────── */
 
@@ -26,34 +27,54 @@ class QueryError extends Error {
 }
 
 async function fetchTable<T>(table: string, select = "*", order?: string, limit = 1000): Promise<T[]> {
+  if (isBrowserOffline()) {
+    return (await cacheRead(table)) as T[];
+  }
   let q = supabase.from(table).select(select).limit(limit);
   if (order) q = q.order(order, { ascending: false });
   const { data, error } = await q;
   if (error) {
     console.error(`[${table}]`, error.message);
+    // Offline-first (origin/master): serve the cached copy when there is one.
+    // But an error with nothing cached is a failure, not an empty table — the
+    // page's own .catch can only fire if we actually reject.
+    const cached = (await cacheRead(table)) as T[];
+    if (cached.length > 0) return cached;
     throw new QueryError(table, error.message);
   }
-  return (data ?? []) as T[];
+  const rows = (data ?? []) as T[];
+  await cacheReplace(table, rows as Record<string, unknown>[]);
+  return rows;
+}
+
+async function countFromCache(table: string, col?: string, val?: string): Promise<number> {
+  const rows = await cacheRead(table);
+  if (!col) return rows.length;
+  return rows.filter((r) => String(r[col] ?? "") === val).length;
 }
 
 async function count(table: string): Promise<number> {
+  if (isBrowserOffline()) return countFromCache(table);
   const { count: c, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true });
   if (error) {
     console.error(`[${table}] count`, error.message);
+    if ((await cacheRead(table)).length > 0) return countFromCache(table);
     throw new QueryError(table, error.message);
   }
   return c ?? 0;
 }
 
 async function countWhere(table: string, col: string, val: string): Promise<number> {
+  if (isBrowserOffline()) return countFromCache(table, col, val);
   const { count: c, error } = await supabase
     .from(table)
     .select("*", { count: "exact", head: true })
     .eq(col, val);
   if (error) {
     console.error(`[${table}] count ${col}=${val}`, error.message);
+    if ((await cacheRead(table)).length > 0) return countFromCache(table, col, val);
     throw new QueryError(table, error.message);
   }
   return c ?? 0;

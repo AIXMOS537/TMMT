@@ -90,12 +90,16 @@ export function homePathForTier(tier: AccessTier): string {
     case "executive":
       return "/executive";
     case "operator":
-      return "/operator";
+    case "staff":
+    case "none":
+      return "/";
     case "vendor":
       return "/vendor";
     case "investor":
       return "/investor";
-    default:
-      return "/";
+    default: {
+      const _never: never = tier;
+      return _never;
+    }
   }
 }

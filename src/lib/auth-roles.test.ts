@@ -38,7 +38,7 @@ describe("homePathForTier", () => {
   it("routes each tier to its landing path", () => {
     expect(homePathForTier("owner")).toBe("/command");
     expect(homePathForTier("executive")).toBe("/executive");
-    expect(homePathForTier("operator")).toBe("/operator");
+    expect(homePathForTier("operator")).toBe("/");
     expect(homePathForTier("vendor")).toBe("/vendor");
     expect(homePathForTier("investor")).toBe("/investor");
     expect(homePathForTier("staff")).toBe("/");

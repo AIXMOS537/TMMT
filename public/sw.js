@@ -1,14 +1,25 @@
-// TMMT service worker — deliberately minimal and safe.
-// It caches ONLY the offline fallback page. Every real request goes to the
-// network first; the cached page is shown only when a navigation fails because
-// you're offline. Nothing dynamic (data, auth, API) is ever cached, so it can
-// never serve stale info while you're online.
-const CACHE = "tmmt-shell-v2";
+// TMMT service worker — network first for pages, cache visited rentals shell
+// so the SAME app Khan Strategies uses still opens offline. Writes never cached.
+const CACHE = "tmmt-shell-v3";
 const OFFLINE_URL = "/offline";
+const SHELL = [
+  OFFLINE_URL,
+  "/",
+  "/login",
+  "/customers",
+  "/fleet",
+  "/tickets",
+  "/leads",
+  "/payments",
+  "/appointments",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.add(OFFLINE_URL)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL).catch(() => c.add(OFFLINE_URL)))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -23,9 +34,36 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== "GET") return; // never touch writes
-  // Only intercept page navigations; let everything else hit the network normally.
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then((hit) => hit || caches.match(OFFLINE_URL))
+        )
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith("/_next/") || url.pathname.startsWith("/icons")) {
+    event.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ||
+          fetch(req).then((res) => {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            return res;
+          })
+      )
+    );
   }
 });

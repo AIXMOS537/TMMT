@@ -66,6 +66,23 @@ function isPitchPublicPath(pathname: string) {
   );
 }
 
+/** Same rentals desk Khan Strategies uses — customers, fleet, tickets, the lot. */
+function isRentalsDeskPath(pathname: string): boolean {
+  return (
+    !pathname.startsWith("/vendor") &&
+    !pathname.startsWith("/investor") &&
+    !pathname.startsWith("/partner") &&
+    !pathname.startsWith("/command") &&
+    !pathname.startsWith("/executive") &&
+    !pathname.startsWith("/operator") &&
+    // Money Meter = business-wide financial telemetry. Owner-only (its ledger
+    // has org-member RLS, so a non-owner member could otherwise see their
+    // own org's used/saved). Owner tier returns true above; everyone else is
+    // redirected to their home.
+    !pathname.startsWith("/money")
+  );
+}
+
 function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (isPublicPath(pathname)) return true;
 
@@ -77,37 +94,35 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   // routes do their own auth + token metering. See docs/aixmos-pocket.
   if (pathname === "/pocket" || pathname.startsWith("/pocket/")) return true;
   if (pathname.startsWith("/api/pocket/")) return true;
+  if (pathname.startsWith("/api/offline/")) return true;
 
   switch (tier) {
     case "owner":
       return true;
     case "executive":
-      return pathname.startsWith("/executive");
+      return pathname.startsWith("/executive") || isRentalsDeskPath(pathname);
     case "operator":
       // "/operator" and not "/operators": the (command)/operators screens are
       // the owner's provisioning console, and a bare startsWith handed them to
-      // the operator tier while denying them to staff — backwards on both
-      // counts. Those pages re-check for themselves, so nothing leaked; the
-      // rule was simply wrong, and the next thing to lean on it would inherit it.
-      return pathname === "/operator" || pathname.startsWith("/operator/");
+      // the operator tier. Those pages re-check for themselves, so nothing
+      // leaked; the rule was simply wrong, and the next thing to lean on it
+      // would inherit it. Keeps the rentals-desk grant from origin/master.
+      return (
+        pathname === "/operator" ||
+        pathname.startsWith("/operator/") ||
+        isRentalsDeskPath(pathname)
+      );
     case "vendor":
       return pathname.startsWith("/vendor");
     case "investor":
       return pathname.startsWith("/investor") || pathname.startsWith("/partner");
-    default:
-      return (
-        !pathname.startsWith("/vendor") &&
-        !pathname.startsWith("/investor") &&
-        !pathname.startsWith("/partner") &&
-        !pathname.startsWith("/command") &&
-        !pathname.startsWith("/executive") &&
-        !pathname.startsWith("/operator") &&
-        // Money Meter = business-wide financial telemetry. Owner-only (its ledger
-        // has org-member RLS, so a non-owner member could otherwise see their
-        // own org's used/saved). Owner tier returns true above; everyone else is
-        // redirected to their home.
-        !pathname.startsWith("/money")
-      );
+    case "staff":
+    case "none":
+      return isRentalsDeskPath(pathname);
+    default: {
+      const _never: never = tier;
+      return _never;
+    }
   }
 }
 

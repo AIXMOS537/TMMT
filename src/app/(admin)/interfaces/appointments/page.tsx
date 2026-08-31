@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, BarChart3, Table2 } from "lucide-react";
 import { getAppointmentStats } from "@/lib/queries";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 import {
   PageHeader, StatCard, DataTable, FilterBar, ErrorBanner,
   StatusBadge, Button, FormField, inputClass, selectClass,
