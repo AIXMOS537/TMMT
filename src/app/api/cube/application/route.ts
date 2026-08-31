@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { AppState } from "@aixmos/core";
 import {
-  fetchApplicationGuard,
+  authorizeApplicationAccess,
   loadProgramApplication,
   saveProgramApplication,
 } from "@/lib/program-applications-server";
-import { createSSRClient } from "@/lib/supabase-server";
-import { isStaffUser } from "@/lib/auth-roles";
-import { timingSafeEqualString } from "@/lib/ghl/webhook-auth";
 
 /**
  * Read and write one credit/funding application.
@@ -35,34 +32,13 @@ import { timingSafeEqualString } from "@/lib/ghl/webhook-auth";
 
 type Access = "granted" | "denied";
 
+/** Thin wrapper over the shared rule, kept so the handlers read the same way. */
 async function authorize(
   applicationId: string,
   suppliedToken: string | null
 ): Promise<Access> {
-  const guard = await fetchApplicationGuard(applicationId);
-  if (!guard) return "denied";
-
-  if (
-    suppliedToken &&
-    guard.accessToken &&
-    timingSafeEqualString(suppliedToken, guard.accessToken)
-  ) {
-    return "granted";
-  }
-
-  const supabase = await createSSRClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return "denied";
-
-  if (isStaffUser(user)) return "granted";
-
-  const sessionEmail = user.email?.trim().toLowerCase();
-  const ownerEmail = guard.email?.trim().toLowerCase();
-  if (sessionEmail && ownerEmail && sessionEmail === ownerEmail) return "granted";
-
-  return "denied";
+  const access = await authorizeApplicationAccess(applicationId, suppliedToken);
+  return access.ok ? "granted" : "denied";
 }
 
 export async function GET(request: NextRequest) {

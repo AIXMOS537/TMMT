@@ -6,6 +6,9 @@ import {
   rowToApplication,
   type ProgramApplicationRow,
 } from "@aixmos/core";
+import { createSSRClient } from "@/lib/supabase-server";
+import { isStaffUser } from "@/lib/auth-roles";
+import { timingSafeEqualString } from "@/lib/ghl/webhook-auth";
 
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -70,6 +73,50 @@ export async function fetchApplicationGuard(
     email: (data.email as string | null) ?? null,
     accessToken: (data.access_token as string | null) ?? null,
   };
+}
+
+/**
+ * May this caller touch this application?
+ *
+ * Two ways in, matching the two ways the journey is legitimately reached: the
+ * access token minted with the row and mailed out inside learnDeepLink, or a
+ * signed-in session — staff get any application, everyone else only the one
+ * filed under their own email.
+ *
+ * Shared rather than written twice. The cube API and the document upload both
+ * run on the service role, so this is the only thing standing between a request
+ * and someone's credit application; two copies of it would eventually disagree.
+ */
+export async function authorizeApplicationAccess(
+  applicationId: string,
+  suppliedToken: string | null
+): Promise<{ ok: true; staff: boolean; userId: string | null } | { ok: false }> {
+  const guard = await fetchApplicationGuard(applicationId);
+  if (!guard) return { ok: false };
+
+  if (
+    suppliedToken &&
+    guard.accessToken &&
+    timingSafeEqualString(suppliedToken, guard.accessToken)
+  ) {
+    return { ok: true, staff: false, userId: null };
+  }
+
+  const supabase = await createSSRClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  if (isStaffUser(user)) return { ok: true, staff: true, userId: user.id };
+
+  const sessionEmail = user.email?.trim().toLowerCase();
+  const ownerEmail = guard.email?.trim().toLowerCase();
+  if (sessionEmail && ownerEmail && sessionEmail === ownerEmail) {
+    return { ok: true, staff: false, userId: user.id };
+  }
+
+  return { ok: false };
 }
 
 export async function loadProgramApplication(

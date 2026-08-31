@@ -13,8 +13,27 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
+    // Array form, and @aixmos/core before @/ — an object alias keyed on "@"
+    // does not resolve the workspace package, so any test importing a module
+    // that reaches into @aixmos/core failed with "Cannot find package". These
+    // mirror the "paths" block in tsconfig.json; keep the two in step.
+    alias: [
+      {
+        find: /^@aixmos\/core$/,
+        replacement: fileURLToPath(
+          new URL("./packages/aixmos-core/src/index.ts", import.meta.url)
+        ),
+      },
+      {
+        find: /^@aixmos\/core\//,
+        replacement: fileURLToPath(
+          new URL("./packages/aixmos-core/src/", import.meta.url)
+        ),
+      },
+      {
+        find: /^@\//,
+        replacement: fileURLToPath(new URL("./src/", import.meta.url)),
+      },
+    ],
   },
 });
