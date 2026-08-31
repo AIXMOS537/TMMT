@@ -11,6 +11,7 @@ import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tena
 function isFunnelPublicPath(pathname: string) {
   return (
     pathname === "/join" ||
+    pathname === "/try" ||
     pathname === "/upgrade" ||
     pathname === "/dealers" ||
     pathname === "/credit" ||
