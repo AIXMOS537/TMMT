@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { getTierForUser } from "@/lib/auth-roles";
-import { getInvestorUpdates } from "@/lib/queries";
 import { Card, StatCard } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
 import { Bell, FileText } from "lucide-react";
@@ -15,7 +14,21 @@ export default async function InvestorPortalPage() {
   if (!user) redirect("/login");
   if (getTierForUser(user) !== "investor") redirect("/");
 
-  const updates = await getInvestorUpdates();
+  // Read through the same request-scoped client the auth check above used.
+  // This page previously called getInvestorUpdates() from @/lib/queries, which
+  // is built on the *browser* Supabase client — on the server that carries no
+  // session cookie, so the query ran anonymously and row-level security
+  // returned nothing. Every investor was permanently shown "No updates yet.
+  // Your account may need to be linked to an investor profile", regardless of
+  // how many updates were published. The gate used the right client; the read
+  // did not.
+  const { data } = await supabase
+    .from("investor_updates")
+    .select("*")
+    .eq("visible_to_investors", true)
+    .order("published_at", { ascending: false })
+    .limit(50);
+  const updates = data ?? [];
 
   return (
     <div className="space-y-8">
