@@ -8,6 +8,7 @@ import { Button } from "@/components/aixmos-ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
 import { Badge } from "@/components/aixmos-ui/badge";
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { CUBE_DEMO_CONTROLS } from "@/lib/cube-demo-controls";
 
 export default function StatusPage() {
   const { state, updateApplication, transitionStatus } = useCube();
@@ -58,7 +59,11 @@ export default function StatusPage() {
       <WorkflowBanner />
       <Card>
         <CardTitle>Submission status tracker</CardTitle>
-        <CardDescription>MVP uses a stub adapter — no real lender API calls.</CardDescription>
+        <CardDescription>
+          {CUBE_DEMO_CONTROLS
+            ? "Demo build — the submit button below uses a stub adapter and calls no lender."
+            : "Your funding packet is submitted by the TMMT team, not automatically. You will be told once it goes out."}
+        </CardDescription>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg bg-slate-50 p-3">
@@ -73,13 +78,33 @@ export default function StatusPage() {
           </div>
         </div>
 
-        {app.clientConsentGiven && state.currentUser.role === "client" && app.status === "client_consent_given" && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button disabled={submitting} onClick={submitStub}>
-              Submit (API stub)
-            </Button>
-          </div>
-        )}
+        {/* The stub calls no lender. It invents an AIX-STUB- reference, writes
+            "submitted" into the audit log, and returns in 800ms — so on a
+            production deploy a client could believe their application had gone
+            to a lender when nothing had left the building. The real path is the
+            staff "Prepare manual submission packet" below, which is a person
+            doing it. Demo builds keep the button; production does not get it. */}
+        {CUBE_DEMO_CONTROLS &&
+          app.clientConsentGiven &&
+          state.currentUser.role === "client" &&
+          app.status === "client_consent_given" && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button disabled={submitting} onClick={submitStub}>
+                Submit (API stub)
+              </Button>
+            </div>
+          )}
+
+        {!CUBE_DEMO_CONTROLS &&
+          app.clientConsentGiven &&
+          state.currentUser.role === "client" &&
+          app.status === "client_consent_given" && (
+            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              Your consent is recorded and your packet is with the TMMT team.
+              They review it and submit on your behalf — there is nothing more
+              for you to do here.
+            </p>
+          )}
 
         {["supervisor", "admin", "coach"].includes(state.currentUser.role) && (
           <div className="mt-4">
