@@ -56,7 +56,7 @@ export default function AppointmentsInterface() {
       const matchSearch = !search || [r.customer_name, r.phone, r.email, r.appointment_type].some((v) =>
         String(v ?? "").toLowerCase().includes(search.toLowerCase())
       );
-      const matchStatus = !statusFilter || r.status === statusFilter;
+      const matchStatus = !statusFilter || r.appointment_status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [stats, search, statusFilter]);
@@ -69,7 +69,7 @@ export default function AppointmentsInterface() {
         id: String(a.id),
         date: new Date(String(a.appointment_date_time)),
         title: `${a.customer_name ?? "Unknown"} — ${a.appointment_type ?? ""}`,
-        status: String(a.status ?? ""),
+        status: String(a.appointment_status ?? ""),
         ...a,
       }));
   }, [stats]);
@@ -78,7 +78,7 @@ export default function AppointmentsInterface() {
     { key: "customer_name", label: "Customer", render: (r) => <span className="font-medium">{String(r.customer_name ?? "—")}</span> },
     { key: "appointment_type", label: "Type" },
     { key: "appointment_date_time", label: "Date/Time", render: (r) => formatDateTime(r.appointment_date_time as string) },
-    { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status as string} /> },
+    { key: "appointment_status", label: "Status", render: (r) => <StatusBadge status={r.appointment_status as string} /> },
     { key: "phone", label: "Phone" },
   ];
 
@@ -107,8 +107,8 @@ export default function AppointmentsInterface() {
   async function quickStatus(status: string) {
     if (!selected?.id) return;
     setSaving(true);
-    const result = await adminUpsert("appointments", { id: selected.id, status });
-    if (!result.success) { setError(result.error); } else { setSelected({ ...selected, status }); load(); }
+    const result = await adminUpsert("appointments", { id: selected.id, appointment_status: status });
+    if (!result.success) { setError(result.error); } else { setSelected({ ...selected, appointment_status: status }); load(); }
     setSaving(false);
   }
 
@@ -167,7 +167,7 @@ export default function AppointmentsInterface() {
             <DetailSection title="Appointment Info">
               <DetailRow label="Date/Time" value={formatDateTime(selected.appointment_date_time as string)} />
               <DetailRow label="Type" value={String(selected.appointment_type ?? "—")} />
-              <DetailRow label="Status" value={<StatusBadge status={selected.status as string} />} />
+              <DetailRow label="Status" value={<StatusBadge status={selected.appointment_status as string} />} />
             </DetailSection>
             <DetailSection title="Customer">
               <DetailRow label="Name" value={String(selected.customer_name ?? "—")} href="/customers" />
@@ -176,13 +176,13 @@ export default function AppointmentsInterface() {
             </DetailSection>
             <div className="flex flex-wrap gap-2 pt-4">
               <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-              {selected.status !== "Completed" && (
+              {selected.appointment_status !== "Completed" && (
                 <Button size="sm" onClick={() => quickStatus("Completed")} disabled={saving}>Mark Completed</Button>
               )}
-              {selected.status !== "No-Show" && (
+              {selected.appointment_status !== "No-Show" && (
                 <Button variant="danger" size="sm" onClick={() => quickStatus("No-Show")} disabled={saving}>Mark No-Show</Button>
               )}
-              {selected.status !== "Cancelled" && (
+              {selected.appointment_status !== "Cancelled" && (
                 <Button variant="ghost" size="sm" onClick={() => quickStatus("Cancelled")} disabled={saving}>Cancel</Button>
               )}
             </div>
@@ -211,7 +211,7 @@ export default function AppointmentsInterface() {
               <input name="appointment_date_time" type="datetime-local" defaultValue={selected.appointment_date_time ? String(selected.appointment_date_time).slice(0, 16) : ""} className={inputClass} />
             </FormField>
             <FormField label="Status">
-              <select name="status" defaultValue={String(selected.status ?? "")} className={selectClass}>
+              <select name="appointment_status" defaultValue={String(selected.appointment_status ?? "")} className={selectClass}>
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </FormField>
