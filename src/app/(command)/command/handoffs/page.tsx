@@ -1,4 +1,6 @@
 import { createSSRClient } from "@/lib/supabase-server";
+import { isOwnerUser } from "@/lib/auth-roles";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Card, StatCard, PageHeader, StatusBadge, Badge, Button } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
@@ -34,16 +36,37 @@ const entityLabel = (slug: string) => ENTITY[slug] ?? slug;
 const CONSENT_CHANNELS = ["sms", "email", "call", "form", "in_person"];
 
 // ── Server actions (guarded RPCs) ────────────────────────────────
+
+/**
+ * Middleware keeps every tier but owner off /command, and that is what these
+ * actions were relying on. It does not reach them: a server action is invoked
+ * by its id, from whatever page the caller is already allowed on, so the URL
+ * rule that guards this page never runs. Both actions had no check of their own
+ * — any signed-in account could log a consent that never happened and then
+ * accept the handoff it unblocks. Handoffs carry commission.
+ */
+async function requireOwner() {
+  const supabase = await createSSRClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (!isOwnerUser(user)) throw new Error("Not authorized.");
+  return supabase;
+}
+
 async function logConsentAction(formData: FormData) {
   "use server";
   const id = String(formData.get("id") || "");
   const channel = String(formData.get("channel") || "");
   if (!id || !channel) return;
-  const supabase = await createSSRClient();
-  await supabase.rpc("capture_handoff_consent", {
+  if (!CONSENT_CHANNELS.includes(channel)) throw new Error("Unknown consent channel.");
+  const supabase = await requireOwner();
+  const { error } = await supabase.rpc("capture_handoff_consent", {
     p_referral_id: id,
     p_consent_channel: channel,
   });
+  // Never swallow this. A consent record that silently failed to save, on a
+  // page whose whole job is proving consent was captured, is worse than an error.
+  if (error) throw new Error(`Could not log consent: ${error.message}`);
   revalidatePath("/command/handoffs");
 }
 
@@ -51,9 +74,12 @@ async function acceptHandoffAction(formData: FormData) {
   "use server";
   const id = String(formData.get("id") || "");
   if (!id) return;
-  const supabase = await createSSRClient();
-  // The enforce_handoff_consent() trigger blocks this if consent is missing.
-  await supabase.rpc("accept_handoff", { p_referral_id: id });
+  const supabase = await requireOwner();
+  // The enforce_handoff_consent() trigger blocks this if consent is missing —
+  // which is exactly the error that used to be discarded, leaving the button
+  // looking like it had worked.
+  const { error } = await supabase.rpc("accept_handoff", { p_referral_id: id });
+  if (error) throw new Error(`Could not accept handoff: ${error.message}`);
   revalidatePath("/command/handoffs");
 }
 

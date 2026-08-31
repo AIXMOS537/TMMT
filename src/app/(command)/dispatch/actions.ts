@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
+import { isStaffUser } from "@/lib/auth-roles";
 import { searchAddress } from "@/lib/osm-geocode";
 import { askCaptainDispatch } from "@/lib/captain-client";
 import { notifyResponder } from "@/lib/notify-telegram";
@@ -32,6 +33,67 @@ async function requireAuth() {
   return { supabase, user };
 }
 
+/**
+ * Being signed in is not the same as belonging to an organisation.
+ *
+ * requireAuth() only asks whether there is a user, and every export below used
+ * to stop there. Several of them take the org id from the caller, so "signed
+ * in" was enough to file an incident into someone else's organisation — and, on
+ * approveResponderLink, to approve yourself as an active responder in it.
+ * dispatch/layout.tsx already had the right rule (staff, or a row in org_roles);
+ * it just could not defend the actions, because a server action is dispatched
+ * by id rather than by URL and never passes through the layout that guards its
+ * page.
+ *
+ * Roles per the schema: tenant_admin, dispatcher, responder, viewer.
+ */
+const ORG_ADMIN_ROLES = ["tenant_admin", "dispatcher"] as const;
+
+async function requireOrgAccess(
+  orgId: string | null | undefined,
+  need: "member" | "admin" = "member"
+): Promise<ActionResult<{ supabase: Awaited<ReturnType<typeof createSSRClient>>; user: NonNullable<Awaited<ReturnType<typeof requireAuth>>["user"]> }>> {
+  const { supabase, user } = await requireAuth();
+
+  // Staff run every org's dispatch, same as the layout allows.
+  if (isStaffUser(user)) return { ok: true, data: { supabase, user } };
+
+  if (!orgId) return { ok: false, error: "not authorized" };
+
+  const { data } = await supabase
+    .from("org_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("org_id", orgId);
+
+  const roles = (data ?? []).map((r) => String((r as { role: unknown }).role));
+  if (roles.length === 0) return { ok: false, error: "not authorized" };
+
+  if (need === "admin" && !roles.some((r) => (ORG_ADMIN_ROLES as readonly string[]).includes(r))) {
+    return { ok: false, error: "not authorized" };
+  }
+
+  return { ok: true, data: { supabase, user } };
+}
+
+/** The org a unit belongs to — never taken from the caller. */
+async function orgForUnit(
+  supabase: Awaited<ReturnType<typeof createSSRClient>>,
+  unitId: string
+): Promise<string | null> {
+  const { data } = await supabase.from("units").select("org_id").eq("id", unitId).maybeSingle();
+  return (data?.org_id as string | undefined) ?? null;
+}
+
+/** The org an incident belongs to — never taken from the caller. */
+async function orgForIncident(
+  supabase: Awaited<ReturnType<typeof createSSRClient>>,
+  incidentId: string
+): Promise<string | null> {
+  const { data } = await supabase.from("incidents").select("org_id").eq("id", incidentId).maybeSingle();
+  return (data?.org_id as string | undefined) ?? null;
+}
+
 export async function geocodeAddress(query: string): Promise<ActionResult<Array<{ label: string; lat: number; lng: number }>>> {
   await requireAuth();
   const results = await searchAddress(query);
@@ -41,7 +103,10 @@ export async function geocodeAddress(query: string): Promise<ActionResult<Array<
 export async function createIncident(input: unknown): Promise<ActionResult<{ incident_id: string; ref_code: string }>> {
   const parsed = NewIncidentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid input" };
-  const { supabase, user } = await requireAuth();
+  // org_id arrives from the caller, so it has to be checked, not trusted.
+  const access = await requireOrgAccess(parsed.data.org_id);
+  if (!access.ok) return access;
+  const { supabase, user } = access.data;
 
   const { data: refRow, error: refErr } = await supabase.rpc("next_dsp_ref_code");
   if (refErr) return { ok: false, error: "ref_code generation failed" };
@@ -146,11 +211,17 @@ const OverrideSchema = z.object({
 export async function overrideAssignment(input: unknown): Promise<ActionResult<{ assignment_id: string }>> {
   const parsed = OverrideSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid input" };
-  const { supabase, user } = await requireAuth();
+  const { supabase: reader } = await requireAuth();
 
-  const { data: current } = await supabase.from("incident_assignments_v")
+  const { data: current } = await reader.from("incident_assignments_v")
     .select("*").eq("id", parsed.data.current_assignment_id).maybeSingle();
   if (!current) return { ok: false, error: "assignment not found" };
+
+  // The org comes off the assignment, never off the request.
+  const access = await requireOrgAccess((current as { org_id?: string }).org_id);
+  if (!access.ok) return access;
+  const { supabase, user } = access.data;
+
   if ((current as { effective_status?: string }).effective_status === "locked") {
     return { ok: false, error: "override window expired" };
   }
@@ -213,7 +284,12 @@ const TransitionSchema = z.object({
 export async function transitionStatus(input: unknown): Promise<ActionResult<null>> {
   const parsed = TransitionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid input" };
-  const { supabase } = await requireAuth();
+  const { supabase: reader } = await requireAuth();
+  const access = await requireOrgAccess(
+    await orgForIncident(reader, parsed.data.incident_id)
+  );
+  if (!access.ok) return access;
+  const { supabase } = access.data;
 
   const patch: Record<string, unknown> = { status: parsed.data.to_status };
   if (parsed.data.to_status === "closed" || parsed.data.to_status === "cancelled" || parsed.data.to_status === "cleared") {
@@ -242,8 +318,10 @@ export async function transitionStatus(input: unknown): Promise<ActionResult<nul
 }
 
 export async function lockExpiredAssignments(orgId: string): Promise<ActionResult<{ locked: number }>> {
-  await requireAuth();
-  const supabase = await createSSRClient();
+  if (!z.string().uuid().safeParse(orgId).success) return { ok: false, error: "invalid id" };
+  const access = await requireOrgAccess(orgId);
+  if (!access.ok) return access;
+  const { supabase } = access.data;
   const { data, error } = await supabase.rpc("lock_expired_assignments", { p_org_id: orgId });
   if (error) return { ok: false, error: "lock tick failed" };
   return { ok: true, data: { locked: (data as number | null) ?? 0 } };
@@ -257,7 +335,10 @@ const SetUnitStatusSchema = z.object({
 export async function setUnitStatus(input: unknown): Promise<ActionResult<null>> {
   const parsed = SetUnitStatusSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid input" };
-  const { supabase } = await requireAuth();
+  const { supabase: reader } = await requireAuth();
+  const access = await requireOrgAccess(await orgForUnit(reader, parsed.data.unit_id));
+  if (!access.ok) return access;
+  const { supabase } = access.data;
   const { error } = await supabase.from("units").update({ status: parsed.data.status }).eq("id", parsed.data.unit_id);
   return error ? { ok: false, error: "update failed" } : { ok: true, data: null };
 }
@@ -271,7 +352,11 @@ const SetUnitLocationSchema = z.object({
 export async function setUnitLocation(input: unknown): Promise<ActionResult<null>> {
   const parsed = SetUnitLocationSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid input" };
-  const { supabase } = await requireAuth();
+  const { supabase: reader } = await requireAuth();
+  const unitOrg = await orgForUnit(reader, parsed.data.unit_id);
+  const access = await requireOrgAccess(unitOrg);
+  if (!access.ok) return access;
+  const { supabase } = access.data;
   const now = new Date().toISOString();
   const { error: updErr } = await supabase.from("units").update({
     current_lat: parsed.data.lat,
@@ -302,7 +387,12 @@ const ApproveResponderSchema = z.object({
 export async function approveResponderLink(input: unknown): Promise<ActionResult<null>> {
   const parsed = ApproveResponderSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid input" };
-  const { supabase, user } = await requireAuth();
+  // This grants someone the right to be dispatched. Membership is not enough —
+  // otherwise a responder in an org could approve themselves into any role in
+  // it, and anyone at all could name an org they have never belonged to.
+  const access = await requireOrgAccess(parsed.data.org_id, "admin");
+  if (!access.ok) return access;
+  const { supabase, user } = access.data;
   const { error } = await supabase.from("org_responder_links").upsert({
     org_id: parsed.data.org_id,
     user_id: parsed.data.user_id,
@@ -317,7 +407,15 @@ export async function approveResponderLink(input: unknown): Promise<ActionResult
 
 export async function revokeResponderLink(linkId: string): Promise<ActionResult<null>> {
   if (!z.string().uuid().safeParse(linkId).success) return { ok: false, error: "invalid id" };
-  const { supabase } = await requireAuth();
+  const { supabase: reader } = await requireAuth();
+  const { data: link } = await reader
+    .from("org_responder_links")
+    .select("org_id")
+    .eq("id", linkId)
+    .maybeSingle();
+  const access = await requireOrgAccess((link?.org_id as string | undefined) ?? null, "admin");
+  if (!access.ok) return access;
+  const { supabase } = access.data;
   const { error } = await supabase.from("org_responder_links").update({ active: false }).eq("id", linkId);
   return error ? { ok: false, error: "revoke failed" } : { ok: true, data: null };
 }

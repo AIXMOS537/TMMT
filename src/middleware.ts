@@ -84,7 +84,12 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
     case "executive":
       return pathname.startsWith("/executive");
     case "operator":
-      return pathname.startsWith("/operator");
+      // "/operator" and not "/operators": the (command)/operators screens are
+      // the owner's provisioning console, and a bare startsWith handed them to
+      // the operator tier while denying them to staff — backwards on both
+      // counts. Those pages re-check for themselves, so nothing leaked; the
+      // rule was simply wrong, and the next thing to lean on it would inherit it.
+      return pathname === "/operator" || pathname.startsWith("/operator/");
     case "vendor":
       return pathname.startsWith("/vendor");
     case "investor":
