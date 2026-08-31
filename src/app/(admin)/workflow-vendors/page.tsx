@@ -21,7 +21,7 @@ import {
   ErrorBanner,
   inputClass,
 } from "@/components/ui";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 import { Plus } from "lucide-react";
 
 type Vendor = Record<string, unknown>;

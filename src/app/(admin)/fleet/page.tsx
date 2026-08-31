@@ -17,7 +17,7 @@ import {
   selectClass,
 } from "@/components/ui";
 import { Plus } from "lucide-react";
-import { adminUpsert } from "@/app/(admin)/admin-actions";
+import { adminUpsert } from "@/lib/offline/desk-save";
 
 type Fleet = Record<string, unknown>;
 
