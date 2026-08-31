@@ -78,4 +78,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, { silent: true, disableLogger: true });
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  // `disableLogger` is deprecated in @sentry/nextjs v10; this is its replacement.
+  webpack: { treeshake: { removeDebugLogging: true } },
+});
