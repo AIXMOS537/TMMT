@@ -315,6 +315,22 @@ export async function vendorUploadJobFile(formData: FormData): Promise<ActionRes
   const check = assertVendorUploadFile(file);
   if (!check.ok) return { success: false, error: check.error };
 
+  // isVendorUser only says "a vendor", not "this job's vendor" — and the upload
+  // below runs on the service-role client, which bypasses the storage rules
+  // entirely. Without this, any vendor could plant a file in any other vendor's
+  // job folder just by naming their job id.
+  //
+  // The check is a read through the RLS-scoped client: vendor_read_jobs already
+  // restricts vendor_jobs to current_vendor_id(), so a job that comes back is by
+  // definition this vendor's. That keeps one definition of ownership, in SQL,
+  // rather than a second copy here that could drift from it.
+  const { data: ownJob } = await supabase
+    .from("vendor_jobs")
+    .select("id")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (!ownJob) return { success: false, error: "Job not found." };
+
   const storagePath = vendorJobObjectKey(jobId, file.name, file.type);
   const bytes = new Uint8Array(await file.arrayBuffer());
   const service = createServiceRoleClient();
