@@ -1,9 +1,84 @@
 # CHANGE REQUEST 001 — Vehicle owners and per-vehicle agreements
 
-**Raised** 2026-09-01 · **Status: AWAITING OWNER APPROVAL. Nothing has been applied.**
+**Raised** 2026-09-01 · **Status: 🔴 BLOCKED — DO NOT APPLY. Nothing has been applied.**
 Migration file: `supabase/migrations/20260901120000_vehicle_owners_and_agreements.sql`
 
 Format per `CLAUDE.md` §4.
+
+---
+
+## 🔴 BLOCKING FINDING — the fleet data is 76 days stale
+
+**Discovered 2026-09-01 while checking the owner's answers.** The owner replied *"it's gone now"* and *"no longer here"* to three separate reconciliation questions. That prompted a check of when this data was last written.
+
+| Table | Last updated | Distinct update days | Rows | Age |
+|---|---|---:|---:|---|
+| **`fleet`** | **2026-06-17** | **1** | 43 | **76 days** |
+| **`expenses`** | **2026-06-17** | **1** | 34 | **76 days** |
+| `active_customers` | 2026-06-22 | 2 | 35 | 71 days |
+| `customer_payments` | 2026-07-16 | 4 | 31 | 47 days |
+| `incoming_leads` | 2026-08-31 | 3 | 875 | ✅ live |
+
+**Every one of the 43 fleet rows was written on the same single day and never touched again.** Same for all 34 expenses. These are not operational tables — they are a **one-day migration dump from 17 June that nothing has written to since.**
+
+Only `incoming_leads` is live, because GHL feeds it.
+
+### What this actually means
+
+> **The rental operations side of Supabase is not a stale database. It is a snapshot of a business that has moved on without it.**
+
+Consequences for every figure in circulation:
+
+- **"21 vehicles rented" is not a current fact.** It is what was true on 17 June. The owner has since confirmed several of those vehicles are gone.
+- **"16 active customers" is a 22 June figure.**
+- **"$21,884 revenue"** — already flagged as undated — cannot be checked against this data either.
+- My own earlier framing, *"21 rented vehicles generating money with no ledger behind them,"* **was wrong and is withdrawn.** The correct statement is: **nobody can say from this database what is rented today.**
+
+The real operational truth has been living in Airtable, spreadsheets and people's heads for 76 days. That is precisely the *"honestly, it's all a mess"* the owner described — now measured.
+
+### 🔴 Why this blocks the migration
+
+`owner_agreements` records terms **per vehicle**. Building agreements against a 76-day-old vehicle list would write contracts for cars that no longer exist and miss every car acquired since June. **It would encode the staleness into the new schema and make it permanent.**
+
+The migration itself is still correct and stays as written. **It just must not be applied until the fleet list is current.**
+
+### Fleet data quality — worse than 43 rows suggests
+
+| Problem | Detail |
+|---|---|
+| **Duplicate plate `5CW4654`** | 2013 Toyota Corolla appears **twice** — one row owned by **Marc**, status *Rented*; one row with **no owner**, status *Available*. **Same car, two rows, two contradictory states.** This is Marc's car from the Drive payout report |
+| **Duplicate plate `SZF4776`** | 2017 Ford Edge twice — one *Retired*, one *null status* |
+| **Duplicate plate `6GJ4314`** | 2017 Toyota Camry twice, both *Available* |
+| **`SZF477` vs `SZF4776`** | Almost certainly a typo'd third copy |
+| **11 vehicles have no plate at all** | Including a *Rented* Nissan Versa, a *Rented* Tesla Model 3 and a *Rented* Honda CRV |
+| **2 completely blank rows** | No year, make, model, plate, owner or status |
+
+**At least 3 of the 7 "unowned" vehicles are duplicates of owned ones.** The true distinct fleet is **around 38, not 43** — before removing what the owner says is gone.
+
+### The revised first step
+
+**Getting a current fleet list is now step 1, ahead of everything else.** It is also the cheapest step: one person walking the lot, or one export from wherever the real list lives.
+
+`[RECOMMENDED]` the fastest safe version:
+
+1. Owner or a VA produces the **current** vehicle list — plate, make/model, owner, status, current renter.
+2. Reconcile against these 43 rows: mark departed vehicles **`Returned to owner` / `Sold` / `Retired` with an end date — never delete them.** The blueprint's rule holds: *history, not overwrite.* A car that left still has rental and payout history that must remain answerable.
+3. Merge the three duplicate-plate pairs, keeping the row with the richer history.
+4. Delete only the two entirely blank rows — they carry no history to preserve.
+5. **Then** apply this migration and do the owner backfill.
+
+Steps 1–2 need no code and no schema change.
+
+### ✅ What the owner has already settled
+
+| Question | Answer |
+|---|---|
+| Esmat / Ismatullah | **Same person** `[STATED]` — merge into one owner |
+| TAHA's 2020 Corolla | **Gone** `[STATED]` — despite the table saying *Rented* with a customer attached |
+| The 7 unowned vehicles | **Gone** `[STATED]` — and at least 3 are duplicates of vehicles that are not |
+| Robin's cars | **No longer here** `[STATED]` — needs clarifying whether that means all three or only the two without a recorded share |
+
+---
 
 ---
 
