@@ -1,431 +1,405 @@
 # TMMT — Business Requirements & Workflow Specification
 
-**Version:** 2
+**Version:** 3 — merged canonical spec
 **Date:** 2026-09-01
-**Status:** Rules locked by owner. Build order approved for review.
-
-> **Change from v1:** v1 read the database as a live operation — "43 vehicles, 21 currently
-> rented." That was wrong. The owner confirmed on 2026-09-01: **no partners and no cars
-> currently. The business is at square one.** All fleet and active-customer rows are
-> history, not today. The build order below has been re-ordered because of it.
+**Supersedes:** v1 and v2 of this file.
+**Absorbs:** `BUSINESS-RULES-RECOVERED.md` (Drive evidence) and `platform-context/05-OPEN-DECISIONS.md`.
+Those files remain as the evidence base and are cited throughout — this document is the one to build from.
 
 ---
 
-## 0. How to read this
+## 0. Status and how to read it
 
-Three tags:
+Three independent sources were reconciled to produce this:
 
-- `[CONFIRMED]` — verified live in the database or repo on 2026-09-01.
-- `[LOCKED]` — decided by the owner on 2026-09-01. Treat as business policy.
-- `[OPEN]` — still the owner's decision. Nothing may assume an answer.
+| Source | What it gives | Weight |
+|---|---|---|
+| **Live database + repo** | What the software actually does | Fact about the system |
+| **Google Drive Data Room** | What the contracts and SOPs say | Fact about the paperwork |
+| **Owner, 2026-09-01** | What the policy is | Authoritative — beats both |
 
-The stack is settled: Next.js in this repo, Supabase `uapxakmlwnpfsftfeezx` as source of
-truth, GHL as the front door. This is a reconciliation spec, not a greenfield one.
+Tags: `[OWNER]` stated by Taha 2026-09-01 · `[DOC]` evidenced in Drive · `[DB]` live in Supabase ·
+`[CONFLICT]` the three sources disagree · `[OPEN]` nobody has answered.
+
+> ### Corrections to v2 of this document
+> v2 presented three things as settled that the Drive evidence contradicts. Corrected here:
+> 1. **Insurance products are not evidenced.** v2 listed six products as "Confirmed — already live". They are seeded rows. **No TMMT insurance policy exists in Drive**, and the named carrier "National Fleet Underwriters" appears nowhere in it. See §3.1.
+> 2. **Deposit amounts are not policy.** v2 published a per-tier deposit table as confirmed. Drive: *"BLANK in every template. There is no deposit policy anywhere."* Those numbers are seed data. See §3.2.
+> 3. **Weekly pricing is seed data, not the rate card.** v2's `rental_pricing_rules` figures (economy $280/wk) do not match real practice — sedans from **$300**, SUVs from **$450**, real rates $300–$500. See §3.3.
+>
+> v2 also framed the fleet as live. It is not — see §1.
 
 ---
 
 ## 1. Where the business actually is
 
-`[CONFIRMED]` The owner has **no vehicles and no partners right now.** The 43 rows in
-`fleet` are sold or returned to their owners. The 16 "Active" rows in `active_customers`
-are historical.
+`[OWNER]` **No vehicles and no partners currently.** The 43 `fleet` rows are sold or returned;
+the 16 "Active" `active_customers` rows are historical.
 
-That inverts the priority. The live asset is not the fleet — it is **the pipeline**:
+So the live asset is the pipeline, not the fleet:
 
 | Live asset | Count | Note |
 |---|---|---|
 | Leads | 875 | **759 have no status at all** |
 | GHL contacts | 1,642 | Synced |
-| Waitlist | 104 | People who wanted a car and never got one |
-| Background checks | 299 | 69 sat in "Need Manager's Review" |
-| Stuck in "Verification Form Sent" | 377 | The busiest stage in the old pipeline |
+| Waitlist | 104 | Wanted a car, never got one |
+| Background checks | 299 | 69 sat in "Need Manager's Review" — and see §4 C1 |
+| Stuck in "Verification Form Sent" | 377 | Busiest stage in the old pipeline |
 | Stuck in "Verification Form Received" | 286 | Terminal stage — where people disappeared |
-| Approved, never placed | 81 | Already eligible, never saw a car |
+| **Approved, never placed** | **81** | Already eligible, never saw a car |
 
-**Eighty-one approved people and one hundred and four waitlisted people are sitting in the
-database right now with nobody talking to them.** That is the asset. Everything vehicle-side
-is a rebuild.
-
-`[CONFIRMED]` Around 170 tables already exist, plus app portals for admin, investor,
-operator, partner, program, vendor. The ecosystem is modelled, not wired.
+**Eighty-one approved people and a hundred and four on the waitlist are in the database with
+nobody contacting them.** That is the restart asset.
 
 ---
 
-## 2. Decisions locked 2026-09-01
+## 2. Rules that are settled
 
-Every rule here came from the owner directly. These are policy. They belong in a settings
-table an admin can edit — never hardcoded in a branch.
+### 2.1 Qualification — criminal and driving `[DOC]`
 
-### Renting
+From `Background Check Qualifications` (2026-06-04), a real screening SOP already in use.
 
-| Rule | Value |
+**Identity gate.** Legal name as on licence · DOB · current phone · current address · valid
+licence uploaded. *"If identity cannot be confidently matched → DO NOT PREQUALIFY."*
+
+**Automatic denial, no escalation:**
+
+| Category | Disqualifiers |
 |---|---|
-| Credit check | **None.** Licence + deposit + first week's payment `[CONFIRMED docs/CLOSER_PLAYBOOK_V1.md]` |
-| Minimum term | **1 week** |
-| Maximum term | **None.** Rolls week to week indefinitely |
-| Ongoing check | **Periodic vehicle-condition check-in** while the rental rolls |
-| Payment schedule | **Weekly** |
-| Grace period | **3 days** past due, then flagged |
-| Late fee | **$25 per day late** |
-| Deposit | **Refundable, minus damage, unpaid tickets and missed payments** |
-| Lease-to-own | At **90 days of good payment history**, *offer* enrolment. Opt-in only — the rental otherwise keeps rolling |
+| Violent | Murder / manslaughter · attempted murder · assault any degree · domestic violence · kidnapping · armed robbery · sexual offences. *"Zero tolerance. No exceptions."* |
+| Financial | Theft, fraud or robbery **≥ $1,000** · auto theft · carjacking · organised retail theft · identity theft or credit fraud |
+| Weapons / drugs | Illegal firearm possession · weapons trafficking · drug distribution or trafficking · felony drug manufacturing |
+| Driving | DUI/DWI **within 7 years** · reckless driving · hit and run · driving on suspended/revoked licence · vehicular assault · racing · speeding **20+ over** |
 
-`[CONFIRMED]` `client_journey` already carries `good_standing_days` and `lto_eligible`.
-The 90-day rule wires straight into columns that already exist.
+**Escalate, do not auto-deny:** 3+ moving violations in 24 months · 2+ at-fault accidents in
+36 months · non-violent misdemeanour older than 5 years · simple possession · single theft
+under $1,000 · violations 5+ years old · any ambiguity.
 
-### Qualification — automatic disqualifiers
+**Denial script:** *"Based on internal risk guidelines, we're unable to move forward at this time."*
 
-A person is **auto-declined**, no human needed, on any of:
+### 2.2 Qualification — driver record `[OWNER]`
 
-1. Uber/Lyft rating **below 4.6**
-2. Fewer than **100 completed trips**
-3. A vehicle was **repossessed** from them before
-4. They **left a past rental owing money**
-5. **Failed** background check
-6. **No valid driver licence**
+Drive contains **no** rating or trip rule; the "4.8 Uber rating" in the old blueprint was an
+AI's invention and must not be built. The owner set the real bar on 2026-09-01:
 
-`[CONFIRMED]` Qualifying platforms, from `programs.match_keywords`: Uber, Lyft, rideshare,
-DoorDash, UberEats, gig driver.
+- Uber/Lyft rating **below 4.6** → decline
+- Fewer than **100 completed trips** → decline
+- Past repossession · left a past rental owing money · failed background · no valid licence → decline
 
-`[OPEN]` Everything else is a human decision. Who may override an auto-decline is still open.
+`[DB]` Qualifying platforms, from `programs.match_keywords`: Uber, Lyft, rideshare, DoorDash,
+UberEats, gig driver. This is keyword routing, not a written policy — treat as practice.
 
-### Vehicle owners / partners
+`[DOC]` Income is screened **by phone, not by rule**: *"our rentals typically start around $300
+per week depending on the vehicle. Does that fit?"* Sales disqualifiers: can't afford base
+pricing · needs daily only · no licence · wants "cheap" · won't commit to an appointment.
 
-| Rule | Value |
+### 2.3 Rental terms
+
+| Rule | Value | Source |
+|---|---|---|
+| Credit check | **None** — licence + deposit + first week | `[DOC]` closer playbook |
+| Minimum term | **1 week** | `[OWNER]` — Drive has no contractual minimum; sales target is *"ideal 30+ days"* |
+| Maximum term | **None** — rolls weekly, with periodic vehicle-condition check-ins | `[OWNER]` |
+| Payment schedule | **Weekly** | `[OWNER]` + `[DOC]` |
+| Grace before flagged | **3 days** | `[OWNER]` |
+| Late fee | **$25 per day** | `[OWNER]` — but see `[CONFLICT]` §3.4 |
+| Lease-to-own | At **90 days** good payment, *offer* enrolment; opt-in only | `[OWNER]` |
+| Late escalation ladder | Day 1 notice → *"we are allowing 48 hours"* → Fleet Department for repossession. Separate 24-hour ladder for 3-day rentals | `[DOC]` real, in use |
+| Repossession | v3 draft: written notice + **48h cure**, *"without breaching the peace (UCC §9-609)"* | `[DOC]` |
+
+`[DB]` `client_journey` already carries `good_standing_days` and `lto_eligible` — the 90-day
+rule wires into columns that exist.
+
+### 2.4 Partner economics
+
+**The payout formula, reverse-engineered from two issued reports and verified:**
+
+```
+partner payout = (gross rental earnings × partner %) − insurance − expenses
+```
+
+| Partner | Period | Vehicle | Gross | Insurance | Split | Paid |
+|---|---|---|---:|---:|---|---:|
+| Marc | Feb 2026 | 2013 Corolla | $1,000 | $120 | 40/60 | $480 ✓ |
+| Asad | Mar 2026 | 2009 Corolla | $1,280 | $120 | 30/70 | $776 ✓ |
+| Asad | Mar 2026 | 2010 Camry | $1,440 | $120 | 30/70 | **$813** ⚠️ should be $888 |
+
+**The written fee ladder** — JV Partner Agreement v3, current draft `[DOC]`:
+
+| Tier | TMMT fee | Partner keeps | Scope |
+|---|---:|---:|---|
+| 1 | 10% | 90% | Basic management, up to 3 vehicles |
+| 2 | 20% | 80% | Up to 5 |
+| 3 | **30%** | **70%** | Up to 10 — *this is the owner's stated default* |
+| 4 | 40% | 60% | Full service |
+| 5 | 50% | 50% | Premium / done-for-you |
+
+*"The higher fee must reflect MORE real services delivered — so it stays a fair service fee."*
+
+`[OWNER]` Default for a car with no recorded number: **70% to the owner** — i.e. Tier 3.
+`[OWNER]` `partner_percentage` in the database is **the owner's share**, not TMMT's.
+`[OWNER]` Repairs: **owner pays**, deducted from their share — matches JV v3 §7 `[DOC]`.
+`[OWNER]` Payout cadence: **monthly** — matches Drive `[DOC]`.
+
+**Who pays what** `[DOC]`:
+
+| Cost | Who |
 |---|---|
-| Revenue split | **Owner 70% / TMMT 30%** is the default |
-| Split direction | `partner_percentage` is **the owner's share**, not TMMT's |
-| Existing splits | 70% on 4 cars, 65% on 2, 60% on 1 — honour the deal on the car |
-| Repairs | **Owner pays**, deducted from their share |
-| Payout schedule | **Monthly** |
+| Insurance | Partner — deducted per car per month |
+| Routine maintenance, towing, trackers, keys, upkeep | Partner (JV v3 §7), unless Tier 5 |
+| Booking, renters, claims, maintenance coordination, tolls, tickets, cleaning, reporting | Company |
+| Citations | Renter, under the lease |
+| Roadside — **AAA Premier + Allstate**, mandatory on JV vehicles | Partner |
 
-### Approvals
+### 2.5 Approvals
 
-| Rule | Value |
-|---|---|
-| Manager repair spend without the owner | **$250** |
+`[OWNER]` A manager may approve a repair up to **$250** without the owner.
 
-`[OPEN]` Refund limits, discount limits, and who may approve a rental are still open.
+### 2.6 Compliance trip-wires on calls `[DOC]`
 
-### Pricing and deposits `[CONFIRMED — live in `rental_pricing_rules`]`
-
-| Tier / vehicle | Daily | Weekly | Deposit |
-|---|---:|---:|---:|
-| Economy | $45 | $280 | $400 |
-| Mid | $75 | $470 | $500 |
-| Luxury | $150 | $950 | $1,000 |
-| Tesla Model 3 (2020+) | $89 | $550 | $500 |
-| Tesla Model Y (2020+) | $95 | $590 | $500 |
-| BMW 3 Series (2018+) | $120 | $750 | $750 |
-| Mercedes C-Class (2018+) | $125 | $780 | $750 |
-| Porsche (2018+) | $220 | $1,400 | $1,500 |
-| BMW 7 Series (2018+) | $240 | $1,550 | $2,000 |
-| Mercedes S-Class (2018+) | $250 | $1,600 | $2,000 |
-
-### Insurance `[CONFIRMED — live in `rental_insurance_products`]`
-
-| Product | Source | Min liability | Weekly |
-|---|---|---:|---:|
-| TMMT Economy Shield | internal | $250,000 | $35 |
-| TMMT Mid-Tier Protection | internal | $500,000 | $55 |
-| TMMT Luxury Coverage | internal | $1,000,000 | $95 |
-| Fleet Non-Owner (Economy) | National Fleet Underwriters | $300,000 | $42 |
-| Fleet Non-Owner (Mid) | National Fleet Underwriters | $500,000 | $62 |
-| Fleet Non-Owner (Luxury) | National Fleet Underwriters | $1,000,000 | $110 |
-
-Every product carries `requires_background_approved = true`.
-
-`[OPEN]` Whether a renter may bring their own policy instead, and what minimum it must meet.
-
-### Compliance trip-wires `[CONFIRMED docs/CLOSER_PLAYBOOK_V1.md]`
-
-Banned on any call: *guarantee · approve · fund · fix your credit · credit repair ·
-remove items · 100% · no risk · I promise.* Three in 30 days = off the phones.
+Banned: *guarantee · approve · fund · fix your credit · credit repair · remove items · 100% ·
+no risk · I promise.* Three in 30 days = off the phones.
 
 ---
 
-## 3. The four collisions
+## 3. Conflicts — resolve these before building
 
-Still true, but re-read them knowing the fleet is historical.
+### 3.1 🔴 There is no evidenced insurance policy
 
-### 3.1 The rental record does not exist
+Every JV contract states *"Company maintains commercial insurance"* and partners are charged
+**$120/month** for it. The Drive contains **no policy, no declarations page, no certificate,
+no broker agreement** for TMMT Auto Services LLC.
 
-`bookings` — dates, pricing, deposit, insurance verification, lot release — has **0 rows**.
-Rentals were kept inside `active_customers` (`vehicle_rented`, `rental_start_date`,
-`payment_amount`) with `fleet.customer` as free text, and `status` flipping between
-**Active (16)** and **Removed (19)**.
+The only insurance document is an **ID card belonging to a different entity** — Mobilitas via
+Roamly, named insured *Urban Fleet Solutions LLC / Overland Indemnity / Sukul Barua*,
+**Connecticut**, one 2020 Tesla Model Y.
 
-Because renters were overwritten, most of the rental history is already gone. What survives
-should be archived, but the real point is forward-looking: **a rental record must exist
-before the first new car goes out.** Do not restart the business on the old shape.
+`[DB]` `rental_insurance_products` names **"National Fleet Underwriters"** and three
+`tmmt_internal` "Shield" products at $35/$55/$95 weekly. **The carrier appears nowhere in
+Drive.** Treat every row in that table as a placeholder.
 
-### 3.2 The person record is a mirror, not a spine
+> **Selling the `tmmt_internal` products without underwriting paper is a state-insurance
+> problem, not a data problem.** Nothing may use that table until a policy is produced.
 
-`people` has 1,209 rows: **1,205 GHL links, 2 lead links, 2 customer links.** It mirrors
-marketing and touches operations nowhere. `parties` is a second abandoned spine at 0 rows.
+`[OPEN]` Is the model broker-referral (Drive supports this) or own-paper (no evidence)?
 
-### 3.3 Vehicle ownership is free text
+### 3.2 🔴 Deposit — three answers
 
-`fleet.partner_name` holds names typed three different ways — `TMMT`, `Tmmt `,
-`TMMT Rentals` are all the house; `Duval / Jimmy` and `Jimmy/ Duval` are the same two
-people counted twice; `Asad` and `Asad ` differ by a trailing space. Only 7 of 43 carry a
-percentage. Free text cannot support payouts or a partner portal.
+| Source | Says |
+|---|---|
+| `[DB]` `rental_pricing_rules` | $400 / $500 / $1,000 by tier, up to $2,000 |
+| `[DOC]` every lease template | **Blank. No deposit policy exists anywhere in Drive** |
+| `[DOC]` draft language | *Non-refundable earnest money* if the renter walks — explicitly **not** a damage deposit |
+| `[OWNER]` 2026-09-01 | **Refundable**, minus damage, tickets and arrears |
 
-### 3.4 The pipeline is mostly blank
+The owner's answer is authoritative and is the biggest single change from the paperwork —
+it converts the deposit from earnest money into a damage deposit. **The lease must be
+redrafted to match, or the contract and the system will say different things.**
 
-875 leads, **759 with no status.** The 116 that have one use free text, including
-`Active customer` and `vehicle returned` — rental states leaking into the lead table.
+### 3.3 🟡 Pricing — seed data versus the real rate card
 
-`[CONFIRMED]` `docs/GHL-PIPELINE-MAP.md` already contains a designed 11-stage replacement
-pipeline with real volumes. It has not been applied.
+`[DB]` says economy $280/week. `[DOC]` says *"Sedans: starting as low as $300/week · SUVs:
+starting at $450/week,"* with real per-car rates **$300–$500**. `[OPEN]` Which is the rate card?
+
+### 3.4 🔴 The late fee collides with the halal lease
+
+`[OWNER]` **$25 per day** late.
+`[DOC]` The current `Vehicle Ijārah (Lease) Agreement v3 MULTI-STATE (halal)` states late
+fees are ***"donated to CHARITY, never kept."*** The superseded Georgia template it replaced
+applied payments to *"accrued interest"* — the riba problem already corrected once.
+
+**These are compatible only if the $25/day is collected and donated, not retained as revenue.**
+That is a decision for the owner, and it should be written into both the lease and the ledger
+so the accounting can prove it. `[OPEN]`
+
+### 3.5 🔴 The 60% mismatch, open since June
+
+The v2 draft carries the owner's own note:
+
+> *"Your internal P&L showed a 60% partner payout on some cars, but this contract says 70-90%.
+> Reconcile which deal applies to which partner so records and contracts match."*
+
+Worse: **Marc's real February report is 40/60 — Tier 4, which did not exist in any contract at
+that time.** He was paid on a tier that was not yet written down.
+
+### 3.6 🔴 Insurance deduction — three values
+
+JV v2 §5 says **$70/month**. JV v3 §6 is **blank**. Both real payout reports charge **$120**.
+Partners are being charged $120 against a contract that says $70 or says nothing. `[OPEN]`
+
+### 3.7 ⚠️ A $75 gap in a real payout
+
+`Asad Camry: (1440 × 70%) − 120 = $888`, but the report paid **$813**. No stated expense
+accounts for it. Either a deduction went unrecorded or a partner was underpaid.
+**Check whether it repeated** — this is exactly the failure the missing ledger produces.
+
+### 3.8 🟡 Termination trigger
+
+Old: *"late more then 2 times"* → terminate and repossess. v3: written notice + 48h cure.
+`[OPEN]` Which governs?
+
+### 3.9 🟡 Other unsettled terms
+
+Mileage limit (15,000/term in the old template, blank in v3) · payment method (Zelle/bank per
+contract, Cash App in the real ledger, Stripe in the lead checklist) · service radius (only the
+wrong-state *"100-mile Greater Atlanta"* exists).
 
 ---
 
-## 4. Canonical model
+## 4. Compliance queue — professional review, not developer work
+
+| # | Item | Why |
+|---|---|---|
+| C1 | **Intelius is not a CRA** but drives rental eligibility. Its own SOP says so | FCRA. Legal review before more screening runs. Note this makes the 299 `background_checks` rows a different thing than assumed |
+| C2 | **No TMMT insurance policy evidenced**, partners charged $120/mo for it | Contractual, possibly regulatory |
+| C3 | **`tmmt_internal` insurance products have no underwriting paper** | State insurance regulation |
+| C4 | **Non-compliant marketing script still live** — *"$800 to $1,000+ a month on autopilot"*, *"Secure $50K+ in funding"*, *"without lifting a finger"*. It was edited **six days after** the compliant replacement was written | CROA / FTC. **Fixable today at zero cost** |
+| C5 | **Georgia lease template still filed as canon** for a Virginia business, and it contains the interest clause | Wrong governing law + riba |
+| C6 | **Superseded Deal Picker still present**, pointing at the wrong lease | Someone will sign the Georgia contract |
+| C7 | **$75 unexplained payout gap** | Possible partner underpayment |
+| C8 | **All In One Management provides credit repair and is owner-affiliated** | CROA + related-party disclosure |
+| C9 | **Automatic declines** (§2.2) issue adverse decisions without a human | Needs a decline notice that satisfies the rules in each state |
+| C10 | **Late fee at $25/day** | State caps and disclosure, plus the charity condition in §3.4 |
+
+`[DOC]` **There is no P&L.** The `$21,884 / $13,130 / $5,400` figures come from one undated
+worksheet with a flat 60% assumption and no insurance, maintenance or repair lines.
+**Do not put $21,884 in an investor document.**
+
+---
+
+## 5. What the software gets wrong today
+
+| # | Collision | Detail |
+|---|---|---|
+| 1 | **No rental record** | `bookings` = 0 rows. Rentals lived inside `active_customers` with the renter's name as free text on the car; status flipped Active (16) / Removed (19). Renters were overwritten, so most history is gone. **Build this before the next car goes out.** |
+| 2 | **Person record is a mirror** | `people` = 1,209 rows: 1,205 GHL links, **2** lead links, **2** customer links. `parties` is a second, empty spine. |
+| 3 | **Ownership is free text** | `TMMT` / `Tmmt ` / `TMMT Rentals` are all the house. `Duval / Jimmy` and `Jimmy/ Duval` are the same pair twice. `Asad` and `Asad ` differ by a trailing space. Only 7 of 43 carry a percentage. |
+| 4 | **Pipeline is blank** | 759 of 875 leads have no status. Two live statuses (`Active customer`, `vehicle returned`) are rental states leaking into the lead table. A replacement 11-stage pipeline is already designed in `GHL-PIPELINE-MAP.md` and has never been applied. |
+
+---
+
+## 6. Canonical model
 
 **A person is one record. Everything else is a relationship or an event attached to it.**
 A relationship has a start and an end; ending it never deletes it.
 
 ```
 PERSON  (people)
-  |
-  +-- RELATIONSHIP (person_roles)   one row per role, with dates
+  +-- RELATIONSHIP (person_roles)   role + dates, never deleted
   |     applicant | renter | former_renter | vehicle_owner
   |     investor | partner | vendor | staff | referral_source
-  |
   +-- IDENTITY LINKS      ghl_contact, lead, auth user
   +-- DOCUMENTS           licence, insurance, agreements
   +-- COMMUNICATIONS      every touch, every channel
   +-- CONSENT             TCPA state, per channel
-```
 
-```
 VEHICLE (fleet)
-  +-- OWNERSHIP      person/org, % share (owner's share), start/end
+  +-- OWNERSHIP      person/org, owner's % share, tier, start/end
   +-- RENTALS        many, over time
   +-- INSPECTIONS    onboarding, periodic condition, return
-  +-- MAINTENANCE    scheduled + reactive, with who-pays
-  +-- TICKETS        violations, tolls
-  +-- INSURANCE      policy, dates
-  +-- DOCUMENTS      title, registration, emissions
+  +-- MAINTENANCE    who-pays flag per JV tier
+  +-- TICKETS · INSURANCE · DOCUMENTS
   +-- MONEY          revenue, expenses, owner payouts
   +-- EVENTS         append-only status history
-```
 
-```
-RENTAL (bookings)          <-- build before the first new car goes out
+RENTAL (bookings)          <-- the missing centre
   person_id, vehicle_id, org_id
-  state, dates (start / actual_end)   -- no expected_end: it rolls
-  pricing (weekly, deposit), payment schedule
+  state, dates (start / actual_end)     -- no expected_end: it rolls
+  weekly rate, deposit, payment schedule
   agreement, insurance source + verification
   delivery + periodic + return inspections
-  ledger entries, late fees, incidents, tickets
+  ledger entries, late fees (and their charity disposition), tickets
   good_standing_days, lto_offered_at
   end reason
-```
 
-```
-PATHWAY (program_applications + client_journey)
-  person_id, program (one of the 7)
-  entry reason   <-- "did not qualify, because X"
-  milestones, tasks, partner referrals
-  reassessment dates + outcomes
-  exit: qualified | became owner | closed | declined
+PAYOUT (revenue_splits)
+  vehicle, partner, period
+  gross · partner% (tier) · insurance · itemised expenses · net
+  -- must reproduce: (gross x partner%) - insurance - expenses
 ```
 
 ---
 
-## 5. Who sees what
+## 7. Lifecycles
 
-`[CONFIRMED]` `profiles.role` is authoritative, **not** the JWT role. Operators scope
-through `org_roles`, partners through `partner_fleet_access`.
-
-| Actor | Sees | Can do | Cannot do |
-|---|---|---|---|
-| Owner / admin | Everything | Everything | — |
-| Ops manager | All operations | Approve repairs **to $250** `[LOCKED]` | Spend over $250, change roles |
-| Rental staff | Assigned applications & rentals | Collect docs, run checks, prep agreements | Final approval, full background report |
-| Customer service | Assigned people & rentals | Communicate, log, create tasks | Financial edits, qualification calls |
-| Finance | Money across the business | Payments, payouts, refunds | Qualification calls |
-| Maintenance | Vehicles & jobs | Inspections, repairs, status | Customer or financial records |
-| Renter | Own record only | Upload docs, pay, view rental | Anything else |
-| Vehicle owner | Own vehicles only | Performance, statements, documents | Renter PII beyond the agreement |
-| Partner | Referred people, consented fields | Update referral status | Full customer record |
-
-`[CONFIRMED]` Background checks, payments, documents and insurance are already locked to
-platform admin, with staff reviewing through a masked queue. Keep that model.
-
----
-
-## 6. Lifecycles
-
-### 6.1 Lead → application → qualification
-
+**Lead → qualification**
 ```
 NEW -> CONTACTED -> APPLYING -> DOCS_PENDING -> IN_REVIEW
-                                           |
-                             +-------------+-------------+
-                             v                           v
-                        QUALIFIED                  NOT_QUALIFIED
-                             |                           |
-                             v                           v
-                      VEHICLE_MATCH             PATHWAY_ASSESSMENT
-                                                         |
-                                             +-----------+-----------+
-                                             v                       v
-                                     PATHWAY_ENROLLED             CLOSED
+                                     |
+                     +---------------+---------------+
+                     v                               v
+                 QUALIFIED                     NOT_QUALIFIED
+                     |                               |
+                     v                               v
+              VEHICLE_MATCH                 PATHWAY_ASSESSMENT
+                                                     |
+                                        +------------+------------+
+                                        v                         v
+                                PATHWAY_ENROLLED               CLOSED
 ```
+Auto-decline fires before `IN_REVIEW` on §2.1 and §2.2. Escalation cases go to a human, never
+to auto-decline. Every decline writes a reason code and stays reversible.
 
-Auto-decline fires before `IN_REVIEW` on any of the six disqualifiers in §2.
-`NOT_QUALIFIED` must carry a reason code — that reason routes the pathway.
-Terminal but reopenable: `CLOSED`, `JUNK`, `DO_NOT_RENT`.
-
-`[CONFIRMED]` Map onto the 11 stages already designed in `docs/GHL-PIPELINE-MAP.md`,
-including the missing **Under Review** stage that let 286 people disappear.
-
-### 6.2 Rental
-
+**Rental**
 ```
 MATCHED -> RESERVED -> AGREEMENT_SIGNED -> DEPOSIT_PAID -> DELIVERED
    -> ACTIVE  (rolls weekly, no end date)
-        |-> day 4 unpaid -> PAYMENT_ISSUE  ($25/day accrues)
-        |        cured -> ACTIVE   |   uncured -> RECOVERY
+        |-> day 4 unpaid -> PAYMENT_ISSUE  ($25/day accrues, see 3.4)
+        |     day 1 notice -> 48h allowed -> Fleet Dept
+        |     cured -> ACTIVE   |   uncured -> notice + 48h cure -> RECOVERY
         |-> CONDITION_CHECK -> ACTIVE
-        |-> day 90 good standing -> LTO_OFFERED (opt-in) -> ACTIVE or lease_to_own
+        |-> day 90 good standing -> LTO_OFFERED (opt-in)
    -> ENDING -> RETURNED -> INSPECTED -> RECONCILED -> CLOSED
 ```
+Deposit settles at `RECONCILED`: refunded minus damage, tickets, arrears.
 
-Deposit is settled at `RECONCILED`: refunded minus damage, tickets and arrears.
-Closing a rental never deletes it and never blanks the vehicle's history.
-
-### 6.3 Vehicle
-
+**Partner / vehicle owner**
 ```
-PROSPECT -> ONBOARDING -> DOCS -> INSPECTION -> APPROVED
-   -> AVAILABLE -> RESERVED -> RENTED -> RETURNED
-   -> INSPECTION -> AVAILABLE
-   (any point)  -> MAINTENANCE -> AVAILABLE
-                -> RETIRED | SOLD | RETURNED_TO_OWNER
-```
-
-`[CONFIRMED]` All 43 existing vehicles resolve to `SOLD` or `RETURNED_TO_OWNER`.
-
-### 6.4 Vehicle owner / partner
-
-```
-LEAD -> APPLICATION -> VERIFICATION -> VEHICLE_REVIEW
-     -> INSPECTION -> AGREEMENT -> ONBOARDED -> EARNING
-          MONTHLY:  revenue
-                  - expenses (repairs charged to owner)
-                  = gross, split 70% owner / 30% TMMT
-                  -> PAYOUT
+LEAD -> APPLICATION -> VERIFICATION -> VEHICLE_REVIEW -> INSPECTION
+     -> AGREEMENT (tier 1-5 recorded) -> ONBOARDED -> EARNING
+        MONTHLY: (gross x partner%) - insurance - itemised expenses -> PAYOUT
      -> WINDING_DOWN -> EXITED
 ```
 
-`[OPEN]` Minimum commitment and termination terms.
-
-### 6.5 Pathway — the person who did not qualify
-
+**Pathway — did not qualify**
 ```
-NOT_QUALIFIED (with reason)
-  -> ASSESSED -> OFFERED -> ACCEPTED | DECLINED
-  -> REFERRED (partner) -> IN_PROGRESS
-        milestones, tasks, check-ins
-  -> REASSESSED
-        -> QUALIFIED_FOR_RENTAL   (back to 6.1)
-        -> READY_TO_ACQUIRE       (becomes an owner)
-        -> STALLED -> nurture
-        -> CLOSED
+NOT_QUALIFIED (reason) -> ASSESSED -> OFFERED -> ACCEPTED | DECLINED
+  -> REFERRED (partner) -> IN_PROGRESS -> REASSESSED
+       -> QUALIFIED_FOR_RENTAL | READY_TO_ACQUIRE | STALLED | CLOSED
 ```
-
-Record the **target** milestone date and the **actual** outcome as separate fields.
-A ninety-day target is a plan, never a promise.
-
-### 6.6 Partner referral
-
-```
-CREATED -> CONSENT_CAPTURED -> SENT -> ACCEPTED | DECLINED
-        -> IN_PROGRESS -> OUTCOME -> commission -> CLOSED
-```
-
-`[CONFIRMED]` `partner_referrals` already carries `consent_captured_at` and
-`consent_channel`. No referral leaves the building without recorded consent.
+Record **target** milestone dates and **actual** outcomes separately. A 90-day target is a
+plan, never a promise.
 
 ---
 
-## 7. Automation tiers
+## 8. Build order
 
-**Tier A — automate freely.** Application received. Missing-document reminders. Appointment
-reminders. Insurance and registration expiry. Condition-check due. Late-payment reminder at
-day 1–3. Maintenance due. Renewal notice. Staff task creation. Partner notification. Owner
-monthly statement generation.
+**Step 0 — Free compliance wins, today.** Archive the non-compliant sales script (C4). Remove
+the superseded Deal Picker and the Georgia lease from canon (C5, C6). These cost nothing and
+are live exposure.
 
-**Tier B — machine preps, human sends.** Draft the message. Stage the referral. Propose the
-vehicle match. Compute the payout. Prepare the agreement. Present the 90-day LTO offer.
-A person taps send. `[CONFIRMED]` `automation_outbox` already stages rather than dispatches.
+**Step 1 — Settings table.** Every `[OWNER]` rule in §2 as editable settings, plus the JV tier
+ladder. Nothing hardcodes them.
 
-**Tier C — never automatic.** Qualification overrides. Adverse action. Background-check
-interpretation. Credit decisions. Insurance eligibility. Financing. Deposit forfeiture.
-Repossession. Refunds. Anything that moves money out.
+**Step 2 — Lead pipeline.** The only live asset. Apply the 11 stages from `GHL-PIPELINE-MAP.md`.
+Resolve the 759 blanks. Surface the **81 approved + 104 waitlisted** as a call list.
 
-The six auto-disqualifiers in §2 are the single exception in Tier C's direction: they may
-decline automatically, because the owner set them as bright lines. Every auto-decline must
-still write a reason and be reversible by a human.
+**Step 3 — Rental record.** Build `bookings` per §7 before the next car goes out. Archive what
+survives of old rentals, marked historical. Stop writing `fleet.customer`.
 
-`[CONFIRMED]` TCPA and do-not-contact gating already exists, including a personal line
-marked `do_not_contact`. Every outbound path passes through it.
+**Step 4 — Person spine.** Backfill lead and customer links by phone/email. Add `person_roles`.
+Retire `parties`.
 
----
+**Step 5 — Vehicle and ownership.** Mark all 43 sold or returned. Deduplicate owner names.
+Real ownership rows carrying the tier and the owner's share.
 
-## 8. Needs a professional, not a developer
+**Step 6 — Payout ledger.** Must reproduce the §2.4 formula exactly and itemise every
+deduction — that is both the contract's promise and the fix for §3.7.
 
-- Background checks and adverse action, including automatic declines
-- Anything credit-repair-shaped — what TMMT does versus a partner, and what marketing may claim
-- Automatic decline notices and what they must say
-- Insurance placement and referral compensation
-- Lease-to-own structure and disclosure at the 90-day offer
-- Late fees at $25/day — check the cap and disclosure rules in each state you operate in
-- Electronic signature and record retention
-- Retention and deletion for licence, background and payment data
+**Step 7 — Documents and tasks.** Built and empty; wire once the spine exists.
 
-`[CONFIRMED]` `COMPLIANCE_DISCLAIMERS.md` and `CREDIT-FUNDING-COMPLIANCE.md` already exist
-in this repo. Reconcile before building the pathway.
-
----
-
-## 9. Build order — revised for square one
-
-v1 put the rental backfill first because it looked like a live rescue. It is not. With no
-cars and no partners, the order changes: **wake the pipeline first, then build the rails
-before the first new car goes out.**
-
-**Step 1 — Settings table.** Encode every `[LOCKED]` rule in §2 as editable settings:
-grace 3 days, $25/day, 1-week minimum, deposit refundable-minus, 70/30 default, monthly
-payout, $250 manager limit, the six auto-disqualifiers, 4.6 rating, 100 trips. Nothing
-downstream hardcodes them.
-
-**Step 2 — Lead pipeline.** The only live asset. Apply the 11 stages already designed in
-`GHL-PIPELINE-MAP.md`. Resolve the 759 blanks. Surface the **81 approved and 104 waitlisted
-people** as a call list. This is the step that can make money this month.
-
-**Step 3 — Rental record.** Build `bookings` properly against §6.2 before the first new car
-goes out. Archive what survives of the old rentals from `active_customers` into it, marked
-historical. Stop anything writing `fleet.customer`.
-
-**Step 4 — Person spine.** Backfill `people.incoming_lead_id` and `active_customer_id` by
-phone and email. Add `person_roles`. Retire `parties`. Everything joins through `people`.
-
-**Step 5 — Vehicle and ownership.** Mark all 43 vehicles `SOLD` or `RETURNED_TO_OWNER`.
-Deduplicate the owner names. Build `vehicle_ownership` with the owner's share as an explicit
-percentage, so the next car onboards clean.
-
-**Step 6 — Documents and tasks.** Both built and empty. Wire once the spine exists.
-
-**Step 7 — Pathway wiring.** Connect `NOT_QUALIFIED` plus its reason code to
-`program_applications`, `partner_referrals` and `client_journey`. The seven programs already
-carry `owner_role`, `destination` and `next_action` — the routing table exists.
-
-**Step 8 — Owner payouts.** `revenue_splits`, monthly, 70/30, repairs deducted.
+**Step 8 — Pathway wiring.** Decline reason → `program_applications`, `partner_referrals`,
+`client_journey`. The seven programs already carry `owner_role`, `destination`, `next_action`.
 
 **Step 9 — Dashboards.** Only after the data underneath is real.
 
@@ -433,22 +407,26 @@ carry `owner_role`, `destination` and `next_action` — the routing table exists
 
 ---
 
-## 10. Still open
+## 9. Still open
 
-Down from seventeen to six.
+**Blocking money:** insurance model (§3.1) · deposit versus lease language (§3.2) · rate card
+(§3.3) · late fee and the charity condition (§3.4) · the 60% reconciliation (§3.5) · insurance
+deduction $70/$120 (§3.6) · termination trigger (§3.8) · mileage, payment method, service
+radius (§3.9).
 
-1. **Insurance** — may a renter bring their own policy instead of one of the six products, and what minimum must it meet?
-2. **Overrides** — who may reverse an automatic decline, and is it logged as an exception?
-3. **Refunds and discounts** — the manager's limit on each. Only the $250 repair limit is set.
-4. **Owner terms** — minimum commitment and termination notice.
-5. **Division of labour** — precisely what TMMT does versus All In One Management versus the credit partner versus the funder. This blocks the pathway and every marketing claim attached to it.
-6. **Reassessment** — how often someone on a pathway is re-checked, and how many attempts before they move to nurture.
+**Blocking the pathway:** exactly what TMMT does versus All In One Management versus the credit
+partner versus the funder — and what marketing may claim. The funding partner is **still
+unnamed** in Drive, and the strategy memo instructs *"get the partner agreements in writing."*
+
+**Blocking permissions:** refund and discount limits; who may reverse an automatic decline.
+
+**Blocking reassessment:** how often a pathway person is re-checked, and how many attempts
+before nurture.
 
 ---
 
 ## Appendix — provenance
 
-`[CONFIRMED]` facts were read from Supabase `uapxakmlwnpfsftfeezx` and this repository on
-2026-09-01. `[LOCKED]` rules were stated by the owner on 2026-09-01. Row counts are
-point-in-time — re-verify before acting, since other sessions may have patched the same
-database.
+`[DB]` read from Supabase `uapxakmlwnpfsftfeezx` and this repo on 2026-09-01.
+`[DOC]` from the Google Drive `TMMT DATA ROOM` read-only sweep, per `BUSINESS-RULES-RECOVERED.md`.
+`[OWNER]` stated by Taha on 2026-09-01. Row counts are point-in-time — re-verify before acting.
