@@ -71,6 +71,36 @@ export default function DashboardPage() {
 
       {mission && <MissionBoard data={mission} />}
 
+      {data.paperTrail.rented >
+        Math.min(data.paperTrail.contracts, data.paperTrail.handovers) && (
+        <Card className="p-5 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                {data.paperTrail.rented} vehicle{data.paperTrail.rented === 1 ? " is" : "s are"} out,
+                with {data.paperTrail.contracts} contract{data.paperTrail.contracts === 1 ? "" : "s"} and{" "}
+                {data.paperTrail.handovers} handover{data.paperTrail.handovers === 1 ? "" : "s"} on file
+              </p>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                A vehicle can be marked Rented without an agreement or a handover
+                record, and nothing else on this dashboard would show it. That
+                gap is what gets argued about after a crash, a late return, or a
+                dispute over a deposit.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3 text-sm font-medium">
+                <Link href="/interfaces/contracts" className="text-amber-900 dark:text-amber-200 underline">
+                  Record a contract
+                </Link>
+                <Link href="/forms/handover" className="text-amber-900 dark:text-amber-200 underline">
+                  Log a handover
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Fleet Vehicles" value={data.fleet.total} icon={<Car size={20} />} trend={`${data.fleet.available} available · ${data.fleet.rented} rented`} />
         <StatCard label="Incoming Leads" value={data.leads.total} icon={<UserPlus size={20} />} trend={`${data.leads.new} new · ${data.leads.qualified} qualified`} />
