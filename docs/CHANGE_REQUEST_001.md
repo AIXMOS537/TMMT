@@ -80,15 +80,13 @@ Steps 1–2 need no code and no schema change.
 
 ---
 
----
-
 ## CURRENT — what exists now, with evidence
 
 Verified read-only against production `uapxakmlwnpfsftfeezx`, 2026-09-01.
 
 **Ownership is a free-text field.** `fleet.partner_name`, 43 vehicles, **21 distinct strings** for roughly **17 real owners**.
 
-**The split is recorded on 7 of 43 vehicles (16%).** 36 vehicles have `partner_percentage = NULL`. **21 vehicles are currently rented.**
+**The split is recorded on 7 of 43 vehicles (16%).** 36 vehicles have `partner_percentage = NULL`. **21 vehicles were marked rented as of 17 June** — see the blocking finding above; that is not a current figure.
 
 **There is no table that can hold an owner agreement.**
 
@@ -101,7 +99,7 @@ Verified read-only against production `uapxakmlwnpfsftfeezx`, 2026-09-01.
 
 > **The assumption that `revenue_splits` was "built but unused" and just needed data is wrong.** It is built for a different purpose. This is the single most useful correction in this change request — it would have been discovered the hard way.
 
-**Consequence:** TMMT cannot calculate what an owner is owed, cannot produce a statement, and cannot show an owner their vehicle. 21 rented vehicles are generating money with no ledger behind them.
+**Consequence:** TMMT cannot calculate what an owner is owed, cannot produce a statement, and cannot show an owner their vehicle. Worse, per the blocking finding above, it cannot even say which vehicles are rented today.
 
 ---
 
