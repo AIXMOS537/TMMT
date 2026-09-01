@@ -5,6 +5,7 @@ import { getLeads } from "@/lib/queries";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { ReferToPartner } from "@/components/ReferToPartner";
 import { adminUpsert } from "@/lib/offline/desk-save";
 
 type Lead = Record<string, unknown>;
@@ -124,6 +125,19 @@ export default function LeadsPage() {
             <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Lead"}</Button>
           </div>
         </form>
+
+        {/* Offered to anyone who does not get a rental straight away, and to
+            renters who want it — not only to people who were declined. Kept
+            outside the form so recording a referral never submits the lead. */}
+        {editing?.contact_name ? (
+          <div className="mt-4 border-t border-gray-200 dark:border-slate-700 pt-4">
+            <ReferToPartner
+              contactRef={String(editing.contact_name)}
+              defaultReason="No rental available right now"
+              compact
+            />
+          </div>
+        ) : null}
       </Modal>
     </div>
   );
