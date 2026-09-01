@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, PageHeader, Button } from "@/components/ui";
-import { getClients, type StoredClient } from "@/lib/credit-dispute/data/store";
+import {
+  readLegacyClients,
+  clearLegacyClients,
+  type StoredClient,
+} from "@/lib/credit-dispute/data/store";
+import {
+  listDisputeClients,
+  addDisputeRoundsForClient,
+  importClientsFromBrowser,
+} from "./actions";
 import {
   runDisputeProtocol,
   deepAuditAll,
@@ -11,7 +20,6 @@ import {
   estimateScoreImpact,
   type DeepAuditResult,
 } from "@/lib/credit-dispute/engine/protocol";
-import { addDisputeRounds } from "@/lib/credit-dispute/data/store";
 import { tierLabel, tierColor } from "@/lib/credit-dispute/engine/funding-readiness";
 import { CREDIT_GHL_TAGS } from "@/lib/credit-dispute/ghl-tags";
 import { pathLabel } from "@/lib/client-journey/credit-paths";
@@ -20,24 +28,73 @@ export default function CreditDisputeCommandPage() {
   const [clients, setClients] = useState<StoredClient[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [stranded, setStranded] = useState(0);
+  const [rescuing, setRescuing] = useState(false);
+
+  async function refresh() {
+    const res = await listDisputeClients();
+    if (!res.ok) {
+      setError(res.error);
+      return [];
+    }
+    setError("");
+    setClients(res.data);
+    setSelectedId((current) =>
+      current && res.data.some((c) => c.profile.id === current)
+        ? current
+        : res.data[0]?.profile.id ?? null
+    );
+    return res.data;
+  }
 
   useEffect(() => {
-    const loaded = getClients();
-    setClients(loaded);
-    if (loaded.length > 0 && !selectedId) setSelectedId(loaded[0].profile.id);
-  }, [selectedId]);
+    // Clients live in the database now. Anything still under the old browser
+    // key belongs to whoever imported it on this machine and would otherwise
+    // be invisible, so surface the count and offer to bring it across.
+    setStranded(readLegacyClients().length);
+    refresh().finally(() => setLoading(false));
+    // Runs once — refresh reads no state it does not set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleRescue() {
+    setRescuing(true);
+    setError("");
+    const res = await importClientsFromBrowser(readLegacyClients());
+    setRescuing(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    // Only clear the browser copy once the server has confirmed it holds them.
+    clearLegacyClients();
+    setStranded(0);
+    await refresh();
+    setMessage(
+      `Moved ${res.data.imported} client(s) into the database` +
+        (res.data.skipped ? `, ${res.data.skipped} already there` : "") +
+        ". This browser's copy has been cleared."
+    );
+  }
 
   const selected = clients.find((c) => c.profile.id === selectedId);
   const funding = selected ? assessFundingReadiness(selected.profile, selected.negativeItems) : null;
   const audits = selected ? deepAuditAll(selected.negativeItems) : [];
   const impact = selected ? estimateScoreImpact(selected.negativeItems) : null;
 
-  function handleGenerate() {
+  async function handleGenerate() {
     if (!selected) return;
+    setError("");
     const active = selected.negativeItems.filter((i) => i.status !== "removed" && i.status !== "closed");
     const result = runDisputeProtocol(selected.profile, active);
-    addDisputeRounds(selected.profile.id, result.lettersGenerated);
-    setClients(getClients());
+    const saved = await addDisputeRoundsForClient(selected.profile.id, result.lettersGenerated);
+    if (!saved.ok) {
+      setError(saved.error);
+      return;
+    }
+    await refresh();
     setMessage(`Generated ${result.lettersGenerated.length} letter(s) — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`);
   }
 
@@ -54,6 +111,33 @@ export default function CreditDisputeCommandPage() {
           credit_billing_plans, client_journey, shared Supabase. Not a separate product — ops layer on what you already built.
         </p>
       </Card>
+
+      {stranded > 0 && (
+        <Card className="p-4 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-sm">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            {stranded} client record{stranded === 1 ? "" : "s"} are still only in this browser
+          </p>
+          <p className="mt-1 text-amber-800 dark:text-amber-300">
+            They were saved before this desk used the database, so they exist on
+            this machine and nowhere else — clearing your browser data would
+            lose them. Bring them across and they are backed up like everything
+            else.
+          </p>
+          <Button className="mt-3" onClick={handleRescue} disabled={rescuing}>
+            {rescuing ? "Moving…" : `Move ${stranded} into the database`}
+          </Button>
+        </Card>
+      )}
+
+      {error && (
+        <Card className="p-3 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-200">
+          {error}
+        </Card>
+      )}
+
+      {loading && (
+        <Card className="p-3 text-sm text-gray-600 dark:text-slate-400">Loading clients…</Card>
+      )}
 
       {message && (
         <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-200">

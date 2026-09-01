@@ -1,5 +1,4 @@
 import type { CreditProfile, DisputeRoundType, NegativeItem } from "../types";
-import type { DisputeLetterBatch } from "../engine/protocol";
 
 export type ReportSource = "disputefox" | "myfreescorenow" | "smartcredit";
 
@@ -25,61 +24,42 @@ export interface StoredClient {
   externalId?: string;
 }
 
-const STORAGE_KEY = "aix-dispute-clients";
+/**
+ * The old browser key.
+ *
+ * Client records used to live here and nowhere else — legal name, email, phone,
+ * date of birth, social-security last four, address and tri-bureau scores, in
+ * localStorage, on whatever machine imported them. They are in the database now
+ * (see the server actions beside the credit-dispute pages); this constant
+ * survives only so the one-time rescue can find what is still stranded in a
+ * browser.
+ *
+ * Nothing writes to it any more. Once a machine has run the rescue and the
+ * count comes back zero, the key can be cleared.
+ */
+export const LEGACY_STORAGE_KEY = "aix-dispute-clients";
 
-export function getClients(): StoredClient[] {
+/** Whatever this browser still holds under the old key. Read-only. */
+export function readLegacyClients(): StoredClient[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as StoredClient[]) : [];
   } catch {
     return [];
   }
 }
 
-export function saveClients(clients: StoredClient[]): void {
+/** Drop the old key. Only call this once the rescue has reported success. */
+export function clearLegacyClients(): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
-}
-
-export function getClientById(id: string): StoredClient | undefined {
-  return getClients().find((c) => c.profile.id === id);
-}
-
-export function upsertClient(client: StoredClient): void {
-  const clients = getClients();
-  const idx = clients.findIndex((c) => c.profile.id === client.profile.id);
-  if (idx >= 0) {
-    clients[idx] = client;
-  } else {
-    clients.push(client);
+  try {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    /* a browser that refuses storage has nothing to clear */
   }
-  saveClients(clients);
-}
-
-export function addDisputeRounds(
-  profileId: string,
-  batches: DisputeLetterBatch[]
-): StoredClient | undefined {
-  const client = getClientById(profileId);
-  if (!client) return undefined;
-
-  const newRounds: StoredDisputeRound[] = batches.map((b, i) => ({
-    id: `round-${Date.now()}-${i}`,
-    negativeItemId: b.negativeItemId,
-    roundNumber: b.roundNumber,
-    roundType: b.roundType,
-    bureau: b.bureau,
-    status: b.status,
-    letterSubject: b.letter.subject,
-    letterBody: b.letter.body,
-    furnisherName: b.furnisherName,
-    createdAt: new Date().toISOString(),
-  }));
-
-  client.disputeRounds = [...client.disputeRounds, ...newRounds];
-  upsertClient(client);
-  return client;
 }
 
 export function generateId(): string {
