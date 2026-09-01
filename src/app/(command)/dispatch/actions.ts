@@ -8,9 +8,10 @@ import { searchAddress } from "@/lib/osm-geocode";
 import { askCaptainDispatch } from "@/lib/captain-client";
 import { notifyResponder } from "@/lib/notify-telegram";
 import type { Candidate, AssignmentReasoning, Incident } from "@/lib/dispatch-types";
+import { OrgIdSchema } from "@/lib/agent/tenant";
 
 const NewIncidentSchema = z.object({
-  org_id: z.string().uuid(),
+  org_id: OrgIdSchema,
   reporter_name: z.string().min(1).max(120).optional(),
   reporter_phone: z.string().max(40).optional(),
   location_lat: z.number().refine(n => n >= -90 && n <= 90, "lat out of range"),
@@ -318,7 +319,7 @@ export async function transitionStatus(input: unknown): Promise<ActionResult<nul
 }
 
 export async function lockExpiredAssignments(orgId: string): Promise<ActionResult<{ locked: number }>> {
-  if (!z.string().uuid().safeParse(orgId).success) return { ok: false, error: "invalid id" };
+  if (!OrgIdSchema.safeParse(orgId).success) return { ok: false, error: "invalid id" };
   const access = await requireOrgAccess(orgId);
   if (!access.ok) return access;
   const { supabase } = access.data;
@@ -378,7 +379,7 @@ export async function setUnitLocation(input: unknown): Promise<ActionResult<null
 }
 
 const ApproveResponderSchema = z.object({
-  org_id: z.string().uuid(),
+  org_id: OrgIdSchema,
   user_id: z.string().uuid(),
   link_kind: z.enum(["vendor","operator","client_volunteer","contractor"]),
   certs: z.record(z.string(), z.unknown()).optional(),
