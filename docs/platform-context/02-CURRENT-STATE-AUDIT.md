@@ -109,6 +109,20 @@ Operational core: `Incoming Leads`, `Background Checks`, `Waitlist`, `Appointmen
 1,642 contacts mirrored into Supabase. Public phone layer. `[OPEN]` Agency plan tier
 and SaaS-mode status still unconfirmed.
 
+> **What is needed to close this, 2026-09-01.** This cannot be answered from the
+> repository or the database — no plan tier is recorded in either, and the GHL API key
+> is not held locally. It is a two-minute lookup in the GHL dashboard:
+> **Settings → Company Billing** for the plan tier, and **Settings → SaaS Configurator**
+> for whether SaaS mode is enabled.
+>
+> It matters because the code already assumes the answer. `org_ghl_connections` and
+> `src/lib/ghl/org-location.ts` support a `foreign_agency` mode — one location per
+> partner org — which is a SaaS-mode capability. If SaaS mode is off, every partner
+> shares one location and the per-org routing that the multi-business bridge depends on
+> does not hold.
+
+
+
 ### Vercel — team `AIXMOS PROJECTS` (hobby plan)
 
 | Project | Git link |
@@ -202,6 +216,31 @@ the split terms, a revenue/expense attribution rule, a statement period, and a p
 record. **`[OPEN]` The split percentages and management fee structure are the owner's
 to state** — the 0.60/0.65/0.70 values in the database are unconfirmed.
 
+> **What is actually in the database, 2026-09-01.** Not one unconfirmed number but
+> three competing ones, on three different scales, in two tables:
+>
+> | Field | Values | Coverage |
+> |---|---|---|
+> | `fleet.partner_percentage` | 0.60 ×1, 0.65 ×2, 0.70 ×4 | **7 of 43 vehicles** |
+> | `organizations.agency_revenue_share_pct` | 80 | 9 of 9 orgs — looks like a default, not a decision |
+> | `organizations.partner_revenue_split_tier` | `50_50` | 1 org |
+>
+> A fraction, a percentage and a label all describing the same idea. Any settlement
+> code written before these are reconciled will pick one and silently be wrong about
+> the rest.
+>
+> Two further blockers on the same build, both factual rather than commercial:
+> **36 of 43 vehicles carry no split at all**, and `fleet.partner_name` holds
+> **21 distinct free-text owner names** with no owner entity behind them — so there is
+> nothing to attach an agreement to even once the percentages are settled.
+>
+> The migration for that entity is written and committed but deliberately not applied
+> (`f8120402`, vehicle owners and per-vehicle agreements). The percentages are the
+> input it is waiting on.
+>
+> **The question, stated plainly:** for each of the 43 vehicles, what share does the
+> owner receive, and does TMMT take a management fee on top of or inside that share?
+
 ---
 
 ## 5. Risk #3 — business rules already seeded, never confirmed
@@ -247,6 +286,44 @@ $35–50k.
 
 Every one of these is `[OPEN]` until the owner confirms it reflects real commercial
 terms. Do not treat any of it as approved.
+
+> **The exact values live in production, 2026-09-01**, so confirming is a read-through
+> rather than an investigation.
+>
+> **Packages (10, all `active = true`).** Tiers 1–3 Starter / Growth / Elite, tier 99
+> Custom, then a resale ladder: Airtable Starter **$1,875**, Airtable Pro **$3,750**,
+> Airtable + Automations **$7,500**, Business in a Box **$15,000**, Box + Vehicle
+> **$25,000**, Full Stack **$35–50k**.
+>
+> Structural problem independent of whether the numbers are right: **there is no price
+> column.** `packages` is `id, slug, name, tier, description, active` — every figure
+> above lives in free-text `description`, including the range "$35-50k". Nothing can
+> total, validate or bill against it, and a typo there is invisible.
+>
+> **Programs (7 routing rules), with what each has actually routed:**
+>
+> | Program | Destination | Leads routed |
+> |---|---|---|
+> | `rentals_rideshare` | incoming_leads | **726** |
+> | `general` | cases | 132 |
+> | `partner_fleet` | partners | 15 |
+> | `lease_to_own` | lto_agreements | 2 |
+> | `credit_repair` | credit_funding_sessions | **0** |
+> | `detailing` | detail_jobs | **0** |
+> | `operator_program` | operator_profiles | **0** |
+>
+> `credit_repair` is active and correctly configured — its keywords are credit, fico,
+> tradeline, dispute, collections. It has matched nothing because **zero of 875 leads
+> mention credit in any form.** The rule is not broken; there is no inbound credit
+> demand at all. Every lead this business has ever received is a rental lead.
+>
+> That is the case for the referral flow rather than against it: the credit lane will
+> only ever carry volume if it is created out of rental leads who do not convert. See
+> the referral work of 2026-09-01 (`a19f4e54`), which does exactly that.
+>
+> The same reading applies to `detailing` and `operator_program` — configured, active,
+> never used. Confirming these terms is worth doing; expecting the routing engine to
+> fill those lanes on its own is not.
 
 ---
 
