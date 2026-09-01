@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Card, PageHeader, Button } from "@/components/ui";
-import { getClientById, addDisputeRounds, type StoredClient } from "@/lib/credit-dispute/data/store";
+import { type StoredClient } from "@/lib/credit-dispute/data/store";
+import { getDisputeClient, addDisputeRoundsForClient } from "../actions";
 import { runDisputeProtocol } from "@/lib/credit-dispute/engine/protocol";
 
 export default function CreditDisputeClientPage() {
@@ -13,16 +14,44 @@ export default function CreditDisputeClientPage() {
   const [client, setClient] = useState<StoredClient | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    setClient(getClientById(id) ?? null);
+    let cancelled = false;
+    getDisputeClient(id)
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.ok) setError(res.error);
+        else setClient(res.data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  function handleGenerate() {
+  async function handleGenerate() {
     if (!client) return;
+    setError("");
     const active = client.negativeItems.filter((i) => i.status !== "removed" && i.status !== "closed");
     const result = runDisputeProtocol(client.profile, active);
-    addDisputeRounds(client.profile.id, result.lettersGenerated);
-    setClient(getClientById(id) ?? null);
+    const saved = await addDisputeRoundsForClient(client.profile.id, result.lettersGenerated);
+    if (!saved.ok) {
+      setError(saved.error);
+      return;
+    }
+    setClient(saved.data);
+  }
+
+  if (loading) {
+    return <p className="text-sm text-gray-600 dark:text-slate-400">Loading client…</p>;
+  }
+
+  if (error) {
+    return <p className="text-sm text-red-700 dark:text-red-300">{error}</p>;
   }
 
   if (!client) {

@@ -14,7 +14,8 @@ import {
   parseMfsnReport,
   parseMfsnCsv,
 } from "@/lib/credit-dispute/importers/myfreescorenow";
-import { generateId, upsertClient, type ReportSource } from "@/lib/credit-dispute/data/store";
+import { generateId, type ReportSource } from "@/lib/credit-dispute/data/store";
+import { upsertDisputeClient } from "../actions";
 import type { NegativeItem } from "@/lib/credit-dispute/types";
 
 type ImportSource = "disputefox" | "myfreescorenow";
@@ -52,7 +53,7 @@ export default function CreditDisputeImportPage() {
     }
   }
 
-  function handleImport() {
+  async function handleImport() {
     setError("");
     try {
       const id = generateId();
@@ -131,13 +132,19 @@ export default function CreditDisputeImportPage() {
         status: "draft",
       }));
 
-      upsertClient({
+      const saved = await upsertDisputeClient({
         profile: { id, ...profileData },
         source: source as ReportSource,
         negativeItems: items,
         disputeRounds: [],
         importedAt: new Date().toISOString(),
       });
+      if (!saved.ok) {
+        // Never navigate to a client that was not stored. The old code could
+        // not fail here, because the write only ever touched this browser.
+        setError(saved.error);
+        return;
+      }
 
       router.push(`/command/credit-dispute/${id}`);
     } catch (e) {

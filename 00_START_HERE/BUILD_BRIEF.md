@@ -1,5 +1,16 @@
 # BUILD BRIEF — AIXMOS National Launch
 
+> **⛔ One correction before you read on.** This brief was written while the
+> credit and funding vertical was a partnership. It is not one. Muhammad Umar /
+> Moe Legacy is a **permanently fenced party** with zero authority, access, or
+> approval rights under any alias — see `docs/UMAR-MOE-TERMINAL-NOTICE.md`,
+> which is authoritative and overrides anything below. The vertical is
+> Taha-owned end-to-end as **AIXMOS Credit**. The `moe_legacy` slug survives
+> only as a frozen data key on existing rows.
+>
+> The rest of the brief is still the decided plan. Read it with that one
+> substitution.
+
 This is the handoff from strategy to build. Read it once, then work `BUILD_PLAN.md`.
 Two source strategy reports sit beside this file; they hold the full reasoning. This brief is the decided, compressed version.
 
@@ -7,12 +18,12 @@ Two source strategy reports sit beside this file; they hold the full reasoning. 
 
 ## The company
 
-TMMT (PROJECT X HAILMARY, founder/CEO) is an automotive rental business productized into an app + AI platform (AIXMOS), launching nationally at **$97/month**. Partner **Umar** runs a credit repair + business funding agency that is being merged in as an in-house vertical. The pitch: an operator network where people **learn and earn at the same time**, open to all regardless of starting capital, but protected by firm conduct standards.
+TMMT (PROJECT X HAILMARY, founder/CEO) is an automotive rental business productized into an app + AI platform (AIXMOS), launching nationally at **$97/month**. The credit repair and business funding agency is an in-house vertical, **AIXMOS Credit**, owned end-to-end by TMMT. The pitch: an operator network where people **learn and earn at the same time**, open to all regardless of starting capital, but protected by firm conduct standards.
 
 ## The three things we are building
 
 1. **AIXMOS Core** — make the bespoke stack an installable product: one-command provisioning, a Fleet Economics Command Center dashboard, and the connectors fleet operators actually use.
-2. **Credit + Funding Vertical** — Umar's agency as a pipeline inside AIXMOS: intake → credit dispute → business-credit/tradeline → funding desk. Legally gated.
+2. **Credit + Funding Vertical** — AIXMOS Credit as a pipeline inside AIXMOS: intake → credit dispute → business-credit/tradeline → funding desk. Legally gated.
 3. **Operator Network** — the $97/mo product: signup/billing, operator portal, commission engine, conduct covenant.
 
 ## Decided positioning (do not relitigate in code/copy)
