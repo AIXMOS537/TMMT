@@ -73,6 +73,20 @@ An empty fleet is consistent with a deliberate exit from owning and renting cars
 
 ---
 
+> ## ↩️ Partly un-voided, 2026-09-01
+>
+> The owner subsequently set the direction: the **operator programme** is the priority --
+> educating people who want to earn with a car, or who set up an LLC, obtain funding, buy a
+> car, **and have TMMT manage it**.
+>
+> That destination -- a client owns a car and TMMT manages it -- is exactly what
+> `vehicle_owners` + `owner_agreements` model. The difference is only whose capital buys the
+> car: previously TMMT or an investor, now the client. **`CHANGE_REQUEST_001` is un-voided**
+> and becomes Phase 2 of `OPERATOR-PROGRAM-BUILD.md`. The migration needs no changes.
+>
+> What stays void is the investor-payout build against the *old* fleet -- those 43 vehicles
+> are gone and no statement will ever be produced for them.
+
 ## 🔴 What this voids
 
 I recommended the investor/owner payout build as *"the highest-value work available."* **On this evidence that recommendation is withdrawn.**
