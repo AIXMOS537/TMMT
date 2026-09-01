@@ -50,10 +50,44 @@ Live row counts worth knowing:
 | `customer_payments` | 31 | |
 | `memory_facts` / `memory_events` | 57 / 11 | "Memory fabric" layer |
 
-A second Supabase project exists — **`moe-legacy`** (`renmvevnrjptjeqwrdtr`, us-west-1).
-Its read-only credentials currently fail authentication, so its contents could not be
-audited. `[OPEN]` — is this project still in scope? The associated partner record in
-the main database is deactivated.
+~~A second Supabase project exists — **`moe-legacy`** (`renmvevnrjptjeqwrdtr`,
+us-west-1). Its read-only credentials currently fail authentication, so its contents
+could not be audited. Was open — is this project still in scope?~~
+
+`[CLOSED 2026-09-01]` — **audited, then deleted by the owner.** The credentials were
+fixed by resetting the project's database password, which made it readable. It held:
+
+| | |
+|---|---|
+| Tables | 1 — `credit_funding_sessions` |
+| Rows | 0 |
+| Auth users | 0 |
+| Storage buckets / objects | 0 / 0 |
+| Database functions | 0 |
+| Migrations | 1 — `moe_legacy_intake`, 2026-06-26 |
+
+Everything else was stock Supabase. Created 2026-06-25, one migration the following
+day, never touched again — a one-day scaffold, not a parallel system.
+
+It was also **superseded before it was written**. The main project has carried its own
+`credit_funding_sessions` since 2026-06-09, seventeen days earlier: 40+ columns to the
+scaffold's 13, a six-part readiness score, compliance flags
+(`ai_disclaimer_shown`, `banned_terms_check_passed`, `no_outcome_promised`), session
+lifecycle, and seven RLS policies to its two. The scaffold's policies were
+`insert to anon` and `select to any authenticated` — every intake readable by any
+signed-in user. It never held a row, so nothing was exposed.
+
+One thing was worth keeping and was carried across before deletion: `affiliate_ref`,
+now on the main `credit_funding_sessions` and wired through `?ref=` on the intake form.
+The live intake previously had no way to record who referred someone, which matters
+now that referrals run both ways with Khan Strategies.
+
+Verified after deletion: the Supabase organisation lists one project,
+`uapxakmlwnpfsftfeezx`. No repository under `C:\dev` ever referenced
+`renmvevnrjptjeqwrdtr`, so nothing depended on it.
+
+The associated partner record in the main database remains deactivated. See
+`docs/UMAR-MOE-TERMINAL-NOTICE.md`.
 
 ### Airtable — staff operations surface
 Base `appcenWUju039rD7b` · **30 tables**.
