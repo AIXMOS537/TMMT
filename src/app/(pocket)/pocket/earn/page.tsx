@@ -43,13 +43,19 @@ export default async function EarnPage() {
   let code = "";
   let collectedTotal = 0;
   let collectedCount = 0;
+  // Distinguish "you have earned nothing yet" from "we could not find out".
+  // Showing $0.00 to an affiliate when the lookup failed is not a neutral
+  // default — it is a specific and wrong claim about their money.
+  let earningsKnown = false;
   try {
     const service = createServiceRoleClient();
     code = await getOrCreateReferralCode(service, { email, userId });
     const summary = await getReferralSummary(service, code);
     collectedTotal = summary.collectedTotal;
     collectedCount = summary.collectedCount;
-  } catch {
+    earningsKnown = true;
+  } catch (err) {
+    console.error("[pocket/earn]", err instanceof Error ? err.message : err);
     code = "";
   }
 
@@ -74,11 +80,20 @@ export default async function EarnPage() {
       <Card className="p-5 mb-4">
         <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Collected earnings</p>
         <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-          ${collectedTotal.toFixed(2)}
+          {earningsKnown ? `$${collectedTotal.toFixed(2)}` : "—"}
         </p>
         <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-          {collectedCount} collected {collectedCount === 1 ? "sale" : "sales"} ·{" "}
-          {Math.round(REFERRAL_RATE * 100)}% per collected sale
+          {earningsKnown ? (
+            <>
+              {collectedCount} collected {collectedCount === 1 ? "sale" : "sales"} ·{" "}
+              {Math.round(REFERRAL_RATE * 100)}% per collected sale
+            </>
+          ) : (
+            <>
+              We couldn&apos;t load your earnings just now — this is not a zero.
+              Try again shortly, or contact us if it persists.
+            </>
+          )}
         </p>
       </Card>
 
