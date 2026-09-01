@@ -48,12 +48,16 @@ const COLUMNS_FULL =
 
 const COLUMNS_PUBLIC = 'id, name, partner_app_slug, agent_name'
 
-// Zod 4's .uuid() enforces the RFC 9562 version and variant nibbles. The AIXMOS org
-// was seeded with a placeholder id - aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa - which is
-// the right shape but carries no version digit, so .uuid() rejects it: every lead for
-// that org 500s out of resolveOrgBySlugPublic, because OrgRowShapeError is not one of
-// the errors the webhook route catches. Zod 3 accepted it, which is why this only
-// broke on the upgrade. Keep the shape check, drop the version demand.
+// Zod 4's .uuid() enforces the RFC 9562 version nibble. Three orgs were seeded with
+// repeated-letter placeholder ids - AIXMOS (aaaaaaaa-...), Moe Legacy (bbbbbbbb-...)
+// and Operation Overdrive (cccccccc-...). All three are the right shape and none
+// carries a version digit, so .uuid() rejects them: leads for those orgs 500 out of
+// resolveOrgBySlugPublic, because OrgRowShapeError is not one of the errors the
+// webhook route catches. Zod 3 accepted them; only the upgrade made them invalid.
+//
+// Keep the shape check, drop the version demand. Version-agnostic on purpose: the
+// seeding habit that produced three of these can produce a fourth, and the next one
+// should not be an outage.
 //
 // This guards two different kinds of value, so do not read it as an authorization
 // boundary. Here it checks rows coming back from Postgres. In dispatch/actions.ts it
