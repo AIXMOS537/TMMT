@@ -70,14 +70,12 @@ const navGroups = [
       { href: "/background-checks", label: "Background Checks", icon: ShieldCheck },
       { href: "/credit-funding", label: "Credit & Funding", icon: TrendingUp },
       { href: "/waitlist", label: "Waitlist", icon: Clock },
-      { href: "/appointments", label: "Appointments", icon: CalendarCheck },
     ],
   },
   {
     label: "Customers",
     items: [
       { href: "/customers", label: "Active Customers", icon: Users },
-      { href: "/payments", label: "Payments", icon: CreditCard },
       { href: "/affiliates", label: "Affiliate Payouts", icon: Handshake },
       { href: "/former-customers", label: "Former Customers", icon: Users },
       { href: "/do-not-rent", label: "Do Not Rent", icon: Ban },
@@ -86,7 +84,6 @@ const navGroups = [
   {
     label: "Fleet",
     items: [
-      { href: "/fleet", label: "Fleet Vehicles", icon: Car },
       { href: "/inspections", label: "Car Inspections", icon: ClipboardCheck },
       { href: "/maintenance", label: "Maintenance", icon: Wrench },
       { href: "/insurance", label: "Insurance", icon: Shield },
@@ -98,7 +95,6 @@ const navGroups = [
       { href: "/tasks", label: "To-Do List", icon: ClipboardCheck },
       { href: "/tickets", label: "Tickets", icon: AlertTriangle },
       { href: "/expenses", label: "Expenses", icon: DollarSign },
-      { href: "/contracts", label: "Contracts", icon: FileText },
       { href: "/vendors", label: "Vendors / Shops", icon: Store },
       { href: "/operation-costs", label: "Software & Tools", icon: UserCog },
     ],

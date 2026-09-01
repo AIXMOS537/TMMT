@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, BarChart3, Table2 } from "lucide-react";
+import { Calendar, BarChart3, Table2, Plus } from "lucide-react";
 import { getAppointmentStats } from "@/lib/queries";
 import { adminUpsert } from "@/lib/offline/desk-save";
 import {
   PageHeader, StatCard, DataTable, FilterBar, ErrorBanner,
-  StatusBadge, Button, FormField, inputClass, selectClass,
+  StatusBadge, Button, FormField, ExportButton, inputClass, selectClass,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
@@ -88,6 +88,21 @@ export default function AppointmentsInterface() {
     setEditing(false);
   }
 
+  /**
+   * Add a record by opening the same panel on an empty one.
+   *
+   * These screens could edit but never create — the only "add" form lived on
+   * the older page this replaces. Rather than porting a second form that would
+   * drift from this one, open the existing editor with no row behind it:
+   * handleSave only sets record.id when selected.id exists, so an empty
+   * selection inserts.
+   */
+  function openCreate() {
+    setSelected({});
+    setPanelOpen(true);
+    setEditing(true);
+  }
+
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
@@ -122,7 +137,16 @@ export default function AppointmentsInterface() {
 
   return (
     <div>
-      <PageHeader title="Appointment Management" description="Dashboard, calendar, and table views for all appointments" />
+      <PageHeader
+        title="Appointment Management"
+        description="Dashboard, calendar, and table views for all appointments"
+        action={
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="appointments" />
+            <Button onClick={openCreate}><Plus size={16} />New Appointment</Button>
+          </div>
+        }
+      />
       <ViewSwitcher tabs={VIEW_TABS} defaultTab="dashboard" />
 
       {activeView === "dashboard" && stats && (
