@@ -25,7 +25,7 @@ export default function CreditLegalPage() {
         TMMT and AIXMOS provide <strong>educational information</strong> about consumer credit, score factors, and lender criteria. We do <strong>not</strong> represent ourselves to be, and are not, a credit repair organization as defined under the Credit Repair Organizations Act (CROA, 15 U.S.C. § 1679a). We do not promise to remove, dispute, or alter accurate items on your credit report. We do not act as your agent in communications with credit bureaus, lenders, or collectors.
       </p>
       <p>
-        Any actions you take on your credit profile are taken by you, with information we provide. If you choose to engage hands-on credit repair services, we refer you exclusively to <strong>Moe Legacy</strong>, an independent company; you contract with Moe Legacy directly, on its terms, and it alone is responsible for its services. We may receive compensation in connection with that referral relationship. Results vary; we make <strong>no guarantee</strong> that any specific action will raise your score by a specific amount or within a specific timeframe.
+        Any actions you take on your credit profile are taken by you, with information we provide. If you choose to engage hands-on credit repair services, we refer you to <strong>Khan Strategies LLC</strong>, an independent company; you contract with Khan Strategies directly, on its terms, and it alone is responsible for its services. We may receive compensation in connection with that referral relationship. Results vary; we make <strong>no guarantee</strong> that any specific action will raise your score by a specific amount or within a specific timeframe.
       </p>
 
       <h2>What we do</h2>

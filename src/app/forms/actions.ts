@@ -552,6 +552,8 @@ const creditFundingSchema = z.object({
   stage_reached: z.string().max(1).optional(),
   channel: z.string().max(40).optional(),
   operator_handoff_requested: z.string().optional(),
+  /** Who sent them — carried from a partner's link. Sanitised before storing. */
+  affiliate_ref: z.string().max(64).optional(),
 });
 
 function splitToJsonArray(s: string | undefined | null): string[] {
@@ -598,6 +600,12 @@ export async function submitCreditFundingIntake(formData: FormData): Promise<For
   const tier = routingTierFor(scoreTotal);
 
   const result = await insertRow("credit_funding_sessions", {
+    // Who sent them. Referrals run both ways with the credit partner, so an
+    // inbound one has to be attributable — without this it arrives anonymous
+    // and nobody can be credited. Capped and stripped because it comes off a
+    // query string.
+    affiliate_ref:
+      d.affiliate_ref?.trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) || null,
     first_name: d.first_name?.trim() || null,
     preferred_channel: d.preferred_channel || null,
     goals_horizon: d.goals_horizon || null,
