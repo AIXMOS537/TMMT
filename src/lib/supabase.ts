@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
 // Read + validate env lazily, so importing this module never throws at
 // build-time module evaluation (e.g. Next.js "collect page data"). Missing
@@ -36,12 +36,11 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   },
 });
 
-// Server-side client with service role for admin operations
-export function createServiceClient() {
-  const { supabaseUrl } = getSupabaseEnv();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
-  }
-  return createClient(supabaseUrl, serviceRoleKey);
-}
+// createServiceClient() used to live here. It had zero call sites, and this
+// module is the browser client — imported by ~38 "use client" pages through
+// @/lib/queries. A service-role factory sitting in that module is one careless
+// import away from being a real problem, and nothing was gaining from it.
+//
+// Use @/lib/supabase-service instead: createServiceRoleClient() is the same
+// thing with `import "server-only"` at the top, which is the guard that
+// actually stops a service key being pulled into a client bundle.
