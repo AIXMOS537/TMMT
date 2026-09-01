@@ -265,3 +265,23 @@ describe("statutory routes recovered from the letter library", () => {
     }
   });
 });
+
+describe("FDCPA validation is used where it helps, not reflexively", () => {
+  it("leads with validation on a collection disputed on the facts", () => {
+    expect(sequenceFor("wrong_balance", "collection")[0]).toBe("fdcpa_validation");
+  });
+
+  it("does NOT validate a time-barred collection — that is a bureau matter", () => {
+    expect(sequenceFor("obsolete", "collection")).toEqual(["initial_611", "cfpb_escalation"]);
+  });
+
+  it("does not validate an identity-theft collection", () => {
+    expect(sequenceFor("identity_theft", "collection")).not.toContain("fdcpa_validation");
+  });
+
+  it("keeps the round and the citation target consistent for an obsolete collection", () => {
+    const seq = sequenceFor("obsolete", "collection");
+    expect(routeFor("obsolete")?.target).toBe("bureau");
+    expect(seq[0]).toBe("initial_611");
+  });
+});

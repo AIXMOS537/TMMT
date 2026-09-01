@@ -249,9 +249,28 @@ export function sequenceFor(
       seq = ["initial_611", "method_of_verification", "furnisher_623", "cfpb_escalation"];
   }
 
-  // Collections carry an FDCPA validation right that the bureaus do not.
-  // Use it first — it is the cheapest possible win.
-  if (itemType === "collection" && !seq.includes("fdcpa_validation")) {
+  // Collections carry an FDCPA validation right that the bureaus do not, and
+  // using it first is the cheapest possible win — but only where the argument is
+  // actually about the debt.
+  //
+  // Not for `obsolete`: the ground there is that the item may not be reported at
+  // all, which is a bureau matter under 1681c. Asking a collector to validate a
+  // debt we are arguing is time-barred from the report concedes the wrong point
+  // and delays the right letter.
+  //
+  // Not for `identity_theft` or `no_permissible_purpose` either: both have their
+  // own statutory routes that do not run through debt validation.
+  const validationIsBesideThePoint: FactualBasis[] = [
+    "obsolete",
+    "identity_theft",
+    "no_permissible_purpose",
+    "reinserted_without_notice",
+  ];
+  if (
+    itemType === "collection" &&
+    !validationIsBesideThePoint.includes(basis) &&
+    !seq.includes("fdcpa_validation")
+  ) {
     seq = ["fdcpa_validation", ...seq];
   }
 
