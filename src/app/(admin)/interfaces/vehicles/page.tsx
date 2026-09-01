@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Columns3, BarChart3, Table2 } from "lucide-react";
+import { Columns3, BarChart3, Table2, Plus } from "lucide-react";
 import { getVehicleStats, getMaintenance } from "@/lib/queries";
 import { adminUpsert } from "@/lib/offline/desk-save";
 import {
   PageHeader, StatCard, DataTable, FilterBar, ErrorBanner,
-  StatusBadge, Button, FormField, inputClass, selectClass,
+  StatusBadge, Button, FormField, ExportButton, inputClass, selectClass,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -91,14 +91,28 @@ export default function VehiclesInterface() {
     { key: "vehicle_name", label: "Vehicle", render: (r) => <span className="font-medium">{String(r.vehicle_name ?? "—")}</span> },
     { key: "license_plate", label: "Plate" },
     { key: "vehicle_status", label: "Status", render: (r) => <StatusBadge status={r.vehicle_status as string} /> },
-    { key: "weekly_rate", label: "Weekly Rate", render: (r) => formatCurrency(Number(r.weekly_rate) || null) },
+    { key: "weekly_prices", label: "Weekly Price", render: (r) => Array.isArray(r.weekly_prices) ? r.weekly_prices.join(", ") : String(r.weekly_prices ?? "—") },
     { key: "color", label: "Color" },
-    { key: "odometer", label: "Odometer", render: (r) => r.odometer ? Number(r.odometer).toLocaleString() : "—" },
+    { key: "mileage", label: "Odometer", render: (r) => r.mileage ? Number(r.mileage).toLocaleString() : "—" },
   ];
 
   function openDetail(item: Vehicle) {
     setSelected(item); setPanelOpen(true); setEditing(false);
   }
+
+  /**
+   * Add a record by opening the same panel on an empty one.
+   *
+   * These screens could edit but never create — the only "add" form lived on
+   * the older page this replaces. Rather than porting a second form that would
+   * drift from this one, open the existing editor with no row behind it:
+   * handleSave only sets record.id when selected.id exists, so an empty
+   * selection inserts.
+   */
+  function openCreate() {
+    setSelected({}); setPanelOpen(true); setEditing(true);
+  }
+
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -107,8 +121,8 @@ export default function VehiclesInterface() {
     const record: Record<string, unknown> = {};
     fd.forEach((v, k) => { record[k] = v || null; });
     if (record.year) record.year = Number(record.year);
-    if (record.weekly_rate) record.weekly_rate = Number(record.weekly_rate);
-    if (record.odometer) record.odometer = Number(record.odometer);
+    // weekly_prices is an ARRAY column and is not edited here — see the note by the form.
+    if (record.mileage) record.mileage = Number(record.mileage);
     if (record.lowest_possible_price) record.lowest_possible_price = Number(record.lowest_possible_price);
     if (record.partner_percentage) record.partner_percentage = Number(record.partner_percentage);
     if (selected?.id) record.id = selected.id;
@@ -130,7 +144,16 @@ export default function VehiclesInterface() {
 
   return (
     <div>
-      <PageHeader title="Vehicle Management" description="Dashboard, kanban, and table views for the fleet" />
+      <PageHeader
+        title="Vehicle Management"
+        description="Dashboard, kanban, and table views for the fleet"
+        action={
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="fleet-vehicles" />
+            <Button onClick={openCreate}><Plus size={16} />Add Vehicle</Button>
+          </div>
+        }
+      />
       <ViewSwitcher tabs={VIEW_TABS} defaultTab="dashboard" />
 
       {activeView === "dashboard" && stats && (
@@ -171,7 +194,7 @@ export default function VehiclesInterface() {
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{String(item.vehicle_name ?? "—")}</p>
               <p className="text-xs text-gray-500 dark:text-slate-400">{String(item.license_plate ?? "")}</p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">{formatCurrency(Number(item.weekly_rate) || null)}/wk</p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">{formatCurrency(Number(item.lowest_possible_price) || null)} lowest</p>
             </div>
           )}
         />
@@ -192,8 +215,8 @@ export default function VehiclesInterface() {
               <DetailRow label="VIN" value={String(selected.vin ?? "—")} />
               <DetailRow label="Plate" value={String(selected.license_plate ?? "—")} />
               <DetailRow label="Color" value={String(selected.color ?? "—")} />
-              <DetailRow label="Odometer" value={selected.odometer ? Number(selected.odometer).toLocaleString() : "—"} />
-              <DetailRow label="Weekly Rate" value={formatCurrency(Number(selected.weekly_rate) || null)} />
+              <DetailRow label="Odometer" value={selected.mileage ? Number(selected.mileage).toLocaleString() : "—"} />
+              <DetailRow label="Lowest Price" value={formatCurrency(Number(selected.lowest_possible_price) || null)} />
               <DetailRow label="Status" value={<StatusBadge status={selected.vehicle_status as string} />} />
             </DetailSection>
 
@@ -227,8 +250,8 @@ export default function VehiclesInterface() {
             <FormField label="VIN"><input name="vin" defaultValue={String(selected.vin ?? "")} className={inputClass} /></FormField>
             <FormField label="License Plate"><input name="license_plate" defaultValue={String(selected.license_plate ?? "")} className={inputClass} /></FormField>
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Weekly Rate"><input name="weekly_rate" type="number" step="0.01" defaultValue={String(selected.weekly_rate ?? "")} className={inputClass} /></FormField>
-              <FormField label="Odometer"><input name="odometer" type="number" defaultValue={String(selected.odometer ?? "")} className={inputClass} /></FormField>
+              <FormField label="Lowest Price"><input name="lowest_possible_price" type="number" step="0.01" defaultValue={String(selected.lowest_possible_price ?? "")} className={inputClass} /></FormField>
+              <FormField label="Odometer"><input name="mileage" type="number" defaultValue={String(selected.mileage ?? "")} className={inputClass} /></FormField>
             </div>
             <FormField label="Status">
               <select name="vehicle_status" defaultValue={String(selected.vehicle_status ?? "")} className={selectClass}>

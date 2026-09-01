@@ -37,6 +37,18 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // The four tables that had two admin screens each, both in the sidebar,
+      // so which app you got depended on which link you clicked. The
+      // /interfaces/* generation won — it has the kanban, calendar, charts and
+      // detail panel, and it now carries the export and add-record the older
+      // pages had. These keep old bookmarks and any link already sent out
+      // working. Not permanent: 307, so nothing is cached into a browser if
+      // these paths are ever wanted for something else.
+      { source: "/appointments", destination: "/interfaces/appointments", permanent: false },
+      { source: "/contracts", destination: "/interfaces/contracts", permanent: false },
+      { source: "/payments", destination: "/interfaces/payments", permanent: false },
+      { source: "/fleet", destination: "/interfaces/vehicles", permanent: false },
+
       // Phase 9 short aliases for marketing surfaces (email, SMS, bio links).
       // Permanent (308) so browsers cache; UTM defaults can be overridden by callers passing their own.
       {
