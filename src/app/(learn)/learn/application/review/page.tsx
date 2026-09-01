@@ -2,10 +2,11 @@
 
 import { useCube } from "@aixmos/core";
 import { formatCurrency, formatDate } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
-import { Textarea } from "@/components/aixmos-ui/input";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Button, Card, CardDescription, CardTitle, Textarea } from "@/components/ui";
 
 export default function ApplicationReviewPage() {
   const { state, updateApplication, transitionStatus } = useCube();
@@ -22,7 +23,7 @@ export default function ApplicationReviewPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card className="mb-4 border-amber-200 bg-amber-50">
+      <Card className="p-5 mb-4 border-amber-200 bg-amber-50">
         <p className="text-sm text-amber-900">
           <strong>Required:</strong> You must review all data below before the application packet is finalized.
           Confirm every number matches your real documents.
@@ -31,7 +32,7 @@ export default function ApplicationReviewPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {app.personal && (
-          <Card>
+          <Card className="p-5 p-5">
             <CardTitle>Personal data</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
               <li>Name: {app.personal.legalName}</li>
@@ -46,7 +47,7 @@ export default function ApplicationReviewPage() {
           </Card>
         )}
         {app.business && (
-          <Card>
+          <Card className="p-5 p-5">
             <CardTitle>Business data</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
               <li>{app.business.businessName}</li>
@@ -60,7 +61,7 @@ export default function ApplicationReviewPage() {
         )}
       </div>
 
-      <Card className="mt-4">
+      <Card className="p-5 mt-4">
         <CardTitle>Documents</CardTitle>
         <ul className="mt-2 text-sm text-slate-700">
           {app.documents.map((d) => (
@@ -71,7 +72,7 @@ export default function ApplicationReviewPage() {
         </ul>
       </Card>
 
-      <Card className="mt-4">
+      <Card className="p-5 mt-4">
         <CardTitle>Readiness summary</CardTitle>
         <CardDescription>Overall score: {app.overallReadiness}/100</CardDescription>
         <p className="mt-2 text-sm text-slate-600">
@@ -80,7 +81,7 @@ export default function ApplicationReviewPage() {
       </Card>
 
       {(role === "coach" || role === "admin") && (
-        <Card className="mt-4">
+        <Card className="p-5 mt-4">
           <CardTitle>Advisor notes</CardTitle>
           <Textarea
             className="mt-2"

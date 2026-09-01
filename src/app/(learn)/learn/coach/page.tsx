@@ -2,10 +2,11 @@
 
 import { Clock, Heart, ShieldAlert } from "lucide-react";
 import { useCube, workPath } from "@aixmos/core";
-import { Badge } from "@/components/aixmos-ui/badge";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui";
 
 const TIMING_LABELS = {
   apply_now: { label: "May apply now", tone: "strong" as const, icon: Heart },
@@ -30,7 +31,7 @@ export default function CoachPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card className="mb-6 border-teal-200 bg-teal-50/50">
+      <Card className="p-5 mb-6 border-teal-200 bg-teal-50/50">
         <div className="flex items-start gap-3">
           <Heart className="h-6 w-6 text-teal-700 shrink-0" />
           <div>
@@ -48,7 +49,7 @@ export default function CoachPage() {
           const timing = TIMING_LABELS[item.timingAdvice];
           const Icon = timing.icon;
           return (
-            <Card key={i}>
+            <Card className="p-5" key={i}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base">{item.dimension}</CardTitle>
                 <Badge tone={timing.tone}>
@@ -79,7 +80,7 @@ export default function CoachPage() {
       {(role === "coach" || role === "admin" || role === "supervisor") && (
         <div className="mt-6 flex flex-wrap gap-2">
           <a href={workPath("/work/review", state.application.id)}>
-            <Button variant="outline">Open Work face — advisor review</Button>
+            <Button variant="secondary">Open Work face — advisor review</Button>
           </a>
           {role === "coach" && (
             <Button onClick={markCoachReviewed}>Mark coaching complete (demo)</Button>

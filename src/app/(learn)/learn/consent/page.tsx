@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCube } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Button, Card, CardDescription, CardTitle } from "@/components/ui";
 
 export default function ConsentPage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function ConsentPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card>
+      <Card className="p-5 p-5">
         <CardTitle>Final client consent</CardTitle>
         <CardDescription>
           Required after admin and supervisor approval — per lender/application before submission.
