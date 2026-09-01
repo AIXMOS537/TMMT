@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Columns3, BarChart3, Table2 } from "lucide-react";
+import { Columns3, BarChart3, Table2, Plus } from "lucide-react";
 import { getPaymentStats } from "@/lib/queries";
 import { adminUpsert } from "@/lib/offline/desk-save";
 import {
   PageHeader, StatCard, DataTable, FilterBar, ErrorBanner,
-  StatusBadge, Button, FormField, inputClass, selectClass,
+  StatusBadge, Button, FormField, ExportButton, inputClass, selectClass,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -54,7 +54,7 @@ export default function PaymentsInterface() {
   const filtered = useMemo(() => {
     if (!stats) return [];
     return stats.all.filter((r) => {
-      const matchSearch = !search || [r.customer_name, r.payment_method, r.vehicle].some((v) =>
+      const matchSearch = !search || [r.customer, r.payment_method, r.vehicle].some((v) =>
         String(v ?? "").toLowerCase().includes(search.toLowerCase())
       );
       const matchStatus = !statusFilter || r.payment_status === statusFilter;
@@ -70,7 +70,7 @@ export default function PaymentsInterface() {
   }, [stats]);
 
   const columns: Column<Payment>[] = [
-    { key: "customer_name", label: "Customer", render: (r) => <span className="font-medium">{String(r.customer_name ?? "—")}</span> },
+    { key: "customer", label: "Customer", render: (r) => <span className="font-medium">{String(r.customer ?? "—")}</span> },
     { key: "amount", label: "Amount", render: (r) => formatCurrency(Number(r.amount) || null) },
     { key: "payment_status", label: "Status", render: (r) => <StatusBadge status={r.payment_status as string} /> },
     { key: "payment_method", label: "Method" },
@@ -79,6 +79,19 @@ export default function PaymentsInterface() {
 
   function openDetail(item: Payment) {
     setSelected(item); setPanelOpen(true); setEditing(false);
+  }
+
+  /**
+   * Add a record by opening the same panel on an empty one.
+   *
+   * These screens could edit but never create — the only "add" form lived on
+   * the older /payments page, which this replaces. Rather than porting a second
+   * form that would drift from this one, open the existing editor with no row
+   * behind it: handleSave only sets record.id when selected.id exists, so an
+   * empty selection inserts.
+   */
+  function openCreate() {
+    setSelected({}); setPanelOpen(true); setEditing(true);
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -115,7 +128,16 @@ export default function PaymentsInterface() {
 
   return (
     <div>
-      <PageHeader title="Payment Management" description="Dashboard, kanban, and table views for all payments" />
+      <PageHeader
+        title="Payment Management"
+        description="Dashboard, kanban, and table views for all payments"
+        action={
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="customer-payments" />
+            <Button onClick={openCreate}><Plus size={16} />Record Payment</Button>
+          </div>
+        }
+      />
       <ViewSwitcher tabs={VIEW_TABS} defaultTab="dashboard" />
 
       {activeView === "dashboard" && stats && (
@@ -154,7 +176,7 @@ export default function PaymentsInterface() {
           onCardClick={(item) => openDetail(item as Payment)}
           renderCard={(item) => (
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{String(item.customer_name ?? "—")}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{String(item.customer ?? "—")}</p>
               <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(Number(item.amount) || null)}</p>
               <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
                 {String(item.payment_method ?? "")} · {formatDate(item.last_payment_date as string)}
@@ -167,7 +189,7 @@ export default function PaymentsInterface() {
       <DetailPanel
         open={panelOpen}
         onClose={() => { setPanelOpen(false); setSelected(null); }}
-        title={editing ? "Edit Payment" : String(selected?.customer_name ?? "Payment Details")}
+        title={editing ? "Edit Payment" : String(selected?.customer ?? "Payment Details")}
       >
         {selected && !editing && (
           <>
@@ -179,7 +201,7 @@ export default function PaymentsInterface() {
               <DetailRow label="Date" value={formatDate(selected.last_payment_date as string)} />
             </DetailSection>
             <DetailSection title="Customer">
-              <DetailRow label="Name" value={String(selected.customer_name ?? "—")} href="/customers" />
+              <DetailRow label="Name" value={String(selected.customer ?? "—")} href="/customers" />
               <DetailRow label="Phone" value={String(selected.phone ?? "—")} />
             </DetailSection>
             <DetailSection title="Related">
@@ -201,7 +223,7 @@ export default function PaymentsInterface() {
         {selected && editing && (
           <form onSubmit={handleSave} className="space-y-4">
             <ErrorBanner message={error} onDismiss={() => setError(null)} />
-            <FormField label="Customer Name"><input name="customer_name" defaultValue={String(selected.customer_name ?? "")} className={inputClass} /></FormField>
+            <FormField label="Customer Name"><input name="customer" defaultValue={String(selected.customer ?? "")} className={inputClass} /></FormField>
             <div className="grid grid-cols-2 gap-4">
               <FormField label="Amount"><input name="amount" type="number" step="0.01" defaultValue={String(selected.amount ?? "")} className={inputClass} /></FormField>
               <FormField label="Payment Date"><input name="last_payment_date" type="date" defaultValue={String(selected.last_payment_date ?? "")} className={inputClass} /></FormField>
