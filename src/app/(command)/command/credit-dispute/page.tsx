@@ -3,9 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, PageHeader, Button } from "@/components/ui";
-import { getClients, type StoredClient } from "@/lib/credit-dispute/data/store";
 import {
-  runDisputeProtocol,
+  getClients,
+  getAssessments,
+  roundsSentByItem,
+  setItemAssessment,
+  type StoredClient,
+} from "@/lib/credit-dispute/data/store";
+import { runGatedDisputeProtocol, type GatedRunResult } from "@/lib/credit-dispute/engine/gated-protocol";
+import type { FactualBasis } from "@/lib/credit-dispute/policy/dispute-policy";
+import {
   deepAuditAll,
   assessFundingReadiness,
   estimateScoreImpact,
@@ -16,10 +23,37 @@ import { tierLabel, tierColor } from "@/lib/credit-dispute/engine/funding-readin
 import { CREDIT_GHL_TAGS } from "@/lib/credit-dispute/ghl-tags";
 import { pathLabel } from "@/lib/client-journey/credit-paths";
 
+
+/**
+ * The grounds a person may record.
+ *
+ * Only grounds with a verified statutory route appear here. The theories in
+ * docs/knowledge/QUARANTINE-disputed-legal-theories.md are deliberately absent —
+ * if it is not selectable, it cannot end up in a letter.
+ */
+const BASIS_OPTIONS: Array<{ value: FactualBasis; label: string }> = [
+  { value: "not_mine", label: "Not mine" },
+  { value: "identity_theft", label: "Identity theft (report filed)" },
+  { value: "never_late", label: "Never late — paid on time" },
+  { value: "wrong_balance", label: "Balance is wrong" },
+  { value: "wrong_dates", label: "Dates are wrong" },
+  { value: "wrong_status", label: "Status is wrong" },
+  { value: "duplicate", label: "Duplicate of another entry" },
+  { value: "paid_in_full_reported_unpaid", label: "Paid, reported unpaid" },
+  { value: "settled_reported_unsettled", label: "Settled, reported outstanding" },
+  { value: "included_in_bankruptcy", label: "Discharged in bankruptcy" },
+  { value: "no_permissible_purpose", label: "Inquiry not authorised" },
+  { value: "reinserted_without_notice", label: "Reinserted without notice" },
+  { value: "dispute_not_notated", label: "Dispute not notated" },
+  { value: "unverifiable", label: "Came back verified — demand method" },
+];
+
 export default function CreditDisputeCommandPage() {
   const [clients, setClients] = useState<StoredClient[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [run, setRun] = useState<GatedRunResult | null>(null);
+  const [assessTick, setAssessTick] = useState(0);
 
   useEffect(() => {
     const loaded = getClients();
@@ -31,21 +65,46 @@ export default function CreditDisputeCommandPage() {
   const funding = selected ? assessFundingReadiness(selected.profile, selected.negativeItems) : null;
   const audits = selected ? deepAuditAll(selected.negativeItems) : [];
   const impact = selected ? estimateScoreImpact(selected.negativeItems) : null;
+  // assessTick is read so this recomputes when a call is recorded.
+  void assessTick;
+  const current = selected ? getAssessments(selected.profile.id) : {};
 
   function handleGenerate() {
     if (!selected) return;
-    const active = selected.negativeItems.filter((i) => i.status !== "removed" && i.status !== "closed");
-    const result = runDisputeProtocol(selected.profile, active);
-    addDisputeRounds(selected.profile.id, result.lettersGenerated);
-    setClients(getClients());
-    setMessage(`Generated ${result.lettersGenerated.length} letter(s) — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`);
+
+    // Runs through the accuracy gate. On a fresh import this will usually produce
+    // ZERO letters and a list of items awaiting an accuracy call — that is correct,
+    // not a fault. Nobody has looked at them yet, and a dispute with no recorded
+    // factual basis is the kind that comes back verified.
+    const stored = getAssessments(selected.profile.id);
+    const sent = roundsSentByItem(selected.profile.id);
+
+    const assessments = Object.fromEntries(
+      selected.negativeItems.map((i) => [
+        i.id,
+        { ...(stored[i.id] ?? { accuracy: "unknown" as const }), roundsSent: sent[i.id] ?? [] },
+      ])
+    );
+
+    const result = runGatedDisputeProtocol(selected.profile, selected.negativeItems, assessments);
+    setRun(result);
+
+    if (result.lettersGenerated.length > 0) {
+      addDisputeRounds(selected.profile.id, result.lettersGenerated);
+      setClients(getClients());
+      setMessage(
+        `${result.summary} — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`
+      );
+    } else {
+      setMessage(`${result.summary} — nothing to send yet.`);
+    }
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Credit dispute command"
-        description="AIXMOS in-house — Dispute Fox + MyFreeScoreNow → client_journey → funding handoff"
+        description="Dispute Fox + MyFreeScoreNow → accuracy gate → letters → funding handoff"
       />
 
       <Card className="p-4 border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 text-sm">
@@ -58,6 +117,43 @@ export default function CreditDisputeCommandPage() {
       {message && (
         <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-200">
           {message}
+        </Card>
+      )}
+
+      {run && run.notDisputed.length > 0 && (
+        <Card className="p-4 border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/20">
+          <h3 className="font-semibold text-sm text-gray-900 dark:text-slate-100">
+            Not disputed ({run.notDisputed.length})
+          </h3>
+          <p className="mt-1 text-xs text-gray-600 dark:text-slate-400">
+            These are safe to read out to the client as-is.
+          </p>
+          <ul className="mt-3 space-y-3">
+            {run.notDisputed.map((n) => (
+              <li key={n.negativeItemId} className="text-sm">
+                <span className="font-medium text-gray-900 dark:text-slate-100">
+                  {n.furnisherName}
+                </span>
+                <p className="text-gray-700 dark:text-slate-300">{n.reason}</p>
+                {n.nextStep && (
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                    Next: {n.nextStep}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {run && run.nextActions.length > 0 && (
+        <Card className="p-4 text-sm">
+          <h3 className="font-semibold text-gray-900 dark:text-slate-100">Next actions</h3>
+          <ul className="mt-2 space-y-1 text-gray-700 dark:text-slate-300">
+            {run.nextActions.map((a) => (
+              <li key={a}>· {a}</li>
+            ))}
+          </ul>
         </Card>
       )}
 
@@ -176,6 +272,7 @@ export default function CreditDisputeCommandPage() {
                         <th className="py-2 pr-3">Type</th>
                         <th className="py-2 pr-3">Furnisher</th>
                         <th className="py-2 pr-3">Conf.</th>
+                        <th className="py-2 pr-3">Accuracy call</th>
                         <th className="py-2">Finding</th>
                       </tr>
                     </thead>
@@ -187,6 +284,46 @@ export default function CreditDisputeCommandPage() {
                           <td className="py-2 pr-3">{a.item.itemType}</td>
                           <td className="py-2 pr-3 font-medium">{a.item.furnisherName}</td>
                           <td className="py-2 pr-3">{a.overallConfidence}%</td>
+                          <td className="py-2 pr-3">
+                            <select
+                              aria-label={`Accuracy call for ${a.item.furnisherName}`}
+                              className="text-xs border rounded px-1 py-0.5 bg-white dark:bg-slate-900 dark:border-slate-700"
+                              value={
+                                current[a.item.id]?.accuracy === "accurate"
+                                  ? "accurate"
+                                  : current[a.item.id]?.basis ?? ""
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (!selected) return;
+                                if (v === "") {
+                                  setItemAssessment(selected.profile.id, a.item.id, {
+                                    accuracy: "unknown",
+                                  });
+                                } else if (v === "accurate") {
+                                  setItemAssessment(selected.profile.id, a.item.id, {
+                                    accuracy: "accurate",
+                                  });
+                                } else {
+                                  setItemAssessment(selected.profile.id, a.item.id, {
+                                    accuracy: "inaccurate",
+                                    basis: v as FactualBasis,
+                                  });
+                                }
+                                setClients(getClients());
+                                setAssessTick((t) => t + 1);
+                                setRun(null);
+                              }}
+                            >
+                              <option value="">Not assessed</option>
+                              <option value="accurate">Accurate — coach, do not dispute</option>
+                              {BASIS_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                  {o.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
                           <td className="py-2 text-gray-500 text-xs">{a.findings[0]?.title ?? "—"}</td>
                         </tr>
                       ))}
