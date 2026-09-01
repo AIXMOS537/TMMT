@@ -51,6 +51,82 @@ So the live asset is the pipeline, not the fleet:
 **Eighty-one approved people and a hundred and four on the waitlist are in the database with
 nobody contacting them.** That is the restart asset.
 
+### 1.1 When the business actually stopped `[DB — audited 2026-09-01]`
+
+Real business dates, not row timestamps:
+
+| Last… | Date |
+|---|---|
+| Rental started | **2026-02-06** |
+| Payment recorded | **2026-03-23** |
+| Ticket raised | **2026-03-27** |
+| Inspection | 2026-02-23 |
+| Expense logged | 2026-01-21 |
+
+The data independently confirms the owner's statement. Operations wound down in Q1 2026.
+
+### 1.2 The database froze at the migration
+
+`active_customers`, `background_checks`, `customer_payments`, `expenses`, `fleet`,
+`insurance`, `tickets`, `waitlist`, `operation_costs` and `appointments` **all carry
+`created_at = 2026-04-22`** — the Airtable→Supabase migration date. **Nothing operational has
+been written since.** Only `exec_va_tasks` (17,192), `coo_briefings`, `ghl_contacts` and
+`incoming_leads` are still moving.
+
+### 1.3 Lead flow collapsed before anything broke
+
+| Month | New leads |
+|---|---:|
+| April | **662** |
+| May | 111 |
+| July | 91 |
+| August | **11** |
+
+`[DB]` GHL intake still works — 7 leads and 12 GHL contacts since 2026-08-19, newest one day
+old. Only the direct landing-page webhook is dead (§1.5).
+
+### 1.4 Collections were the failure, not pricing
+
+Of 31 payment records: **26 Overdue, 1 Paid.** Roughly **$6,869 past due** against **$9,510**
+billed; worst single balance **$814**. This matches the Drive's independent "chronic arrears"
+finding. **The business did not fail on demand or on price — it failed on collection.**
+
+That is exactly what the owner's rules in §2.3 exist to fix: 3-day grace, $25/day, and a
+`PAYMENT_ISSUE` state that fires on day 4 without anyone remembering to look.
+
+### 1.5 🔴 Lead intake has been dead since 2026-08-19
+
+`/api/leads/webhook` on `tmmt-ops` has returned **500 nine hundred and thirty-five times**
+since 2026-08-19 22:27 UTC. Cause: Vercel **production** is missing
+`NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) and `SUPABASE_SERVICE_ROLE_KEY`.
+
+All eight public landing pages return **200**, so the forms look alive, accept submissions,
+and the webhook then drops them with an empty body. How many were real leads **cannot be
+recovered** — the failures never wrote a row. Fix: set both vars in Production, redeploy,
+then re-run `scripts/mesh/go-live-integration-test.sh` until it prints
+`lead webhook 200 + ok:true`.
+
+### 1.6 🔴 Money is not a queryable number
+
+`active_customers.payment_amount` is **free text on 32 of 35 rows; zero are clean numbers**:
+
+```
+"$69.99/daily ($489.93/weekly)"
+"$438/weekly ; $63/day"
+"$165/3 days"
+```
+
+Nothing can total revenue, compute arrears, or bill automatically without a human reading
+each row one at a time. Real rates land **$322–$489/week**, consistent with the Drive's
+$300–$500 card.
+
+Expenses barely exist: **33 rows, Nov 2025–Jan 2026, $2,216 total** for a 43-car fleet —
+which is why §4 concludes there is no P&L.
+
+**This is the strongest argument for §5 collision 1.** A rental record with typed
+`weekly_rate_cents` and `deposit_cents` is not a nicety — without it the business cannot
+measure itself, bill reliably, or prove anything to an investor.
+
 ---
 
 ## 2. Rules that are settled
