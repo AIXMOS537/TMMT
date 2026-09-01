@@ -275,3 +275,49 @@ Safe at any point before the backfill: the tables are empty and `fleet.owner_id`
 | Q3 — the 7 unowned vehicles | ⬜ |
 | Robin: same terms on all three cars? | ⬜ |
 | Approved to apply to production | ⬜ |
+
+---
+
+## Addendum — the stocktake sheet (2026-09-01)
+
+The owner was asked whether Robin's "no longer here" meant all three cars or two.
+The reply was **"ALL CARS ARET HERE, DOO ALLLLL"**.
+
+That reads as *"all cars aren't here"* — but it is genuinely ambiguous between
+*Robin's cars* and *the fleet as a whole*, and the difference is material: one is a
+three-row correction, the other means the 43-row table is fiction.
+
+**Rather than guess, the ambiguity is resolved by construction.** A walk-the-lot
+stocktake sheet now exists — `docs/fleet-stocktake.html`, also published as an
+artifact. It lists all 43 rows grouped by owner, phone-sized, three taps per car
+(Here / Gone / ?), with a "mark all gone" shortcut per owner. Whoever walks the lot
+produces the current list, and the ambiguity disappears.
+
+The sheet carries the findings inline so the walker sees them in context:
+- the 17 June staleness warning, with a plain instruction to trust their eyes over the label
+- the four duplicate rows flagged as duplicates (`5CW4654`, `SZF4776` ×2, `6GJ4314`)
+- the two blank rows flagged as safe to delete
+- `Esmat` and `Ismatullah` already merged per the owner's answer
+- the two `Duval / Jimmy` spellings already merged
+- the three TMMT spellings already merged into "TMMT (company)"
+
+So the reconciliation the migration needs is **already applied in the sheet**. What
+comes back is a current fleet list against clean owner names.
+
+### Vehicle counts as they now stand
+
+| | |
+|---|---:|
+| Rows in `fleet` | 43 |
+| Duplicate rows (same plate + VIN) | −4 |
+| Blank rows (nothing identifies them) | −2 |
+| **Distinct vehicles on paper** | **37** |
+| Actually present today | **unknown — this is what the walk determines** |
+
+### One more data defect found
+
+`fleet.vin` is corrupted. Values come back as JSON fragments — `2226"}`, `": ""}` —
+so the column holds stringified JSON leftovers from the Airtable migration rather than
+VINs. Enough survives to prove the duplicate pairs match, but **VIN is not currently a
+usable identifier** and should be re-captured during the walk. Added to the migration
+follow-up list.
