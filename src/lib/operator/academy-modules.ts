@@ -153,9 +153,14 @@ export const ACADEMY_MODULES: readonly AcademyModule[] = [
     est_minutes: 20,
     sort_order: 11,
     drill: "List three things an operator must never see.",
-    pass_criteria: "Names L10 data fence and Moe Legacy bound (credit/GHL only).",
+    pass_criteria: "Names the L10 data fence and who is fenced out entirely.",
+    // Was: "Moe Legacy = credit/GHL only, zero engine." That taught operators a
+    // bounded partnership that no longer exists — per
+    // docs/UMAR-MOE-TERMINAL-NOTICE.md it is zero access under any alias, not
+    // credit/GHL access. Teaching the old boundary is worse than teaching none,
+    // because it implies a lane that must not be honoured.
     content_md:
-      "## Fences\n\nMoe Legacy = credit/GHL only, zero engine. Muhammad Umar = zero. Operators do not see customer financials.",
+      "## Fences\n\nMuhammad Umar / Moe Legacy: zero access, under any name. Not a lane, not a seat, not an approver.\n\nThe credit and funding vertical is AIXMOS Credit, owned by TMMT. Hands-on credit repair is referred to Khan Strategies LLC, an independent company.\n\nOperators do not see customer financials.",
   },
   {
     id: "lec-12",
