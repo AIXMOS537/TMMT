@@ -6,23 +6,66 @@ import { Download } from "lucide-react";
 import { downloadCsv } from "@/lib/csv";
 
 // ─── Badge ────────────────────────────────────────
+/**
+ * `tone` came from components/aixmos-ui/badge.tsx, which the (learn) face used
+ * and which had no dark-mode colours at all. Merged here so there is one Badge:
+ * existing callers pass className and are unaffected, tone callers get the same
+ * five names they had, now legible on both grounds.
+ */
+const BADGE_TONES = {
+  strong: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+  moderate: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
+  weak: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
+  default: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
+  info: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200",
+} as const;
+
+export type BadgeTone = keyof typeof BADGE_TONES;
+
 export function Badge({
   children,
+  tone,
   className,
 }: {
   children: ReactNode;
+  tone?: BadgeTone;
   className?: string;
 }) {
   return (
     <span
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        tone ? BADGE_TONES[tone] : undefined,
         className
       )}
     >
       {children}
     </span>
   );
+}
+
+// ─── Card sub-parts ───────────────────────────────
+// Also from aixmos-ui. Same shapes, so the pages using them did not change —
+// only the colours, which now have a dark half.
+
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <h3 className={cn("text-lg font-semibold text-gray-900 dark:text-slate-100", className)}>
+      {children}
+    </h3>
+  );
+}
+
+export function CardDescription({ children }: { children: ReactNode }) {
+  return <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">{children}</p>;
+}
+
+export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn("mb-3", className)}>{children}</div>;
+}
+
+export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn(className)}>{children}</div>;
 }
 
 export function StatusBadge({ status }: { status: string | null }) {
@@ -362,6 +405,34 @@ export const inputClass =
   "w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition";
 
 export const selectClass = inputClass;
+
+// ─── Form controls ────────────────────────────────
+// Ported from aixmos-ui so the (learn) face stops carrying its own set. They
+// build on inputClass, so they are dark-aware for the first time.
+//
+// Note the prop order: the spread comes BEFORE className. In the originals it
+// came after, which meant a caller passing className replaced the base styles
+// outright rather than adding to them — border, padding, focus ring and all.
+
+export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+      {children}
+    </label>
+  );
+}
+
+export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={cn(inputClass, className)} />;
+}
+
+export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={cn(selectClass, className)} />;
+}
+
+export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...props} className={cn(inputClass, className)} />;
+}
 
 export function Button({
   children,

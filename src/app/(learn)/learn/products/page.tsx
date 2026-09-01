@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useCube } from "@aixmos/core";
 import { formatCurrency } from "@aixmos/core";
-import { Badge } from "@/components/aixmos-ui/badge";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui";
 
 export default function ProductsPage() {
   const { state } = useCube();
@@ -15,7 +16,7 @@ export default function ProductsPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card className="mb-6">
+      <Card className="p-5 mb-6">
         <CardTitle>Product & funder matching</CardTitle>
         <CardDescription>
           Matches are based on your truthful profile — fit scores are educational, not approvals.
@@ -24,7 +25,7 @@ export default function ProductsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {matches.length === 0 ? (
-          <Card>
+          <Card className="p-5 p-5">
             <p className="text-sm text-slate-600">
               Complete questionnaires to see product matches.
             </p>
@@ -34,7 +35,7 @@ export default function ProductsPage() {
           </Card>
         ) : (
           matches.map((m) => (
-            <Card key={m.id}>
+            <Card className="p-5" key={m.id}>
               <div className="flex justify-between gap-2">
                 <CardTitle className="text-base">{m.name}</CardTitle>
                 <Badge tone={m.fitScore >= 70 ? "strong" : m.fitScore >= 50 ? "moderate" : "weak"}>

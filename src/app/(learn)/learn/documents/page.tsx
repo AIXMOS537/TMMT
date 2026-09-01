@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { CheckCircle2, Circle, Upload, Loader2, X } from "lucide-react";
 import { useCube } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
-import { Badge } from "@/components/aixmos-ui/badge";
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui";
 import {
   listProgramDocuments,
   removeProgramDocument,
@@ -137,7 +136,7 @@ export default function DocumentsPage() {
     <div>
       <WorkflowBanner />
 
-      <Card className="mb-4">
+      <Card className="p-5 mb-4">
         <CardTitle>Document checklist</CardTitle>
         <CardDescription>
           JPEG, PNG, WebP or PDF, up to 12 MB each. Your files are stored
@@ -163,7 +162,7 @@ export default function DocumentsPage() {
           const pending = busy === doc.id;
 
           return (
-            <Card key={doc.id} className="flex flex-wrap items-center justify-between gap-3">
+            <Card key={doc.id} className="p-5 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 {file ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -211,7 +210,7 @@ export default function DocumentsPage() {
 
                 {file && (
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="gap-1 text-xs"
                     onClick={() => onRemove(doc.id)}
                     disabled={pending}

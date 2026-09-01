@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/aixmos-ui/card";
+
 import { cn } from "@/lib/utils";
 import type { MissionBoardData, Tone } from "@/lib/mission/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 
 const STAT_TONE: Record<Tone, string> = {
   neutral: "border-border/80",
@@ -27,7 +28,7 @@ export function MissionBoard({ data }: { data: MissionBoardData }) {
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {data.stats.map((s) => (
-            <Card key={s.label} className={cn("border-l-[3px]", STAT_TONE[s.tone])}>
+            <Card key={s.label} className={cn("p-5 border-l-[3px]", STAT_TONE[s.tone])}>
               <CardContent className="p-4">
                 <div className="text-2xl font-bold leading-none">{s.value ?? "—"}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
@@ -38,7 +39,7 @@ export function MissionBoard({ data }: { data: MissionBoardData }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="p-5 p-5">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">🎯 What you&apos;re needed for</CardTitle>
           </CardHeader>
@@ -62,7 +63,7 @@ export function MissionBoard({ data }: { data: MissionBoardData }) {
           </CardContent>
         </Card>
 
-        <Card className="border-l-[3px] border-emerald-500/40">
+        <Card className="p-5 border-l-[3px] border-emerald-500/40">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">🚀 Grow &amp; scale — your next moves</CardTitle>
           </CardHeader>
@@ -86,7 +87,7 @@ export function MissionBoard({ data }: { data: MissionBoardData }) {
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {data.agents.map((a) => (
-            <Card key={a.key}>
+            <Card className="p-5" key={a.key}>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2">
                   <span className={cn("h-2 w-2 rounded-full", DOT_TONE[a.tone])} />
@@ -109,7 +110,7 @@ export function MissionBoard({ data }: { data: MissionBoardData }) {
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.ventures.map((v) => (
-              <Card key={v.name}>
+              <Card className="p-5" key={v.name}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold">{v.name}</span>

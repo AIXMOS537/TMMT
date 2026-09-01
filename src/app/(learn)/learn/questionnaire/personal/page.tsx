@@ -5,10 +5,11 @@ import { useState } from "react";
 import { useCube } from "@aixmos/core";
 import { SAMPLE_PERSONAL } from "@aixmos/core";
 import type { PersonalQuestionnaire } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
-import { Input, Label, Select } from "@/components/aixmos-ui/input";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Button, Card, CardDescription, CardTitle, Input, Label, Select } from "@/components/ui";
 
 const empty: PersonalQuestionnaire = {
   legalName: "",
@@ -54,7 +55,7 @@ export default function PersonalQuestionnairePage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card>
+      <Card className="p-5 p-5">
         <CardTitle>Personal funding questionnaire</CardTitle>
         <CardDescription>
           Answer truthfully — lenders verify income, credit, and obligations. Estimates are fine only when
@@ -140,7 +141,7 @@ export default function PersonalQuestionnairePage() {
           </div>
 
           <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <Button type="button" variant="outline" onClick={loadSample}>
+            <Button type="button" variant="secondary" onClick={loadSample}>
               Load demo data
             </Button>
             <Button type="submit">Save & continue</Button>
