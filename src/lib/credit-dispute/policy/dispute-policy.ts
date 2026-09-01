@@ -58,6 +58,8 @@ export type FactualBasis =
   | "settled_reported_unsettled"
   | "included_in_bankruptcy"
   | "no_permissible_purpose" // inquiry the consumer never authorised
+  | "reinserted_without_notice" // deleted, then put back without the 5-day notice
+  | "dispute_not_notated" // furnisher failed to mark the account as disputed
   | "unverifiable"; // bureau/furnisher could not verify on a prior round
 
 /** What the desk actually knows about accuracy. Unknown is a real answer. */
@@ -227,8 +229,19 @@ export function sequenceFor(
       break;
 
     case "unverifiable":
-      // Already failed verification once — demand the method.
+      // Already failed verification once — demand the method. MOV belongs
+      // IMMEDIATELY after a verified result, not later in a campaign.
       seq = ["method_of_verification", "factual_confrontation", "cfpb_escalation"];
+      break;
+
+    case "reinserted_without_notice":
+      // Self-contained violation. One letter, then escalate if ignored.
+      seq = ["initial_611", "cfpb_escalation"];
+      break;
+
+    case "dispute_not_notated":
+      // A furnisher failure — go to the furnisher, not the bureau.
+      seq = ["furnisher_623", "cfpb_escalation"];
       break;
 
     default:
@@ -247,6 +260,117 @@ export function sequenceFor(
   }
 
   return seq;
+}
+
+// ---------------------------------------------------------------------------
+// Statutory routes
+//
+// Recovered from the owner's own letter library (g3 Drive, 2026-09-01) and
+// screened: only grounds that rest on a correct reading of the statute are here.
+// The theories that did not survive screening are recorded, not deleted, in
+// docs/knowledge/QUARANTINE-disputed-legal-theories.md.
+//
+// A citation is NOT a reason to dispute. It is the route once a factual reason
+// exists. The gate below still decides whether a letter should exist at all.
+// ---------------------------------------------------------------------------
+
+export interface StatutoryRoute {
+  /** The section relied on. */
+  citation: string;
+  /** Who the letter is aimed at. Getting this wrong invites a one-line dismissal. */
+  target: "bureau" | "furnisher" | "collector" | "court";
+  /** Plain-English summary, safe to show a client. */
+  summary: string;
+}
+
+export const STATUTORY_ROUTES: Partial<Record<FactualBasis, StatutoryRoute>> = {
+  obsolete: {
+    citation: "FCRA 15 U.S.C. 1681c",
+    target: "bureau",
+    summary:
+      "Past the period this may lawfully be reported. Accuracy is irrelevant to this ground.",
+  },
+  identity_theft: {
+    citation: "FCRA 15 U.S.C. 1681c-2 (and 605B)",
+    target: "bureau",
+    summary:
+      "Block within 4 business days on receipt of an identity theft report. Requires an actual report, not merely a denial.",
+  },
+  not_mine: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681i(5)",
+    target: "bureau",
+    summary: "Reported against the wrong consumer; maximum possible accuracy not met.",
+  },
+  never_late: {
+    citation: "FCBA 15 U.S.C. 1666b",
+    target: "furnisher",
+    summary:
+      "Billing error: payment was made on time and reported late. Valid ONLY where the payment genuinely was on time.",
+  },
+  wrong_balance: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681i(5)",
+    target: "bureau",
+    summary: "A specific field is wrong. Name the field, not the account generally.",
+  },
+  wrong_dates: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681i(5)",
+    target: "bureau",
+    summary: "Date of first delinquency, open or close date misreported.",
+  },
+  wrong_status: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681i(5)",
+    target: "bureau",
+    summary: "Status misreported, e.g. open when settled or paid.",
+  },
+  duplicate: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681s-2",
+    target: "furnisher",
+    summary: "The same debt appears more than once.",
+  },
+  paid_in_full_reported_unpaid: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681s-2",
+    target: "furnisher",
+    summary: "Paid, still reported as owing.",
+  },
+  settled_reported_unsettled: {
+    citation: "FCRA 15 U.S.C. 1681e(b), 1681s-2",
+    target: "furnisher",
+    summary: "Settled, still reported as outstanding.",
+  },
+  included_in_bankruptcy: {
+    citation: "FCRA 15 U.S.C. 1681e(b)",
+    target: "furnisher",
+    summary: "Discharged in bankruptcy but still reported as an active balance.",
+  },
+  no_permissible_purpose: {
+    citation: "FCRA 15 U.S.C. 1681b",
+    target: "bureau",
+    summary:
+      "Inquiry the consumer did not authorise. Scope is INQUIRIES - do not extend this to tradelines the consumer opened.",
+  },
+  reinserted_without_notice: {
+    citation: "FCRA 15 U.S.C. 1681i(5)(B)(ii)-(iii)",
+    target: "bureau",
+    summary:
+      "Deleted, then reinserted without notice to the consumer within 5 business days. Easy to evidence and frequently missed.",
+  },
+  dispute_not_notated: {
+    citation: "FCRA 15 U.S.C. 1681s-2 (collections: FDCPA 15 U.S.C. 1692e(8))",
+    target: "furnisher",
+    summary:
+      "Failed to mark the account as disputed within 30 days. Aim at the furnisher, never the bureau.",
+  },
+  unverifiable: {
+    citation: "FCRA 15 U.S.C. 1681i(7), then 1681i(5)(A)",
+    target: "bureau",
+    summary:
+      "Demand the method of verification: original creditor name, address, phone, WHO verified it, and the documents used. An agency that verified via an automated code match usually cannot answer, which makes the item unverifiable under 1681i(5)(A).",
+  },
+};
+
+/** The citation and target for a ground, if one is defined. */
+export function routeFor(basis: FactualBasis): StatutoryRoute | undefined {
+  return STATUTORY_ROUTES[basis];
 }
 
 // ---------------------------------------------------------------------------
