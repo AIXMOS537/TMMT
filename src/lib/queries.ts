@@ -129,6 +129,8 @@ export async function getDashboardData() {
     openTickets,
     totalPayments,
     overduePayments,
+    contractCount,
+    handoverCount,
     recentLeads,
     recentTickets,
   ] = await Promise.all([
@@ -148,6 +150,8 @@ export async function getDashboardData() {
     countWhere("tickets", "status", "Open"),
     count("customer_payments"),
     countWhere("customer_payments", "payment_status", "Overdue"),
+    count("contracts"),
+    count("vehicle_handover"),
     fetchTable("incoming_leads", "*", "created_on").then(r => r.slice(0, 5)),
     fetchTable("tickets", "*", "date_created").then(r => r.slice(0, 5)),
   ]);
@@ -179,6 +183,16 @@ export async function getDashboardData() {
     customers: { total: activeCustomers, active: activeCustomerCount },
     tickets: { total: totalTickets, open: openTickets },
     payments: { total: totalPayments, overdue: overduePayments, restricted: !admin },
+    /**
+     * The paper trail behind the cars that are out.
+     *
+     * On 2026-09-01 this read 21 rented, 2 contracts, 1 handover. The forms
+     * exist and work; almost nothing reaches them, and nothing in the app said
+     * so — a vehicle can be marked Rented with no agreement and no handover
+     * record, and every screen looked fine. Surfaced so the gap is visible
+     * daily rather than discovered during a dispute or an audit.
+     */
+    paperTrail: { rented: rentedFleet, contracts: contractCount, handovers: handoverCount },
     recentLeads: recentLeads as Record<string, unknown>[],
     recentTickets: recentTickets as Record<string, unknown>[],
   };
