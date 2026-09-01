@@ -191,3 +191,88 @@ Also relevant, found today by another session: the dispute desk had been keeping
 | 7 | Build the letter generator + CROA rails together | Me, after 6 |
 
 **Step 6 is the whole project.** Steps 1–5 clear the way so that when you start talking, it lands somewhere that works.
+
+---
+
+# RESULTS — steps 1–5 executed, 2026-09-01
+
+## The diagnosis changed once I read the daemon
+
+`brain-intake.sh` is a **good** script — it extracts, chunks, embeds with `nomic-embed-text` and stores to `vectors.jsonl`. It was never broken.
+
+**It watches `~/Sync/RICK-DESK/BRAIN-FEED/`. Everything was piling up in `~/Sync/rick/BRAIN-FEED/`.** Two different directories, one character apart in the eye, nothing in common to the shell.
+
+| | |
+|---|---:|
+| `RICK-DESK/BRAIN-FEED` — what the ingester watches | **2 entries** |
+| `rick/BRAIN-FEED` — where 45,000 files accumulated | inbox 6,687 · compiled 38,307 |
+| **`vectors.jsonl` — everything the brain had ever learned** | **6 chunks** |
+
+This is the same failure recorded in August as the runaway enqueue loop: *"the guard watched a different inbox than Enqueue wrote to."* It happened again, in a different pair of folders.
+
+> So the embedding limit on BRAINIAC is real but was **not** the active blocker. The M1 has no limit and its ingester worked fine — it was simply starving.
+
+## What was done
+
+| # | Step | Result |
+|---|---|---|
+| 1 | Stop the voice-profile regeneration | ⚠️ **Not done — cannot reach it.** See below |
+| 2 | Archive the regenerated copies | ✅ **3,293 archived**, newest kept. Inbox 6,697 → 3,404 |
+| 3 | Un-quarantine the credit files | ✅ Recovered and staged |
+| 4 | Get embedding working | ✅ **Verified working on the M1** |
+| 5 | Harvest every credit source | ✅ **34 sources ingested from both machines** |
+
+### The corpus now
+
+| | Before | After |
+|---|---:|---:|
+| Vectors (embedded chunks) | **6** | **242** |
+| `KNOWLEDGE.md` | 96 lines | **2,193 lines** |
+| Sources | 6 | **34** (28 credit-specific) |
+
+Largest contributors: `RIDER-1-Credit-Repair-Vertical` (35 chunks), `CREDIT_FUNDING_OS` (14), the credit-guidance pitch (13), the MOE phone script (10).
+
+### Two file types were being silently dropped
+
+`extract_text()` handles `txt|md|csv|json|log` — but **not `.jsonl` and not `.ts`**. Six files, including the single largest knowledge source, were stored as *"[unsupported type]"* with no content extracted.
+
+Fixed by converting rather than forcing: the rawlog was rendered to clean markdown (one note per bullet, JSON scaffolding stripped so it does not pollute the embeddings) and the engine sources renamed to `.md`.
+
+**The rawlog turned out to be 341 unique notes, not 740** — 399 were duplicates. Channel breakdown: telegram-export 326, vault 8, manual 3, slack 2, media-content 2.
+
+`[RECOMMENDED]` add `jsonl` and `ts|js|py|sql` to the extractor's case statement, so this stops happening.
+
+## ⚠️ Step 1 could not be done from here
+
+The TAHA-VOICE profile is not written by anything on the M1. Its own header says **"compiled by Carry Watchtower"**, and there is a separate `watchtower` node on the tailnet (`100.77.126.8`, macOS) that **refuses my SSH key**.
+
+So the regeneration continues — it produced two more files while this work was running. The archive removes the backlog but not the source.
+
+**To stop it, someone needs access to the `watchtower` Mac.** The fix there is one line: write to a fixed filename instead of a new timestamped one.
+
+## It answers questions now
+
+Query: *"how do I dispute a collection account with the credit bureau"* — top hit, score 0.725, from `dispute-process-lawful.md`:
+
+> **"Hard rule: If an item is accurate, current, and verifiable, it is not disputed. It is coached on (behavior + time). Document for each item: bureau(s), creditor, the specific factual reason…"**
+
+That is a real judgement rule, in the owner's own material, and it is exactly the kind of thing the in-house generator must respect — **the letter engine has to be able to decline to write a letter.**
+
+Query: *"what makes a client ready for funding"* returned the guidance pitch, the funding-desk spec and `CREDIT_FUNDING_OS` intake questions.
+
+## Query tool
+
+`scripts/askbrain.py`, installed on the M1 at `~/.config/tmmt/rick-desk/askbrain.py`:
+
+```bash
+ssh m1 'python3 ~/.config/tmmt/rick-desk/askbrain.py "your question"'
+ssh m1 'python3 ~/.config/tmmt/rick-desk/askbrain.py --stats'
+```
+
+## What is still step 6, and still only yours
+
+242 chunks of **documents** are now searchable. That is the floor, not the ceiling.
+
+What is in there is what was already written down — SOPs, pitches, compliance rules, the legal rider, and the code's own logic. **What is not in there is the judgement**: which round to run when, what actually earns a deletion versus a verification, when to leave an item alone.
+
+The channel is clear now. When you start talking, it will land somewhere that works.
