@@ -1,7 +1,28 @@
 # CHANGE REQUEST 001 — Vehicle owners and per-vehicle agreements
 
-**Raised** 2026-09-01 · **Status: 🔴 BLOCKED — DO NOT APPLY. Nothing has been applied.**
+**Raised** 2026-09-01 · **Status: ⬛ SUPERSEDED — DO NOT APPLY. Nothing was applied.**
 Migration file: `supabase/migrations/20260901120000_vehicle_owners_and_agreements.sql`
+
+> ## ⬛ Superseded the same day — the fleet is empty
+>
+> The stocktake came back **0 here, 43 gone**. Every vehicle in the database is gone.
+> See **`STOCKTAKE-RESULT-2026-09-01.md`**.
+>
+> This change request assumed a fleet existed and needed its ownership reconciled.
+> **That premise is void.** There are no vehicles to attach an owner to, no agreements
+> to record, and no statements to produce.
+>
+> The migration is sound and costs nothing on the shelf — if vehicles return, it is
+> ready. But it must not be applied to an empty fleet, and there is no backfill to run.
+>
+> **Everything below is retained as the record of what was investigated and why.** Two
+> findings in it survive the fleet and stay useful:
+>
+> * `revenue_splits` cannot hold vehicle-owner payouts — it is keyed on
+>   `operator_id`/`deal_id` with no `vehicle_id`. Relevant to the operator business,
+>   which is still live.
+> * `fleet.partner_percentage` means the **owner's** share, proven against the Drive
+>   payout reports. Worth keeping if the model is ever restarted.
 
 Format per `CLAUDE.md` §4.
 
