@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Columns3, BarChart3, Table2 } from "lucide-react";
+import { Columns3, BarChart3, Table2, Plus } from "lucide-react";
 import { getContractStats } from "@/lib/queries";
 import { adminUpsert } from "@/lib/offline/desk-save";
 import {
   PageHeader, StatCard, DataTable, FilterBar, ErrorBanner,
-  StatusBadge, Button, FormField, inputClass, selectClass,
+  StatusBadge, Button, FormField, ExportButton, inputClass, selectClass,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
@@ -54,7 +54,7 @@ export default function ContractsInterface() {
   const filtered = useMemo(() => {
     if (!stats) return [];
     return stats.all.filter((r) => {
-      const matchSearch = !search || [r.customer_name, r.vehicle_name, r.contract_type].some((v) =>
+      const matchSearch = !search || [r.active_customer, r.vehicle, r.contract_id].some((v) =>
         String(v ?? "").toLowerCase().includes(search.toLowerCase())
       );
       const matchStatus = !statusFilter || r.contract_status === statusFilter;
@@ -70,8 +70,8 @@ export default function ContractsInterface() {
   }, [stats]);
 
   const columns: Column<Contract>[] = [
-    { key: "customer_name", label: "Customer", render: (r) => <span className="font-medium">{String(r.customer_name ?? "—")}</span> },
-    { key: "vehicle_name", label: "Vehicle" },
+    { key: "active_customer", label: "Customer", render: (r) => <span className="font-medium">{String(r.active_customer ?? "—")}</span> },
+    { key: "vehicle", label: "Vehicle" },
     { key: "contract_status", label: "Status", render: (r) => <StatusBadge status={r.contract_status as string} /> },
     { key: "start_date", label: "Start", render: (r) => formatDate(r.start_date as string) },
     { key: "end_date", label: "End", render: (r) => formatDate(r.end_date as string) },
@@ -81,6 +81,20 @@ export default function ContractsInterface() {
   function openDetail(item: Contract) {
     setSelected(item); setPanelOpen(true); setEditing(false);
   }
+
+  /**
+   * Add a record by opening the same panel on an empty one.
+   *
+   * These screens could edit but never create — the only "add" form lived on
+   * the older page this replaces. Rather than porting a second form that would
+   * drift from this one, open the existing editor with no row behind it:
+   * handleSave only sets record.id when selected.id exists, so an empty
+   * selection inserts.
+   */
+  function openCreate() {
+    setSelected({}); setPanelOpen(true); setEditing(true);
+  }
+
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -111,7 +125,16 @@ export default function ContractsInterface() {
 
   return (
     <div>
-      <PageHeader title="Contract Management" description="Dashboard, kanban, and table views for all contracts" />
+      <PageHeader
+        title="Contract Management"
+        description="Dashboard, kanban, and table views for all contracts"
+        action={
+          <div className="flex gap-2">
+            <ExportButton data={filtered} columns={columns} filename="contracts" />
+            <Button onClick={openCreate}><Plus size={16} />New Contract</Button>
+          </div>
+        }
+      />
       <ViewSwitcher tabs={VIEW_TABS} defaultTab="dashboard" />
 
       {activeView === "dashboard" && stats && (
@@ -149,8 +172,8 @@ export default function ContractsInterface() {
           onCardClick={(item) => openDetail(item as Contract)}
           renderCard={(item) => (
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{String(item.customer_name ?? "—")}</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{String(item.vehicle_name ?? "—")}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{String(item.active_customer ?? "—")}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{String(item.vehicle ?? "—")}</p>
               <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
                 {formatDate(item.start_date as string)} – {formatDate(item.end_date as string)}
               </p>
@@ -162,7 +185,7 @@ export default function ContractsInterface() {
       <DetailPanel
         open={panelOpen}
         onClose={() => { setPanelOpen(false); setSelected(null); }}
-        title={editing ? "Edit Contract" : String(selected?.customer_name ?? "Contract Details")}
+        title={editing ? "Edit Contract" : String(selected?.active_customer ?? "Contract Details")}
       >
         {selected && (
           <>
@@ -170,18 +193,18 @@ export default function ContractsInterface() {
               <>
                 <ErrorBanner message={error} onDismiss={() => setError(null)} />
                 <DetailSection title="Contract Info">
-                  <DetailRow label="Type" value={String(selected.contract_type ?? "—")} />
+                  <DetailRow label="Contract ID" value={String(selected.contract_id ?? "—")} />
                   <DetailRow label="Status" value={<StatusBadge status={selected.contract_status as string} />} />
                   <DetailRow label="Start" value={formatDate(selected.start_date as string)} />
                   <DetailRow label="End" value={formatDate(selected.end_date as string)} />
                   <DetailRow label="Total" value={formatCurrency(Number(selected.total_contract_amount) || null)} />
                 </DetailSection>
                 <DetailSection title="Customer">
-                  <DetailRow label="Name" value={String(selected.customer_name ?? "—")} href="/customers" />
+                  <DetailRow label="Name" value={String(selected.active_customer ?? "—")} href="/customers" />
                   <DetailRow label="Phone" value={String(selected.phone ?? "—")} />
                 </DetailSection>
                 <DetailSection title="Vehicle">
-                  <DetailRow label="Vehicle" value={String(selected.vehicle_name ?? "—")} href="/interfaces/vehicles" />
+                  <DetailRow label="Vehicle" value={String(selected.vehicle ?? "—")} href="/interfaces/vehicles" />
                   <DetailRow label="Plate" value={String(selected.license_plate ?? "—")} />
                 </DetailSection>
                 <div className="flex flex-wrap gap-2 pt-4">
@@ -195,13 +218,16 @@ export default function ContractsInterface() {
                 <ErrorBanner message={error} onDismiss={() => setError(null)} />
                 <input type="hidden" name="contract_pdf_storage_path" value={String(selected.contract_pdf_storage_path ?? "")} />
                 <FormField label="Customer Name">
-                  <input name="customer_name" defaultValue={String(selected.customer_name ?? "")} className={inputClass} />
+                  <input name="active_customer" defaultValue={String(selected.active_customer ?? "")} className={inputClass} />
                 </FormField>
                 <FormField label="Vehicle Name">
-                  <input name="vehicle_name" defaultValue={String(selected.vehicle_name ?? "")} className={inputClass} />
+                  <input name="vehicle" defaultValue={String(selected.vehicle ?? "")} className={inputClass} />
                 </FormField>
-                <FormField label="Contract Type">
-                  <input name="contract_type" defaultValue={String(selected.contract_type ?? "")} className={inputClass} />
+                {/* No "Contract Type" field: contracts has no such column, so
+                    this input wrote to nothing and always rendered empty.
+                    contract_id is the real identifier on the row. */}
+                <FormField label="Contract ID">
+                  <input name="contract_id" defaultValue={String(selected.contract_id ?? "")} className={inputClass} />
                 </FormField>
                 <FormField label="Status">
                   <select name="contract_status" defaultValue={String(selected.contract_status ?? "")} className={selectClass}>
