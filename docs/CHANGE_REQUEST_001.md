@@ -1,6 +1,12 @@
 # CHANGE REQUEST 001 — Vehicle owners and per-vehicle agreements
 
-**Raised** 2026-09-01 · **Status: ⬛ SUPERSEDED — DO NOT APPLY. Nothing was applied.**
+**Raised** 2026-09-01 · **Status: ⏸️ ON HOLD, REVIVED as Phase 2 of `OPERATOR-PROGRAM-BUILD.md`**
+> Un-voided the same day. The operator programme routes clients to buy their own car and have
+> TMMT manage it -- which is exactly what `vehicle_owners` + `owner_agreements` model. The
+> migration is unchanged and still not applied; it now waits on real client-owners rather than
+> on a fleet that no longer exists.
+
+**Superseded status below applied only to the old investor fleet · Status: ⬛ SUPERSEDED — DO NOT APPLY. Nothing was applied.**
 Migration file: `supabase/migrations/20260901120000_vehicle_owners_and_agreements.sql`
 
 > ## ⬛ Superseded the same day — the fleet is empty
