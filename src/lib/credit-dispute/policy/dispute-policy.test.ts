@@ -8,6 +8,8 @@ import {
   isObsolete,
   sequenceFor,
   summarise,
+  routeFor,
+  STATUTORY_ROUTES,
   type ItemAssessment,
 } from "./dispute-policy";
 
@@ -204,5 +206,62 @@ describe("whole-profile view", () => {
     const results = decideForProfile([item({ id: "x" }), item({ id: "y" })], {});
     expect(summarise(results).hold).toBe(2);
     expect(summarise(results).dispute).toBe(0);
+  });
+});
+
+describe("statutory routes recovered from the letter library", () => {
+  it("aims failure-to-notate at the furnisher, never the bureau", () => {
+    const r = routeFor("dispute_not_notated");
+    expect(r?.target).toBe("furnisher");
+    expect(r?.citation).toMatch(/1681s-2/);
+  });
+
+  it("routes a failure-to-notate letter to the furnisher, not the bureau", () => {
+    expect(sequenceFor("dispute_not_notated", "charge_off")[0]).toBe("furnisher_623");
+  });
+
+  it("keeps permissible-purpose scoped to inquiries in its own summary", () => {
+    expect(routeFor("no_permissible_purpose")?.summary).toMatch(/do not extend/i);
+  });
+
+  it("sends an unverifiable item straight to method of verification", () => {
+    expect(routeFor("unverifiable")?.citation).toMatch(/1681i\(7\)/);
+    expect(sequenceFor("unverifiable", "charge_off")[0]).toBe("method_of_verification");
+  });
+
+  it("treats reinsertion as a self-contained violation, not a campaign", () => {
+    expect(sequenceFor("reinserted_without_notice", "charge_off")).toEqual([
+      "initial_611",
+      "cfpb_escalation",
+    ]);
+  });
+
+  it("flags never_late as valid only when the payment really was on time", () => {
+    expect(routeFor("never_late")?.summary).toMatch(/ONLY where the payment genuinely was on time/);
+  });
+
+  it("gives obsolete a route that does not depend on accuracy", () => {
+    expect(routeFor("obsolete")?.summary).toMatch(/Accuracy is irrelevant/i);
+  });
+
+  it("requires an actual report for identity theft, not just a denial", () => {
+    expect(routeFor("identity_theft")?.summary).toMatch(/not merely a denial/i);
+  });
+
+  it("defines a route for every ground the gate can emit", () => {
+    const grounds = [
+      "not_mine", "identity_theft", "never_late", "wrong_balance", "wrong_dates",
+      "wrong_status", "duplicate", "obsolete", "paid_in_full_reported_unpaid",
+      "settled_reported_unsettled", "included_in_bankruptcy", "no_permissible_purpose",
+      "reinserted_without_notice", "dispute_not_notated", "unverifiable",
+    ] as const;
+    for (const g of grounds) expect(routeFor(g), g).toBeDefined();
+  });
+
+  it("carries no quarantined theory into the routes", () => {
+    const blob = JSON.stringify(STATUTORY_ROUTES).toLowerCase();
+    for (const bad of ["perjury", "estoppel", "engelhardt", "1605", "litigious", "1681a(2)(b)"]) {
+      expect(blob).not.toContain(bad);
+    }
   });
 });
