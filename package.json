@@ -2,7 +2,8 @@
   "overrides": {
     "sharp": "^0.35.0",
     "postcss": "^8.5.23",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "browserslist": "^4.28.7"
   },
   "name": "tmmt-app",
   "version": "0.1.0",
