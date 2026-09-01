@@ -1,4 +1,5 @@
 import type { CreditProfile, DisputeRoundType, NegativeItem } from "../types";
+import type { ItemAssessment } from "../policy/dispute-policy";
 import type { DisputeLetterBatch } from "../engine/protocol";
 
 export type ReportSource = "disputefox" | "myfreescorenow" | "smartcredit";
@@ -23,6 +24,15 @@ export interface StoredClient {
   disputeRounds: StoredDisputeRound[];
   importedAt: string;
   externalId?: string;
+  /**
+   * The accuracy call a human made on each item, keyed by negative-item id.
+   *
+   * Separate from the item itself because it is a JUDGEMENT about the item, made
+   * by a named person at a point in time — not a property of the tradeline. It is
+   * also the thing the policy gate requires before any letter exists, so it needs
+   * to survive a page reload.
+   */
+  assessments?: Record<string, ItemAssessment>;
 }
 
 const STORAGE_KEY = "aix-dispute-clients";
@@ -84,4 +94,56 @@ export function addDisputeRounds(
 
 export function generateId(): string {
   return `client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+
+/**
+ * Record the accuracy call on one item.
+ *
+ * Stamps who and when, because "who decided this was inaccurate, and on what day"
+ * is the first question anyone reviewing a dispute will ask.
+ */
+export function setItemAssessment(
+  profileId: string,
+  negativeItemId: string,
+  assessment: Omit<ItemAssessment, "assessedAt">,
+  assessedBy?: string
+): void {
+  const clients = getClients();
+  const client = clients.find((c) => c.profile.id === profileId);
+  if (!client) return;
+
+  const existing = client.assessments?.[negativeItemId];
+  client.assessments = {
+    ...(client.assessments ?? {}),
+    [negativeItemId]: {
+      ...assessment,
+      // Rounds already sent are tracked by the dispute history, not re-entered.
+      roundsSent: existing?.roundsSent ?? assessment.roundsSent ?? [],
+      assessedBy: assessedBy ?? existing?.assessedBy,
+      assessedAt: new Date().toISOString(),
+    },
+  };
+  saveClients(clients);
+}
+
+/** The recorded assessments for a client, or an empty map. */
+export function getAssessments(profileId: string): Record<string, ItemAssessment> {
+  return getClientById(profileId)?.assessments ?? {};
+}
+
+/**
+ * Rounds already sent for each item, derived from stored dispute history.
+ *
+ * Read from the history rather than tracked separately, so the two can never
+ * disagree about what has actually gone out.
+ */
+export function roundsSentByItem(profileId: string): Record<string, DisputeRoundType[]> {
+  const client = getClientById(profileId);
+  if (!client) return {};
+  const out: Record<string, DisputeRoundType[]> = {};
+  for (const r of client.disputeRounds) {
+    (out[r.negativeItemId] ??= []).push(r.roundType);
+  }
+  return out;
 }
