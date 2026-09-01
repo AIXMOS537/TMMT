@@ -66,7 +66,21 @@ export async function getOrCreateReferralCode(
     if (again?.[0]?.code) return again[0].code as string;
     code = `${deriveReferralCode(email)}${Math.floor(Math.random() * 90 + 10)}`;
   }
-  return code;
+
+  // Never hand back a code that was not saved.
+  //
+  // This used to `return code` here, which meant a member was shown a referral
+  // link for a code that exists nowhere: anyone using it would credit no one.
+  // It is not a rare path either — pocket_referral_codes lives in
+  // supabase/migrations/_parked/ and is deliberately not applied (it would
+  // split-brain against the live partner_referrals / affiliate_links system),
+  // so in production every insert here fails and every member got a dead code.
+  //
+  // Failing means /pocket/earn shows its "your link will appear once your
+  // account is ready" state, which is true, instead of a link that is not.
+  throw new Error(
+    "Referral codes are unavailable: pocket_referral_codes is not present in this database."
+  );
 }
 
 /**
