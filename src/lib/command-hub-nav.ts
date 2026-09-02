@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { AccessTier } from "@/lib/auth-roles";
 import { ghlLinks } from "@/lib/ghl-links";
 import { CLICKUP_WORKSPACE_URL } from "@/lib/clickup/config";
 import {
@@ -16,7 +17,40 @@ import {
   ExternalLink,
   Handshake,
   Scale,
+  Siren,
 } from "lucide-react";
+
+/**
+ * Purchased org modules — mirrors `organization_licenses.modules` in Supabase
+ * (a `full_os` license implies every module).
+ */
+export const ORG_MODULES = [
+  "rentals_app",
+  "credit_repair",
+  "lease_to_own",
+  "operator_program",
+  "dispatch_core",
+  "agent_sales",
+  "partner_deploy",
+  "revenue_engine",
+] as const;
+
+export type OrgModule = (typeof ORG_MODULES)[number];
+
+/** Third-party connections that must be wired up before we surface their link. */
+export type IntegrationId = "clickup" | "ghl";
+
+/** What an account must have bought (or connected) before a link is shown. */
+export type CommandHubRequirement = {
+  /** Org module from the client's license. */
+  module?: OrgModule;
+  /** Entitlement slug from the client's package (`package_entitlements`). */
+  entitlement?: string;
+  /** Access tiers allowed to see the link. Defaults to owner + staff. */
+  tiers?: AccessTier[];
+  /** Hide unless this connection is configured for the deployment. */
+  integration?: IntegrationId;
+};
 
 export type CommandHubLink = {
   href: string;
@@ -25,6 +59,7 @@ export type CommandHubLink = {
   icon: LucideIcon;
   badge?: string;
   external?: boolean;
+  requires?: CommandHubRequirement;
 };
 
 export const commandHubSections: { title: string; links: CommandHubLink[] }[] = [
@@ -47,18 +82,21 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Fleet",
         description: "Vehicles, availability, maintenance status",
         icon: Car,
+        requires: { module: "rentals_app" },
       },
       {
         href: "/appointments",
         label: "Bookings & appointments",
         description: "Scheduled pickups, returns, and calendar",
         icon: CalendarCheck,
+        requires: { module: "rentals_app" },
       },
       {
         href: "/maintenance",
         label: "Maintenance",
         description: "Shop work and vehicle downtime",
         icon: Wrench,
+        requires: { module: "rentals_app" },
       },
     ],
   },
@@ -70,6 +108,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Program desk (Work face)",
         description: "Credit & funding readiness — staff review queue",
         icon: TrendingUp,
+        requires: { module: "credit_repair" },
         badge: "Cube",
       },
       {
@@ -77,6 +116,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Credit dispute command",
         description: "Dispute Fox + MyFreeScoreNow → deep audit → FCRA letters → funding",
         icon: Scale,
+        requires: { module: "credit_repair" },
         badge: "AIXMOS",
       },
       {
@@ -87,6 +127,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Learn face (client)",
         description: "Education, coach, questionnaires",
         icon: ExternalLink,
+        requires: { module: "credit_repair", entitlement: "credit_education_hub" },
         external: process.env.NEXT_PUBLIC_CUBE_SAME_ORIGIN === "false",
       },
       {
@@ -94,6 +135,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "GHL upsell queue",
         description: "Contacts tagged ready-for-aixmos → membership",
         icon: TrendingUp,
+        requires: { integration: "ghl" },
         badge: "GHL",
         external: true,
       },
@@ -109,6 +151,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "TMMT → AIXMOS ladder",
         description: "Move existing renters into higher GHL tiers",
         icon: TrendingUp,
+        requires: { module: "operator_program", entitlement: "upgrade_center" },
         badge: "GHL",
       },
     ],
@@ -121,6 +164,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Entity handoffs",
         description: "Cross-entity client handoffs (TMMT · AIXMOS · MOE) with consent status",
         icon: Handshake,
+        requires: { module: "partner_deploy" },
         badge: "Federation",
       },
       {
@@ -128,6 +172,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "Operators",
         description: "Provision operator sub-accounts under an agency and fund their tokens",
         icon: Users,
+        requires: { module: "operator_program" },
         badge: "Network",
       },
     ],
@@ -153,10 +198,18 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
     title: "Workflow & command",
     links: [
       {
+        href: "/dispatch",
+        label: "Dispatch cockpit",
+        description: "Live incident queue, units on the map, and assignment locks",
+        icon: Siren,
+        requires: { module: "dispatch_core" },
+      },
+      {
         href: "/command/desk",
         label: "Command desk",
         description: "Voice → AI refine → dispatch to executive VAs",
         icon: Radio,
+        requires: { tiers: ["owner"] },
         badge: "Owner",
       },
       {
@@ -170,6 +223,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         label: "ClickUp workspace",
         description: "TMMT RENTALS — fleet, ops, admin lists",
         icon: ExternalLink,
+        requires: { integration: "clickup" },
         badge: "ClickUp",
         external: true,
       },
