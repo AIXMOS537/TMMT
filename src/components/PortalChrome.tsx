@@ -11,10 +11,13 @@ import { useBrand } from "@/components/brand/BrandProvider";
 export default function PortalChrome({
   title,
   subtitle,
+  navHrefs,
   children,
 }: {
   title: string;
   subtitle: string;
+  /** Command-hub links this account may see (see command-hub-access). */
+  navHrefs?: string[];
   children: React.ReactNode;
 }) {
   const brand = useBrand();
@@ -42,7 +45,7 @@ export default function PortalChrome({
           </div>
         </div>
       </header>
-      <CommandHubNav />
+      {navHrefs && navHrefs.length > 0 && <CommandHubNav allowedHrefs={navHrefs} />}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">{children}</main>
     </div>
   );

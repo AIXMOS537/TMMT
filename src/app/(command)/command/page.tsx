@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Card, PageHeader } from "@/components/ui";
-import { commandHubSections } from "@/lib/command-hub-nav";
+import {
+  hiddenCommandHubCount,
+  visibleCommandHubSections,
+} from "@/lib/command-hub-access";
+import { getCommandHubViewer } from "@/lib/command-hub-access-server";
 import { OWNER_HUB_HOST } from "@/lib/site-domains";
 import { ChevronRight } from "lucide-react";
 
@@ -9,7 +13,11 @@ export const metadata = {
   description: "Private ops navigation for fleet, leads, bookings, and command messaging",
 };
 
-export default function CommandHubPage() {
+export default async function CommandHubPage() {
+  const viewer = await getCommandHubViewer();
+  const sections = visibleCommandHubSections(viewer);
+  const hidden = hiddenCommandHubCount(viewer);
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -25,7 +33,7 @@ export default function CommandHubPage() {
         </p>
       </Card>
 
-      {commandHubSections.map((section) => (
+      {sections.map((section) => (
         <section key={section.title}>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-3">
             {section.title}
@@ -79,6 +87,19 @@ export default function CommandHubPage() {
           </ul>
         </section>
       ))}
+
+      {hidden > 0 && (
+        <Card className="p-4">
+          <p className="text-sm text-gray-600 dark:text-slate-400">
+            {hidden} {hidden === 1 ? "tool is" : "tools are"} hidden — they belong to modules
+            this account has not licensed, or to a connection that is not set up yet.{" "}
+            <Link href="/upgrade" className="text-blue-600 dark:text-blue-400 underline">
+              See what unlocks them
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
