@@ -21,7 +21,7 @@ $NOTES  = Join-Path $CC 'ops\notes'
 # Folders the agent may look at. Everything else is invisible to it.
 $ALLOWED = @(
     'C:\Users\AIXMOS\CommandCenter',
-    'C:\Users\AIXMOS\TMMT',
+    'C:\Users\AIXMOS\TMMT-canon',
     'C:\Users\AIXMOS\AIXMOS-Brain',
     'C:\Users\AIXMOS\Automation',
     'C:\Users\AIXMOS\LocalModels',

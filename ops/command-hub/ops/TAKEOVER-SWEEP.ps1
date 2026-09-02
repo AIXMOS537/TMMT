@@ -101,20 +101,20 @@ function Repo($path) {
     '       origin={0}' -f $remote
     Pop-Location
 }
-Repo 'C:\Users\AIXMOS\TMMT'
+Repo 'C:\Users\AIXMOS\TMMT-canon'
 Repo 'C:\Users\AIXMOS\CommandCenter\tmmt-os'
 Repo 'C:\Users\AIXMOS\AIXMOS-Brain'
 
 Section 'TMMT FEATURE FILES (Claude 2026-08-25)'
 $feat = @(
-  'C:\Users\AIXMOS\TMMT\src\app\(admin)\tasks\page.tsx',
-  'C:\Users\AIXMOS\TMMT\src\app\(admin)\admin-actions.ts',
-  'C:\Users\AIXMOS\TMMT\src\app\(admin)\maintenance\page.tsx',
-  'C:\Users\AIXMOS\TMMT\src\components\Sidebar.tsx',
-  'C:\Users\AIXMOS\TMMT\src\components\ui.tsx',
-  'C:\Users\AIXMOS\TMMT\src\lib\queries.ts',
-  'C:\Users\AIXMOS\TMMT\supabase\migrations\20260825_create_tasks.sql',
-  'C:\Users\AIXMOS\TMMT\docs\STATUS.md'
+  'C:\Users\AIXMOS\TMMT-canon\src\app\(admin)\tasks\page.tsx',
+  'C:\Users\AIXMOS\TMMT-canon\src\app\(admin)\admin-actions.ts',
+  'C:\Users\AIXMOS\TMMT-canon\src\app\(admin)\maintenance\page.tsx',
+  'C:\Users\AIXMOS\TMMT-canon\src\components\Sidebar.tsx',
+  'C:\Users\AIXMOS\TMMT-canon\src\components\ui.tsx',
+  'C:\Users\AIXMOS\TMMT-canon\src\lib\queries.ts',
+  'C:\Users\AIXMOS\TMMT-canon\supabase\migrations\20260825_create_tasks.sql',
+  'C:\Users\AIXMOS\TMMT-canon\docs\STATUS.md'
 )
 foreach ($f in $feat) {
     if (Test-Path -LiteralPath $f) { '[OK]   {0}' -f $f } else { '[MISS] {0}' -f $f }

@@ -23,3 +23,6 @@ ClosedLoop/logs/
 *secret*
 *.key
 *.pem
+
+# Watchtower writes its PID here on every start.
+Watchtower/*.pid
