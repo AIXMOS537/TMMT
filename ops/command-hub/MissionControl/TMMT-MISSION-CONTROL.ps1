@@ -78,7 +78,7 @@ while ($true) {
     '5' { Invoke-Canon @('doctor');  Read-Host '  enter to continue' }
     '6' { Start-Process $Cloud }
     '7' {
-      $rental = 'C:\Users\AIXMOS\TMMT'
+      $rental = 'C:\Users\AIXMOS\TMMT-canon'
       $devDir = if ((Test-Path "$rental\node_modules\next")) { $rental } elseif ((Test-Path "$DevRoot\node_modules\next")) { $DevRoot } else { $null }
       if ($devDir -and (Get-Command node)) {
         Start-Process cmd.exe -ArgumentList '/k', "cd /d `"$devDir`" && npm run dev"

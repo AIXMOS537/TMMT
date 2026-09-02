@@ -214,7 +214,11 @@ function Cmd-Brain {
 
 # The app lives here. Every app command cd's in first, so none of them care
 # where you were standing when you typed it.
-$APP_DIR = 'C:\Users\AIXMOS\TMMT'
+# Lane paths come from the kit map (AIXMOS-KIT\kit.json) so this file
+# cannot go stale the way it did when the old TMMT folder lost its .git.
+# The literal is the fallback for a machine with the repo but not the kit.
+$_kit = 'C:\Users\AIXMOS\AIXMOS-KIT\lib\paths.ps1'
+if (Test-Path $_kit) { . $_kit; $APP_DIR = Get-KitLane canon } else { $APP_DIR = 'C:\Users\AIXMOS\TMMT-canon' }
 
 function Invoke-InApp([string]$Script) {
     if (-not (Test-Path $APP_DIR)) { Bad "App not found at $APP_DIR"; return }

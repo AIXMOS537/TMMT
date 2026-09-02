@@ -22,7 +22,11 @@ param(
 
 $ErrorActionPreference = 'SilentlyContinue'
 
-$APP    = 'C:\Users\AIXMOS\TMMT'
+# Lane paths come from the kit map (AIXMOS-KIT\kit.json) so this file
+# cannot go stale the way it did when the old TMMT folder lost its .git.
+# The literal is the fallback for a machine with the repo but not the kit.
+$_kit = 'C:\Users\AIXMOS\AIXMOS-KIT\lib\paths.ps1'
+if (Test-Path $_kit) { . $_kit; $APP = Get-KitLane canon } else { $APP = 'C:\Users\AIXMOS\TMMT-canon' }
 $OS_APP = 'C:\Users\AIXMOS\CommandCenter\tmmt-os'
 $BRAIN  = 'C:\Users\AIXMOS\AIXMOS-Brain'
 $SNAPS  = 'C:\Users\AIXMOS\CommandCenter\Snapshots'
