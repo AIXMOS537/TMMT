@@ -53,7 +53,7 @@ export const TENANTS: Record<string, TenantBrand> = {
       markPath: "/brands/aixmos/mark.svg",
       faviconPath: "/brands/aixmos/favicon.svg",
     },
-    domains: { marketing: "aixmos.com", app: "aixmos-landing.vercel.app" },
+    domains: { marketing: "aixmos.com", app: "allinonemanagementsolutions.com" },
   },
   "moe_legacy": {
     id: "moe-legacy",
@@ -112,7 +112,7 @@ export const TENANT_ALIASES: Record<string, string> = {
 /** hostname (no port, lowercase) -> canonical slug */
 export const TENANT_HOSTS: Record<string, string> = {
   "aixmos.com": "aixmos",
-  "aixmos-landing.vercel.app": "aixmos",
+  "allinonemanagementsolutions.com": "aixmos",
   "credit.aixmos.internal": "moe_legacy",
   "tmmtrentals.com": "tmmt_property",
   "tmmt-ops.vercel.app": "tmmt_property"

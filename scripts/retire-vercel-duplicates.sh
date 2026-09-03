@@ -1,59 +1,54 @@
 #!/usr/bin/env bash
-# Retire ONLY legacy duplicate Vercel projects for AIXMOS537/TMMT.
+# Retire the legacy Vercel projects for AIXMOS537/TMMT. ONE app remains.
 #
-# KEEP (three separate apps — see docs/THREE-APP-ECOSYSTEM.md):
-#   tmmt-ops          → TMMT Ops / TMMT OS
-#   tmmt-command-center → owner command center
-#   aixmos-landing    → AIXMOS public funnel
+# KEEP:   tmmt-ops  → the one app: ops, owner command center, training, forms
+# PUBLIC: allinonemanagementsolutions.com → GHL site (not on Vercel at all)
 #
-# RETIRE (legacy duplicates that re-deploy the same repo on every push):
-#   tmmt-c919, tmmt
+# RETIRE (all four deploy the same repo; every push created a BLOCKED deploy):
+#   tmmt-command-center  (May prototype; tree preserved at tag archive/command-center-2026-05-18)
+#   aixmos-landing       (static AIXMOS/public — superseded by the GHL site)
+#   tmmt-training-site   (never had a production deploy; academy = /learn in tmmt-ops)
+#   aixmos-offer         (never had a production deploy)
 #
-# Usage: bash scripts/retire-vercel-duplicates.sh [--apply]
-
+# Harvest of env vars, settings, domains and deployed source was completed
+# 2026-09-03 → ~/Archive/vercel-harvest-20260903/ (see docs/THREE-APP-ECOSYSTEM.md).
+#
+# Usage: bash scripts/retire-vercel-duplicates.sh            # dry run
+#        bash scripts/retire-vercel-duplicates.sh --apply    # OWNER ONLY — deletes projects
 set -euo pipefail
 
 APPLY=false
 [[ "${1:-}" == "--apply" ]] && APPLY=true
+SCOPE="${VERCEL_SCOPE:-aixmos537}"
 
-LEGACY_DUPLICATES=(tmmt-c919 tmmt)
-KEEP=(tmmt-ops tmmt-command-center aixmos-landing)
+RETIRE=(tmmt-command-center aixmos-landing tmmt-training-site aixmos-offer)
+KEEP=tmmt-ops
 
-run() {
-  if $APPLY; then echo ">> $*"; "$@"; else echo "DRY-RUN: $*"; fi
-}
+run() { if $APPLY; then echo ">> $*"; "$@"; else echo "DRY-RUN: $*"; fi; }
 
-echo "=== Retire legacy Vercel duplicates (NOT the three apps) ==="
-echo ""
-echo "KEEP these three separate apps:"
-for p in "${KEEP[@]}"; do echo "  ✓ $p"; done
-echo ""
-echo "RETIRE legacy duplicates only:"
-for p in "${LEGACY_DUPLICATES[@]}"; do echo "  ✗ $p"; done
-echo ""
+echo "=== Retire legacy Vercel projects — ONE app remains ==="
+echo "  ✓ keep   $KEEP"
+for p in "${RETIRE[@]}"; do echo "  ✗ retire $p"; done
+echo
+
+echo "--- Pre-flight: the one app must be healthy before anything is deleted ---"
+for u in https://tmmt-ops.vercel.app/login https://tmmt-ops.vercel.app/forms/customer-intake https://tmmt-ops.vercel.app/api/health; do
+  code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo ERR)
+  echo "  $u → $code"
+  [[ "$code" == "200" ]] || { echo "ABORT: $u is not 200"; exit 1; }
+done
+[ -d "$HOME/Archive/vercel-harvest-20260903" ] && echo "  harvest present: ~/Archive/vercel-harvest-20260903" || echo "  WARN: harvest folder missing"
+echo
 
 if ! $APPLY; then
-  echo "Dry run. Re-run with: bash scripts/retire-vercel-duplicates.sh --apply"
-  echo ""
+  echo "Dry run. Deleting projects is irreversible — owner re-runs with: bash scripts/retire-vercel-duplicates.sh --apply"
+  echo
 fi
 
-echo "--- Before deleting tmmt-c919 ---"
-echo "1. Vercel → tmmt-c919 → Settings → Environment Variables"
-echo "   Copy any vars missing from tmmt-ops / tmmt-command-center / aixmos-landing"
-echo "2. Vercel → tmmt-c919 → Settings → Domains"
-echo "   Move custom domains to the correct app (see docs/THREE-APP-ECOSYSTEM.md)"
-echo "3. Confirm each of the three apps has a successful production deploy on master"
-echo ""
-
-echo "--- Delete legacy projects ---"
-for p in "${LEGACY_DUPLICATES[@]}"; do
-  run vercel project rm "$p" --yes
+for p in "${RETIRE[@]}"; do
+  run vercel project rm "$p" --yes --scope "$SCOPE"
 done
 
-echo ""
-echo "--- Verify the three apps ---"
-echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://tmmt-ops.vercel.app/login"
-echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://tmmt-command-center.vercel.app/forms/customer-intake"
-echo "  curl -sS -o /dev/null -w '%{http_code}\\n' https://aixmos-landing.vercel.app/"
-echo ""
-echo "See docs/THREE-APP-ECOSYSTEM.md"
+echo
+echo "--- After: optional vanity alias for the academy ---"
+echo "  vercel domains add tmmt-academy.vercel.app $KEEP --scope $SCOPE   # freed once tmmt-training-site is gone"

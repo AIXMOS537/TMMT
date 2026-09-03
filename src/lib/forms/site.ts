@@ -8,7 +8,11 @@ export function siteFromHost(host: string | null | undefined, forwardedHost?: st
   const fwd = normalizeHost(forwardedHost ?? null);
   const h = normalizeHost(host ?? null);
   const probe = fwd || h;
-  if (probe.includes("aixmos-landing") || probe === "aixmos.com" || probe === "www.aixmos.com") {
+  if (
+    probe.includes("allinonemanagementsolutions") ||
+    probe === "aixmos.com" ||
+    probe === "www.aixmos.com"
+  ) {
     return "aixmos";
   }
   if (isTmmtPublicHost(host ?? null) || isTmmtPublicHost(forwardedHost ?? null)) return "tmmt";

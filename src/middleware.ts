@@ -3,7 +3,12 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import { isOwnerHubHost, shouldBounceTmmtCreditToAixmos, aixmosCreditRedirectUrl } from "@/lib/site-domains";
+import {
+  isOwnerHubHost,
+  shouldBounceTmmtCreditToAixmos,
+  aixmosCreditRedirectUrl,
+  publicSiteRedirectUrl,
+} from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
@@ -166,8 +171,8 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Credit + funding landings belong on AIXMOS, not TMMT rentals.
-  // Skip when the AIXMOS landing rewrote here (x-forwarded-host) or we loop.
+  // Marketing entry points (/credit, /funding, credit SKU landings) belong on the
+  // public GHL site. Skip when the public site proxied here (x-forwarded-host).
   if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
     const dest = aixmosCreditRedirectUrl(pathname);
     if (dest) {
@@ -211,6 +216,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && !isPublicPath(pathname)) {
+    // The app's front door is for staff. Anyone else who lands on "/" goes to
+    // the public All In One Management site (GHL); staff use /login directly.
+    if (pathname === "/") {
+      return withRobotsHeader(NextResponse.redirect(publicSiteRedirectUrl("front-door")));
+    }
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 
