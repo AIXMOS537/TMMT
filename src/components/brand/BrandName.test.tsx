@@ -13,7 +13,7 @@ describe("BrandName", () => {
 
   it("renders the tenant display name inside a provider", () => {
     const { container } = render(
-      <BrandProvider brand={TENANTS.moe_legacy}>
+      <BrandProvider brand={TENANTS.aixmos_credit}>
         <BrandName />
       </BrandProvider>,
     );

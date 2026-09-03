@@ -30,7 +30,7 @@ describe("mix", () => {
 
 describe("brandTokens", () => {
   it("emits authored colors", () => {
-    const tokens = brandTokens(TENANTS.moe_legacy.theme);
+    const tokens = brandTokens(TENANTS.aixmos_credit.theme);
     expect(tokens["--brand-primary"]).toBe("#34d399");
     expect(tokens["--brand-primary-ink"]).toBe("#000000");
   });
