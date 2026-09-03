@@ -1,8 +1,14 @@
 /**
  * POST /api/license/provision
  * One-time install handshake for partner-deploy flash drives.
- * Caller supplies a one-time install token (HMAC) + organization_id + hardware UUID + Secure Enclave attestation key.
- * On success: marks the license consumed, binds the hardware, returns a license JWT.
+ * Caller supplies a one-time install token (HMAC) + organization_id + hardware UUID + a device public key.
+ * On success: marks the license consumed, binds the hardware, returns an opaque session token.
+ *
+ * NOTE ON TRUST: `enclave_pubkey_pem` is enrollment data, not attestation. The v1 client generates
+ * the key with openssl in userspace and imports it to the Keychain, so the server cannot establish
+ * that it is hardware-backed. A populated value therefore proves neither hardware provenance nor
+ * possession of the private key, and is never sufficient for an authorization decision.
+ * Installations enrolled this way are PROVISIONED_UNATTESTED and are not eligible for mesh authority.
  */
 import { NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
