@@ -42,7 +42,7 @@ const ALLOWED_ROLES = new Set([
 ]);
 
 const LOGIN_URL =
-  process.env.PROVISION_LOGIN_URL || "https://tmmt-command-center.vercel.app/login";
+  process.env.PROVISION_LOGIN_URL || "https://tmmt-ops.vercel.app/login";
 
 function parseArgs() {
   const argv = process.argv.slice(2);

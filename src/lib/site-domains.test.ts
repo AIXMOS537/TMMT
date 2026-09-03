@@ -65,11 +65,11 @@ describe("ownerHubOrigin", () => {
 describe("isTmmtPublicHost", () => {
   it("matches rental/ops public hosts", () => {
     expect(isTmmtPublicHost("tmmt-ops.vercel.app")).toBe(true);
-    expect(isTmmtPublicHost("tmmt-command-center.vercel.app")).toBe(true);
     expect(isTmmtPublicHost("tmmtrentals.com")).toBe(true);
   });
-  it("leaves AIXMOS and GHL hosts alone", () => {
+  it("leaves the retired landing and the GHL hosts alone", () => {
     expect(isTmmtPublicHost("aixmos-landing.vercel.app")).toBe(false);
+    expect(isTmmtPublicHost("tmmt-command-center.vercel.app")).toBe(false);
     expect(isTmmtPublicHost("allinonemanagementsolutions.com")).toBe(false);
     expect(isTmmtPublicHost("localhost:3000")).toBe(false);
   });
@@ -80,21 +80,26 @@ describe("shouldBounceTmmtCreditToAixmos", () => {
     expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "tmmt-ops.vercel.app")).toBe(true);
     expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", null)).toBe(true);
   });
-  it("does not bounce when AIXMOS landing rewrote the form here", () => {
+  it("does not bounce when the public GHL site proxied the request here", () => {
     expect(
-      shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "aixmos-landing.vercel.app"),
+      shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "allinonemanagementsolutions.com"),
     ).toBe(false);
   });
 });
 
 describe("aixmosCreditPath", () => {
-  it("moves AIXMOS Credit SKUs off TMMT", () => {
-    expect(aixmosCreditPath("/lp/moe_legacy/intro-97")).toBe("/forms/academy-join");
-    expect(aixmosCreditPath("/lp/aixmos/intro-97")).toBe("/forms/academy-join");
-    expect(aixmosCreditPath("/lp/moe_legacy/lead-magnet")).toBe("/lp/playbook");
-    expect(aixmosCreditPath("/credit")).toBe("/forms");
-    expect(aixmosCreditPath("/funding")).toBe("/forms");
-    expect(aixmosCreditPath("/forms/credit-funding-intake")).toBe("/forms/credit-funding-intake");
+  const utm = (c: string) => `/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=${c}`;
+  it("sends marketing entry points to the GHL public site", () => {
+    expect(aixmosCreditPath("/lp/moe_legacy/intro-97")).toBe(utm("credit-guidance"));
+    expect(aixmosCreditPath("/lp/aixmos/intro-97")).toBe(utm("credit-guidance"));
+    expect(aixmosCreditPath("/lp/moe_legacy/lead-magnet")).toBe(utm("playbook"));
+    expect(aixmosCreditPath("/credit")).toBe(utm("credit"));
+    expect(aixmosCreditPath("/funding")).toBe(utm("credit"));
+  });
+  it("keeps the intake forms on the one app (GHL links to them)", () => {
+    expect(aixmosCreditPath("/forms/credit-funding-intake")).toBeNull();
+    expect(aixmosCreditPath("/forms/academy-join")).toBeNull();
+    expect(aixmosCreditPath("/forms/apply")).toBeNull();
   });
   it("does not steal rental SKUs", () => {
     expect(aixmosCreditPath("/lp/tmmt_property/rental-in-a-box")).toBeNull();
@@ -102,19 +107,21 @@ describe("aixmosCreditPath", () => {
     expect(aixmosCreditPath("/dealers")).toBeNull();
     expect(aixmosCreditPath("/kits")).toBeNull();
   });
-  it("points the redirect at the AIXMOS public origin", () => {
+  it("points the redirect at the GHL public site", () => {
     expect(aixmosCreditRedirectUrl("/lp/moe_legacy/intro-97")).toBe(
-      "https://aixmos-landing.vercel.app/forms/academy-join",
+      "https://allinonemanagementsolutions.com" + utm("credit-guidance"),
     );
+    expect(aixmosCreditRedirectUrl("/forms/apply")).toBeNull();
   });
 });
 
 describe("isAixmosCorsOrigin", () => {
-  it("allows the AIXMOS site to post leads", () => {
-    expect(isAixmosCorsOrigin("https://aixmos-landing.vercel.app")).toBe(true);
-    expect(isAixmosCorsOrigin("https://allinonemanagementsolutions.com")).toBe(
-      true,
-    );
+  it("allows the GHL public site (.com and .net) to post leads", () => {
+    expect(isAixmosCorsOrigin("https://allinonemanagementsolutions.com")).toBe(true);
+    expect(isAixmosCorsOrigin("https://www.allinonemanagementsolutions.net")).toBe(true);
+  });
+  it("no longer trusts the retired landing origin", () => {
+    expect(isAixmosCorsOrigin("https://aixmos-landing.vercel.app")).toBe(false);
   });
   it("rejects random origins", () => {
     expect(isAixmosCorsOrigin("https://evil.com")).toBe(false);
