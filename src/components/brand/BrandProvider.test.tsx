@@ -11,18 +11,18 @@ function wrapper(container: HTMLElement) {
 describe("BrandProvider", () => {
   it("tags the subtree with the tenant", () => {
     const { container } = render(
-      <BrandProvider brand={TENANTS.moe_legacy}>
+      <BrandProvider brand={TENANTS.aixmos_credit}>
         <span>portal</span>
       </BrandProvider>,
     );
     const el = wrapper(container);
-    expect(el.dataset.brand).toBe("moe_legacy");
+    expect(el.dataset.brand).toBe("aixmos_credit");
     expect(within(container).getByText("portal")).toBeTruthy();
   });
 
   it("declares the tenant palette as CSS variables", () => {
     const { container } = render(
-      <BrandProvider brand={TENANTS.moe_legacy}>
+      <BrandProvider brand={TENANTS.aixmos_credit}>
         <span>x</span>
       </BrandProvider>,
     );

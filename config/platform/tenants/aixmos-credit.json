@@ -1,7 +1,7 @@
 {
-  "id": "moe-legacy",
-  "slug": "moe_legacy",
-  "aliases": ["moe-legacy", "moe_legacy"],
+  "id": "aixmos-credit",
+  "slug": "aixmos_credit",
+  "aliases": ["aixmos-credit", "credit", "moe-legacy", "moe_legacy"],
   "displayName": "AIXMOS Credit",
   "legalName": "AIXMOS Credit",
   "tagline": "The go-to for getting funding-ready and funded",
@@ -13,9 +13,9 @@
     "accent": "#059669",
     "background": "#0a0a0a",
     "foreground": "#ffffff",
-    "logoPath": "/brands/moe-legacy/logo.svg",
-    "markPath": "/brands/moe-legacy/mark.svg",
-    "faviconPath": "/brands/moe-legacy/favicon.svg"
+    "logoPath": "/brands/aixmos-credit/logo.svg",
+    "markPath": "/brands/aixmos-credit/mark.svg",
+    "faviconPath": "/brands/aixmos-credit/favicon.svg"
   },
   "domains": {
     "marketing": "credit.aixmos.internal",
