@@ -29,8 +29,9 @@ describe("forms catalog", () => {
 });
 
 describe("siteFromHost", () => {
-  it("treats aixmos-landing as AIXMOS even when forwarded", () => {
-    expect(siteFromHost("tmmt-ops.vercel.app", "aixmos-landing.vercel.app")).toBe("aixmos");
+  it("treats the GHL public site as AIXMOS even when forwarded", () => {
+    expect(siteFromHost("tmmt-ops.vercel.app", "allinonemanagementsolutions.com")).toBe("aixmos");
+    expect(siteFromHost("www.allinonemanagementsolutions.net")).toBe("aixmos");
     expect(siteFromHost("tmmt-ops.vercel.app")).toBe("tmmt");
   });
 });

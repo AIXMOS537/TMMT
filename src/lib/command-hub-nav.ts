@@ -98,9 +98,9 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         external: true,
       },
       {
-        href: "https://aixmos-landing.vercel.app/",
-        label: "Public AIXMOS site",
-        description: "Marketing landing — CTAs go to GHL",
+        href: "https://allinonemanagementsolutions.com/",
+        label: "Public site (GHL)",
+        description: "All In One Management — every public visitor lands here",
         icon: ExternalLink,
         external: true,
       },
