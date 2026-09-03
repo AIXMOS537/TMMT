@@ -20,9 +20,8 @@
       { "id": "funnel", "name": "Public Funnel", "role": "Offers, checkout, intake" }
     ],
     "apps": [
-      { "id": "tmmt-ops", "url": "https://tmmt-ops.vercel.app", "audience": "staff" },
-      { "id": "tmmt-command-center", "url": "https://tmmt-command-center.vercel.app", "audience": "owner" },
-      { "id": "aixmos-landing", "url": "https://aixmos-landing.vercel.app", "audience": "public" }
+      { "id": "tmmt-ops", "url": "https://tmmt-ops.vercel.app", "audience": "staff+owner+operators (one app: ops, command center, training, forms)" },
+      { "id": "ghl-public-site", "url": "https://allinonemanagementsolutions.com", "audience": "public" }
     ]
   },
   "licenseTiers": [

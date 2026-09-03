@@ -14,7 +14,7 @@
  */
 
 const BASE = (process.env.PROBE_BASE_URL || "https://tmmt-ops.vercel.app").replace(/\/$/, "");
-const AIXMOS = (process.env.NEXT_PUBLIC_AIXMOS_SITE_URL || "https://aixmos-landing.vercel.app").replace(/\/$/, "");
+const AIXMOS = (process.env.NEXT_PUBLIC_AIXMOS_SITE_URL || "https://allinonemanagementsolutions.com").replace(/\/$/, "");
 const JSON_OUT = process.argv.includes("--json");
 const TIMEOUT_MS = Number(process.env.PROBE_TIMEOUT_MS || 20000);
 
