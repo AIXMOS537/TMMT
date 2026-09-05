@@ -45,6 +45,12 @@ operator to orchestrator — build for delegation, not hand-holding.
 - **Forgotten/stale open work self-resolves — no human needed.** A scheduled reaper loop
   drives every open PR/branch to merged/closed (escalating only genuine owner decisions).
   Policy: `docs/AUTONOMOUS-SESSION-POLICY.md`. Follow it when sweeping open work.
+- **Migrations: `success: true` is NOT proof the state changed — the postcondition query is.**
+  Inspect the live signature and `pg_proc.proacl` BEFORE writing SQL (a grant to `PUBLIC`
+  makes `REVOKE ... FROM anon` a silent no-op; a guessed signature aborts the whole
+  migration), then re-query the result and re-run the advisors. Never migrate via the
+  dashboard — that is how 214-applied-vs-41-in-repo drift happened. Runbook:
+  `docs/runbooks/PRODUCTION-MIGRATION-WORKFLOW.md`.
 
 ## ARCHITECTURE (nouns)
 - **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,

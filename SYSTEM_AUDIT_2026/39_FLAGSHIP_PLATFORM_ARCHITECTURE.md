@@ -106,6 +106,7 @@ The resolution is not freeze-or-finish. It is a split:
   exists and is paying. That surface is what the audit means by "unpaid complexity."
 
 ### 2.4 🔴 NEW FINDING — the compliance gates are keyed to the wrong state (or the audit is)
+> **OWNER DECISION / LEGAL INPUT REQUIRED** — carry this into the master backlog as its own line item.
 
 Not in the audit, not in the brief. Found while grounding this document.
 
@@ -132,7 +133,10 @@ breaking the law, and a gate that names the wrong statute does not protect anyon
 means filing the wrong registration, in the wrong state, and binding the wrong bond — spending money to
 become compliant with a law that may not apply while remaining non-compliant with the one that does.
 
-**Owner answer needed (one question):** what state is TMMT Auto Services LLC formed in, and in which states
+**BACKLOG ITEM — OWNER DECISION / LEGAL INPUT REQUIRED.** Not resolvable by engineering: the repo does
+not establish the entity's state of formation, and no amount of code reading will settle it.
+
+**The question:** what state is TMMT Auto Services LLC formed in, and in which states
 will credit clients live? Until that answer is in the repo, the gates stay `false` — which they already are.
 No code is blocked by this. **Nothing here is urgent because everything it gates is already off.** But it must
 be settled before the legal review in §2.2, or the lawyer gets briefed against the wrong statute.
@@ -278,7 +282,11 @@ Not *TMMT rental software*. Not *a credit-repair app*.
 That framing is correct, it is what the code is already reaching for, and the audit's own
 `27_SOURCE_OF_TRUTH.md` is its first chapter. What the audit adds is the discipline that makes it survivable:
 
-> **Nothing new ships until something existing has a paying user.**
+> **No expansion of surface area without a validated customer or revenue reason; foundational work
+> continues where it unblocks, protects, or operationalizes the flagship.**
 
-The flagship reading and that rule are compatible. Ranks 1–7 above build the flagship *and* obey it, because
-every one of them serves a customer who already exists.
+This is deliberately *not* "nothing new ships until something existing has a paying user." That wording
+carries the right discipline but recreates the freeze this document rejects — it reads as a prohibition on
+all work, when the thing to prohibit is **widening**. Foundation work has a different test: does it unblock,
+protect, or operationalize what already exists? Ranks 1–7 all pass it while serving a customer who exists
+today.
