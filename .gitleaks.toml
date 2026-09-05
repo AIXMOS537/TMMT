@@ -27,4 +27,9 @@ regexes = [
   # in tmmt-os/scripts/airtable-to-supabase-migrate.mjs. Base IDs (app…) are database
   # identifiers — data access still requires the PAT (correctly env-only). Not a secret.
   '''appcenWUju039rD7b''',
+  # FALSE POSITIVE: the TECHHAUS dossier documents which auth mechanism each GHL
+  # webhook uses. The literal string "signature+idempotency" is a DESCRIPTION, not a
+  # credential — 21 chars, all lowercase plus a '+', zero entropy. The default
+  # generic-api-key rule matches any quoted value following "auth":.
+  '''signature\+idempotency''',
 ]
