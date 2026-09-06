@@ -11,6 +11,7 @@ migrations that **should** run, once a human has read them.
 | File | What it does | Blocked on |
 |---|---|---|
 | `20260904010000_generate_va_tasks_idempotent_STAGED.sql` | The **durable** fix: identity on `(category, source_table, source_id)` + `generate_va_tasks_v2()` upsert. Covers `bgcheck_review` only. | Owner review. **Cron still calls the OLD generator** — cutover is a separate decision, gated on "run twice, table does not grow". |
+| `20260827000001_org_ghl_connections_STAGED.sql` | Per-org GHL connections: separates `subaccount` (our agency token) from `foreign_agency` (operator owns their GHL, credential in Vault). | Owner review. **Not in the production ledger and the table does not exist.** No app code references it yet — moved here 2026-09-05 because sitting in `migrations/` meant the next `supabase db push` would have created it unreviewed. |
 | `TRIAGE_ADVERSARIAL_TESTS.sql` | 8-case adversarial harness (join failure, fan-out, mixed state, missing state, duplicate identity, idempotency ×2, authority boundary, fail-open). Runs in a transaction and rolls back. | Needs a branch or local stack — it inserts fixtures. |
 
 ## Applied and moved out
