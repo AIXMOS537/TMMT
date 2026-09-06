@@ -53,9 +53,27 @@ operator to orchestrator — build for delegation, not hand-holding.
   `docs/runbooks/PRODUCTION-MIGRATION-WORKFLOW.md`.
 
 ## ARCHITECTURE (nouns)
-- **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,
-  served tailnet-only), work Mac, brainiac (main compute — DEFINE), UGREEN NAS
-  (file tier), iPhone (Private LLM + Shortcuts), operator/employee laptops.
+- **Mesh:** Tailscale tailnet. Nodes (measured 2026-09-05, not aspirational):
+  - **carry** — M5, owner console. Ollama hub served loopback-only; LiteLLM on
+    :4001. It does **not** hold `qwen2.5:14b` — that model lives on M1. The
+    `ollama-direct` fallback in `free-lane-guard.sh` still names it, so that path
+    fails silently on carry. Do not "fix" this by pulling the model: decide the
+    routing first, then make the config match.
+  - **rick (M1 Max)** — 10 cores / 32GB, macOS 26.5, Ollama 0.33.2 (13 models,
+    incl. `qwen2.5:14b` + `qwen2.5-coder:14b`), whisper.cpp, ffmpeg 8.1.1,
+    Docker. Never sleeps on AC. Persistent executor.
+  - **brainiac** — Ryzen 9 9900X (12c/24t), 31GB, RX 9070 XT, 524GB free,
+    Win11 + TPM 2.0, Ollama 0.33.2 (14 models), Docker, **Qdrant on 6333/6334**.
+    Never sleeps. The fleet's main compute — and it already has a vector DB, so
+    do not add a second one.
+  - UGREEN NAS (file tier), iPhone (Private LLM + Shortcuts), operator laptops.
+  - **Caveat:** `/usr/local/bin/tailscale status` reports "stopped" on carry even
+    when the tailnet is healthy — it is the OSS CLI talking to a `tailscaled`
+    that is not running, while connectivity comes from Tailscale.app. Verify with
+    `~/.config/tmmt/mesh-verify.sh`, never with that command.
+  - **Carry is a single point of failure for worker inference:** ports :11436
+    (brainiac) and :11437 (M1) are SSH forwards whose client end runs on carry.
+    Close the laptop and both worker GPUs leave the routing fabric.
 - **Cloud hub:** Cloudflare Workers Gateway — role-scoped secrets, tiered model
   routing (Ollama → Haiku → Sonnet → Opus), role-broker for team access.
 - **Backbone:** GHL · Airtable (`appcenWUju039rD7b`) · n8n · Supabase · Qdrant · Redis.
