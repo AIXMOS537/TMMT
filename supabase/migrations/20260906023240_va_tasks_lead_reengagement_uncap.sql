@@ -1,0 +1,35 @@
+-- Applied to production 2026-09-06 (version 20260906023240) with owner approval.
+--
+-- Remove the arbitrary LIMIT 100 on lead_reengagement.
+--
+-- The cap predates idempotency. When every sweep INSERTed, a cap was the only
+-- thing bounding row growth -- but it bounded the wrong thing: it capped how
+-- many leads were ever SURFACED while doing nothing about duplication. 510 of
+-- 610 qualifying leads had never been given a work item, and the original
+-- (unordered) LIMIT rotated arbitrarily among them, which is part of why the
+-- subject count sprawled and why 132 lead rows were stranded without identity.
+--
+-- Now that generation is idempotent, row growth is bounded by the number of
+-- distinct qualifying source rows, not by sweeps. A cap only hides work.
+--
+-- NOT replaced with LIMIT 610: that is today's count, and a hardcoded number
+-- would silently under-cover tomorrow. ORDER BY is KEPT -- it no longer selects
+-- a subset, but it keeps insertion order deterministic and the intent legible.
+--
+-- Bounded in practice: all 610 qualifying leads were created 2026-04-22..05-18,
+-- a closed historical cohort. The real guard is the WHERE clause (status
+-- New/null, >30d old, has phone, non-noreply), not an arbitrary integer.
+--
+-- Only the lead_reengagement block changes. Identity, upsert semantics, the
+-- other four categories and all safety properties are unchanged.
+--
+-- VERIFIED after apply:
+--   run 1: 18,587 -> 19,097 (+510 one-time)   lead_reengagement touched 610
+--   run 2: 19,097 -> 19,097                   idempotent at the larger population
+--   duplicate identities 0 · unclassified 0 · triage='auto' 0
+--   orphaned lead rows without identity: 132 -> 0 (absorbed by the uncap)
+--   lifecycle untouched: pending 19,052 / blocked_dnc 45
+--
+-- The full function body as applied is the one in
+-- 20260906022113_generate_va_tasks_idempotent_all_categories.sql with the
+-- lead_reengagement `limit 100` clause removed.
