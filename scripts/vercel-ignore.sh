@@ -8,6 +8,27 @@
 # ship docs/scripts freely; the live site only rebuilds when the APP changes.
 set -uo pipefail
 
+# ---- BOT BRANCH GUARD (2026-09-05) -------------------------------------------
+# swarm.sh:125 pushes coordination state to the "swarm-coord" branch. On
+# 2026-09-03 that produced 20 deployments in 66 minutes (~3.3 min apart) — all
+# BLOCKED, none of which ever reached this script.
+#
+# vercel.json ALREADY sets git.deploymentEnabled.swarm-coord = false, but that
+# setting ships INSIDE a deployment: the commit carrying it (40a6740f6) is itself
+# BLOCKED, so the suppression has never taken effect. Config that can only arrive
+# via the channel it is meant to protect is not a control.
+#
+# This guard does not depend on that commit landing. It is evaluated on every
+# build attempt, from the branch name Vercel injects at runtime.
+BOT_BRANCHES="swarm-coord"
+REF="${VERCEL_GIT_COMMIT_REF:-}"
+for b in $BOT_BRANCHES; do
+  if [ "$REF" = "$b" ]; then
+    echo "vercel-ignore: '$REF' is a bot coordination branch — SKIP (never builds)."
+    exit 0   # SKIP
+  fi
+done
+
 # Files/dirs that genuinely affect the deployed Next.js app.
 APP_PATHS="src public packages shared config \
 package.json package-lock.json \
