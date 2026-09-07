@@ -826,6 +826,72 @@ _______________________________________________
 
 ---
 
+## D-20 🔴 The vehicle-inclusive offer — where does the car sit, and at what price?
+
+**Decision.** Which rung includes a physical vehicle, and what that rung costs.
+
+**Why now.** This is the only SKU in the catalog that obligates a **physical asset
+with a real acquisition cost**, and two sources place it $10,000 apart. Quoting
+from the wrong one either under-funds a car by $10,000 or promises one that was
+never priced in. **Do not quote any vehicle-inclusive offer until this is settled.**
+
+**Evidence.**
+
+| Source | Price | Vehicle included? |
+|---|---|---|
+| DB `packages.resale_box_plus_car` | **$25,000** | Name is **"Resale: Box + Vehicle"** — implies yes |
+| `docs/OFFER-STACK.md:33` ($25K rung) | $25,000 | **No car.** Reads "credit-repair + business-funding + **car-rental vertical**" — the software vertical for running a rental business |
+| `docs/OFFER-STACK.md:34` ($35K rung) | $35,000 | **Yes** — "a **reliable economy car included** for the operator (provided by TMMT through their business) — **or no backend funding fee** if they don't want the car" |
+
+**The decisive fact:** `resale_box_plus_car` grants entitlements **byte-identical**
+to `resale_business_in_a_box` ($15,000) — the same six: `resale_ai_sonnet`,
+`resale_airtable_automations`, `resale_integrations`, `resale_priority_support`,
+`resale_tmmt_os_full`, `resale_whitelabel`. **The $10,000 delta between the $15K
+and $25K rows buys nothing the entitlement system records.** So the row is wrong
+under either reading:
+
+- If the delta *is* the car, the DB price sits **$10,000 below** where OFFER-STACK
+  puts the car — and a real vehicle's cost lives in that gap.
+- If the delta is the credit/funding vertical (OFFER-STACK's reading), then the row
+  is **misnamed** and no car is owed at $25,000 — but the vertical is not recorded
+  in entitlements either.
+
+**A second, related ambiguity:** `resale_full_stack_max` spans **$35,000–$50,000**
+in one row, collapsing OFFER-STACK's $35K rung (**car included**) and its $45–50K
+rung (**no car mentioned**). Inside a single SKU, a car is owed at the bottom of
+the range and not at the top.
+
+**Also unpriced:** the $35K rung's alternative — "**no backend funding fee**" if
+the operator declines the car — is **defined and priced nowhere in the repository**,
+so the value of the alternative cannot be stated.
+
+**Option A — the vehicle lives at $35,000** (OFFER-STACK's reading). Rename the DB
+row away from "Box + Vehicle", and treat $25,000 as the credit/funding vertical.
+*Consequence:* the ladder becomes internally consistent; the vehicle is funded at
+the rung that names it.
+
+**Option B — the vehicle lives at $25,000** (the DB's reading). Then OFFER-STACK's
+$35K rung must be re-described, and you must confirm $25,000 covers software
+delivery **plus** a vehicle at your actual acquisition cost.
+
+**Option C — unbundle the vehicle entirely.** Sell software at the software price
+and the vehicle as a separately quoted line at cost-plus.
+
+**Recommended Default: Option C, with Option A as the fallback.** Bundling a
+physical asset into a software price fixes your margin against a used-vehicle
+market you do not control, and the entitlement system cannot represent a car in any
+case. Unbundling also removes the $35K rung's undefined "no backend funding fee"
+alternative. **But this is a margin and obligation decision, not a data-modelling
+one — it is yours.**
+
+**Until answered: VEHICLE-INCLUSIVE OFFER = HOLD.** No quote, no invoice, no
+public copy naming a vehicle.
+
+**Owner Answer:**
+_______________________________________________
+
+---
+
 ## SUMMARY — what blocks what
 
 | Decision | Priority | Blocks |
@@ -843,11 +909,12 @@ _______________________________________________
 | D-11 billing interval | 🟠 | the merged catalog |
 | D-12 `/try` + static tree | 🟠 | a live mis-sale |
 | D-13 founder terms | 🟠 | fence compliance |
+| D-20 vehicle-inclusive offer | 🔴 | **any quote naming a car — HOLD until answered** |
 | D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |
 | D-7 `dist/` · D-17 deps | ⚪ | hygiene |
 
-**Nine of nineteen decisions require no engineering at all** — D-1, D-3, D-4,
-D-5, D-6, D-7, D-13, D-18, D-19. They are commercial, legal and policy choices
+**Ten of twenty decisions require no engineering at all** — D-1, D-3, D-4, D-5,
+D-6, D-7, D-13, D-18, D-19, D-20. They are commercial, legal and policy choices
 only you can make.
