@@ -837,16 +837,17 @@ _______________________________________________
 | D-6 GHL products | 🔴 | first dollar through checkout |
 | D-14 approval gate | 🔴 | a compliance claim you cannot support |
 | D-15 SMS / DNC | 🔴 | any outbound campaign |
+| D-18 agent prod-write authority | 🔴 | any agent touching production; default: owner gate stays |
 | D-5 contract values | 🟠 | papering a deal |
 | D-10 sovereign | 🟠 | the highest-ticket offer |
 | D-11 billing interval | 🟠 | the merged catalog |
 | D-12 `/try` + static tree | 🟠 | a live mis-sale |
 | D-13 founder terms | 🟠 | fence compliance |
+| D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |
 | D-7 `dist/` · D-17 deps | ⚪ | hygiene |
-| D-18 agent prod-write authority | 🔴 | any agent touching production; default: owner gate stays |
-| D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 
-**Seven of seventeen decisions require no engineering at all** — D-1, D-3, D-4,
-D-5, D-6, D-7, D-13. They are commercial and legal choices only you can make.
+**Nine of nineteen decisions require no engineering at all** — D-1, D-3, D-4,
+D-5, D-6, D-7, D-13, D-18, D-19. They are commercial, legal and policy choices
+only you can make.
