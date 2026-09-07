@@ -109,6 +109,17 @@ data encrypted + owner-isolated per operator.
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
 without the flag owner (Muhammad Taha — the sole owner) in the loop.
 
+## CONTROL PLANE (Stage 3 — added 2026-09-07)
+Operating script for DB / migration / decision-architecture work:
+`docs/CONTROL-PLANE-OPERATING-SCRIPT.md` (method, command classification, production safety
+rules, Stage 3 package state, open items). Read it before touching Supabase. Highlights:
+rehearse every migration before prod · one named migration at a time, never blind `db push` ·
+tag every claim VERIFIED / INFERRED / REPORTED / UNKNOWN · never invent business-policy values
+(reason codes, pricing, thresholds) — mark them BUSINESS POLICY REQUIRED · complete the existing
+decision architecture (`people`, five eligibility states, `bg_check_decide`, `programs` router,
+consent rail), do not rebuild it. Applied-package records + rollback paths:
+`docs/migrations-applied-2026-09-07/`. Schema of record: `supabase/schema/`.
+
 <!-- AIXMOS-LAUNCH-RULES:START -->
 <!-- Managed by aixmos-launch/install.sh. Edit the packet, re-run install to refresh. -->
 # CLAUDE.md — AIXMOS Launch Build (Master Instructions)
