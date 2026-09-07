@@ -12,6 +12,80 @@ Audit date: 2026-09-07 · Repo `TMMT-LIVE` @ `e4950c97` · DB `uapxakmlwnpfsftfe
 
 ---
 
+## PHASE 2 CORRECTIONS — read this before the rest
+
+A verification pass on 2026-09-07 corrected six claims below. **Where this section
+disagrees with the body of the document, this section is right.**
+
+Companion documents produced by that pass:
+`PRICE_RECONCILIATION.md` · `OWNER_DECISIONS.md` · `REVENUE_READINESS.md`
+
+**C1 — "Nothing can take money today" was overstated.** That claim rested on
+`.env.example` containing placeholders. `.env.example` is not evidence about
+production. Vercel environment *values* are not exposed by the tooling available to
+me, so config readiness is marked **`UNVERIFIED PRODUCTION CONFIGURATION`** and must
+be checked in the dashboard. What *is* true: `checkoutHref()` never produces a dead
+link — with no env var set it falls back to the GHL campaign site — and **money is
+taken in GoHighLevel, not in this application** (Stripe here is receipt-only; no
+charge is initiated anywhere in the codebase).
+
+**C2 — the licensing crown jewel was described using the code's own inaccurate
+docstrings.** Corrected: the install token is hashed with **plain unsalted SHA-256,
+not HMAC**; the Secure Enclave public key is **stored and never verified anywhere**
+(collection, not attestation); the returned "license JWT" is an **opaque digest**,
+and the code's own comment admits *"full Ed25519 JWT signing happens once vault is
+wired"*; the heartbeat authenticates only on `organization_id` + `hardware_uuid`,
+neither of which is a secret; and **the kill switch is advisory** — a client that
+ignores the 410, or stops calling, is unaffected. The architecture and the tenancy
+depth are the real asset. **Do not claim cryptographic attestation in a sales
+document.**
+
+**C3 — Dispatch was overstated.** Called "a complete multi-tenant product". It is
+~1,482 lines total and has **never been used**: `incidents` = 0 rows,
+`incident_assignments` = 0, `org_responder_links` = 0, `units` = 3. A credible
+product skeleton, not a proven product. The proposed $50k–$90k replacement figure in
+§9 is revised to **$15k–$35k**.
+
+**C4 — `dist/` is no longer at risk.** Another session restored it during this
+audit; it is present, tracked and clean (23 files, matching HEAD). Forensics show it
+was **tracked first (2026-06-18/21) and gitignored after (2026-06-22)** by a generic
+hygiene commit, and that **nothing generates it** — `FLEET-UP.sh:110-113` *consumes*
+it and exits 1 if missing. It is a hand-made release artifact. See `OWNER_DECISIONS.md`
+D-7.
+
+**C5 — the contradictions were undercounted.** $50,000 has **seven** distinct
+commercial meanings, not four. And there are **five mutually incompatible
+revenue-share schemes**, of which the only one that **writes to the production
+database** (0/70/85% by seat stage) was never approved and *inverts* the direction of
+another. The "agency 80% / operator 0–35%" figures cited in §5.5 are **live-DB
+observations only** — no migration defines those columns.
+
+**C6 — two more promise-vs-implementation gaps.** Beyond the owner-approval gate:
+`requireGate()` (the legal-gate enforcer) also has **zero callers**, and
+`src/lib/owner-approval-enforcement.test.ts` is a text lint that **passes vacuously**
+because nothing matches its predicates. `GO.command:74-75` reports green on **file
+existence**, which is why this went unnoticed. ⭐ **Mitigator:** no code in this
+repository moves money — the promise is unenforced *and* unexercised.
+
+### The two facts that most change the picture
+
+**F1 — Fulfilment is manual end-to-end and has never been run.** There is no
+self-serve path. Account creation is invite-gated and **`signup_invites` has 0 rows,
+ever**; invites are created only by `scripts/invite.mjs`, run by hand. The GHL
+purchase webhook maps a tag to a SKU and **returns a string** — no queue, no worker.
+Provisioning is an 11-step manual runbook whose `handoffs/` directory has never been
+created. Selling is possible; delivering requires a person at every step.
+
+**F2 — The revenue ground truth.** The only real money ever recorded in this system
+is **31 payments totalling $9,510.57, October 2025 → March 2026**, all small rental
+payments. **The largest single payment ever recorded is $577.** Nothing since March.
+Zero software or SaaS revenue, ever; zero organizations carry a Stripe subscription;
+zero profiles carry a package. Every price above $577 in this document is
+**untested**, which is not the same as wrong — but it is the caveat that governs
+every valuation figure that follows.
+
+---
+
 ## 0. EXECUTIVE SUMMARY
 
 You did not build a car rental app. You built a **multi-tenant business
@@ -32,13 +106,17 @@ Six things are true, and they are the whole picture:
    business system onto somebody else's hardware and still control it. Very few
    businesses your size have this. It is wired and working.
 
-3. **You cannot take money today, and the reason is small.** Every checkout
-   button on the live site resolves through `src/lib/ghl-offers.ts` to a
-   GoHighLevel URL held in an environment variable. Fourteen offers are coded.
-   In `.env.example` all eleven checkout URLs are placeholders. The storefront
-   is finished; the payment links behind it are the gap. This is hours of work,
-   not months — but it must be confirmed against the live Vercel environment,
-   which I cannot read.
+3. **Taking money is a configuration question, not a code question — and it is
+   unresolved.** *(Corrected in Phase 2 — see C1.)* Every checkout button resolves
+   through `src/lib/ghl-offers.ts` to a GoHighLevel URL held in an environment
+   variable; 14 offers are coded and the fallback never produces a dead link.
+   Whether the production URLs are set is **`UNVERIFIED PRODUCTION CONFIGURATION`**
+   — Vercel env values are not exposed to me. Two things *are* certain: the
+   activation runbook tells you to set eight checkout variables **without the
+   `NEXT_PUBLIC_` prefix the code requires** (they would silently do nothing, with
+   no error anywhere), and the three recurring-checkout variables are documented
+   nowhere at all. **The bigger constraint is fulfilment — manual at every step,
+   never run once (F1).**
 
 4. **You have three price lists and they contradict each other.** Ladder A
    (`docs/OFFER-STACK.md`, self-declared canonical, $1,875→$100K), Ladder B (the
@@ -526,57 +604,134 @@ consent captured. The plumbing exists. Only the rate is unset.
 
 ---
 
-## 9. REPLACEMENT VALUE
+## 9. REPLACEMENT VALUE — with the assumptions exposed
 
-*What it would cost somebody else to reproduce this body of work.* **Estimate,
-not a quote.** Method: per-module agency pricing, cross-checked against ~65,000
-lines of production code and 1,082 real commits over 6.5 months.
+*What it would cost somebody else to reproduce this body of work.* **An estimate
+with a stated method, not a quote, and not a market value.**
 
-| Module | Replacement |
-|---|---|
-| Multi-tenant platform, auth, 344 RLS policies, 165-table schema | $80k–$150k |
-| Admin / rentals back-office (27 screens) | $60k–$120k |
-| AI agent framework | $60k–$120k |
-| AIXMOS Cube (credit & funding readiness) | $60k–$110k |
-| Dispatch | $50k–$90k |
-| Lead capture + GHL integration layer | $40k–$80k |
-| Credit dispute / FCRA engine | $40k–$80k |
-| Licensing control plane + partner-deploy | $35k–$70k |
-| Operator Academy + role portals | $30k–$60k |
-| Tooling, CI, provisioning, gates | $30k–$60k |
-| PWA / offline-first desk | $20k–$40k |
-| **Total** | **~$505k – $980k** |
+### 9.1 Three independent methods, then their overlap
 
-**Excluded** (real value, not counted above): the 301-file / 53,000-line
-documentation and SOP corpus; the 240-migration schema history; the 876 leads
-and 1,642 contacts; the ~6.5 months of compliance and legal-posture design.
+**Method A — bottom-up per module**, now grounded in measured line counts rather
+than impression. Revised where Phase 2 changed the facts.
 
-**Call it $500k–$1.0M to reproduce the software alone.**
+| Module | Measured size | Replacement | Change |
+|---|---|---|---|
+| Multi-tenant platform, auth, 344 RLS policies, 165-table schema, 240 migrations | 165 tables / 96 org-scoped | $80k–$150k | — |
+| Admin / rentals back-office | 27 pages / 5,188 lines | $45k–$85k | ↓ measured |
+| AI agent framework | ~1,700 lines | $50k–$100k | ↓ |
+| AIXMOS Cube | 15 screens | $50k–$90k | ↓ |
+| Lead capture + GHL integration layer | ~1,850 lines | $40k–$80k | — |
+| Credit dispute / FCRA engine | ~2,140 lines | $40k–$80k | — |
+| Licensing control plane + partner-deploy | 3 routes + kit | $30k–$60k | ↓ (v1 crypto) |
+| Operator Academy + role portals | — | $30k–$60k | — |
+| Tooling, CI, provisioning, gates | 198 scripts | $30k–$60k | — |
+| **Dispatch** | **1,482 lines, never used** | **$15k–$35k** | **↓↓ was $50k–$90k** |
+| PWA / offline-first desk | — | $20k–$40k | — |
+| **Total** | | **~$430k – $840k** | |
+
+**Method B — team-time.** A 3-person team (2 engineers + 1 designer/PM) at ~$150k
+loaded: 12 months = $450k, 18 months = $675k. Given 11 product areas and a
+165-table RLS schema, 12–18 months is a fair estimate for a conventional team.
+→ **$450k–$675k**
+
+**Method C — lines of code.** ~65,000 lines of application code (src 47,053 +
+scripts 8,191 + supabase 4,700 + packages/apps/aria/shared/tools/e2e ~5,200). At
+$8–15/line for business software including design, test and PM:
+→ **$520k–$975k**. *(This method is the weakest — AI-assisted code is more verbose,
+and much of this is CRUD.)*
+
+**Convergence: $450k–$850k.** All three methods overlap in that band. I am
+**revising the earlier $500k–$1.0M down to ~$450k–$850k** on the strength of the
+measured line counts and the Dispatch correction.
+
+### 9.2 What is excluded
+
+Real value, deliberately not counted: the 301-file / 53,000-line documentation and
+SOP corpus; the 240-migration schema history; the 876 leads and 1,642 contacts; and
+~6.5 months of compliance and legal-posture design.
+
+### 9.3 The caveat that matters most
+
+**Replacement value is not market value.** Nobody pays rebuild cost for software
+with no customers. For a pre-revenue codebase, a buyer typically pays a fraction —
+often 10–30% of replacement — unless they are buying a specific capability or the
+team. With **$9,510.57 of lifetime revenue, all of it from a rental business that
+stopped taking payments in March 2026**, this asset's market value today is
+governed by demand evidence, and there is none above $577.
+
+**Use $450k–$850k for insurance, for a build-vs-buy argument, or to explain what a
+partner would have to spend to replicate you. Do not use it as an asking price.**
 
 ---
 
 ## 10. SELLING VALUE — and why it is not the same number
 
-These four figures must never be added together. This is the double-count
-guard.
+These four figures must never be added together. This is the double-count guard.
 
 | Concept | Figure | What it means |
 |---|---|---|
-| **Gross Component Value** | **~$650k–$1.3M** | Sum of what each component might fetch sold *independently*. **Overlapping by construction** — Full Stack contains the CRM, the agent, the dashboard and the tenant system. This number exists to show optionality, **never** to represent non-overlapping value. |
-| **Bundle Selling Value** | **$35k–$50k** per full-stack customer; **$50k + $97/agent/mo** sovereign | What one customer actually pays. VERIFIED. |
-| **Replacement Value** | **$500k–$1.0M** | Cost to rebuild. Relevant to an acquirer or an insurer, not to a customer. |
-| **Recurring Revenue Potential** | see below | The only figure that compounds. |
+| **Gross Component Value** | **~$550k–$1.1M** | Sum of what each component might fetch sold *independently*. **Overlapping by construction** — Full Stack contains the CRM, the agent, the dashboard and the tenant system. Shows optionality; **never** non-overlapping value. |
+| **Bundle Selling Value** | **$35k–$50k** per full-stack customer; **$50k + $97/agent/mo** sovereign | What one customer actually pays. VERIFIED prices, **untested demand**. |
+| **Replacement Value** | **$450k–$850k** | Cost to rebuild. For an acquirer or an insurer, not a customer. |
+| **Recurring Revenue Potential** | §10.1 | The only figure that compounds. |
 
-**Illustrative recurring, at modest volume** `PROPOSED`:
+### 10.1 The recurring model, with its arithmetic shown
 
-- 20 operator seats @ $97 = **$1,940/mo**
-- 5 Dealer Bundles @ $697 = **$3,485/mo**
-- 3 Dispatch @ $549 = **$1,647/mo**
-- 2 Full-Service retainers @ $7,500 = **$15,000/mo**
-- 1 sovereign, 10 agents @ $97 = **$970/mo**
+The earlier "$276k ARR" figure was an illustration presented without its
+assumptions. Here it is in full, so it can be judged rather than repeated.
 
-≈ **$23,000/mo (~$276k ARR)** from a small book. **Recurring, not build fees, is
-where this business becomes valuable** — and it is the layer least finished.
+**Formula:** `ARR = Σ (customers × units × monthly price) × 12`
+
+**Scenario C — the original figure, relabelled as a ceiling** `PROPOSED`
+
+| Line | Customers | Units | Price | Monthly |
+|---|---:|---:|---:|---:|
+| Operator seats | 20 | 1 | $97 | $1,940 |
+| Dealer Bundles | 5 | 1 | $697 | $3,485 |
+| Dispatch | 3 | 1 | $549 *(proposed, no SKU)* | $1,647 |
+| Full-Service retainers | 2 | 1 | $7,500 | $15,000 |
+| Sovereign agents | 1 | 10 | $97 | $970 |
+| **Total** | **31 relationships** | | | **$23,042/mo → $276,504/yr** |
+
+**Why this is a ceiling, not a forecast:**
+
+1. It assumes **31 paying customer relationships**. The business has **zero**
+   software customers today and has never had one.
+2. **$180,000 of the $276,504 — 65% — comes from two hypothetical Full-Service
+   retainers** at $7,500/mo, the least-proven SKU in the portfolio: docs-only,
+   never sold, never delivered.
+3. **Dispatch's $6,588/yr is doubly speculative** — a proposed price for a product
+   with no SKU and zero operational history.
+4. It assumes 100% collection, zero churn, and all twelve months.
+5. It assumes GHL checkout live **and** the fulfilment capacity to onboard 31
+   customers through an 11-step manual runbook.
+
+**Scenario A — evidence-anchored** `PROPOSED`. Verified prices only; volumes a
+first year could plausibly reach.
+
+| Line | Customers | Price | Monthly |
+|---|---:|---:|---:|
+| Operator seats | 5 | $97 | $485 |
+| Ops Kit | 1 | $297 | $297 |
+| Command Kit | 1 | $497 | $497 |
+| **Total** | **7** | | **$1,279/mo → $15,348/yr** |
+
+Plus one-time setup in year one: $997 + $2,997 = **$3,994**.
+
+**Scenario B — moderate** `PROPOSED`
+
+| Line | Customers | Price | Monthly |
+|---|---:|---:|---:|
+| Operator seats | 15 | $97 | $1,455 |
+| Dealer Bundles | 3 | $697 | $2,091 |
+| Full-Service retainer | 1 | $7,500 | $7,500 |
+| **Total** | **19** | | **$11,046/mo → $132,552/yr** |
+
+**Read it this way:** Scenario A is what the next twelve months look like if
+checkout goes live and you sell steadily to the segment you already understand.
+Scenario C is what the model *can* produce, and it is dominated by two customers at
+a price nobody has yet paid. **Recurring revenue is still where this business
+becomes valuable — but the honest near-term number is Scenario A, not $276k.**
 
 ---
 
