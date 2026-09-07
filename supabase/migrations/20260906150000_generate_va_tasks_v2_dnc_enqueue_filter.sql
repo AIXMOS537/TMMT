@@ -1,0 +1,23 @@
+-- 20260906150000_generate_va_tasks_v2_dnc_enqueue_filter
+-- APPLIED TO PRODUCTION 2026-09-06 via MCP apply_migration.
+-- This file is a REPO RECONCILIATION: apply_migration records the migration in
+-- supabase_migrations.schema_migrations but writes no file, so repo and DB had
+-- diverged. Content matches what was applied.
+--
+-- WHAT: adds a do-not-contact filter at ENQUEUE time.
+-- SCOPE: CHUMMO outbound-SMS categories only --
+--   payment_followup - waitlist_contact - lead_reengagement   FILTERED
+--   bgcheck_review   VISION internal review, no send. DNC governs CONTACT,
+--                    not internal work. Filtering it would drop legitimate reviews.
+--   ticket_collect   inserts subject_phone as NULL. Nothing to filter.
+-- NOT EXISTS, not NOT IN: `x NOT IN (subquery)` yields NULL for every row if the
+-- subquery holds one NULL, silently dropping the whole insert.
+-- The payment_followup OR-chain is parenthesised so AND NOT EXISTS binds to the
+-- whole predicate, not just the last OR term.
+--
+-- Full body: see the deployed definition, or the pre-change copy at
+--   ~/Brain/vault/02-Needs-You/rollback/generate_va_tasks_v2.PRE-DNC-FILTER.20260906.sql
+-- Rollback: run that file verbatim.
+--
+-- Verified after apply: generate_va_tasks_v2() ran twice, 0 rows inserted both
+-- times (19,097 -> 19,097), 810 rows touched via ON CONFLICT DO UPDATE.
