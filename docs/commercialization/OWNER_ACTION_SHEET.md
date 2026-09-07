@@ -1,10 +1,10 @@
 # OWNER ACTION SHEET
 
-**Nine decisions. No source code required. Answer in the blanks.**
+**Ten decisions. No source code required. Answer in the blanks.**
 
 Everything here is a choice only you can make. Nothing on this page needs an
-engineer. Full evidence for each lives in `OWNER_DECISIONS.md` (19 decisions);
-this sheet is only the nine that need no engineering.
+engineer. Full evidence for each lives in `OWNER_DECISIONS.md` (20 decisions);
+this sheet is only the ten that need no engineering.
 
 Recommendations are **non-binding**. Where the repository cannot support a
 recommendation, it says so rather than guessing.
@@ -156,6 +156,31 @@ list.
 
 ---
 
+### ☐ 10 · Where does the car sit? *(D-20)* — **HOLD until answered**
+
+The only offer you have that includes a **physical vehicle**, and two of your own
+sources place it **$10,000 apart**.
+
+- Your **database** calls the $25,000 rung **"Box + Vehicle."**
+- **OFFER-STACK** puts the car at **$35,000** and describes $25,000 as the
+  *car-rental vertical* — software, no car.
+
+And the decisive detail: in the database, the $25,000 row grants **exactly the same
+six entitlements** as the $15,000 row. The $10,000 difference buys nothing the
+system records — so whichever reading is right, that row is wrong.
+
+**Recommended:** **unbundle the vehicle.** Sell software at the software price and
+quote the car separately at cost-plus. Bundling a used vehicle into a software
+price fixes your margin against a market you do not control, and your entitlement
+system cannot represent a car anyway. *(Fallback: put the car at $35,000 and rename
+the $25,000 row.)*
+
+**Until you answer: quote no offer that names a vehicle.**
+
+**Answer → ☐ Unbundle ☐ Car at $35k ☐ Car at $25k · _______________**
+
+---
+
 ## After you answer
 
 | You answer | Unblocks |
@@ -166,6 +191,7 @@ list.
 | 4 | **Every signable contract** (all currently ship `[TBD]`) |
 | 7, 8 | Governance cleanup |
 | 6, 9 | Hygiene |
+| 10 | **Unblocks any quote naming a vehicle — on hold until then** |
 
 **Ten further decisions in `OWNER_DECISIONS.md` do need engineering** — they are
 not on this page on purpose.
