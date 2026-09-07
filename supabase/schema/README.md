@@ -2,13 +2,13 @@
 
 ## The gap this exists to close
 
-As of **2026-09-01**:
+As of **2026-09-07** (first measured 2026-09-01: 224 applied / 32 files / 192 missing):
 
 | | count |
 |---|---|
-| migrations applied to the live database | **224** |
-| migration files in `supabase/migrations/` | **32** |
-| applied live but never written back | **192** |
+| migrations applied to the live database | **240** |
+| migration files in `supabase/migrations/` | **45** |
+| applied live but never written back | **195** |
 
 A clean checkout of this repo **cannot reproduce the database it talks to.**
 Migrations are being applied straight to production — three landed on 2026-09-01
@@ -21,8 +21,8 @@ the schema back down.
 
 ## What's here now
 
-- **`live-ledger-2026-09-01.tsv`** — the exact contents of
-  `supabase_migrations.schema_migrations`, 224 rows, `version<TAB>name`.
+- **`live-ledger-2026-09-07.tsv`** — the exact contents of
+  `supabase_migrations.schema_migrations`, 240 rows, `version<TAB>name`.
   This is the authoritative list of what has actually been applied. It is the
   reference for deciding which of the 32 local files are real and which are
   orphans. Complete and accurate as of the timestamp in the name.
