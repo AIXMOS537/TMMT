@@ -54,8 +54,9 @@ LOCAL READ · LOCAL WRITE · REMOTE READ · REMOTE WRITE · PRODUCTION WRITE · 
 - Org ids `aaaaaaaa-…` (AIXMOS, partner_app_slug `aixmos`), `bbbbbbbb-…`, `cccccccc-…` are INTENTIONAL and load-bearing
   (96 FKs). Fix app validation, never re-key.
 - App-side: `src/lib/agent/tenant.ts` `OrgIdSchema` is already format-only (commit `e57e22ea`); the only
-  `bg_check_decide` caller is `decideBgCheck` in `src/lib/queries.ts` (3-arg form). No generated
-  `src/types/supabase.ts` exists yet; `supabase.rpc` calls are untyped.
+  `bg_check_decide` caller is `decideBgCheck` in `src/lib/queries.ts` — sends all 7 args since 2026-09-08 (derived dedupe key
+  `bgcheck:<id>:<decision>:<yyyymmddhhmm>`; reason code is plumbing only). No generated `src/types/supabase.ts`
+  exists and nothing consumes one; `supabase.rpc` calls are untyped.
 
 ## 6. STAGE 3 STATE
 | Package | State | Notes |
@@ -68,7 +69,7 @@ LOCAL READ · LOCAL WRITE · REMOTE READ · REMOTE WRITE · PRODUCTION WRITE · 
 | R-02 Webhook org-id fix | DONE (VERIFIED 2026-09-07) | Landed on `master` in `e57e22ea` before this script was written; regression test open in PR #188. `docs/R-02_webhook_org_id_fix.md` kept as the record |
 | S3-05 Reason taxonomy | BLOCKED: BUSINESS POLICY | owner must supply codes; until then `Not Eligible` accepts free text, rule_version `pre-taxonomy` |
 | S3-04 Unified routing | DESIGN | reason → destination matrix; fills `decision_events.next_destination` |
-| S3-06 Staff decision screen | DESIGN | one screen; pass `p_dedupe_key` on every `bg_check_decide` call. Existing queue UI: `src/app/(admin)/background-checks/StaffReviewQueue.tsx` |
+| S3-06 Staff decision screen | MINIMAL DONE 2026-09-08 (app only) | `StaffReviewQueue.tsx` = queue → decide (dedupe key always sent) → trail (`getDecisionTrail` over `v_decision_trail`, shown in the review modal). NOT built: the reason picker — it has nothing to show until S3-05 is seeded. No new router. |
 | S3-08 Ledger unification | DESIGN | fixes "everyone overdue" in `customer_payments` |
 
 Invariants: only `Not Eligible` requires a reason once codes are seeded · `seq` orders events · dedupe_key optional
@@ -89,10 +90,11 @@ hand-writing, and never repair drift with `migration repair --status reverted`.
 ## 8. OPEN ACTION ITEMS (do in this order)
 1. ~~Sync migration files into repo (§7).~~ DONE 2026-09-07 — branch `chore/record-s3-migrations-20260907`.
 2. ~~R-02: patch the org-row validator.~~ DONE in `e57e22ea`. Remaining: merge PR #188 (the regression test).
-3. App diff for S3-03: generate types (`supabase gen types typescript --linked > src/types/supabase.ts`),
-   add optional `p_reason_code/p_explanation/p_product_program/p_dedupe_key` to `decideBgCheck` in
-   `src/lib/queries.ts`, always pass a dedupe_key (`bgcheck:<id>:<decision>:<yyyymmddhhmm>`).
-4. S3-06 staff screen: queue (`bg_check_queue`) → decide → trail (`v_decision_trail`). No new router.
+3. ~~App diff for S3-03: add the optional args to `decideBgCheck`, always pass a dedupe_key.~~ DONE 2026-09-08
+   (branch `feat/bg-check-decide-7arg`; `src/lib/queries.test.ts` pins the wire contract). Generated types were NOT
+   produced: the repo has no type-generation workflow and no `createClient<Database>` consumer, so a 170-table
+   file would be dead weight; revisit when S3-06 introduces typed reads.
+4. ~~S3-06 staff screen: queue → decide → trail. No new router.~~ MINIMAL DONE 2026-09-08 (same branch as item 3). Reason picker waits on item 7.
 5. S3-04 router design doc → owner review → then code.
 6. S3-08 ledger: propose the "paid" write path; do not alter `sweep-overdue-payments` until the paid path exists.
 7. Ask owner for S3-05 reason codes (category, code, label, remediable_by, default_requal_days) — do NOT invent.
