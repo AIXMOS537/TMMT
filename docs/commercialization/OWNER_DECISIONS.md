@@ -21,11 +21,15 @@ Audit date: 2026-09-07 · Companion to `COMMERCIAL_MASTER.md` and `PRICE_RECONCI
 
 **NO OWNER ANSWER = NO COMMERCIAL AUTHORITY.**
 
-As of this writing, **`docs/commercialization/COMMERCIAL_AUTHORITY.md` does not
-exist, and must not be created until explicit owner answers exist.** A placeholder
-carrying an authoritative filename is dangerous precisely because a later reader —
-human or agent — may take recommendations, defaults, blank fields, stale values or
-inherited text as approved policy. That is the same failure mode as D-18.
+**As of 2026-09-08, `docs/commercialization/COMMERCIAL_AUTHORITY.md` EXISTS** and
+carries **four settled decisions** — A-1 (D-1), A-2 (D-2), A-3 (D-20) and A-4
+(D-21a). It was created only once explicit owner answers existed, and it contains
+nothing else.
+
+**Absence from that file is not approval.** Every decision not recorded there is
+still open, and its default is `NO CHANGE / HOLD`. Do not fill a gap in it from
+recommendations, defaults, production values, public copy, database rows, or any
+document that calls itself canonical — that is the same failure mode as D-18.
 
 None of the following is authority on its own:
 
@@ -92,8 +96,10 @@ $3,750 and $7,500 each mean both a one-time build and a monthly retainer,
 `OFFER-STACK.md:84-86` admits this is deliberate) — a document that ambiguous cannot
 be the authority a contract points at.
 
-**Owner Answer:**
-_______________________________________________
+**Owner Answer — SETTLED 2026-09-08: MERGE INTO ONE CATALOG.**
+End state is one catalog. **Dependency: D-11 must establish `billing_interval` /
+`pricing_model` before unlike commercial models are merged.** Until then no ladder
+is retired or promoted. Recorded in `COMMERCIAL_AUTHORITY.md` A-1.
 
 ---
 
@@ -142,8 +148,16 @@ actually honour today, and it is what the database, the onboarding script and th
 curriculum already encode. Option C is a reasonable follow-on once token grants are
 configurable.
 
-**Owner Answer:**
-_______________________________________________
+**Owner Answer — SETTLED 2026-09-08: TWO TIERS, $97 AND $297.**
+$97 = current/provisionable. **$297 = intended but NOT LAUNCH-READY** until its
+entitlement/grant/provisioning path exists and is tested. The product and its
+implementation are **preserved, not deleted**. Gap analysis:
+`TIER_297_GAP.md`. Recorded in `COMMERCIAL_AUTHORITY.md` A-2.
+
+**Verified after the decision:** the $297 offer is **not purchasable** — it is an
+intake form with no checkout, so there is no unfulfillable purchase path to block.
+The residual issue is an advertised price and token allowance the platform cannot
+honour: a copy problem, not a fulfilment failure.
 
 ---
 
@@ -969,8 +983,12 @@ value.** None of these terms have been invented here.
 **Until all of the above are answered: VEHICLE-INCLUSIVE OFFER = HOLD.** No quote,
 no invoice, no contract and no public copy naming a vehicle.
 
-**Owner Answer:**
-_______________________________________________
+**Owner Answer — SETTLED 2026-09-08: STOP SELLING VEHICLE OFFERS.**
+Product direction is **software-only**. The vehicle-inclusive rung is retired,
+along with the undefined "no backend funding fee" alternative. **The 13-term
+fulfilment checklist above is moot** — it applied only to a vehicle-inclusive
+option, and none is being sold. No quote, invoice, contract or public page may
+name a vehicle. Recorded in `COMMERCIAL_AUTHORITY.md` A-3.
 
 ---
 
@@ -1017,8 +1035,21 @@ silent and cross-tenant. Part (b) is a small, well-scoped migration onto a patte
 
 **The migration is not written and not applied.**
 
-**Owner Answer:**
-_______________________________________________
+**Owner Answer — SETTLED 2026-09-08 (part a): TENANT ADMIN ≠ PLATFORM ADMIN.**
+Recorded as a **permanent architecture and security invariant**, not a preference.
+Tenant/partner/customer admins are granted through `org_roles` / organization-scoped
+membership, **never** through a global `profiles.role = 'admin'`. Any code path
+where tenant administration requires or grants global admin is an **architectural
+defect requiring remediation**, including indirect forms. Full invariant and audit:
+`docs/security/TENANT-ADMIN-INVARIANT.md`; authority record:
+`COMMERCIAL_AUTHORITY.md` A-4.
+
+**Owner's commercial model, recorded:** the admin role is paid; Muhammad Taha and
+his employees hold platform authority; **Khan Strategies is the first and currently
+only external party with their own tenant authority** — the exact case this
+invariant exists to make safe.
+
+**Part (b) — the migration — REMAINS OWNER-GATED.** Not written, not applied.
 
 ---
 
