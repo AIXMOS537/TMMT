@@ -27,6 +27,9 @@ const OUT_TS = join(REPO_ROOT, "src", "lib", "platform", "tenant-map.generated.t
 const BRANDS_DIR = join(REPO_ROOT, "public", "brands");
 const GENERATED_MARKER = "aixmos:generated-placeholder";
 const CHECK_ONLY = process.argv.includes("--check");
+// Git checks files out with CRLF on Windows (core.autocrlf); the generator emits LF.
+// Compare content, not line endings, or every Windows checkout reads as stale.
+const sameText = (a, b) => (a ?? "").replace(/\r\n/g, "\n") === (b ?? "").replace(/\r\n/g, "\n");
 
 const FALLBACK_THEME = {
   mode: "dark",
@@ -216,7 +219,7 @@ function syncBrandAssets(t, report) {
         continue;
       }
       const next = render();
-      if (body === next) continue;
+      if (sameText(body, next)) continue;
       if (CHECK_ONLY) {
         report.stale.push(`public/brands/${t.id}/${name}`);
         continue;
@@ -372,7 +375,7 @@ function main() {
   const defaultSlug = (platform ?? tenants[0]).slug;
   const next = renderModule(tenants, defaultSlug);
   const current = existsSync(OUT_TS) ? readFileSync(OUT_TS, "utf8") : null;
-  if (current !== next) {
+  if (!sameText(current, next)) {
     if (CHECK_ONLY) report.stale.push("src/lib/platform/tenant-map.generated.ts");
     else {
       mkdirSync(dirname(OUT_TS), { recursive: true });
