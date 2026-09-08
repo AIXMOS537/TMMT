@@ -15,7 +15,7 @@ Pass date: 2026-09-08 · Verified against `origin/master` = `5d5d8d2e`
 | Fact | Value |
 |---|---|
 | `origin/master` | `5d5d8d2e` |
-| Working tree | clean (one untracked sibling file, left alone) |
+| Working tree | clean (one untracked file of unknown authorship, left alone) |
 | Worktrees | `C:/dev/TMMT-LIVE` (this), `C:/dev/TMMT-docs-wt` (`docs/owner-model`), `C:/dev/TMMT-s3-wt` (`feat/bg-check-decide-7arg`) |
 | Open PRs | **#191** `feat/bg-check-decide-7arg` — OPEN, MERGEABLE, `pii-scan` SUCCESS |
 | **Production deployment (Vercel)** | **`f152f3c5`** — `dpl_CbGuH9H2axgkmpDNAfpnW5ho4a5X`, state READY, target production, rollback candidate |
@@ -56,10 +56,10 @@ correct action was to verify and not duplicate it.
 | **§6 `bg_check_decide` 7-arg adoption** | **DONE by sibling** — PR #191, commit `0338cc48`. Verified: all 7 named args, dedupe key `bgcheck:<id>:<decision>:<yyyymmddhhmm>` UTC, returns the RPC jsonb incl. `decision_event_id`. **Not duplicated.** |
 | **§7 S3-06 staff decision screen** | **DONE by sibling** — PR #191, commit `e34158f4`. Queue → decide → trail via `v_decision_trail` in the review modal. Reason picker deliberately not built (nothing to show until S3-05 is seeded). **Not duplicated.** |
 | **§8 S3-05 final verification** | **Complete — and the ask is smaller than recorded.** See below. |
-| **§20 Vercel** | **Resolved.** Production = `f152f3c5`. Recorded above. |
+| **§20 Vercel** | **Resolved first-hand** via the authorized Vercel API (`list_deployments` on `prj_Cw4lJPww…`), not inferred from git. Production = `f152f3c5`, `dpl_CbGuH9H2axgkmpDNAfpnW5ho4a5X`, READY, `isRollbackCandidate: true`. |
 | **§21 stale org label** | `preview/rename-moe-legacy-to-aixmos-credit` is **NOT merged** (11 behind / 15 ahead). Recorded; no action taken. |
 | **§22 `dist/` mechanics** | **Determined.** See below. |
-| **§9/§12/§13 Customer #2** | **DONE by sibling** — `CUSTOMER_2_READINESS.md`, 240 lines, verdict **BLOCKED**. **Not duplicated.** |
+| **§9/§12/§13 Customer #2** | `CUSTOMER_2_READINESS.md` exists untracked, **authorship unknown** (the PR #191 session confirms it is not theirs). Its two P0 claims **verified by me against the live DB**: P0-1 confirmed, P0-2 mis-stated. See below. |
 | **§24 this document** | Written. |
 
 ### §8 — S3-05 is a smaller ask than previously recorded
@@ -120,17 +120,64 @@ Full evidence in `OWNER_DECISIONS.md`; one-page form in `OWNER_ACTION_SHEET.md`.
 
 ---
 
-## CUSTOMER #2 — **BLOCKED**
+## CUSTOMER #2 — **BLOCKED, but by less than first recorded**
 
-Per `CUSTOMER_2_READINESS.md` (sibling session, 240 lines). Two P0 blockers stand
-between you and a safe second tenant:
+> **Attribution correction.** An earlier version of this document credited
+> `CUSTOMER_2_READINESS.md` to the PR #191 session. **That was wrong** — they
+> confirm they neither wrote nor read it. The file is **untracked and of unknown
+> authorship**. Its claims are therefore unattributed, so I verified the two P0
+> items myself against the live database rather than repeat them.
 
-- **P0-1** — `customer_payments` and `background_checks` have no org-scoped read path.
-- **P0-2** — no role grants own-org access without cross-tenant reach.
+### P0-1 — **CONFIRMED** (verified first-hand, 2026-09-08)
 
-Both are **tenant-safety** issues, not automation gaps, so they are genuine
-blockers rather than deferrable polish. P1 items (hardcoded customer-facing
-branding; first-ever exercise of scoped access) follow.
+`customer_payments` and `background_checks` both **carry an `org_id` column**, but
+their only policy for `authenticated` is:
+
+```
+customer_payments_admin_only   ALL   authenticated   is_platform_admin()
+background_checks_admin_only   ALL   authenticated   is_platform_admin()
+```
+
+`is_platform_admin()` is `profiles.role = 'admin'` with **no org scoping at all**.
+So a Customer #2 tenant user cannot read their own payments or background checks —
+the `org_id` column exists and no policy uses it. **Real blocker.**
+
+### P0-2 — **MIS-STATED. The org-scoped role path already exists.**
+
+The claim was "no role grants own-org access without cross-tenant reach." That is
+not what the database shows:
+
+| Primitive | Org-scoped? | Policies using it |
+|---|---|---|
+| `is_org_member(p_org_id)` — checks `org_roles`, or `profiles.organization_id` | **Yes** | **126** |
+| `is_staff()` — role/portal_role only | No — global | 185 |
+| `is_platform_admin()` — `role = 'admin'` | No — global | 34 |
+
+**The org-scoped pattern is the dominant one**, with `org_roles (org_id, user_id,
+role)` as its grant table. The real hazard is narrower and sharper than "no role
+exists":
+
+> **`profiles.role = 'admin'` is read as *platform admin* by `is_platform_admin()`
+> and simultaneously as *org membership* by `is_org_member()`.** Granting a
+> Customer #2 administrator that way would make them a platform admin across all
+> nine organizations.
+
+**Safe onboarding rule, derived from the evidence:** grant Customer #2 users
+through **`org_roles`**, never by setting `profiles.role = 'admin'`.
+
+### What this changes
+
+Customer #2 is still **BLOCKED**, but on **one small, well-defined migration**
+(move two tables from the `is_platform_admin()` pattern onto the existing
+`is_org_member(org_id)` pattern that 126 other policies already use) **plus a
+documented onboarding rule** — not on absent architecture.
+
+**That migration is not written and not applied.** It is a production change and
+therefore owner-gated.
+
+P1 items from the unattributed document (hardcoded customer-facing branding; first
+real exercise of scoped access) are **unverified by me** and should be treated as
+leads, not findings.
 
 **Manual fulfilment is not the blocker and should not be treated as one.**
 
