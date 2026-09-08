@@ -1,4 +1,4 @@
-import type { CreditProfile, NegativeItem, NegativeItemType } from "../types";
+import type { NegativeItem, NegativeItemType } from "../types";
 
 export type ViolationCode =
   | "fcra_605_expired"
@@ -33,9 +33,6 @@ export interface DeepAuditResult {
   recommendedAttack: string;
   eligible: boolean;
 }
-
-const SEVEN_YEARS_MS = 7 * 365.25 * 24 * 60 * 60 * 1000;
-const TEN_YEARS_MS = 10 * 365.25 * 24 * 60 * 60 * 1000;
 
 function yearsSince(dateStr: string): number {
   return (Date.now() - new Date(dateStr).getTime()) / (365.25 * 24 * 60 * 60 * 1000);

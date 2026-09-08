@@ -10,7 +10,7 @@ import {
 } from "@/lib/token-ledger";
 import { askPocketBrain } from "@/lib/pocket-brain";
 import { enforceCompliance } from "@/lib/compliance";
-import { isRateLimited } from "@/lib/rate-limit";
+import { isRateLimitedDurable, type RateLimitBackend } from "@/lib/rate-limit-durable";
 import { recordMoneyEventSafe, reconcileFreeForeverByEmail } from "@/lib/money-meter";
 
 export const runtime = "nodejs";
@@ -70,7 +70,10 @@ export async function POST(request: Request) {
   if (!email) return err(403, "Your account has no email on file.");
 
   // 3. Per-member burst limit (cheap abuse guard on top of the token meter).
-  if (isRateLimited(`pocket-chat:${email}`, { windowMs: 60_000, maxHits: 20 })) {
+  //    Shared across instances once the rate_limit_hit RPC exists.
+  let limiter: RateLimitBackend | null = null;
+  try { limiter = createServiceRoleClient(); } catch { limiter = null; }
+  if (await isRateLimitedDurable(`pocket-chat:${email}`, { windowMs: 60_000, maxHits: 20 }, limiter)) {
     return err(429, "Slow down a moment, then try again.");
   }
 

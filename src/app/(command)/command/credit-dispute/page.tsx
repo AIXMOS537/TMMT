@@ -55,8 +55,6 @@ export default function CreditDisputeCommandPage() {
     // be invisible, so surface the count and offer to bring it across.
     setStranded(readLegacyClients().length);
     refresh().finally(() => setLoading(false));
-    // Runs once — refresh reads no state it does not set.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleRescue() {
