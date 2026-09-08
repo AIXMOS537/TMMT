@@ -73,8 +73,8 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | ID | Sev | Item | Status |
 |---|---|---|---|
 | F-24 | P3 | `.env.example`: add the 39 env vars the code reads (names only), remove the 10 it never reads | TODO |
-| F-25 | P3 | Rollback runbook: none exists; add `docs/ROLLBACK.md` (Vercel promote previous READY, migration down.sql order, revoke paths) | TODO |
-| F-26 | P3 | DEPLOY.md: "every push to master deploys" is stale (ignoreCommand) | TODO |
+| F-25 | P3 | Rollback runbook: none exists; add `docs/ROLLBACK.md` (Vercel promote previous READY, migration down.sql order, revoke paths) | DONE faff2926 (PR #198) |
+| F-26 | P3 | DEPLOY.md: "every push to master deploys" is stale (ignoreCommand) | DONE faff2926 (PR #198) |
 | F-27 | P3 | `scripts/circular-deps.mjs` and `brand:check` not enforced anywhere | add to `verify.checks` (F-09) | TODO |
 | F-28 | P4 | Dead directories: `apps/engine`, `aria`, `web/build-page`, `config-from-lexar`, `imports/finance` | OWNER (Unknown #3) — deletion is irreversible | OWNER |
 | F-29 | P4 | 35 repo-wide hook-pattern lint warnings remain after local unused-code cleanup | TODO |
