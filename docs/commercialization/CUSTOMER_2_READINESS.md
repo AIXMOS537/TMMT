@@ -33,7 +33,7 @@ Independent rental / BHPH operator, hypothesised at 3–30 vehicles.
 
 ---
 
-## TENANT ZERO — VERIFIED FACTS ONLY
+## THE EXISTING TMMT RENTALS DEPLOYMENT — VERIFIED FACTS ONLY
 
 Organisation **TMMT RENTALS** `8e651b25-e7c8-4356-af64-1716a82053b0`:
 
@@ -58,10 +58,10 @@ The earlier figure was a **naming conflation, not a fabrication.**
 historically** — and never the second without the word "historically". Both are
 true; only one describes the fleet today.
 
-What Tenant Zero proves: **the software has run a real rental operation** — 308
+What this deployment proves: **the software has run a real rental operation** — 308
 tickets and 299 background checks are genuine operational volume, and 31 real
 payments cleared. What it does **not** prove: that a stranger will pay, or that
-the tenancy works for anyone but the house.
+the tenancy works for any organisation other than this one.
 
 ---
 
@@ -90,14 +90,19 @@ for the decision packet.
 **Tenant-scoped access has never been exercised in production.**
 
 - 9 organisations exist; **8 hold zero data**
-- `org_roles` has **1 row system-wide** — in Khan Strategies, not Tenant Zero
+- `org_roles` has **1 row system-wide** — in Khan Strategies, not TMMT RENTALS
 - All 3 profiles have `organization_id = NULL`
 - Two profiles are `role='admin'` → **global platform admins**
 
-Every access to Tenant Zero's data to date has been through
+Every access to TMMT RENTALS data to date has been through
 `is_platform_admin()` — global, unscoped. The multi-tenant machinery is
 *architecturally present and well built*, and *operationally unproven*.
 **Customer #2 would be the first scoped tenant user this system has ever had.**
+
+**Attribution note.** This deployment is Muhammad Taha's rental operation, run by
+him and his staff. It is a REFERENCE DEPLOYMENT, not a TechHaus customer, and its
+transactions are not TechHaus revenue. The application role named `staff` is an
+application role, not evidence of anyone's employer.
 
 ---
 
@@ -116,7 +121,7 @@ There is **no `is_org_member(org_id)` branch on either table.** So for Customer 
   their own background checks. That is the core of a rental back office. The
   product does not function for them.
 - **Option B** — grant `role='admin'` so they can: that is `is_platform_admin()`,
-  which is **global and unscoped**. They would read Tenant Zero's 31 payments and
+  which is **global and unscoped**. They would read TMMT RENTALS' 31 payments and
   **299 background checks** — third-party PII belonging to your renters.
 
 **Neither is acceptable.** This is the hard blocker.
@@ -157,7 +162,7 @@ Verified against production:
 
 So the staff/masked route returns **all tenants' rows**, and there is **no masked
 route for `customer_payments` at all**. Granting Customer #2 staff to reach the
-masked queue would hand them Tenant Zero's 299 background checks in masked form.
+masked queue would hand them TMMT RENTALS' 299 background checks in masked form.
 
 ### ⛔ STOP — `BACKGROUND_CHECK ROLE POLICY — OWNER/SECURITY SEMANTICS REQUIRED`
 
@@ -287,8 +292,8 @@ Run against a throwaway org (**production writes — owner-authorised only**):
    - read own tickets → expect PASS
    - read own payments → **expect FAIL until P0-1 is fixed**
    - read own background checks → **expect FAIL until P0-1 is fixed**
-   - read **Tenant Zero's** tickets / vehicles / payments / checks → **must FAIL, all four**
-4. That last line is the one that matters. If any Tenant Zero read succeeds,
+   - read **TMMT RENTALS'** tickets / vehicles / payments / checks → **must FAIL, all four**
+4. That last line is the one that matters. If any TMMT RENTALS read succeeds,
    stop and do not onboard anyone.
 
 ---
