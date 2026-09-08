@@ -9,12 +9,12 @@
 set -uo pipefail
 
 # Files/dirs that genuinely affect the deployed Next.js app.
-APP_PATHS="src public packages \
+APP_PATHS="src public packages shared config \
 package.json package-lock.json \
 next.config.ts next.config.js next.config.mjs \
 middleware.ts tsconfig.json postcss.config.mjs \
-sentry.client.config.ts sentry.server.config.ts sentry.edge.config.ts \
-instrumentation.ts vercel.json"
+sentry.server.config.ts sentry.edge.config.ts \
+instrumentation.ts vercel.json eslint.config.mjs"
 
 # Determine a base commit to diff against (Vercel provides the previous SHA).
 BASE="${VERCEL_GIT_PREVIOUS_SHA:-}"

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { addContactTag } from "@/lib/ghl/client";
 import { createServiceRoleClient } from "@/lib/supabase-service";
+import { secretMatches } from "@/lib/secure-compare";
 
 const Body = z.object({
   contact_id: z.string().min(1),
@@ -18,7 +19,7 @@ const Body = z.object({
 export async function POST(req: NextRequest) {
   const secret =
     process.env.GHL_OVERDUE_WEBHOOK_SECRET ?? process.env.GHL_WEBHOOK_SECRET;
-  if (!secret || req.headers.get("x-ghl-secret") !== secret) {
+  if (!secretMatches(req.headers.get("x-ghl-secret"), secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

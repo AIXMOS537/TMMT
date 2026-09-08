@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { getTierForUser, homePathForTier } from "@/lib/auth-roles";
-import { isRateLimited } from "@/lib/rate-limit";
+import { isRateLimitedDurable, type RateLimitBackend } from "@/lib/rate-limit-durable";
 import {
   hashInviteCode,
   inviteRejection,
@@ -29,6 +29,15 @@ function inetOrNull(ip: string): string | null {
   return /^[0-9a-fA-F.:]+$/.test(ip) && ip !== "unknown" ? ip : null;
 }
 
+/** Shared rate-limit counter when the service client is available; never fatal. */
+function limiterBackend(): RateLimitBackend | null {
+  try {
+    return createServiceRoleClient();
+  } catch {
+    return null;
+  }
+}
+
 async function auditSignup(action: string, ip: string, payload: Record<string, unknown>) {
   // Best-effort. A failure to write the log must never block or break sign-up.
   try {
@@ -49,7 +58,7 @@ export async function signUp(formData: FormData) {
   const ip = clientIp(h);
 
   // Throttle before doing any work. Public endpoint, real database behind it.
-  if (isRateLimited(`signup:${ip}`, { windowMs: 60 * 60 * 1000, maxHits: 10 })) {
+  if (await isRateLimitedDurable(`signup:${ip}`, { windowMs: 60 * 60 * 1000, maxHits: 10 }, limiterBackend())) {
     return { error: "Too many attempts. Try again later." };
   }
 
@@ -146,7 +155,7 @@ export async function signIn(formData: FormData) {
 
   const h = await headers();
   const ip = clientIp(h);
-  if (isRateLimited(`signin:${ip}`, { windowMs: 15 * 60 * 1000, maxHits: 20 })) {
+  if (await isRateLimitedDurable(`signin:${ip}`, { windowMs: 15 * 60 * 1000, maxHits: 20 }, limiterBackend())) {
     return { error: "Too many attempts. Try again later." };
   }
 
