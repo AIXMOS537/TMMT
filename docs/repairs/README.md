@@ -22,7 +22,7 @@ convert free-text rental rates or implement a payment-obligation ledger.
 
 | Script | Purpose | Required production prerequisites |
 | --- | --- | --- |
-| `classify-va-tasks-source-identity.sql` | Deduplicate tasks by category plus source table/ID; retain contact fallback for legacy rows | Source-keyed generator migrations; existing classifier signature and triage fields |
+| `classify-va-tasks-source-identity.sql` | Deduplicate tasks by category plus source table/ID; retain contact fallback for legacy rows | Source-keyed generator migrations; existing classifier signature and triage fields. **STAGED 2026-09-08 as `20260908184352_classify_va_tasks_source_identity.sql`** (guarded: skips with a NOTICE where the live-created prerequisites are absent; rehearse with `node scripts/tests/sql/classifier-migration.rehearsal.mjs <migration>`). Not applied. |
 | `agent-jobs-terminal-lease-reap.sql` | Mark an exhausted expired lease failed; retry only below the attempt limit | Lease-fencing migration `20260906022156` and ACL hardening `20260906022251` |
 | `contracts-date-order.sql` | Atomically prevent an end date before its start, including concurrent/partial writes | Date-typed columns; no existing inversions; unique constraint name |
 
