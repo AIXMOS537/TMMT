@@ -9,9 +9,10 @@ import { resolveOrgBySlugPublic, OrgNotFoundError } from '@/lib/agent/tenant'
 import { createServiceSupabase } from '@/lib/agent/supabase-server'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
-import { isRateLimited } from '@/lib/rate-limit'
+import { isRateLimitedDurable, type RateLimitBackend } from '@/lib/rate-limit-durable'
 import { routeIncomingLead } from '@/lib/lead-pool'
 import { isAixmosCorsOrigin } from '@/lib/site-domains'
+import { normalizeNanpPhone } from '@/lib/phone'
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -47,12 +48,8 @@ const SKU_PRICE_CENTS: Record<string, number> = {
   'flagship': 5000000,
 }
 
-function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length === 10) return `+1${digits}`
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  return null
-}
+// Public entry point: North American numbers only (src/lib/phone, strict policy).
+const normalizePhone = normalizeNanpPhone
 
 interface WebhookBody {
   phone: string
@@ -78,10 +75,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!slug) return fail({ error: 'org query param required' }, 400)
 
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 })) {
+  // Shared counter across instances when the rate_limit_hit RPC exists; the
+  // per-process limiter otherwise. Never let limiter setup itself fail a lead.
+  let limiter: RateLimitBackend | null = null
+  try { limiter = createServiceSupabase() } catch { limiter = null }
+  if (await isRateLimitedDurable(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 }, limiter)) {
     return fail({ error: 'too many requests' }, 429)
   }
-  if (isRateLimited(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 })) {
+  if (await isRateLimitedDurable(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 }, limiter)) {
     return fail({ error: 'too many requests' }, 429)
   }
 
