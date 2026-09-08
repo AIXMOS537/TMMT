@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase-service";
+import { secretMatches } from "@/lib/secure-compare";
 
 const LocationRow = z.object({
   slug: z.string().min(1),
@@ -22,8 +23,7 @@ const Body = z.object({
  * Header: X-Sync-Secret (same as SYNC_WEBHOOK_SECRET)
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.SYNC_WEBHOOK_SECRET;
-  if (!secret || req.headers.get("x-sync-secret") !== secret) {
+  if (!secretMatches(req.headers.get("x-sync-secret"), process.env.SYNC_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

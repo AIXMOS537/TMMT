@@ -34,12 +34,19 @@ function walk(dir: string): string[] {
 
 // Any of these count as "routed through the owner-approval / compliance gate".
 // assertSmsAllowed = the canonical shared gate (shared/compliance-gates/sms-gate).
-const GATE = /assertSmsAllowed|SmsBlockedError|assertApproved|ownerApproved|owner_approved|owner-approval-gate|shared\/compliance-gates/;
+// assertOutboundAllowed (src/lib/outbound-gate) is the door every customer-bound
+// message must use: it wraps assertSmsAllowed and adds do-not-contact + opt-out.
+const GATE = /assertOutboundAllowed|outbound-gate|assertSmsAllowed|SmsBlockedError|assertApproved|ownerApproved|owner_approved|owner-approval-gate|shared\/compliance-gates/;
 
 const importsTwilio = /from\s+['"]twilio['"]|require\(\s*['"]twilio['"]\s*\)/;
 const importsStripe = /from\s+['"]stripe['"]|from\s+['"]@stripe/;
 const sendsSms = /\.messages\.create/;
 const movesMoney = /\.(charges|paymentIntents|transfers|payouts|refunds)\.create/;
+// Customer-bound sends that never touch the Twilio SDK:
+//  - GHL Conversations (SMS or email to a contact)
+//  - a TwiML <Message> reply from a Twilio webhook (Twilio sends it for us)
+const sendsViaGhlConversations = /conversations\/messages/;
+const repliesWithTwiml = /<Response><Message>/;
 
 describe("owner-approval gate is enforced on every outbound send/pay path", () => {
   const files = walk(SRC).map((f) => ({ f, src: readFileSync(f, "utf8") }));
@@ -49,6 +56,23 @@ describe("owner-approval gate is enforced on every outbound send/pay path", () =
       .filter(({ src }) => importsTwilio.test(src) && sendsSms.test(src) && !GATE.test(src))
       .map(({ f }) => f.replace(process.cwd() + "/", ""));
     expect(offenders, `SMS send without an owner-approval gate: ${offenders.join(", ")}`).toEqual([]);
+  });
+
+  it("every GHL Conversations sender routes through the outbound gate", () => {
+    const offenders = files
+      .filter(({ src }) => sendsViaGhlConversations.test(src) && !GATE.test(src))
+      .map(({ f }) => f.replace(process.cwd() + "/", ""));
+    expect(offenders, `GHL conversation send without the outbound gate: ${offenders.join(", ")}`).toEqual([]);
+    // and the sender itself is actually present — the rule must not pass vacuously
+    expect(files.some(({ src }) => sendsViaGhlConversations.test(src))).toBe(true);
+  });
+
+  it("every TwiML reply path routes through the outbound gate", () => {
+    const offenders = files
+      .filter(({ src }) => repliesWithTwiml.test(src) && !GATE.test(src))
+      .map(({ f }) => f.replace(process.cwd() + "/", ""));
+    expect(offenders, `TwiML reply without the outbound gate: ${offenders.join(", ")}`).toEqual([]);
+    expect(files.some(({ src }) => repliesWithTwiml.test(src))).toBe(true);
   });
 
   it("every money-moving Stripe file routes through the owner-approval gate", () => {

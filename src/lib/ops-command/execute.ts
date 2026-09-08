@@ -24,9 +24,9 @@ async function opsSummary(supabase: SupabaseClient): Promise<OpsCommandResult> {
     ok: true,
     message: `Pending CRM: ${pendingSync ?? 0} · Blocked cases: ${blocked ?? 0} · Open cases: ${open ?? 0}`,
     links: [
-      { label: "CRM queue", href: "/internal/sync" },
-      { label: "Blocked cases", href: "/internal/cases?view=list&status=blocked" },
-      { label: "Dashboard", href: "/internal/dashboard" },
+      { label: "CRM queue", href: "/leads" },
+      { label: "Blocked cases", href: "/cases?status=blocked" },
+      { label: "Dashboard", href: "/" },
     ],
     data: { pendingSync, blocked, open },
   };
@@ -90,11 +90,11 @@ async function runOne(
         const { error } = await supabase.from("cases").update(updates).eq("id", caseRow.id);
         if (error) throw new Error(error.message);
 
-        revalidatePath(`/internal/cases/${caseRow.id}`);
-        revalidatePath("/internal/cases");
+        revalidatePath(`/cases?id=${caseRow.id}`);
+        revalidatePath("/cases");
 
         const links = [
-          { label: "Open case", href: `/internal/cases/${caseRow.id}` },
+          { label: "Open case", href: `/cases?id=${caseRow.id}` },
           ...(clickupUrl ? [{ label: "ClickUp task", href: clickupUrl }] : []),
         ];
 
@@ -143,13 +143,13 @@ async function runOne(
           data: { case_id: caseRow.id, vendor_id: vendor.id, via: "ops_command" },
         });
 
-        revalidatePath(`/internal/cases/${caseRow.id}`);
+        revalidatePath(`/cases?id=${caseRow.id}`);
 
         return {
           action: cmd.action,
           ok: true,
           message: `Offered job to ${vendor.company_name} on ${caseRow.ref_code}.`,
-          links: [{ label: "Open case", href: `/internal/cases/${caseRow.id}` }],
+          links: [{ label: "Open case", href: `/cases?id=${caseRow.id}` }],
           data: { job_id: job.id, vendor_id: vendor.id },
         };
       }
@@ -174,13 +174,13 @@ async function runOne(
           action: "status_changed",
           data: { to: cmd.to, note: cmd.note, via: "ops_command" },
         });
-        revalidatePath(`/internal/cases/${caseRow.id}`);
-        revalidatePath("/internal/cases");
+        revalidatePath(`/cases?id=${caseRow.id}`);
+        revalidatePath("/cases");
         return {
           action: cmd.action,
           ok: true,
           message: `Case ${caseRow.ref_code} → ${cmd.to}.`,
-          links: [{ label: "Open case", href: `/internal/cases/${caseRow.id}` }],
+          links: [{ label: "Open case", href: `/cases?id=${caseRow.id}` }],
         };
       }
 
@@ -206,15 +206,15 @@ async function runOne(
           verifiedBy: actor?.email ?? actor?.id ?? "ops_command",
         });
 
-        revalidatePath("/internal/sync");
+        revalidatePath("/leads");
         return {
           action: cmd.action,
           ok: true,
           message: "CRM sync approved and applied.",
           links: [
-            { label: "Sync record", href: `/internal/sync/${syncId}` },
+            { label: "Sync record", href: `/leads?sync=${syncId}` },
             ...(result.caseId
-              ? [{ label: "Case", href: `/internal/cases/${result.caseId}` }]
+              ? [{ label: "Case", href: `/cases?id=${result.caseId}` }]
               : []),
           ],
           data: { sync_record_id: syncId, case_id: result.caseId },
@@ -247,16 +247,16 @@ async function runOne(
           .single();
         if (error) throw new Error(error.message);
 
-        revalidatePath("/client/billing");
-        revalidatePath("/internal/ledger");
+        revalidatePath("/interfaces/payments");
+        revalidatePath("/interfaces/payments");
 
         return {
           action: cmd.action,
           ok: true,
           message: `Posted $${cmd.amount.toFixed(2)} to ${cmd.customer_email}${cmd.visible_to_client ? " (visible on billing)" : ""}.`,
           links: [
-            { label: "Finance", href: "/internal/ledger" },
-            { label: "Client billing", href: "/client/billing" },
+            { label: "Finance", href: "/interfaces/payments" },
+            { label: "Client billing", href: "/interfaces/payments" },
           ],
           data: { ledger_id: row.id },
         };

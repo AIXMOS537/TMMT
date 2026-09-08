@@ -24,6 +24,7 @@ import {
   type GhlVoicePayload,
   type VoiceAction,
 } from "@/lib/agent/voice/ghl-voice-handler";
+import { secretMatches } from "@/lib/secure-compare";
 
 const ACTIONS: VoiceAction[] = [
   "qualify_lead",
@@ -34,9 +35,7 @@ const ACTIONS: VoiceAction[] = [
 ];
 
 function authOk(req: NextRequest): boolean {
-  const secret = process.env.GHL_VOICE_WEBHOOK_SECRET;
-  if (!secret) return false;
-  return req.headers.get("x-ghl-voice-secret") === secret;
+  return secretMatches(req.headers.get("x-ghl-voice-secret"), process.env.GHL_VOICE_WEBHOOK_SECRET);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
