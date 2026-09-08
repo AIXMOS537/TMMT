@@ -18,6 +18,7 @@ import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { isStaffUser } from "@/lib/auth-roles";
 import { checkHostname, dnsInstruction, answerPointsAtVercel, type DnsAnswer } from "@/lib/platform/hostname";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 export type Result<T = undefined> =
   | ({ success: true } & (T extends undefined ? object : { data: T }))
@@ -153,14 +154,14 @@ export async function verifyOperatorDomain(hostname: string): Promise<Result<{ v
   let answer: DnsAnswer | null = null;
   try {
     const type = host.isApex ? "A" : "CNAME";
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://dns.google/resolve?name=${encodeURIComponent(host.hostname)}&type=${type}`,
       { headers: { accept: "application/dns-json" }, cache: "no-store" },
     );
     answer = (await res.json()) as DnsAnswer;
     // A subdomain may be a CNAME OR a direct A record; check both before failing.
     if (!answerPointsAtVercel(answer) && !host.isApex) {
-      const res2 = await fetch(
+      const res2 = await fetchWithTimeout(
         `https://dns.google/resolve?name=${encodeURIComponent(host.hostname)}&type=A`,
         { headers: { accept: "application/dns-json" }, cache: "no-store" },
       );

@@ -14,6 +14,7 @@ import {
   isOpportunityStagePayload,
 } from "@/lib/ghl/payload";
 import { consumeGhlEventId, verifyGhlWebhook } from "@/lib/ghl/webhook-auth";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { dealerProvisionCommand, dealerSkuFromTags } from "@/lib/ghl/dealer-provision-queue";
 
 const INTERNAL_CONSUMED_HEADER = "x-tmmt-ghl-consumed";
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
 
   if (programTrigger) {
     const origin = request.nextUrl.origin;
-    const programRes = await fetch(`${origin}/api/webhooks/ghl/program`, {
+    const programRes = await fetchWithTimeout(`${origin}/api/webhooks/ghl/program`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

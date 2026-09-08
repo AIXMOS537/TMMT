@@ -6,6 +6,8 @@
  * - GHL_RESTORATION_LOCATION_ID — Credit / LTO / operator journey (falls back to GHL_LOCATION_ID)
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
 export type GhlLocationKind = "rentals" | "restoration";
@@ -49,7 +51,7 @@ async function findGhlContactInLocation(
     email: email.trim().toLowerCase(),
   });
 
-  const res = await fetch(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
     headers: ghlHeaders(),
     cache: "no-store",
   });
@@ -72,7 +74,7 @@ async function findGhlContactByPhoneInLocation(
     phone: digits.length === 10 ? `+1${digits}` : `+${digits}`,
   });
 
-  const res = await fetch(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
     headers: ghlHeaders(),
     cache: "no-store",
   });
@@ -134,7 +136,7 @@ export async function updateContactCustomFields(
 
   if (customFields.length === 0) return;
 
-  const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/${contactId}`, {
     method: "PUT",
     headers: ghlHeaders(),
     body: JSON.stringify({ customFields }),
@@ -153,7 +155,7 @@ export async function addContactTag(
 ): Promise<void> {
   if (!isGhlConfigured(locationKind)) return;
 
-  const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "POST",
     headers: ghlHeaders(),
     body: JSON.stringify({ tags: [tag] }),
@@ -191,7 +193,7 @@ export async function listPipelines(locationId?: string): Promise<GhlPipeline[]>
   const loc = locationOr(locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return [];
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${GHL_BASE}/opportunities/pipelines?locationId=${encodeURIComponent(loc)}`,
     { headers: ghlHeaders(), cache: "no-store" }
   );
@@ -210,7 +212,7 @@ export async function findPipelineStageId(
   const loc = locationOr(locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return null;
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${GHL_BASE}/opportunities/pipelines/${pipelineId}/stages?locationId=${encodeURIComponent(loc)}`,
     { headers: ghlHeaders(), cache: "no-store" }
   );
@@ -244,7 +246,7 @@ export async function updateOpportunityStage(args: {
     );
   }
 
-  const res = await fetch(`${GHL_BASE}/opportunities/${args.opportunityId}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/opportunities/${args.opportunityId}`, {
     method: "PUT",
     headers: ghlHeaders(),
     body: JSON.stringify({
@@ -294,7 +296,7 @@ export async function sendConversationMessage(args: {
     body.conversationProviderId = providerId;
   }
 
-  const res = await fetch(`${GHL_BASE}/conversations/messages`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/conversations/messages`, {
     method: "POST",
     headers: ghlHeaders(),
     body: JSON.stringify(body),
