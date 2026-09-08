@@ -54,8 +54,9 @@ LOCAL READ · LOCAL WRITE · REMOTE READ · REMOTE WRITE · PRODUCTION WRITE · 
 - Org ids `aaaaaaaa-…` (AIXMOS, partner_app_slug `aixmos`), `bbbbbbbb-…`, `cccccccc-…` are INTENTIONAL and load-bearing
   (96 FKs). Fix app validation, never re-key.
 - App-side: `src/lib/agent/tenant.ts` `OrgIdSchema` is already format-only (commit `e57e22ea`); the only
-  `bg_check_decide` caller is `decideBgCheck` in `src/lib/queries.ts` (3-arg form). No generated
-  `src/types/supabase.ts` exists yet; `supabase.rpc` calls are untyped.
+  `bg_check_decide` caller is `decideBgCheck` in `src/lib/queries.ts` — sends all 7 args since 2026-09-08 (derived dedupe key
+  `bgcheck:<id>:<decision>:<yyyymmddhhmm>`; reason code is plumbing only). No generated `src/types/supabase.ts`
+  exists and nothing consumes one; `supabase.rpc` calls are untyped.
 
 ## 6. STAGE 3 STATE
 | Package | State | Notes |
@@ -89,9 +90,10 @@ hand-writing, and never repair drift with `migration repair --status reverted`.
 ## 8. OPEN ACTION ITEMS (do in this order)
 1. ~~Sync migration files into repo (§7).~~ DONE 2026-09-07 — branch `chore/record-s3-migrations-20260907`.
 2. ~~R-02: patch the org-row validator.~~ DONE in `e57e22ea`. Remaining: merge PR #188 (the regression test).
-3. App diff for S3-03: generate types (`supabase gen types typescript --linked > src/types/supabase.ts`),
-   add optional `p_reason_code/p_explanation/p_product_program/p_dedupe_key` to `decideBgCheck` in
-   `src/lib/queries.ts`, always pass a dedupe_key (`bgcheck:<id>:<decision>:<yyyymmddhhmm>`).
+3. ~~App diff for S3-03: add the optional args to `decideBgCheck`, always pass a dedupe_key.~~ DONE 2026-09-08
+   (branch `feat/bg-check-decide-7arg`; `src/lib/queries.test.ts` pins the wire contract). Generated types were NOT
+   produced: the repo has no type-generation workflow and no `createClient<Database>` consumer, so a 170-table
+   file would be dead weight; revisit when S3-06 introduces typed reads.
 4. S3-06 staff screen: queue (`bg_check_queue`) → decide → trail (`v_decision_trail`). No new router.
 5. S3-04 router design doc → owner review → then code.
 6. S3-08 ledger: propose the "paid" write path; do not alter `sweep-overdue-payments` until the paid path exists.

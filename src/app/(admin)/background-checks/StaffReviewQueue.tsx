@@ -30,7 +30,10 @@ import { ShieldCheck, FileText, Car, Receipt, Camera } from "lucide-react";
  * The background_checks table is admin-only at the database level. Everything
  * here comes from the bg_check_queue RPC, which returns masked contact details
  * and presence flags instead of the raw licence, insurance and paystub files.
- * Decisions go back through bg_check_decide, which writes only the verdict.
+ * Decisions go back through bg_check_decide, which writes the verdict and, since
+ * S3-03, one append-only row in decision_events (decideBgCheck supplies the
+ * idempotency key). No reason code is sent from here: the reason vocabulary is
+ * owner policy (S3-05) and does not exist yet, so the picker is not built.
  */
 
 function DocPill({ ok, label, icon }: { ok: boolean | null; label: string; icon: React.ReactNode }) {
