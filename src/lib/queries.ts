@@ -332,6 +332,46 @@ export async function decideBgCheck(
   }
   return data as BgCheckDecideResult;
 }
+
+/* ──────────── Decision trail (S3-06, minimal) ────────────
+   v_decision_trail is security_invoker over decision_events, whose only policy
+   is SELECT for staff/admin scoped to their org. It carries no names, phones,
+   emails or attachment refs — only the decisions and why. */
+
+export type DecisionTrailRow = {
+  decision_event_id: string;
+  seq: number;
+  created_at: string;
+  decision: string;
+  previous_decision: string | null;
+  reason_code: string | null;
+  reason_category: string | null;
+  recoverable: boolean | null;
+  explanation: string | null;
+  source: string;
+  rule_version: string;
+  actor_kind: string;
+  product_program: string | null;
+  next_destination: string | null;
+  routed_at: string | null;
+};
+
+const DECISION_TRAIL_COLUMNS =
+  "decision_event_id, seq, created_at, decision, previous_decision, reason_code, reason_category, recoverable, explanation, source, rule_version, actor_kind, product_program, next_destination, routed_at";
+
+/** "Why is this customer where they are?" — every decision ever recorded for one check, oldest first. */
+export async function getDecisionTrail(backgroundCheckId: string): Promise<DecisionTrailRow[]> {
+  const { data, error } = await supabase
+    .from("v_decision_trail")
+    .select(DECISION_TRAIL_COLUMNS)
+    .eq("background_check_id", backgroundCheckId)
+    .order("seq", { ascending: true });
+  if (error) {
+    console.error("[v_decision_trail]", error.message);
+    throw new Error(error.message);
+  }
+  return (data ?? []) as unknown as DecisionTrailRow[];
+}
 export const getTasks = () => fetchTable("tasks", "*", "created_at");
 export const getWaitlist = () => fetchTable("waitlist", "*", "date_added_to_waitlist");
 export const getAppointments = () => fetchTable("appointments", "*", "appointment_date_time");
