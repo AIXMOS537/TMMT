@@ -257,20 +257,80 @@ export async function getBgCheckQueue(status?: string, limit = 300): Promise<BgC
   return (data ?? []) as BgCheckQueueRow[];
 }
 
+/**
+ * Optional inputs for bg_check_decide beyond the verdict itself. Since S3-03
+ * (migration 20260907035109) the RPC takes seven arguments; every one after
+ * p_notes defaults to null in the database, so a caller that has nothing to say
+ * about reasons or programs is still correct.
+ *
+ * reasonCode is plumbing only. The vocabulary lives in public.reason_codes,
+ * which is empty until the owner seeds it (S3-05, owner decision D-19). While
+ * it is empty the database accepts a null reason for every decision; once any
+ * active code exists, "Not Eligible" requires one and the RPC raises — surface
+ * that error, do not invent a code here.
+ */
+export type BgCheckDecideOptions = {
+  /** An ACTIVE code from public.reason_codes. Never make one up in the app. */
+  reasonCode?: string | null;
+  /** Human explanation stored on the decision event. Defaults to notes in the DB. */
+  explanation?: string | null;
+  /** programs.slug the customer is being evaluated for, when the caller knows it. */
+  productProgram?: string | null;
+  /** Idempotency key; see bgCheckDedupeKey for the default. */
+  dedupeKey?: string | null;
+};
+
+/** What bg_check_decide returns (jsonb). */
+export type BgCheckDecideResult = {
+  id: string;
+  from: string | null;
+  to: BgCheckDecision;
+  reviewed_at: string;
+  decision_event_id: string | null;
+  reason_code: string | null;
+};
+
+/**
+ * Default idempotency key for a decision: `bgcheck:<id>:<decision>:<yyyymmddhhmm>`
+ * (UTC), the format the control-plane operating script fixes for app callers.
+ *
+ * Semantics, from record_decision_event: decision_events.dedupe_key is UNIQUE;
+ * a repeat call with a key that already exists returns the existing event id
+ * and writes no second event, while bg_check_decide still refreshes the verdict
+ * columns on background_checks. So a double-click, a retried request, or a
+ * reloaded form re-submitting the same verdict within the same minute is one
+ * event. A different verdict, or the same verdict a minute later, is a genuine
+ * new decision and gets its own row — the trail is append-only by design.
+ */
+export function bgCheckDedupeKey(id: string, decision: BgCheckDecision, at: Date = new Date()): string {
+  const stamp = at.toISOString().slice(0, 16).replace(/[-T:]/g, ""); // yyyymmddhhmm, UTC
+  return `bgcheck:${id}:${decision}:${stamp}`;
+}
+
 export async function decideBgCheck(
   id: string,
   decision: BgCheckDecision,
-  notes?: string
-): Promise<void> {
-  const { error } = await supabase.rpc("bg_check_decide", {
+  notes?: string,
+  options: BgCheckDecideOptions = {}
+): Promise<BgCheckDecideResult> {
+  if (!(BG_CHECK_DECISIONS as readonly string[]).includes(decision)) {
+    throw new Error(`bg_check_decide: decision must be one of ${BG_CHECK_DECISIONS.join(" | ")}`);
+  }
+  const clean = (v: string | null | undefined) => (v?.trim() ? v.trim() : null);
+  const { data, error } = await supabase.rpc("bg_check_decide", {
     p_id: id,
     p_decision: decision,
-    p_notes: notes?.trim() ? notes.trim() : null,
+    p_notes: clean(notes),
+    p_reason_code: clean(options.reasonCode),
+    p_explanation: clean(options.explanation),
+    p_product_program: clean(options.productProgram),
+    p_dedupe_key: clean(options.dedupeKey) ?? bgCheckDedupeKey(id, decision),
   });
   if (error) {
     console.error("[bg_check_decide]", error.message);
     throw new Error(error.message);
   }
+  return data as BgCheckDecideResult;
 }
 export const getTasks = () => fetchTable("tasks", "*", "created_at");
 export const getWaitlist = () => fetchTable("waitlist", "*", "date_added_to_waitlist");
