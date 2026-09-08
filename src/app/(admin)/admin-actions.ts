@@ -3,6 +3,7 @@
 import { createSSRClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import { isStaffUser } from "@/lib/auth-roles";
+import { validateRentalWrite } from "@/lib/rental-write-validation";
 
 type SaveResult = { success: true } | { success: false; error: string };
 
@@ -28,6 +29,7 @@ const ADMIN_TABLES = new Set([
   "vendors",
   "cases",
   "vendor_jobs",
+  "tasks",
 ]);
 
 export async function adminUpsert(
@@ -49,6 +51,9 @@ export async function adminUpsert(
   if (!isStaffUser(user)) {
     return { success: false, error: "Not authorized." };
   }
+
+  const validationError = await validateRentalWrite(table, record, supabase);
+  if (validationError) return { success: false, error: validationError };
 
   const { error } = await supabase.from(table).upsert(record);
   if (error) {
