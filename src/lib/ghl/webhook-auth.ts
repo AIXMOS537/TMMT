@@ -1,6 +1,10 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { timingSafeEqualString } from "@/lib/secure-compare";
+
+// Re-exported for existing importers; the implementation now lives in secure-compare.
+export { timingSafeEqualString };
 
 export const GHL_REPLAY_WINDOW_MS = 300_000;
 const IDEMPOTENCY_MAX = 2_000;
@@ -34,21 +38,6 @@ function providedSignature(req: HeaderReader): string | null {
     if (value) return value;
   }
   return null;
-}
-
-/**
- * timingSafeEqual throws on length mismatch. Pad to a shared length first,
- * then require original lengths to match so unequal secrets never throw.
- */
-export function timingSafeEqualString(a: string, b: string): boolean {
-  const aBuf = Buffer.from(a, "utf8");
-  const bBuf = Buffer.from(b, "utf8");
-  const len = Math.max(aBuf.length, bBuf.length, 1);
-  const aPad = Buffer.alloc(len);
-  const bPad = Buffer.alloc(len);
-  aBuf.copy(aPad);
-  bBuf.copy(bPad);
-  return timingSafeEqual(aPad, bPad) && aBuf.length === bBuf.length;
 }
 
 function normalizeSignature(value: string): string {

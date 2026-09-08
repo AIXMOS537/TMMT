@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase-service";
 import { applyVerifiedSync } from "@/lib/crm-sync/apply-verified";
 import { fetchAirtableRecord } from "@/lib/crm-sync/airtable";
 import { upsertOpsLocationFromAirtable } from "@/lib/routing/ops-locations";
+import { secretMatches } from "@/lib/secure-compare";
 
 const Body = z.object({
   airtable_record_id: z.string().min(1),
@@ -19,8 +20,7 @@ const Body = z.object({
  * - Ops Locations: roster row changed → upsert ops_locations
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.SYNC_WEBHOOK_SECRET;
-  if (!secret || req.headers.get("x-sync-secret") !== secret) {
+  if (!secretMatches(req.headers.get("x-sync-secret"), process.env.SYNC_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
