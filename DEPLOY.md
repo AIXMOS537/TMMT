@@ -40,8 +40,12 @@ Before `--apply`: copy env vars and custom domains off `tmmt-c919` onto the corr
 ## Routine deploy
 
 1. `npm run build` locally (must pass).
-2. Commit and push to the production branch — Vercel builds automatically.
-3. Confirm in Vercel dashboard → each app (`tmmt-ops`, `tmmt-command-center`, `aixmos-landing`).
+2. Merge to `master` — Vercel builds automatically **only when the diff touches app paths**
+   (`src`, `public`, `packages`, `shared`, `config`, and the build/config files listed in
+   `scripts/vercel-ignore.sh`). Docs-only and script-only merges are skipped on purpose; they
+   show as CANCELED in Vercel, which is not a failure.
+3. Confirm in the Vercel dashboard → `tmmt-ops` (the only git-linked project). To undo a deploy,
+   an env change, or a migration, see `docs/ROLLBACK.md`.
 
 ## Required environment variables
 
