@@ -15,14 +15,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
  */
 
 const rpc = vi.fn();
-vi.mock("@/lib/supabase", () => ({ supabase: { rpc: (...args: unknown[]) => rpc(...args) } }));
+const from = vi.fn();
+vi.mock("@/lib/supabase", () => ({
+  supabase: { rpc: (...args: unknown[]) => rpc(...args), from: (...args: unknown[]) => from(...args) },
+}));
 vi.mock("@/lib/offline/store", () => ({
   cacheRead: vi.fn(),
   cacheReplace: vi.fn(),
   isBrowserOffline: () => false,
 }));
 
-import { decideBgCheck, bgCheckDedupeKey, BG_CHECK_DECISIONS, type BgCheckDecision } from "./queries";
+import {
+  decideBgCheck,
+  bgCheckDedupeKey,
+  getDecisionTrail,
+  BG_CHECK_DECISIONS,
+  type BgCheckDecision,
+} from "./queries";
 
 const ID = "8e651b25-e7c8-4356-af64-1716a82053b0";
 const OK = { id: ID, from: null, to: "Eligible", reviewed_at: "2026-09-08T12:00:00Z", decision_event_id: "e1", reason_code: null };
@@ -118,6 +127,41 @@ describe("decideBgCheck — wire contract", () => {
   });
 });
 
+describe("getDecisionTrail — S3-06 read surface", () => {
+  function chain(result: { data: unknown; error: { message: string } | null }) {
+    const order = vi.fn().mockResolvedValue(result);
+    const eq = vi.fn().mockReturnValue({ order });
+    const select = vi.fn().mockReturnValue({ eq });
+    from.mockReturnValue({ select });
+    return { select, eq, order };
+  }
+
+  it("reads v_decision_trail for one check, oldest first, without PII or the inputs snapshot", async () => {
+    const rows = [{ decision_event_id: "e1", seq: 1, decision: "Eligible" }];
+    const c = chain({ data: rows, error: null });
+    const out = await getDecisionTrail(ID);
+    expect(from).toHaveBeenCalledWith("v_decision_trail");
+    const cols = c.select.mock.calls[0][0] as string;
+    expect(cols).toMatch(/decision_event_id/);
+    expect(cols).toMatch(/previous_decision/);
+    expect(cols).toMatch(/reason_code/);
+    expect(cols).not.toMatch(/inputs_snapshot|person_id|lead_id|actor_id/);
+    expect(c.eq).toHaveBeenCalledWith("background_check_id", ID);
+    expect(c.order).toHaveBeenCalledWith("seq", { ascending: true });
+    expect(out).toEqual(rows);
+  });
+
+  it("returns an empty trail as [], not as an error", async () => {
+    chain({ data: null, error: null });
+    expect(await getDecisionTrail(ID)).toEqual([]);
+  });
+
+  it("throws the database's message when RLS or the network refuses", async () => {
+    chain({ data: null, error: { message: "permission denied for view v_decision_trail" } });
+    await expect(getDecisionTrail(ID)).rejects.toThrow("permission denied for view v_decision_trail");
+  });
+});
+
 describe("decideBgCheck — errors", () => {
   it("rejects a verdict outside the five eligibility states before touching the network", async () => {
     await expect(decideBgCheck(ID, "Approved" as BgCheckDecision)).rejects.toThrow(/must be one of/);
@@ -129,7 +173,7 @@ describe("decideBgCheck — errors", () => {
     await expect(decideBgCheck(ID, "Eligible")).rejects.toThrow("bg_check_decide: staff or admin only");
   });
 
-  it("surfaces the reason-code rule the database enforces once the taxonomy is seeded", async () => {
+  it("surfaces the reason-code rule the database enforces once the taxonomy is seeded (kept for S3-06)", async () => {
     rpc.mockResolvedValue({
       data: null,
       error: { message: "record_decision_event: reason_code is required for decision Not Eligible once the taxonomy is active" },

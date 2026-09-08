@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getBgCheckQueue,
   decideBgCheck,
+  getDecisionTrail,
   BG_CHECK_DECISIONS,
   type BgCheckQueueRow,
   type BgCheckDecision,
+  type DecisionTrailRow,
 } from "@/lib/queries";
 import {
   PageHeader,
@@ -63,6 +65,12 @@ export default function StaffReviewQueue() {
   const [active, setActive] = useState<BgCheckQueueRow | null>(null);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState<BgCheckDecision | null>(null);
+
+  // S3-06: the decision trail for the check being reviewed. Loaded when the
+  // modal opens; a failure here must not block the decision itself, so it has
+  // its own error slot instead of the page-level one.
+  const [trail, setTrail] = useState<DecisionTrailRow[] | null>(null);
+  const [trailError, setTrailError] = useState<string | null>(null);
 
   // Called from event handlers (after a decision is saved).
   const load = () => {
@@ -171,6 +179,11 @@ export default function StaffReviewQueue() {
     setActive(r);
     setNotes(r.review_notes ?? "");
     setError(null);
+    setTrail(null);
+    setTrailError(null);
+    getDecisionTrail(r.id)
+      .then(setTrail)
+      .catch((e: Error) => setTrailError(e.message || "Could not load the decision history."));
   };
 
   const submit = async (decision: BgCheckDecision) => {
@@ -303,6 +316,47 @@ export default function StaffReviewQueue() {
                 </p>
               </div>
             )}
+
+            <div>
+              <p className="mb-1 text-xs text-gray-500 dark:text-slate-400">Decision history</p>
+              {trailError ? (
+                <p className="text-sm text-amber-700 dark:text-amber-300">{trailError}</p>
+              ) : trail === null ? (
+                <p className="text-sm text-gray-400 dark:text-slate-500">Loading…</p>
+              ) : trail.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-slate-400">
+                  No decision recorded yet
+                  {active.eligibility_status ? " (the current verdict predates the decision trail)" : ""}.
+                </p>
+              ) : (
+                <ol className="divide-y divide-gray-100 rounded border border-gray-200 text-sm dark:divide-slate-800 dark:border-slate-700">
+                  {trail.map((t) => (
+                    <li key={t.decision_event_id} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3 py-2">
+                      <span className="w-36 shrink-0 text-xs text-gray-500 dark:text-slate-400">
+                        {formatDate(t.created_at)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {t.previous_decision && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500">{t.previous_decision} →</span>
+                        )}
+                        <StatusBadge status={t.decision} />
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">
+                        {t.actor_kind} · {t.source}
+                        {t.reason_code ? ` · ${t.reason_code}` : ""}
+                        {t.reason_category ? ` (${t.reason_category})` : ""}
+                        {t.next_destination ? ` · → ${t.next_destination}` : ""}
+                      </span>
+                      {t.explanation && (
+                        <span className="basis-full whitespace-pre-wrap text-gray-700 dark:text-slate-300">
+                          {t.explanation}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
 
             <FormField label="Review notes">
               <textarea
