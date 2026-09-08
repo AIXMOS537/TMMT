@@ -6,12 +6,24 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
  * process.env.GHL_LOCATION_ID directly and pinned all traffic to one.
  */
 
+// sendConversationMessage now runs the outbound gate (A2P + do-not-contact +
+// opt-out) before any SMS leaves. Stand it in here so these routing tests stay
+// about routing; the gate has its own suite in src/lib/outbound-gate.test.ts.
+const gate = vi.hoisted(() => ({
+  assertOutboundAllowed: vi.fn(async () => ({ allowed: true, reason: "ok", flags: ["gate_allow"] })),
+}));
+vi.mock("@/lib/outbound-gate", () => ({
+  assertOutboundAllowed: gate.assertOutboundAllowed,
+  orgSmsVertical: () => "",
+}));
+
 const {
   listPipelines,
   findPipelineStageId,
   updateOpportunityStage,
   sendConversationMessage,
 } = await import("./client");
+const { SmsBlockedError } = await import("../../../shared/compliance-gates/sms-gate");
 
 const fetchMock = vi.fn();
 
@@ -77,6 +89,7 @@ describe("outbound location routing", () => {
     await sendConversationMessage({
       contactId: "c1",
       type: "SMS",
+      phone: "+15551112222",
       message: "hi",
       locationId: "SUB_D",
     });
@@ -85,7 +98,46 @@ describe("outbound location routing", () => {
 
   it("sends nothing at all when no location can be resolved", async () => {
     delete process.env.GHL_LOCATION_ID;
-    await sendConversationMessage({ contactId: "c1", type: "SMS", message: "hi" });
+    await sendConversationMessage({ contactId: "c1", type: "SMS", phone: "+15551112222", message: "hi" });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("sendConversationMessage — outbound gate", () => {
+  it("asks the gate with the phone, org, vertical and class before an SMS", async () => {
+    await sendConversationMessage({
+      contactId: "c1",
+      type: "SMS",
+      phone: "+15551112222",
+      organizationId: "org-1",
+      vertical: "rentals",
+      message: "hi",
+    });
+    expect(gate.assertOutboundAllowed).toHaveBeenCalledWith(
+      expect.objectContaining({ phone: "+15551112222", organizationId: "org-1", vertical: "rentals", type: "transactional" })
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses an SMS without a phone — an unchecked send is not made", async () => {
+    await expect(
+      // @ts-expect-error — the type demands a phone for SMS; this pins the runtime guard too
+      sendConversationMessage({ contactId: "c1", type: "SMS", message: "hi" })
+    ).rejects.toBeInstanceOf(SmsBlockedError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("throws and does not fetch when the gate refuses", async () => {
+    gate.assertOutboundAllowed.mockResolvedValueOnce({ allowed: false, reason: "dnc", flags: ["dnc"] });
+    await expect(
+      sendConversationMessage({ contactId: "c1", type: "SMS", phone: "+15551112222", message: "hi" })
+    ).rejects.toThrow(/dnc/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("email skips the phone-based checks and sends", async () => {
+    await sendConversationMessage({ contactId: "c1", type: "Email", message: "hi", subject: "s" });
+    expect(gate.assertOutboundAllowed).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
