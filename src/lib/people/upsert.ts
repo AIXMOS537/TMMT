@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { siteFromHost, type FormSite } from "@/lib/forms/site";
+import { phoneDigits as digits, normalizePhoneLoose as e164 } from "@/lib/phone";
 
 export type PersonLinkInput = {
   fullName?: string | null;
@@ -17,19 +18,9 @@ export type PersonLinkInput = {
   landingUrl?: string | null;
 };
 
-function digits(phone: string | null | undefined): string | null {
-  const d = String(phone ?? "").replace(/\D/g, "");
-  if (d.length < 7) return null;
-  return d;
-}
-
-function e164(phoneDigits: string | null): string | null {
-  if (!phoneDigits) return null;
-  if (phoneDigits.length === 10) return `+1${phoneDigits}`;
-  if (phoneDigits.length === 11 && phoneDigits.startsWith("1")) return `+${phoneDigits}`;
-  if (phoneDigits.startsWith("1") && phoneDigits.length > 11) return `+${phoneDigits}`;
-  return `+${phoneDigits}`;
-}
+// Phone handling moved to src/lib/phone (loose policy: keep international
+// numbers rather than drop an existing contact). `digits` / `e164` keep their
+// local names so the call sites below read as before.
 
 function cleanEmail(email: string | null | undefined): string | null {
   const e = String(email ?? "").trim().toLowerCase();

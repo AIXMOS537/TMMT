@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAixmosCorsOrigin } from "@/lib/site-domains";
-import { isRateLimited } from "@/lib/rate-limit";
+import { isRateLimitedDurable, type RateLimitBackend } from "@/lib/rate-limit-durable";
+import { createServiceRoleClient } from "@/lib/supabase-service";
 import { submitProgramIntake, submitLeadIntake } from "@/app/forms/actions";
 
 function corsHeaders(origin: string): Record<string, string> {
@@ -50,7 +51,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   const fail = (body: unknown, status: number) => json(body, status, origin);
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || "unknown";
-  if (isRateLimited(ip)) return fail({ error: "Too many submissions. Please try again later." }, 429);
+  let limiter: RateLimitBackend | null = null;
+  try { limiter = createServiceRoleClient(); } catch { limiter = null; }
+  if (await isRateLimitedDurable(`forms:${ip}`, {}, limiter)) {
+    return fail({ error: "Too many submissions. Please try again later." }, 429);
+  }
 
   let body: Body;
   try {
