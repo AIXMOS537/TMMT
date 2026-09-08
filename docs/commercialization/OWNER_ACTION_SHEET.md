@@ -165,19 +165,27 @@ sources place it **$10,000 apart**.
 - **OFFER-STACK** puts the car at **$35,000** and describes $25,000 as the
   *car-rental vertical* — software, no car.
 
-And the decisive detail: in the database, the $25,000 row grants **exactly the same
-six entitlements** as the $15,000 row. The $10,000 difference buys nothing the
-system records — so whichever reading is right, that row is wrong.
+And the detail that settles what we *don't* know: in the database, the $25,000 row
+grants **exactly the same six entitlements** as the $15,000 row. So the system
+**does not record what the extra $10,000 buys.** That is not proof the row is
+wrong — the $10,000 could be a car, a service, an implementation component, an old
+commercial distinction, or stale pricing. **Only you know which.**
 
 **Recommended:** **unbundle the vehicle.** Sell software at the software price and
-quote the car separately at cost-plus. Bundling a used vehicle into a software
-price fixes your margin against a market you do not control, and your entitlement
-system cannot represent a car anyway. *(Fallback: put the car at $35,000 and rename
-the $25,000 row.)*
+quote the car separately at cost-plus. A used-vehicle price you don't control
+shouldn't sit inside a fixed software price, and your entitlement system can't
+represent a car anyway.
 
-**Until you answer: quote no offer that names a vehicle.**
+**⚠️ Picking a price does not finish this one.** If you keep the car in a bundle,
+you also have to say: what spec, who holds title, who pays tax and registration,
+where you'll deliver, what you may substitute, what condition, who eats the cost if
+the market moves, what happens if you can't source one, and what the customer gets
+if they decline it. That last one is already undefined — OFFER-STACK offers "no
+backend funding fee" instead of the car, and that phrase is priced nowhere.
 
-**Answer → ☐ Unbundle ☐ Car at $35k ☐ Car at $25k · _______________**
+**Until then: quote no offer that names a vehicle.**
+
+**Answer → ☐ Unbundle ☐ Car at $35k ☐ Car at $25k ☐ Other: _______________**
 
 ---
 

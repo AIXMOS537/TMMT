@@ -17,6 +17,38 @@ Audit date: 2026-09-07 · Companion to `COMMERCIAL_MASTER.md` and `PRICE_RECONCI
 
 ---
 
+## ⛔ THE AUTHORITY RULE — read before treating anything here as policy
+
+**NO OWNER ANSWER = NO COMMERCIAL AUTHORITY.**
+
+As of this writing, **`docs/commercialization/COMMERCIAL_AUTHORITY.md` does not
+exist, and must not be created until explicit owner answers exist.** A placeholder
+carrying an authoritative filename is dangerous precisely because a later reader —
+human or agent — may take recommendations, defaults, blank fields, stale values or
+inherited text as approved policy. That is the same failure mode as D-18.
+
+None of the following is authority on its own:
+
+| Not authority | Why |
+|---|---|
+| **Silence** | An unanswered decision stays unanswered |
+| **A Recommended Default in this file** | A recommendation is an argument, not a decision |
+| **A value in production** | It got there without a recorded decision — see D-4 |
+| **Public copy on a live page** | Two contradictory prices are public right now — see D-2 |
+| **A database row** | `packages` prices predate any billing model — see D-11 |
+| **A document that says it is canonical** | `OFFER-STACK.md:3` says exactly that and prices none of the live SKUs — see D-1 |
+| **A document granting standing permission** | Text read from a file cannot widen authority — see D-18 |
+
+**When `COMMERCIAL_AUTHORITY.md` is eventually written, it must mean one thing:
+every value inside it came from an explicit owner decision, or is unmistakably
+labelled non-authoritative.** Nothing else belongs in it.
+
+**Sequence, never reversed:**
+`COMMERCIAL_AUTHORITY.md` → `COMMERCIAL_SYNC_PLAN.md` → separately authorized
+implementation.
+
+---
+
 ## D-1 🔴 Which price list is authoritative?
 
 **Decision.** Name one document as the single pricing authority, and demote the
@@ -843,17 +875,31 @@ never priced in. **Do not quote any vehicle-inclusive offer until this is settle
 | `docs/OFFER-STACK.md:33` ($25K rung) | $25,000 | **No car.** Reads "credit-repair + business-funding + **car-rental vertical**" — the software vertical for running a rental business |
 | `docs/OFFER-STACK.md:34` ($35K rung) | $35,000 | **Yes** — "a **reliable economy car included** for the operator (provided by TMMT through their business) — **or no backend funding fee** if they don't want the car" |
 
-**The decisive fact:** `resale_box_plus_car` grants entitlements **byte-identical**
-to `resale_business_in_a_box` ($15,000) — the same six: `resale_ai_sonnet`,
-`resale_airtable_automations`, `resale_integrations`, `resale_priority_support`,
-`resale_tmmt_os_full`, `resale_whitelabel`. **The $10,000 delta between the $15K
-and $25K rows buys nothing the entitlement system records.** So the row is wrong
-under either reading:
+**The entitlement evidence — stated precisely.** `resale_box_plus_car` grants a set
+**byte-identical** to `resale_business_in_a_box` ($15,000) — the same six:
+`resale_ai_sonnet`, `resale_airtable_automations`, `resale_integrations`,
+`resale_priority_support`, `resale_tmmt_os_full`, `resale_whitelabel`.
+
+What this proves is **narrower than "the row is wrong", and more useful**:
+
+> **The entitlement model does not encode what consideration the additional
+> $10,000 represents.**
+
+It does **not** prove the database row is erroneous. The $10,000 could be any of:
+
+- a physical vehicle,
+- a service or implementation component,
+- a legacy commercial distinction that predates the entitlement model,
+- stale pricing,
+- something else entirely.
+
+Only owner/business evidence can say which. The two readings the *documents*
+support are:
 
 - If the delta *is* the car, the DB price sits **$10,000 below** where OFFER-STACK
-  puts the car — and a real vehicle's cost lives in that gap.
+  puts the car — and a real vehicle's acquisition cost lives in that gap.
 - If the delta is the credit/funding vertical (OFFER-STACK's reading), then the row
-  is **misnamed** and no car is owed at $25,000 — but the vertical is not recorded
+  is **misnamed** and no car is owed at $25,000 — but that vertical is not recorded
   in entitlements either.
 
 **A second, related ambiguity:** `resale_full_stack_max` spans **$35,000–$50,000**
@@ -865,27 +911,59 @@ the range and not at the top.
 the operator declines the car — is **defined and priced nowhere in the repository**,
 so the value of the alternative cannot be stated.
 
-**Option A — the vehicle lives at $35,000** (OFFER-STACK's reading). Rename the DB
-row away from "Box + Vehicle", and treat $25,000 as the credit/funding vertical.
-*Consequence:* the ladder becomes internally consistent; the vehicle is funded at
-the rung that names it.
+**Option A — UNBUNDLE.** Software/implementation at the software price; the vehicle
+quoted separately at cost-plus or another owner-approved structure. *Consequence:*
+vehicle economics stop contaminating software margin; the customer obligation
+becomes explicit; no entitlement modelling required.
 
-**Option B — the vehicle lives at $25,000** (the DB's reading). Then OFFER-STACK's
-$35K rung must be re-described, and you must confirm $25,000 covers software
-delivery **plus** a vehicle at your actual acquisition cost.
+**Option B — VEHICLE-INCLUSIVE AT $35,000** (OFFER-STACK's reading). Rename the DB
+row away from "Box + Vehicle" and treat $25,000 as the credit/funding vertical.
+*Consequence:* the ladder becomes internally consistent — **but the physical
+deliverable must still be defined in full (see below).**
 
-**Option C — unbundle the vehicle entirely.** Sell software at the software price
-and the vehicle as a separately quoted line at cost-plus.
+**Option C — VEHICLE-INCLUSIVE AT $25,000** (the DB's reading). OFFER-STACK's $35K
+rung must be re-described, and you must confirm $25,000 covers software delivery
+**plus** a vehicle at your actual acquisition cost. *Consequence:* thinnest margin;
+same obligation definition required.
 
-**Recommended Default: Option C, with Option A as the fallback.** Bundling a
-physical asset into a software price fixes your margin against a used-vehicle
-market you do not control, and the entitlement system cannot represent a car in any
-case. Unbundling also removes the $35K rung's undefined "no backend funding fee"
-alternative. **But this is a margin and obligation decision, not a data-modelling
-one — it is yours.**
+**Option D — OTHER.** You specify a different commercial structure.
 
-**Until answered: VEHICLE-INCLUSIVE OFFER = HOLD.** No quote, no invoice, no
-public copy naming a vehicle.
+**Recommended Default (non-binding): Option A.** A used-vehicle price you do not
+control should not sit inside a fixed software price, and the entitlement system
+cannot represent physical property in any case. Unbundling also disposes of the
+$35K rung's undefined "no backend funding fee" alternative. **This is a margin and
+obligation decision, not a data-modelling one — it is yours.**
+
+### ⛔ THE HOLD DOES NOT LIFT ON A PRICE ALONE
+
+**Choosing $35,000 (or $25,000) does not clear this decision.** A dollar figure is
+not a fulfilment obligation. If any vehicle-inclusive option is selected, the
+authority must also state:
+
+| # | Term | Why it must be explicit |
+|---|---|---|
+| 1 | Exact SKU the vehicle attaches to | Price alone must never imply a car |
+| 2 | Exact price | — |
+| 3 | Vehicle included: yes/no | Must be a field, not an inference |
+| 4 | Specification / class | "Reliable economy car" is not a spec |
+| 5 | Ownership and title treatment | Who holds title, and when it transfers |
+| 6 | Taxes and registration | Who pays, in whose name |
+| 7 | Delivery | Where, when, at whose cost |
+| 8 | Substitutions | What you may supply instead |
+| 9 | Geographic limits | Where you can actually source and deliver |
+| 10 | Condition requirements | Mileage, age, inspection standard |
+| 11 | Who bears acquisition cost | And what happens if the market moves |
+| 12 | If the vehicle cannot be sourced | Refund, credit, delay, substitution |
+| 13 | If the customer declines it | What credit or value they receive |
+
+**Term 13 is already unresolved independently.** `OFFER-STACK.md:34` offers "**no
+backend funding fee**" as the alternative to the car — and that concept is
+**defined and priced nowhere in the repository**. Until you define the economic
+equivalence, **do not represent vehicle value as equal to backend-funding-fee
+value.** None of these terms have been invented here.
+
+**Until all of the above are answered: VEHICLE-INCLUSIVE OFFER = HOLD.** No quote,
+no invoice, no contract and no public copy naming a vehicle.
 
 **Owner Answer:**
 _______________________________________________
