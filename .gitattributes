@@ -1,0 +1,6 @@
+*.sh text eol=lf
+*.command text eol=lf
+scripts/tmmt text eol=lf
+scripts/aixmos text eol=lf
+scripts/ceo text eol=lf
+scripts/watchtower text eol=lf
