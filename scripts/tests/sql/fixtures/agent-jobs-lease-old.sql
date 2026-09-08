@@ -1,5 +1,5 @@
 -- Exact agent_wp_* function bodies from
--- chore/agent-jobs-lease-fencing-20260906:20260906022156_agent_jobs_lease_fencing.sql.
+-- chore/agent-jobs-lease-fencing-20260906 : 20260906022156_agent_jobs_lease_fencing.sql.
 -- The fixture schema is created by automation-repairs.pglite.test.mjs.
 
 create or replace function public.agent_wp_claim(
