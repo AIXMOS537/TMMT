@@ -47,7 +47,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | F-16 | P3 | Eligibility status | Free text with 3 hard-coded copies | Import `BG_CHECK_DECISIONS` from `queries.ts` everywhere; test that the copies are gone | TODO |
 | F-17 | P3 | Formatting | Two `formatCurrency`/`formatDate` with different output | Re-export `src/lib/utils.ts` versions from `packages/aixmos-core`; delete duplicates | TODO |
 | F-18 | P3 | Idempotency | Stripe/Cal webhooks have no event-id dedupe; GHL degrades silently to in-memory | Reuse `consumeGhlEventId` pattern with a generic `webhook_events` table (**OWNER-GATED** migration) + loud metric when fallback engages | TODO / OWNER |
-| F-19 | P3 | Timeouts | No GHL/Airtable/ClickUp fetch has a timeout | One `fetchWithTimeout()` helper (8 s default) used by all outbound clients | TODO |
+| F-19 | P3 | Timeouts | No GHL/Airtable/ClickUp fetch has a timeout | One `fetchWithTimeout()` helper (8 s default) used by all outbound clients | DONE 315ccdd2 (PR #197); 25 sites in 11 files + structural bare-fetch guard |
 
 ## Batch 3 — tests where none exist (interleave with Batch 1/2 fixes)
 
