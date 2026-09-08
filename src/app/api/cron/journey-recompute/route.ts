@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { recomputeAllActiveJourneys, recomputeJourneyForEmail } from "@/lib/client-journey/recompute";
+import { bearerMatches, secretMatches } from "@/lib/secure-compare";
 
 export const dynamic = "force-dynamic";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET ?? process.env.OPS_COMMAND_SECRET;
   if (!secret) return false;
-  const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${secret}`) return true;
-  const header = req.headers.get("x-cron-secret");
-  return header === secret;
+  if (bearerMatches(req.headers.get("authorization"), secret)) return true;
+  return secretMatches(req.headers.get("x-cron-secret"), secret);
 }
 
 export async function GET(req: Request) {

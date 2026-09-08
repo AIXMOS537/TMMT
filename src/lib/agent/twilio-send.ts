@@ -1,12 +1,16 @@
 import Twilio from 'twilio'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { isRateLimited } from '@/lib/rate-limit'
-import { assertSmsAllowed, SmsBlockedError, type SmsType } from '../../../shared/compliance-gates/sms-gate'
+import { SmsBlockedError, type SmsType } from '../../../shared/compliance-gates/sms-gate'
+import { assertOutboundAllowed } from '@/lib/outbound-gate'
 
 export interface SendSmsArgs {
   from: string
   to: string
   body: string
   organizationId?: string
+  /** Client for the do-not-contact / opt-out reads. Defaults to the service client. */
+  db?: SupabaseClient | null
   twilioAccountSid?: string
   twilioAuthToken?: string
   /** Use-case/vertical, e.g. "rentals" | "credit_repair" | "funding". Drives the SMS compliance gate. */
@@ -33,16 +37,21 @@ export class TwilioRateLimitedError extends Error {
  * not on the inbound path.
  */
 export async function sendSms(args: SendSmsArgs): Promise<{ sid: string }> {
-  // Compliance gate FIRST (shared/compliance-gates/sms-gate). BLOCKs promotional
-  // SMS for A2P-restricted verticals (credit/funding/debt/lending) — throws
-  // SmsBlockedError — and HOLDs un-approved marketing. Transactional is the safe
-  // default, so callers that don't pass vertical/type are unaffected.
-  const gate = assertSmsAllowed({
+  // Outbound gate FIRST (src/lib/outbound-gate → shared/compliance-gates/sms-gate).
+  // BLOCKs promotional SMS for A2P-restricted verticals (credit/funding/debt/
+  // lending) — throws SmsBlockedError — HOLDs un-approved marketing, and refuses
+  // numbers on the do-not-contact list or leads that opted out of this org.
+  // Transactional is the safe default, so callers that don't pass vertical/type
+  // are unaffected by the A2P part; the DNC/opt-out part applies to every send.
+  const gate = await assertOutboundAllowed({
+    db: args.db,
+    phone: args.to,
+    organizationId: args.organizationId,
     vertical: args.vertical ?? '',
     type: args.type ?? 'transactional',
-    owner_approved: args.ownerApproved,
+    ownerApproved: args.ownerApproved,
   })
-  if (gate.decision === 'HOLD') {
+  if (!gate.allowed) {
     throw new SmsBlockedError(gate.reason)
   }
 

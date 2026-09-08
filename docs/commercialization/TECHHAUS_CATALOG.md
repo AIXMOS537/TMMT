@@ -1,5 +1,18 @@
 # TECHHAUS CATALOG
 
+> **REPOSITIONING REQUIRED (2026-09-08).** The product model is now confirmed as
+> **shared multi-tenant white-label SaaS** — customer organisations operate their
+> own rental business, their own staff, their own branding. This document is
+> written from a **managed-services** hypothesis ($12,500 setup + $2,500/mo) that
+> the owner has since ruled out. Its market research remains valid; its
+> positioning does not. The $199-$499/mo figure discussed in conversation is a
+> **conversational suggestion, not validated pricing** — subscription tiers should
+> be designed against the actual tenant surface (fleet size, locations, users,
+> transaction volume, premium capabilities, onboarding, support, screening and
+> payment costs, infrastructure) once that surface is known. See `docs/saas/`.
+
+
+
 **The sales catalog. Readable without opening the repository.**
 
 Audit date: 2026-09-07 · Companions: `COMMERCIAL_MASTER.md`,

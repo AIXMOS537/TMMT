@@ -6,6 +6,9 @@
  * - GHL_RESTORATION_LOCATION_ID — Credit / LTO / operator journey (falls back to GHL_LOCATION_ID)
  */
 
+import { assertOutboundAllowed } from "@/lib/outbound-gate";
+import { SmsBlockedError, type SmsType } from "../../../shared/compliance-gates/sms-gate";
+
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
 export type GhlLocationKind = "rentals" | "restoration";
@@ -262,15 +265,46 @@ export async function updateOpportunityStage(args: {
 
 export type GhlMessageType = "SMS" | "Email";
 
-/** Send SMS or email through GHL Conversations (routes via your LC phone / mail — e.g. OpenPhone for SMS). */
-export async function sendConversationMessage(args: {
-  contactId: string;
-  type: GhlMessageType;
-  message: string;
-  subject?: string;
-  html?: string;
-  locationId?: string;
-}): Promise<void> {
+/**
+ * Send SMS or email through GHL Conversations (routes via your LC phone / mail — e.g. OpenPhone for SMS).
+ *
+ * This is a customer-facing send, so it goes through the outbound gate
+ * (src/lib/outbound-gate: A2P compliance + do-not-contact + per-lead opt-out)
+ * before anything leaves. For SMS the destination phone is REQUIRED — GHL only
+ * needs the contact id, but the compliance checks key on the number, and a send
+ * that cannot be checked is not made. Email skips the phone-based checks.
+ * A refused send throws SmsBlockedError; callers must not swallow it silently.
+ */
+export async function sendConversationMessage(
+  args: {
+    contactId: string;
+    message: string;
+    subject?: string;
+    html?: string;
+    locationId?: string;
+    /** Org whose lead record holds the opt-out flag (SMS). */
+    organizationId?: string;
+    /** A2P vertical for the compliance gate, e.g. "rentals" | "credit_repair" | "funding". */
+    vertical?: string;
+    /** Carrier class. Defaults to transactional. Marketing requires ownerApproved. */
+    smsType?: SmsType;
+    ownerApproved?: boolean;
+  } & ({ type: "SMS"; phone: string } | { type: "Email"; phone?: string })
+): Promise<void> {
+  if (args.type === "SMS") {
+    if (!args.phone?.trim()) {
+      throw new SmsBlockedError("sendConversationMessage: phone is required for SMS so the outbound gate can run");
+    }
+    const gate = await assertOutboundAllowed({
+      phone: args.phone,
+      organizationId: args.organizationId,
+      vertical: args.vertical ?? "",
+      type: args.smsType ?? "transactional",
+      ownerApproved: args.ownerApproved,
+    });
+    if (!gate.allowed) throw new SmsBlockedError(gate.reason);
+  }
+
   const loc = locationOr(args.locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return;
 
