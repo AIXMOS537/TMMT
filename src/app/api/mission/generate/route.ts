@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendOwnerMissionToTelegram, sendMissionToTeam } from "@/lib/mission/send";
+import { bearerMatches, secretMatches } from "@/lib/secure-compare";
 
 export const dynamic = "force-dynamic";
 
@@ -8,10 +9,9 @@ type Audience = "owner" | "team";
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET ?? process.env.OPS_COMMAND_SECRET;
   if (!secret) return false;
-  const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${secret}`) return true;
-  if (req.headers.get("x-cron-secret") === secret) return true;
-  if (req.headers.get("x-mission-secret") === secret) return true;
+  if (bearerMatches(req.headers.get("authorization"), secret)) return true;
+  if (secretMatches(req.headers.get("x-cron-secret"), secret)) return true;
+  if (secretMatches(req.headers.get("x-mission-secret"), secret)) return true;
   return false;
 }
 
