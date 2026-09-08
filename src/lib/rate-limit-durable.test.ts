@@ -32,7 +32,7 @@ describe("isRateLimitedDurable", () => {
     const key = `k-${Math.random()}`;
     const results: boolean[] = [];
     for (let i = 0; i < 3; i++) results.push(await isRateLimitedDurable(key, { maxHits: 2 }, db));
-    expect(results).toEqual([false, false, true]);
+    expect(results).toEqual([false, false, true]); // memory limiter semantics, unchanged
   });
 
   it("falls back when the backend throws", async () => {
