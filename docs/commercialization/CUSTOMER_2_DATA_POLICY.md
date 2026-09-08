@@ -58,9 +58,9 @@ the car?"* — which decomposes to:
 | Chase a missing document | presence flags | no |
 | Read the licence / paystub / insurance | **raw payload** | **yes** |
 
-Only the last line needs raw data — and that is the compliance/screening job,
-which in a **managed** offer TechHaus performs. "Uses background checks" is not
-"needs raw background-check records."
+Only the last line needs raw data — and that is the compliance/screening job.
+**Who performs that job is an unchosen operating-model decision, not a fact of
+the code.** "Uses background checks" is not "needs raw background-check records."
 
 ### Option A — No customer access *(recommended)*
 
@@ -227,8 +227,19 @@ correctly org-scoped and their assertions stand as written.
 
 A third, which the evidence says must be answered first:
 
-3. **What does Customer #2 log into?** The admin app is staff-gated and staff is
-   global. Either a scoped customer UI gets built, or Customer #2 is a
-   **managed** offer where TechHaus operates the admin app on their behalf and
-   the customer's own login is narrow or absent. **That choice determines whether
-   questions 1 and 2 matter at all.**
+3. **What does Customer #2 log into, and whose staff operate it?** The admin app
+   is gated on the application `staff` role, and that role is global. Which
+   operating model applies is a decision the owner has not made, and it must not
+   be inferred from code structure:
+
+   | Model | Who performs the second organisation's daily rental work |
+   |---|---|
+   | **A — software** | Customer #2's own staff |
+   | **B — implementation** | someone configures it; Customer #2 then operates it |
+   | **C — managed operations** | a provider performs ongoing operational work |
+   | **D — hybrid** | responsibilities split explicitly |
+
+   **Under A, B or D the transferability blocker is real and must be engineered
+   away.** It cannot be dissolved by assuming a provider will operate the app on
+   the customer's behalf — that assumes model C, which nobody has chosen.
+   Only under C does the customer's own login become narrow or absent.

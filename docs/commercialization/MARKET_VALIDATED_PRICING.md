@@ -208,9 +208,19 @@ the partner's close rate — which you cannot observe or audit.
 
 ## 10. PROOF DISCOUNT
 
-TechHaus has **$0 external software revenue** and **no reference customer at any
-price above $577**. Standard practice is to discount for absent proof, then
-raise once references exist.
+TechHaus has **$0 external software revenue** and **no external software
+customer at any price**.
+
+**Attribution correction.** The $9,510.57 / 31 payments / $577 figures are
+**consumer rental transactions belonging to Muhammad Taha's rental operation**,
+recorded through the system. They are operational transaction evidence — proof
+the workflows have been exercised against a real business — **not TechHaus
+revenue, ARR, MRR or commercial traction**, and they do not establish a
+willingness-to-pay ceiling for B2B software. Do not carry them into a TechHaus
+revenue figure.
+
+Standard practice is to discount for absent proof, then raise once references
+exist.
 
 | Stage | Rentals build | Rentals monthly | Seat |
 |---|---|---|---|
