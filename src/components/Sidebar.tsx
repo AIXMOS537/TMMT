@@ -93,6 +93,7 @@ const navGroups = [
     label: "Operations",
     items: [
       { href: "/tasks", label: "To-Do List", icon: ClipboardCheck },
+      { href: "/va-queue", label: "VA Approval Queue", icon: ClipboardCheck },
       { href: "/tickets", label: "Tickets", icon: AlertTriangle },
       { href: "/expenses", label: "Expenses", icon: DollarSign },
       { href: "/vendors", label: "Vendors / Shops", icon: Store },
