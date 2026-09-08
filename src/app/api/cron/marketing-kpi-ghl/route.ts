@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { syncMarketingKpiWeekFromGhl } from "@/lib/marketing-kpi/ghl-sync";
 import { weekStartMonday } from "@/lib/marketing-kpi/queries";
+import { bearerMatches, secretMatches } from "@/lib/secure-compare";
 
 export const dynamic = "force-dynamic";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET ?? process.env.OPS_COMMAND_SECRET;
   if (!secret) return false;
-  const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${secret}`) return true;
-  return req.headers.get("x-cron-secret") === secret;
+  if (bearerMatches(req.headers.get("authorization"), secret)) return true;
+  return secretMatches(req.headers.get("x-cron-secret"), secret);
 }
 
 export async function GET(req: Request) {

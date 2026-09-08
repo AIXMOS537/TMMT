@@ -2,6 +2,8 @@ import "server-only";
 import { loadCompanyPolicyText } from "@/lib/ops-policy";
 
 export type OpsAiReview = {
+  /** False when no model actually reviewed the text (no key, provider error, bad JSON). */
+  reviewed: boolean;
   aligned: boolean;
   score: number;
   issues: string[];
@@ -73,6 +75,7 @@ ${REVIEW_SCHEMA}`;
   try {
     const parsed = JSON.parse(text.trim()) as OpsAiReview;
     return {
+      reviewed: true,
       aligned: Boolean(parsed.aligned),
       score: Number(parsed.score) || 0,
       issues: Array.isArray(parsed.issues) ? parsed.issues : [],
@@ -147,12 +150,20 @@ Respond JSON only:
   }
 }
 
+/**
+ * A review that did not happen is not a pass. This used to return
+ * { aligned: true, score: 0.5 }: the 0.75 threshold in ops-actions kept it from
+ * publishing on the spot, but `ai_aligned: true` was still written to the row
+ * and publishOpsMessage accepts `ai_aligned` on its own — so a message no model
+ * ever saw could later be published as "AI reviewed". (Remediation F-04.)
+ */
 function fallbackReview(body: string): OpsAiReview {
   return {
-    aligned: true,
-    score: 0.5,
-    issues: ["AI review skipped — set ANTHROPIC_API_KEY for automated fact-checking."],
+    reviewed: false,
+    aligned: false,
+    score: 0,
+    issues: ["Not reviewed — the AI fact-check did not run (missing ANTHROPIC_API_KEY, provider error, or unreadable output). A person must review before publishing."],
     suggestedBody: body,
-    summary: "Manual review required.",
+    summary: "Not reviewed. Manual review required.",
   };
 }
