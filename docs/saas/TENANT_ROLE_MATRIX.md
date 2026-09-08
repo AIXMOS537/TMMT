@@ -5,6 +5,42 @@ Two authority domains for the shared multi-tenant SaaS. Assessed 2026-09-08.
 
 ---
 
+
+---
+
+## SETTLED DECISIONS — 2026-09-08 (do not re-ask)
+
+**DECISION 1 — TENANT ROLE MODEL: APPROVED.** Three roles only:
+`TENANT_OWNER`, `TENANT_MANAGER`, `TENANT_AGENT`. No VIEWER, no speculative
+roles. They belong exclusively to the tenant authority domain and must remain
+distinct from platform authority. Permissions are capability-driven underneath
+the roles so they can evolve without another authorization rewrite.
+
+**DECISION 2 — SENSITIVE DATA EXPOSURE: APPROVED.**
+
+| Surface | OWNER | MANAGER | AGENT |
+|---|---|---|---|
+| Payments | MASKED | MASKED | NONE |
+| Screening | MASKED | MASKED | SUMMARY |
+| Raw identity documents | **NONE** | **NONE** | **NONE** |
+
+Tenant users receive only operationally necessary information. No processor
+internals, secrets, tokens or raw records. The August hardening is **not**
+weakened; access is delivered through purpose-built projections.
+
+**DECISION 3 — P0 FIX: AUTHORIZED AND IMPLEMENTED.** See
+`supabase/migrations/20260908120000_is_internal_ops_fail_closed.sql`.
+
+## ARCHITECTURE INVARIANTS (permanent)
+
+1. **PLATFORM AUTHORITY != TENANT AUTHORITY.** A tenant role must never be
+   expressible as a platform role. `is_staff()` is retired from tenant paths.
+2. **AUTHORIZATION FAILURE = DENY.** No authorization helper may grant authority
+   because something failed. Predicates are `LANGUAGE sql`, no exception
+   handlers, no fail-open branches.
+
+---
+
 ## THE CORE SEPARATION
 
 Today one concept does both jobs, and that is the architectural blocker:

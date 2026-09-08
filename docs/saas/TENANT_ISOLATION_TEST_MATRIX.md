@@ -37,9 +37,29 @@ direction. **Security predicates must fail closed.**
 
 Also note it grants internal-ops to the **`investor`** role.
 
-**Severity P0** in a multi-tenant product. Currently limited to `cases`, which is
-classified PLATFORM_INTERNAL — so exposure today is bounded. It must be fixed
-before `cases` or `is_internal_ops` is used anywhere tenant-facing.
+**CORRECTION 2026-09-08 — the blast radius was understated.** An earlier version
+of this document said exposure was "limited to `cases`". That was wrong. Verified:
+**18 policies across 8 tables**.
+
+| Table | Commands gated | `org_id`? |
+|---|---|---|
+| `cases` | SELECT, UPDATE | yes |
+| `credit_funding_sessions` | SELECT, UPDATE, DELETE | yes |
+| `credit_payment_schedule` | SELECT, INSERT, UPDATE, DELETE | yes |
+| `crm_sync_records` | SELECT, UPDATE | no |
+| `customer_intake_forms` | SELECT — **policy role is `{public}`** | no |
+| `program_applications` | SELECT, INSERT, UPDATE, DELETE | yes |
+| `program_audit_log` | SELECT | no |
+| `sync_events` | SELECT | no |
+
+`customer_intake_forms` is the sharpest edge: an anonymous-reachable policy on
+intake PII sat behind a predicate that granted on failure. Two DELETE policies
+were gated solely on it. Present-day row counts are small (49 total), so realised
+exposure was limited — but the structure was the risk.
+
+**STATUS: FIXED** — `supabase/migrations/20260908120000_is_internal_ops_fail_closed.sql`
+rewrites the predicate as `LANGUAGE sql` with no exception handler, matching every
+sibling helper. Fail-closed by construction, not by luck. Policies untouched.
 
 ### P0-B · The product gate is global
 
@@ -107,7 +127,7 @@ org-id-guessing oracle.
 | Realtime subscriptions | RLS applies, but channel names may leak existence | **UNVERIFIED** |
 | Offline sync (`lib/offline/tables.ts`) | caches `customer_payments` locally | **UNVERIFIED** |
 | Exports / reporting | aggregate queries may bypass row filters | **UNVERIFIED** |
-| Background jobs / sweeps | `sweep_overdue_payments()` has no org predicate | **UNVERIFIED** |
+| Background jobs / sweeps | `sweep_overdue_payments()` — **CLASSIFIED, not a vulnerability**: EXECUTE granted to `postgres`/`service_role` only (**not** `authenticated`), takes no arguments, idempotent, not tenant-invokable. Intentional global maintenance. Will need org-awareness when multi-tenant billing exists. | **RESOLVED** |
 | Host → tenant resolution | can a crafted Host header select another tenant? | **UNVERIFIED** |
 
 **None of these are proven safe. "RLS is on 165/165 tables" does not cover any
