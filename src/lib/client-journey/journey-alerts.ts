@@ -23,7 +23,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       message:
         "Enroll in the $97/mo plan or complete the $250 down + $250 payment plan to continue toward lease-to-own.",
       priority: "high",
-      href: "/client/credit",
+      href: "/learn/dashboard",
     });
   }
 
@@ -33,7 +33,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       title: "Complete credit education",
       message: "Read and acknowledge all sections on why credit repair matters before LTO.",
       priority: "high",
-      href: "/client/credit",
+      href: "/learn/dashboard",
     });
   }
 
@@ -43,7 +43,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       title: "Finish core training",
       message: `Complete all core rebuild modules (${hub.training.coreDone}/${hub.training.coreTotal} done) to unlock lease-to-own.`,
       priority: "high",
-      href: "/client/training",
+      href: "/learn/dashboard",
     });
   }
 
@@ -57,7 +57,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       message: "Your credit enrollment payment is coming up. Stay current to keep Path B waived.",
       priority: "normal",
       dueInDays: 3,
-      href: "/client/billing",
+      href: "/learn/dashboard",
     });
   }
 
@@ -71,7 +71,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       message: "Your $250 balance is due within the 30–45 day window. Pay in Billing to satisfy credit requirements.",
       priority: "high",
       dueInDays: 7,
-      href: "/client/billing",
+      href: "/learn/dashboard",
     });
   }
 
@@ -82,7 +82,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       message:
         "You have 90-day good standing. Finish education and core training to unlock lease-to-own.",
       priority: "high",
-      href: "/client/path",
+      href: "/learn/dashboard",
     });
   }
 
@@ -92,7 +92,7 @@ export function journeyAlertTemplates(hub: JourneyHub): JourneyAlertTemplate[] {
       title: "Lease-to-own unlocked",
       message: "You meet all requirements. Review documents and speak with TMMT to start LTO.",
       priority: "normal",
-      href: "/client/documents",
+      href: "/learn/documents",
     });
   }
 
