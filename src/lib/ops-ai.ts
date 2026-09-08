@@ -1,5 +1,9 @@
 import "server-only";
 import { loadCompanyPolicyText } from "@/lib/ops-policy";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
+// A policy-grounded review can legitimately take longer than an API ping.
+const ANTHROPIC_TIMEOUT_MS = 30_000;
 
 export type OpsAiReview = {
   /** False when no model actually reviewed the text (no key, provider error, bad JSON). */
@@ -49,7 +53,8 @@ If not aligned, provide a corrected suggestedBody that fixes issues while keepin
 
 ${REVIEW_SCHEMA}`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+    timeoutMs: ANTHROPIC_TIMEOUT_MS,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -119,7 +124,8 @@ ${rawTranscript}
 Respond JSON only:
 {"draft": "...", "notes": "brief note to owner about assumptions or questions"}`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
+    timeoutMs: ANTHROPIC_TIMEOUT_MS,
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 /** Resolve ClickUp user IDs from emails (team members). */
 export async function resolveClickUpUserIds(emails: string[]): Promise<number[]> {
   const token = process.env.CLICKUP_API_TOKEN?.trim();
@@ -7,7 +9,7 @@ export async function resolveClickUpUserIds(emails: string[]): Promise<number[]>
   const ids: number[] = [];
   for (const email of emails) {
     const q = new URLSearchParams({ email: email.trim().toLowerCase() });
-    const res = await fetch(`https://api.clickup.com/api/v2/team/${teamId}/user?${q}`, {
+    const res = await fetchWithTimeout(`https://api.clickup.com/api/v2/team/${teamId}/user?${q}`, {
       headers: { Authorization: token },
     });
     if (!res.ok) continue;

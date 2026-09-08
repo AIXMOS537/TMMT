@@ -1,5 +1,6 @@
 import "server-only";
 import { geocodeCache, type GeocodeResult } from "./osm-cache";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search";
 // Nominatim usage policy requires a unique, identifying User-Agent.
@@ -15,7 +16,7 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
   if (cached) return cached;
 
   const url = `${NOMINATIM_BASE}?q=${encodeURIComponent(q)}&format=json&addressdetails=0&limit=5&countrycodes=us`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "GET",
     headers: { "User-Agent": USER_AGENT, "Accept": "application/json" },
   });

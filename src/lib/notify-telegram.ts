@@ -1,4 +1,5 @@
 import "server-only";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 const TG_BASE = "https://api.telegram.org";
 
@@ -13,7 +14,7 @@ export async function notifyTelegram(opts: {
     return false;
   }
   try {
-    const res = await fetch(`${TG_BASE}/bot${token}/sendMessage`, {
+    const res = await fetchWithTimeout(`${TG_BASE}/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
