@@ -65,6 +65,26 @@ the tenancy works for anyone but the house.
 
 ---
 
+## THE PRIOR FINDING — THERE IS NO CUSTOMER-FACING RENTAL UI
+
+Verified 2026-09-08. Every read of `background_checks` and `customer_payments`
+lives in `src/app/(admin)`. The only non-admin touches are the public intake
+WRITE path (`forms/actions.ts`, `forms/license-upload-actions.ts`).
+
+`(operator)` reads only `lead_pool`, training tables, `organizations`,
+`profiles` — **no rental data**. `(partner)` reads none directly.
+
+And `(admin)/layout.tsx:38` gates the whole group on `isStaffUser`, while
+`is_staff()` carries **no org predicate**.
+
+> To use the rental back office today you must be staff, and staff is global.
+> Any Customer #2 user who can operate the product can see every tenant.
+
+This sits UPSTREAM of the two table policies. See `CUSTOMER_2_DATA_POLICY.md`
+for the decision packet.
+
+---
+
 ## THE CRITICAL STRUCTURAL FACT
 
 **Tenant-scoped access has never been exercised in production.**
