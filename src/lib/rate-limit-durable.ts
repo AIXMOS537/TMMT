@@ -4,20 +4,21 @@
  * src/lib/rate-limit.ts keeps hits in a per-process Map. On Vercel every
  * cold start and every parallel instance has its own empty map, so a burst
  * that fans out across instances is never limited and the count resets on
- * each deploy. It remains the right tool for the Edge middleware and fallback.
+ * each deploy. It remains the right tool for the Edge middleware (no database
+ * round-trip on every request) and the fallback here.
  *
  * This variant asks Postgres first: `rate_limit_hit(p_key, p_window_ms,
  * p_max_hits)` (staged migration 20260908000100, owner-gated) does one atomic
  * upsert and returns true when the caller is over the limit. Until that
  * function exists, or if the database is unreachable, the in-memory limiter
- * answers instead.
+ * answers instead — today's behaviour, never worse.
  */
 import { isRateLimited, type RateLimitOpts } from "@/lib/rate-limit";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_HITS = 5;
 
-/** The slice of a Supabase client this needs; tests can hand in a double. */
+/** The slice of a Supabase client this needs; kept narrow so tests can hand in a double. */
 export type RateLimitBackend = {
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 };
@@ -51,7 +52,6 @@ export async function isRateLimitedDurable(
       }
     }
   }
-
   return isRateLimited(key, { windowMs, maxHits });
 }
 

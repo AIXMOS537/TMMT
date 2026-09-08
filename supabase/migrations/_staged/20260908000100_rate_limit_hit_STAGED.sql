@@ -1,5 +1,5 @@
 -- 20260908000100_rate_limit_hit_STAGED.sql
--- STAGED - NOT APPLIED. Production DDL is owner-gated (OWNER_DECISIONS D-18).
+-- STAGED — NOT APPLIED. Production DDL is owner-gated (OWNER_DECISIONS D-18).
 -- Backs src/lib/rate-limit-durable.ts (remediation F-11).
 --
 -- WHY
@@ -55,7 +55,6 @@ begin
     set window_start = case when b.window_start < v_now - v_window then v_now else b.window_start end,
         hits         = case when b.window_start < v_now - v_window then 1 else b.hits + 1 end
   returning hits into v_hits;
-
   return v_hits > greatest(p_max_hits, 1);
 end;
 $$;
