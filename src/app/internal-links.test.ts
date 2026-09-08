@@ -100,6 +100,26 @@ describe("internal links", () => {
     ).toEqual([]);
   });
 
+  // Links do not only live in JSX. Navigation tables, ops-command responses and
+  // journey alerts build them as `href: "/..."` object literals under src/lib,
+  // which is exactly where eight dead links (/fleet, /appointments, /internal/*,
+  // /client/*) survived the JSX-only check above. (Remediation F-08.)
+  it("every static href literal under src/lib points at a route that exists", () => {
+    const LIB = join(process.cwd(), "src", "lib");
+    const dead: string[] = [];
+    for (const f of walk(LIB)) {
+      if (!/\.(ts|tsx)$/.test(f) || /\.test\.(ts|tsx)$/.test(f)) continue;
+      const where = relative(LIB, f).split(sep).join("/");
+      const src = readFileSync(f, "utf8");
+      for (const m of src.matchAll(/\bhref:\s*["'](\/[^"']*)["']/g)) {
+        const href = m[1].replace(/[?#].*$/, "").replace(/\/$/, "") || "/";
+        if (href.startsWith("/api") || href.startsWith("/_next")) continue;
+        if (!routeExists(href)) dead.push(`${href}  ←  src/lib/${where}`);
+      }
+    }
+    expect([...new Set(dead)].sort(), "these links go nowhere").toEqual([]);
+  });
+
   it("finds the routes it is supposed to be checking against", () => {
     // Guards the walker itself: if the glob silently stops matching, the test
     // above would pass by finding nothing rather than by everything being fine.
