@@ -91,8 +91,8 @@ export async function cacheUpsert(
 }
 
 export async function outboxAdd(table: string, record: Record<string, unknown>): Promise<void> {
+  const db = await openDb();
   try {
-    const db = await openDb();
     const item: OutboxItem = {
       id: crypto.randomUUID(),
       table,
@@ -104,10 +104,10 @@ export async function outboxAdd(table: string, record: Record<string, unknown>):
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Offline write was aborted."));
     });
+  } finally {
     db.close();
-  } catch {
-    /* ignore */
   }
 }
 

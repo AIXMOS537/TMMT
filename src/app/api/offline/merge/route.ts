@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSSRClient } from "@/lib/supabase-server";
 import { getTierForUser } from "@/lib/auth-roles";
 import { DESK_TABLES, isDeskTable } from "@/lib/offline/tables";
+import { validateRentalWrite } from "@/lib/rental-write-validation";
 
 type MergeItem = { table: string; record: Record<string, unknown> };
 
@@ -48,9 +49,16 @@ export async function POST(req: Request) {
       errors.push(`skipped ${item?.table ?? "?"}`);
       continue;
     }
+    const validationError = await validateRentalWrite(item.table, item.record, supabase);
+    if (validationError) {
+      errors.push(`${item.table}: ${validationError}`);
+      continue;
+    }
     const record = { ...item.record };
     if (stampedOrg && record.org_id == null) record.org_id = stampedOrg;
     delete record.synced;
+    // Older desk clients queued the cache's synthetic timestamp as a DB field.
+    delete record.updated_at;
     const { error } = await supabase.from(item.table).upsert(record);
     if (error) {
       errors.push(`${item.table}: ${error.message}`);
