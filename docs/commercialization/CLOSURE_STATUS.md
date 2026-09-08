@@ -17,18 +17,32 @@ Pass date: 2026-09-08 · Verified against `origin/master` = `5d5d8d2e`
 | `origin/master` | `5d5d8d2e` |
 | Working tree | clean (one untracked file of unknown authorship, left alone) |
 | Worktrees | `C:/dev/TMMT-LIVE` (this), `C:/dev/TMMT-docs-wt` (`docs/owner-model`), `C:/dev/TMMT-s3-wt` (`feat/bg-check-decide-7arg`) |
-| Open PRs | **#191** `feat/bg-check-decide-7arg` — OPEN, MERGEABLE, `pii-scan` SUCCESS |
-| **Production deployment (Vercel)** | **`f152f3c5`** — `dpl_CbGuH9H2axgkmpDNAfpnW5ho4a5X`, state READY, target production, rollback candidate |
+| Open PRs | **none** — #191 merged by the owner as `0890d02f` |
+| **Production deployment (Vercel)** | **`0890d02f`** — `dpl_FfV6DGKPeoBLrj1L8d6k3V2Q7AL9`, READY, target production |
 | Production branch | `master` |
 | Commercialization docs | 8 on master (this makes 9) |
 | Decisions recorded | 20 · 44 `PENDING` values in the sync plan |
 | `COMMERCIAL_AUTHORITY.md` | **absent — correct** |
 
-⚠️ **Every production-target deployment after `f152f3c5` is CANCELED** — including
-`6a2b5aff`, `49d67b42`, `94d78863`, `97a78d69`, `1c25f1cd`, `5d5d8d2e`. Those are
-all documentation commits, so nothing functional is missing from production, but
-**master is ahead of what is actually deployed.** Do not infer deployment from a
-git merge.
+### Docs-only commits do not deploy — and that is deliberate
+
+An earlier version of this document flagged it as a ⚠️ that "every production
+deployment after `f152f3c5` is CANCELED" and that "master is ahead of what is
+deployed". **That framing was wrong**, and a sibling session corrected it.
+
+`vercel.json:3` sets `"ignoreCommand": "bash scripts/vercel-ignore.sh"`. That
+script skips the build whenever nothing changed under `src`, `public`, `packages`,
+`config`, the Next/Sentry configs or the lockfiles — its own comment says docs and
+scripts "never trigger a deploy — that's what was burning the free-tier daily
+build quota."
+
+So the six commercialization commits were **CANCELED by policy, not stuck**. The
+#191 merge touched `src/`, the ignore script returned BUILD, and production
+deployed immediately as `dpl_FfV6DGKPeoBLrj1L8d6k3V2Q7AL9` (READY) for `0890d02f`.
+
+**"Merged but not shipped" applies only to docs commits, which never ship by
+design.** The standing caution still holds in general — do not infer deployment
+from a git merge — but there was no drift here to be concerned about.
 
 ---
 
@@ -37,7 +51,7 @@ git merge.
 | Item | Evidence |
 |---|---|
 | Migration reconciliation | PR **#190** merged as `4854833d` — ancestor of master, confirmed |
-| Tenant regression | PR **#188** merged as `f152f3c5` — ancestor of master, confirmed; also the live production deployment |
+| Tenant regression | PR **#188** merged as `f152f3c5` — ancestor of master, confirmed |
 | Broad commercial inventory | `COMMERCIAL_MASTER.md` |
 | Revenue census | 31 payments / $9,510.57 / max $577 / Oct 2025–Mar 2026 / none since — re-verified |
 | Security-claim correction | `CLAIMS_AUDIT.md` |
@@ -53,10 +67,10 @@ correct action was to verify and not duplicate it.
 
 | Item | Outcome |
 |---|---|
-| **§6 `bg_check_decide` 7-arg adoption** | **DONE by sibling** — PR #191, commit `0338cc48`. Verified: all 7 named args, dedupe key `bgcheck:<id>:<decision>:<yyyymmddhhmm>` UTC, returns the RPC jsonb incl. `decision_event_id`. **Not duplicated.** |
-| **§7 S3-06 staff decision screen** | **DONE by sibling** — PR #191, commit `e34158f4`. Queue → decide → trail via `v_decision_trail` in the review modal. Reason picker deliberately not built (nothing to show until S3-05 is seeded). **Not duplicated.** |
+| **§6 `bg_check_decide` 7-arg adoption** | **DONE by sibling, now MERGED** (`0890d02f`) — PR #191, commit `0338cc48`. Verified: all 7 named args, dedupe key `bgcheck:<id>:<decision>:<yyyymmddhhmm>` UTC, returns the RPC jsonb incl. `decision_event_id`. **Not duplicated.** |
+| **§7 S3-06 staff decision screen** | **DONE by sibling, now MERGED** (`0890d02f`) — PR #191, commit `e34158f4`. Queue → decide → trail via `v_decision_trail` in the review modal. Reason picker deliberately not built (nothing to show until S3-05 is seeded). **Not duplicated.** |
 | **§8 S3-05 final verification** | **Complete — and the ask is smaller than recorded.** See below. |
-| **§20 Vercel** | **Resolved first-hand** via the authorized Vercel API (`list_deployments` on `prj_Cw4lJPww…`), not inferred from git. Production = `f152f3c5`, `dpl_CbGuH9H2axgkmpDNAfpnW5ho4a5X`, READY, `isRollbackCandidate: true`. |
+| **§20 Vercel** | **Resolved first-hand** via the authorized Vercel API, not inferred from git — **but my first reading of it was wrong. Corrected below.** |
 | **§21 stale org label** | `preview/rename-moe-legacy-to-aixmos-credit` is **NOT merged** (11 behind / 15 ahead). Recorded; no action taken. |
 | **§22 `dist/` mechanics** | **Determined.** See below. |
 | **§9/§12/§13 Customer #2** | `CUSTOMER_2_READINESS.md` exists untracked, **authorship unknown** (the PR #191 session confirms it is not theirs). Its two P0 claims **verified by me against the live DB**: P0-1 confirmed, P0-2 mis-stated. See below. |
@@ -202,7 +216,7 @@ subscription engine.
 
 | Action | Status |
 |---|---|
-| Merge PR #191 | Prepared by sibling, MERGEABLE, checks green. **Not merged by me.** |
+| ~~Merge PR #191~~ | **DONE — owner authorized, merged as `0890d02f`, deployed to production.** |
 | Seed `public.reason_codes` | Blocked on D-9. Schema and 8 categories documented above. |
 | Add `billing_interval` / `pricing_model` to `packages` | Drafted, **not applied** (D-11). |
 | Create GHL products + set `NEXT_PUBLIC_` checkout vars | Owner-only (D-5). |
@@ -232,7 +246,7 @@ Recorded so future passes stop reopening it.
 
 ## GENUINE BLOCKERS THAT ARE NOT OWNER DECISIONS
 
-1. **Customer #2 P0-1 and P0-2** — tenant-scoped read paths and a safe own-org role.
+1. **Customer #2 P0-1 and the role-vocabulary hazard** — see **D-21**, added from this pass's verification. Two tables need moving onto the existing `is_org_member` pattern, and `profiles.role='admin'` must never be used to grant a tenant admin.
 2. **DNC is enforced nowhere** — `do_not_contact_numbers` has zero references in
    `src`. Blocks any outbound campaign, not the first managed sale.
 
