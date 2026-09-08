@@ -1,7 +1,8 @@
 # TENANT ROLE MATRIX
 
 Two authority domains for the shared multi-tenant SaaS. Assessed 2026-09-08.
-**Proposal only — no code or schema changed.**
+Decisions 1-3 are **SETTLED** (2026-09-08). The P0 fix is implemented as a
+prepared migration; production is not modified.
 
 ---
 
@@ -71,16 +72,17 @@ that makes the SaaS safe.
 | `PLATFORM_SUPPORT` | *does not exist* | needed later for scoped support access with an audit trail |
 
 `is_staff()` should be **retired from tenant paths** and, if kept, mean
-"platform staff" only. `is_internal_ops()` must be fixed to fail closed before
-any further use (see the isolation matrix).
+"platform staff" only. `is_internal_ops()` **has been fixed to fail closed** —
+`supabase/migrations/20260908120000_is_internal_ops_fail_closed.sql`, prepared for
+owner-gated application.
 
 ---
 
 ## TENANT AUTHORITY (proposed — smallest model the workflows justify)
 
-Derived from the 27 screens, not from a generic RBAC template. **Four roles, not
-six** — `TENANT_VIEWER` and a separate `TENANT_ADMIN` are not yet justified by
-any workflow.
+Derived from the 27 screens, not from a generic RBAC template. **Three roles** —
+`TENANT_VIEWER` and a separate `TENANT_ADMIN` are not justified by any workflow
+and are deliberately excluded (SETTLED, Decision 1).
 
 | Role | Exists to |
 |---|---|
