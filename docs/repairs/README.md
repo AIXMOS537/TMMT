@@ -87,3 +87,25 @@ orders by UUID rather than an explicit mutation sequence, and partially successf
 batches remain queued. Those require a deliberate outbox migration and conflict
 protocol. The current repairs do not claim to solve them or silently discard old
 queued work.
+
+## Owner queue for `exec_va_tasks` (app, 2026-09-08)
+
+Nothing in the app read `exec_va_tasks` before this. Every `needs_approval` row
+(745 at audit) sat pending with no consumer. `src/app/(admin)/va-queue/` adds a
+staff-only screen and server actions:
+
+- **Approve** (owner only) writes `result.approval = {by, at, note}` and leaves the
+  row pending. It records authority; it does not send, pay, or call anything. A
+  future worker may act only on rows that carry `result.approval`.
+- **Handled / Dismiss** (staff) set `handled_at` and `result.decision`. The
+  classifier already treats `handled_at` as terminal (`already_handled`).
+- Only `handled_at` and `result` are written. `status` and `triage_*` are never
+  touched, so `generate_va_tasks_v2` idempotency and `classify_va_tasks` stay
+  authoritative. Writes are fenced on `handled_at is null` and the affected-row
+  count is verified; a stale screen gets a clear error instead of a silent overwrite.
+- Reads and writes go through the service-role client behind `isStaffUser`, the
+  same pattern as the staff review RPCs, because the table's live RLS policies are
+  not in this repo.
+
+Tests: `src/app/(admin)/va-queue/actions.test.ts` (access control, fencing,
+receipts, error surfacing, filters).
