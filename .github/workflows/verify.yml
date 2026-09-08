@@ -19,7 +19,10 @@ concurrency:
 
 jobs:
   verify:
-    name: brands · lint · test · build
+    # The check name GitHub reports is this `name`, not the job id. Docs and the
+    # session-autopilot workflow refer to the required check as "verify", and a
+    # decorated name never matched it. Keep it exactly "verify".
+    name: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
