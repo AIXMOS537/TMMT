@@ -114,8 +114,12 @@ see both in one session.
   `docs/HOMELAND-HQ-AND-OPERATOR-SEATS.md:61`; `docs/DMV-CLUBHOUSE-OFFICE.md:44,52`;
   `scripts/onboard:31` (`FEE_CENTS=9700`); DB `operator_profiles.license_fee_cents`;
   `/upgrade` via `ghl-offers.ts:137`.
-- ⚠️ **`src/lib/token-ledger.ts:30-45` can grant only 500 tokens, and only on tag
-  `member-97`. Nothing in the system can deliver the advertised 2,000.**
+- ⚠️ **`src/lib/token-ledger.ts` has a grant tag for `member-97` and nothing else.**
+  The 500 figure is an env-configurable default (`MEMBER_97_MONTHLY_TOKENS`), so
+  the cap is not the obstacle — the obstacle is that **no grant path for a $297
+  tier exists at all**. Raising the variable would hand 2,000 tokens to every $97
+  member rather than create a tier. *(Corrected from an earlier, cruder reading;
+  see `CLAIMS_AUDIT.md`.)*
 - **Origin:** `9e97dd8b` (2026-08-19) added the $297 form; `8e4a5d7f` (2026-08-22)
   renamed the pre-existing **$97 Academy** card to "AIXMOS Operator". Neither commit
   touched the other's file — this was an accident, not a decision.
@@ -970,6 +974,54 @@ _______________________________________________
 
 ---
 
+## D-21 🔴 Customer #2 tenant safety — the role vocabulary, and two table policies
+
+**Decision.** (a) Adopt the rule that tenant users are granted through
+`org_roles`, never `profiles.role`. (b) Authorize a migration moving
+`customer_payments` and `background_checks` onto the org-scoped policy pattern.
+
+**Why now.** These are the two things standing between you and a safe second
+tenant. (a) needs no engineering and can be adopted today; (b) is a production
+change and therefore owner-gated.
+
+**Evidence** (verified against the live database, 2026-09-08):
+
+- `customer_payments` and `background_checks` both **carry `org_id`**, but their
+  only policy for `authenticated` is `is_platform_admin()` on the `ALL` command —
+  so a tenant user cannot read their own rows. The column exists; nothing uses it.
+- The org-scoped path **already exists and is dominant**: `is_org_member(p_org_id)`
+  reads `org_roles(org_id, user_id, role)` and backs **126 policies**, against 185
+  on the global `is_staff()` and 34 on `is_platform_admin()`.
+- ⚠️ **`profiles.role = 'admin'` is read as *platform admin* by
+  `is_platform_admin()` and simultaneously as *org membership* by
+  `is_org_member()`.** Granting a Customer #2 administrator that way would make
+  them a platform admin across **all nine organizations**.
+- `org_roles` currently holds **1 row**, so this path has effectively never been
+  exercised.
+
+**Option A — adopt the grant rule now, authorize the migration separately.**
+*Consequence:* the dangerous grant is closed off immediately by policy; the
+read-path fix follows under normal production authorization.
+
+**Option B — do both together as one authorized change.** *Consequence:* one
+review, one migration, slightly slower.
+
+**Option C — neither.** *Consequence:* Customer #2 stays blocked, and the first
+person who grants a tenant admin via `profiles.role` silently gets platform-wide
+access.
+
+**Recommended Default: Option A.** Part (a) costs nothing and removes the sharper
+of the two risks — a mis-grant is worse than a missing read path, because it is
+silent and cross-tenant. Part (b) is a small, well-scoped migration onto a pattern
+126 policies already follow, but it writes to production and that stays yours.
+
+**The migration is not written and not applied.**
+
+**Owner Answer:**
+_______________________________________________
+
+---
+
 ## SUMMARY — what blocks what
 
 | Decision | Priority | Blocks |
@@ -988,11 +1040,13 @@ _______________________________________________
 | D-12 `/try` + static tree | 🟠 | a live mis-sale |
 | D-13 founder terms | 🟠 | fence compliance |
 | D-20 vehicle-inclusive offer | 🔴 | **any quote naming a car — HOLD until answered** |
+| D-21 Customer #2 tenant safety | 🔴 | **a safe second tenant; part (a) needs no engineering** |
 | D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |
 | D-7 `dist/` · D-17 deps | ⚪ | hygiene |
 
-**Ten of twenty decisions require no engineering at all** — D-1, D-3, D-4, D-5,
-D-6, D-7, D-13, D-18, D-19, D-20. They are commercial, legal and policy choices
-only you can make.
+**Ten of twenty-one decisions require no engineering at all** — D-1, D-3, D-4,
+D-5, D-6, D-7, D-13, D-18, D-19, D-20. They are commercial, legal and policy
+choices only you can make. **D-21 part (a) — the `org_roles` grant rule — also
+needs no engineering**; only its migration half does.
