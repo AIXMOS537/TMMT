@@ -52,7 +52,7 @@ async function classifierSuite() {
       ('lead_reengagement', 'dnc', '+15550000004', 'dnc@example.test', 'incoming_leads', 'dnc-source', current_date, 'blocked_dnc', '{"scenario":"dnc"}');
   `)
 
-  await db.exec(await sqlFile('supabase/migrations/20260903194001_classify_va_tasks_fn.sql'))
+  await db.exec(await sqlFile('scripts/tests/sql/fixtures/classify-va-tasks-old.sql'))
   if (repaired) await db.exec(await sqlFile('docs/repairs/classify-va-tasks-source-identity.sql'))
 
   const dry = await rows(db, `select public.classify_va_tasks(true) as result`)

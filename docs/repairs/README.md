@@ -41,6 +41,8 @@ integrated transaction.
 
 The tests execute actual SQL functions in embedded PostgreSQL with synthetic data.
 They do not connect to Supabase. Test dependency is pinned separately from the app.
+Historical function bodies are frozen in `scripts/tests/sql/fixtures/`, so the
+suite does not depend on migrations that exist only on the older safety branch.
 
 ```sh
 npm ci --prefix scripts/tests/sql --ignore-scripts
@@ -73,9 +75,10 @@ schema/RLS/worker/concurrency certification.
    Classification labels are not owner approval or execution authority.
 5. Run `npm run verify` and authenticated rental-save checks in preview, then release.
 
-The inherited SMS replay fix is a separate package. Its production column/index
-was absent during this audit. Do not accidentally release that inherited route
-without its migration and an explicit decision on the existing auto-reply policy.
+The SMS replay fix on the older safety branch is a separate package. The repair
+branch based on current `master` does not include that SMS change. Its required
+production column/index was absent during this audit; importing it later requires
+its migration and an explicit decision on the existing auto-reply policy.
 
 ## Remaining offline limitations
 
