@@ -95,10 +95,25 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | Date | What | Result |
 |---|---|---|
 | 2026-09-08 | Baseline on `a88d8087` (worktree) | tsc 0 · lint 0/40w · vitest 504/504 · build exit 0 · compliance 0 prohibited · secrets clean · e2e NOT RUN · crawl NEVER RUN |
+| 2026-09-08 | F-06 vercel-ignore (PR #193) | script verdict flips on real commits: config-only 784b64bf SKIP→BUILD, docs-only 36c4ef16 SKIP→SKIP |
+| 2026-09-08 | F-01/F-02/F-03 SMS compliance (PR #194) | 61 files / 540 tests; tsc 0; eslint 0; scans clean; pre-push 4/4 |
+| 2026-09-08 | F-04/F-07/F-08/F-09 (PR #195) | 63 files / 555 tests; pre-push 6/6 with test+brand now in the gate |
+| 2026-09-08 | F-11/F-12 (PR #196) | phone 11 + durable limiter 5 cases; tsc 0; re-merged against master (add/add conflicts resolved to the PR versions): 65 files / 571 tests |
+| 2026-09-08 | F-19 (PR #197) | 60 files / 510 tests (6 new) on branch; re-merged against master keeping the #194 gate and #195 `reviewed` flag: 66 files / 577 tests |
+| 2026-09-08 | F-25/F-26 (PR #198) | docs only |
+| 2026-09-08 | brand:check EOL (PR #199) | `brand-sync --check` compared LF output to CRLF checkouts, failing every Windows push after #195; fixed and merged first to unblock |
+| 2026-09-08 | F-31 verification | prod: `is_internal_ops` plpgsql with `exception when others then return true`; 18 dependent policies; fix file on master (aa2e4d32), NOT in schema_migrations |
+| 2026-09-08 | Merges (owner instruction) | #193 dbab9031 · #192 54fbf84b · #194 5f3d5a6a · #195 b925cd8b · #199 eea27523 · #196 02b17bb7 · #197 90e33cd3 · #198 4bd47939. CI verify + pii-scan + Vercel green on each. Production READY on 90e33cd3 (Vercel `dpl_coECeWapGDsNVCHP7QqTfgDZ5H9e`). |
 
 ## Exact next step
 
-Batch 1, F-06 first (one-line deploy gate fix, zero risk), then F-01/F-02/F-03 together as one PR ("SMS compliance"), then F-04, F-05, F-07, F-08, F-09, F-10. Each PR: branch from `origin/master`, tests, `verify.checks` gates, CI green, PR for owner merge.
+**State at 2026-09-08 close:** `origin/master = 4bd47939`, zero open PRs, production runs `90e33cd3` (all code from this pass). Batch 1 complete; Batch 2 F-11/F-12/F-19 done; Batch 5 F-25/F-26 done.
+
+**Incident to know:** commit `0723b3d2` ("fix(audit): finish local gate and public abuse hardening") was made on the audit branch inside `C:\dev\TMMT-audit-wt` by a concurrent third writer and reached master through PR #192. It carried the F-33 edits plus drafts of F-11/F-12, which is why #196 and #197 needed re-merging. Rule: work only in `C:\dev\TMMT-b2-wt` (or a fresh worktree), never in a checkout another session can reach; the pre-push gate runs on the working tree, not the commit.
+
+**Owner items first:** F-31 apply `20260908120000_is_internal_ops_fail_closed.sql` (file on master, not applied) · apply the two staged migrations (SMS replay index, `rate_limit_hit`) · D-19 reason codes · D-21 tenancy migration · dead directories (F-28).
+
+**Next engineering, in order:** F-24 `.env.example` completeness · F-14 Supabase client factories (12 importers) · F-16 eligibility status (import `BG_CHECK_DECISIONS` everywhere) · T-01 middleware tests · T-02 webhook route tests · F-13/F-15/F-17/F-18 · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.
 
 ## Appendix — API route gate table (from Recon A, 2026-09-08)
 
