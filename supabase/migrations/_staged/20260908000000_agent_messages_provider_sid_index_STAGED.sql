@@ -1,3 +1,15 @@
+-- !! BLOCKED - THIS CANNOT BE APPLIED AS WRITTEN (checked against prod 2026-09-09) !!
+--
+-- public.agent_messages has NO `provider_message_sid` column. Its columns are:
+--   id, conversation_id, ts, direction, body, llm_assessment, compliance_flags, metadata
+-- The Twilio SID is carried inside the `metadata` jsonb, so this index targets a
+-- column that does not exist and would fail with 42703.
+--
+-- This is NOT an owner gate - applying it is impossible until either the column is
+-- added or the index is rewritten against metadata->>'provider_message_sid' (and
+-- that expression form needs a duplicate check first; the app-side pre-check from
+-- F-01 is still what enforces SID idempotency in the meantime).
+--
 -- 20260908000000_agent_messages_provider_sid_index_STAGED.sql
 -- STAGED — NOT APPLIED. Production DDL is owner-gated (OWNER_DECISIONS D-18).
 -- Hardens the inbound-SMS replay gate shipped in src/app/api/agent/sms/inbound/route.ts.
