@@ -28,7 +28,7 @@ const h = vi.hoisted(() => {
   return { state, makeDb }
 })
 
-vi.mock('@/lib/agent/supabase-server', () => ({ createServiceSupabase: () => h.makeDb() }))
+vi.mock('@/lib/supabase-service', () => ({ createServiceRoleClient: () => h.makeDb() }))
 
 import { assertOutboundAllowed, phone10, orgSmsVertical } from './outbound-gate'
 import { SmsBlockedError } from '../../shared/compliance-gates/sms-gate'

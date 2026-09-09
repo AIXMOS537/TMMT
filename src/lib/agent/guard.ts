@@ -3,7 +3,7 @@
  * Spec A integration: queries organization_licenses for active state and kill_command.
  * "TMMT and AIXMOS always safe" — see docs/superpowers/specs/2026-06-09-spec-b3-ai-sales-agent-design.md §12
  */
-import { createServiceSupabase } from './supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 export class LicenseDisabledError extends Error {
   constructor(public organizationId: string, public killCommand: string | null) {
@@ -56,7 +56,7 @@ export async function guardOrganization(organizationId: string): Promise<void> {
   // Licensing gates customers, never ourselves.
   if (isHouseOrg(organizationId)) return
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db
     .from('organization_licenses')
     .select('active, kill_command')
@@ -84,7 +84,7 @@ export async function assertLlmCapNotExceeded(
   const since = new Date()
   since.setUTCHours(0, 0, 0, 0)
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data, error } = await db
     .from('audit_events')
     .select('payload')

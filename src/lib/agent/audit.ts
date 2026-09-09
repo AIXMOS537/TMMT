@@ -5,7 +5,7 @@
  *
  * Both end up in the same table. The first is preferred when we already have a Supabase client.
  */
-import { createServiceSupabase } from './supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 export interface AuditEvent {
   organizationId: string | null
@@ -17,7 +17,7 @@ export interface AuditEvent {
 
 export async function emitAudit(evt: AuditEvent): Promise<void> {
   try {
-    const db = createServiceSupabase()
+    const db = createServiceRoleClient()
     const { error } = await db.from('audit_events').insert({
       organization_id: evt.organizationId,
       hardware_uuid: evt.hardwareUuid ?? null,

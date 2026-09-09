@@ -6,7 +6,7 @@ const DispatchMap = dynamic(() => import("./DispatchMap"), { ssr: false, loading
 import { IncidentQueue } from "./IncidentQueue";
 import type { Incident, Unit } from "@/lib/dispatch-types";
 import { lockExpiredAssignments } from "../actions";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase";
 
 type RowEvent<T> = { eventType: string; new: T; old: { id?: string } };
 
@@ -28,10 +28,6 @@ export function CockpitClient({ orgId, initialIncidents, initialUnits }: {
   }, [orgId]);
 
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
     const ch = supabase.channel(`dispatch:${orgId}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "incidents", filter: `org_id=eq.${orgId}` },

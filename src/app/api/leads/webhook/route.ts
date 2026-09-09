@@ -6,7 +6,7 @@
  */
 import { NextResponse } from 'next/server'
 import { resolveOrgBySlugPublic, OrgNotFoundError } from '@/lib/agent/tenant'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 import { isRateLimitedDurable, type RateLimitBackend } from '@/lib/rate-limit-durable'
@@ -78,7 +78,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Shared counter across instances when the rate_limit_hit RPC exists; the
   // per-process limiter otherwise. Never let limiter setup itself fail a lead.
   let limiter: RateLimitBackend | null = null
-  try { limiter = createServiceSupabase() } catch { limiter = null }
+  try { limiter = createServiceRoleClient() } catch { limiter = null }
   if (await isRateLimitedDurable(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 }, limiter)) {
     return fail({ error: 'too many requests' }, 429)
   }
@@ -111,7 +111,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const sku = body.sku || 'lead-magnet'
   const sku_price_cents = SKU_PRICE_CENTS[sku] ?? 0
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data: existing } = await db.from('incoming_leads')
     .select('id, agent_status')
     .eq('phone_e164', phone_e164)

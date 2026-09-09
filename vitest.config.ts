@@ -34,6 +34,18 @@ export default defineConfig({
         find: /^@\//,
         replacement: fileURLToPath(new URL("./src/", import.meta.url)),
       },
+      // `server-only` is not an installed package: Next.js aliases it itself —
+      // to a throwing stub in the client bundle and to this empty module on the
+      // server. Vitest runs in Node (the server side), so it gets the same empty
+      // module. Without this, any test that reaches a server module such as
+      // src/lib/supabase-service.ts (the one service-role factory, F-14) fails
+      // to resolve unless it mocks "server-only" by hand.
+      {
+        find: /^server-only$/,
+        replacement: fileURLToPath(
+          new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)
+        ),
+      },
     ],
   },
 });
