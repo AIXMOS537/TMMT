@@ -1,8 +1,13 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getVentureBySlug } from "@/lib/ventures/registry";
 import { getVentureSummary } from "@/lib/ventures/summary";
+import { ventureHref } from "@/lib/ventures/paths";
 
 export const dynamic = "force-dynamic";
+
+/** Tables that have a screen of their own. Grows one entry per ported family. */
+const DRILLDOWN: Record<string, string> = { fleet: "/fleet" };
 
 /**
  * A venture's overview. Server-rendered on purpose: the counts come from a
@@ -51,14 +56,29 @@ export default async function VentureOverviewPage({
         aria-label="Venture totals"
         className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
       >
-        {summary.map(({ table, label, count }) => (
-          <div key={table} className="rounded-lg border p-4">
-            <div className="text-2xl font-semibold tabular-nums">
-              {count === null ? "—" : count.toLocaleString()}
-            </div>
-            <div className="mt-1 text-sm text-muted-foreground">{label}</div>
-          </div>
-        ))}
+        {summary.map(({ table, label, count }) => {
+          const tile = (
+            <>
+              <div className="text-2xl font-semibold tabular-nums">
+                {count === null ? "—" : count.toLocaleString()}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+            </>
+          );
+          // Only tiles with a screen behind them are links; the rest stay plain
+          // rather than promising a page that does not exist yet.
+          return DRILLDOWN[table] ? (
+            <Link
+              key={table}
+              href={ventureHref(slug, DRILLDOWN[table])}
+              className="rounded-lg border p-4 transition-colors hover:bg-muted/40"
+            >
+              {tile}
+            </Link>
+          ) : (
+            <div key={table} className="rounded-lg border p-4">{tile}</div>
+          );
+        })}
       </section>
 
       <p className="text-xs text-muted-foreground">
