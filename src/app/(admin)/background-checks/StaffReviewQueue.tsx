@@ -6,6 +6,8 @@ import {
   decideBgCheck,
   getDecisionTrail,
   BG_CHECK_DECISIONS,
+  BG_DECISION,
+  isBgCheckPending,
   type BgCheckQueueRow,
   type BgCheckDecision,
   type DecisionTrailRow,
@@ -37,6 +39,19 @@ import { ShieldCheck, FileText, Car, Receipt, Camera } from "lucide-react";
  * idempotency key). No reason code is sent from here: the reason vocabulary is
  * owner policy (S3-05) and does not exist yet, so the picker is not built.
  */
+
+/**
+ * The decision buttons, in the order staff see them. The values come from
+ * BG_DECISION so the wire string is spelled out in exactly one place; only the
+ * button copy is local. "Pass" is the primary action, the rest are secondary.
+ */
+const DECISION_BUTTONS: ReadonlyArray<{ decision: BgCheckDecision; label: string; primary?: boolean }> = [
+  { decision: BG_DECISION.eligible, label: "Pass — Eligible", primary: true },
+  { decision: BG_DECISION.notEligible, label: "Fail — Not Eligible" },
+  { decision: BG_DECISION.needsReview, label: "Escalate to manager" },
+  { decision: BG_DECISION.outOfRadius, label: "Out of radius" },
+  { decision: BG_DECISION.notFound, label: "Not found" },
+];
 
 function DocPill({ ok, label, icon }: { ok: boolean | null; label: string; icon: React.ReactNode }) {
   return (
@@ -121,7 +136,7 @@ export default function StaffReviewQueue() {
   );
 
   const pending = useMemo(
-    () => rows.filter((r) => !r.eligibility_status || r.eligibility_status === "Need Manager's Review").length,
+    () => rows.filter((r) => isBgCheckPending(r.eligibility_status)).length,
     [rows]
   );
 
@@ -375,25 +390,16 @@ export default function StaffReviewQueue() {
                 {active.eligibility_status ? ` · currently “${active.eligibility_status}”` : ""}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => submit("Eligible")} disabled={!!saving}>
-                  {saving === "Eligible" ? "Saving..." : "Pass — Eligible"}
-                </Button>
-                <Button variant="secondary" onClick={() => submit("Not Eligible")} disabled={!!saving}>
-                  {saving === "Not Eligible" ? "Saving..." : "Fail — Not Eligible"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => submit("Need Manager's Review")}
-                  disabled={!!saving}
-                >
-                  {saving === "Need Manager's Review" ? "Saving..." : "Escalate to manager"}
-                </Button>
-                <Button variant="secondary" onClick={() => submit("out of radius")} disabled={!!saving}>
-                  {saving === "out of radius" ? "Saving..." : "Out of radius"}
-                </Button>
-                <Button variant="secondary" onClick={() => submit("Not found")} disabled={!!saving}>
-                  {saving === "Not found" ? "Saving..." : "Not found"}
-                </Button>
+                {DECISION_BUTTONS.map(({ decision, label, primary }) => (
+                  <Button
+                    key={decision}
+                    variant={primary ? "primary" : "secondary"}
+                    onClick={() => submit(decision)}
+                    disabled={!!saving}
+                  >
+                    {saving === decision ? "Saving..." : label}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
