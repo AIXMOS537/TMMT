@@ -7,6 +7,14 @@ const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@aixmos/core"],
+  // Dev-only: the tailnet hosts carry serves from. Without these, `next dev`
+  // blocks /_next/* as a cross-origin request when the app is opened over
+  // Tailscale, React never hydrates, and the login <form> falls back to a
+  // native GET — putting email + password in the URL and the server log.
+  allowedDevOrigins: [
+    "watchtower.tailceb455.ts.net",
+    "100.77.126.8",
+  ],
   turbopack: {
     root: repoRoot,
   },

@@ -52,7 +52,10 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* method="post" is a safety net, not the happy path: if this client
+            component ever fails to hydrate, the browser submits natively and a
+            GET would put the password in the URL, history and server log. */}
+        <form method="post" onSubmit={handleSubmit} className="space-y-5">
           {mode === "up" && (
             <>
               <div>
