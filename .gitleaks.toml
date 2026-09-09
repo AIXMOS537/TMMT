@@ -20,6 +20,10 @@ paths = [
 ]
 regexes = [
   '''pat[a-zA-Z0-9]{14,}\.[a-zA-Z0-9]{40,}''',
+  # FALSE POSITIVE (2026-09-08): webhook test fixtures from PR #207 — `t02-ghl-…` and
+  # `whsec_t02_wrong` are labelled fake secrets in *.route.test.ts. They tripped the
+  # pre-push full-history scan and blocked every new branch from Carry.
+  '''^(?:t02-[A-Za-z0-9_-]+|whsec_t02_[A-Za-z0-9_-]+)$''',
   '''AIRTABLE_PAT=pat[a-zA-Z0-9.]+''',
   # curl basic-auth using an env var (no literal secret)
   '''-u "\$[A-Z_]+:?"''',
