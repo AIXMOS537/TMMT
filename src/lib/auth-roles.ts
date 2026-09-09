@@ -139,7 +139,12 @@ export function homePathForTier(tier: AccessTier): string {
       return "/executive";
     case "operator":
     case "staff":
-      return "/";
+      // The rentals desk dashboard. It used to live at "/" - the (admin) group's
+      // root page - which collided with the public front door added in this
+      // change: two page.tsx both resolving to "/". Next tolerated it locally
+      // and Vercel refused the deployment outright (ENOENT on
+      // app/(admin)/page_client-reference-manifest.js). Same screen, explicit path.
+      return "/desk";
     case "none":
       return "/no-access";
     case "vendor":
