@@ -12,8 +12,14 @@
  * upsert and returns true when the caller is over the limit. Until that
  * function exists, or if the database is unreachable, the in-memory limiter
  * answers instead — today's behaviour, never worse.
+ *
+ * Every fall-back is reported through `reportDegraded` (F-18): one structured
+ * error line per process per interval, a Sentry warning when a DSN is set,
+ * and a `degraded` entry on /api/health. The RPC is still STAGED, so until
+ * the owner applies it production runs on the fallback — and now says so.
  */
 import { isRateLimited, type RateLimitOpts } from "@/lib/rate-limit";
+import { clearDegraded, reportDegraded } from "@/lib/degraded";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_HITS = 5;
@@ -22,8 +28,6 @@ const MAX_HITS = 5;
 export type RateLimitBackend = {
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 };
-
-let warnedMissingFn = false;
 
 export async function isRateLimitedDurable(
   key: string,
@@ -40,22 +44,28 @@ export async function isRateLimitedDurable(
         p_window_ms: windowMs,
         p_max_hits: maxHits,
       });
-      if (!error && typeof data === "boolean") return data;
-      if (error && !warnedMissingFn) {
-        warnedMissingFn = true;
-        console.warn("[rate-limit] durable backend unavailable, using in-memory limiter:", error.message);
+      if (!error && typeof data === "boolean") {
+        clearDegraded("rate-limit");
+        return data;
       }
+      reportDegraded(
+        "rate-limit",
+        error ? error.message : `rate_limit_hit returned ${typeof data}, expected boolean`,
+        error?.code ? { code: error.code } : undefined
+      );
     } catch (e) {
-      if (!warnedMissingFn) {
-        warnedMissingFn = true;
-        console.warn("[rate-limit] durable backend threw, using in-memory limiter:", (e as Error).message);
-      }
+      reportDegraded("rate-limit", (e as Error).message);
     }
+  } else {
+    reportDegraded("rate-limit", "no service-role client; in-memory limiter only");
   }
   return isRateLimited(key, { windowMs, maxHits });
 }
 
-/** Test hook: forget that the backend was reported missing. */
+/**
+ * Test hook: forget that the backend was reported missing. Kept for the
+ * existing tests; the state now lives in `@/lib/degraded`.
+ */
 export function _resetDurableWarning(): void {
-  warnedMissingFn = false;
+  clearDegraded("rate-limit");
 }
