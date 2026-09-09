@@ -12,3 +12,4 @@ version number when it lands, and record it in `supabase/schema/`.
 | File | App change it hardens | Status |
 |---|---|---|
 | `20260908000000_agent_messages_provider_sid_index_STAGED.sql` | inbound-SMS replay gate (`src/app/api/agent/sms/inbound/route.ts`, F-01) | staged |
+| `20260908000200_audit_events_webhook_replay_indexes_STAGED.sql` | Cal.com booking-uid + Stripe event-id replay gates (`src/lib/agent/webhook-replay.ts`, T-02b) | staged |

@@ -42,6 +42,10 @@ export type AccessTier =
    * pages and the everyone-surfaces (/clock, /pocket). This is the fallback,
    * and it has to be: "staff" used to be, which meant an absent or unrecognised
    * `app_metadata.role` silently granted staff.
+   *
+   * Its home is /no-access — a public page that says so and offers sign-out.
+   * It cannot be "/" (the rentals desk): the middleware denies this tier every
+   * desk path, and a home that is itself denied would redirect to itself.
    */
   | "none";
 
@@ -135,8 +139,9 @@ export function homePathForTier(tier: AccessTier): string {
       return "/executive";
     case "operator":
     case "staff":
-    case "none":
       return "/";
+    case "none":
+      return "/no-access";
     case "vendor":
       return "/vendor";
     case "investor":
