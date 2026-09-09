@@ -8,7 +8,7 @@ You funnel prospects. The system handles checkout, onboarding, and coaching. You
 
 | | |
 |---|---|
-| **URL** | https://tmmt-command-center.vercel.app/login |
+| **URL** | https://tmmtrentals.com/login |
 | **After login** | `/operator` — published instructions only |
 | **Password** | One-time password from the owner — change it after first sign-in |
 
@@ -18,7 +18,7 @@ If login fails, contact the owner. Do not share your password.
 
 ## What you push (top of funnel)
 
-Share these **public** links (no account needed). Use **`tmmt-ops.vercel.app`** — not command-center (command-center redirects `/kits` and `/build` to login):
+Share these **public** links (no account needed). There is one app now — `tmmt-command-center` was retired and paused (2026-09-09):
 
 | Link | Purpose |
 |------|---------|
