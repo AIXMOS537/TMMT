@@ -107,7 +107,7 @@ run_local() {
 
 run_production() {
   header "PRODUCTION (live smoke + security)"
-  run_check fail "Live smoke test (tmmt-command-center)" "npm run smoke:prod"
+  run_check fail "Live smoke test (tmmt-ops)" "npm run smoke:prod"
   run_check fail "Kits page returns 200/307/308" "curl -sS -o /dev/null -w '%{http_code}' -L https://tmmt-ops.vercel.app/kits | rg '^(200|307|308)$'"
   run_check fail "Customer intake returns 200" "curl -sS -o /dev/null -w '%{http_code}' https://tmmt-ops.vercel.app/forms/customer-intake | rg '^200$'"
   run_check warn "Watchtower vertical health check" "bash scripts/health.sh --compact"
