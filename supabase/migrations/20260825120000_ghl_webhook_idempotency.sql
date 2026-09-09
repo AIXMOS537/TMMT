@@ -8,8 +8,20 @@
 --
 -- Found during a full-codebase review, 2026-08-25.
 --
--- STATUS: reviewable file for owner approval — NOT auto-applied (same
--- posture as 20260621020000_tenant_scope_rls_policies.sql).
+-- STATUS: APPLIED to production 2026-09-09 21:02 UTC on the owner's instruction
+-- (schema_migrations 20260909210244). It had sat here unapplied since
+-- 2026-08-25 while 37 of its neighbours went in.
+--
+-- Verified after apply: a second insert of the same event_id raises 23505,
+-- which is exactly what consumeGhlEventId reads as a duplicate delivery; RLS on;
+-- zero policies; the received_at index exists; test row deleted.
+--
+-- FOLLOW-UP APPLIED, see 20260909210330_ghl_webhook_events_revoke_anon.sql:
+-- 'RLS on + zero policies' is true for row-level access but does NOT cover
+-- TRUNCATE, and Supabase's schema-wide default grant had given anon and
+-- authenticated ALL privileges on this table, TRUNCATE included. Emptying it
+-- would make every previously-seen webhook replayable, so the grant was
+-- revoked rather than left to RLS alone.
 --
 -- Security posture (matches the rest of this DB): RLS on, no non-service
 -- write/read policies, so only the server (service_role key, which bypasses
