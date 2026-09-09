@@ -133,6 +133,41 @@ describe('inbound SMS — signature', () => {
   })
 })
 
+describe('inbound SMS — malformed body', () => {
+  // Regression: req.formData() threw a TypeError on any non-form Content-Type
+  // and it escaped as a 500 on a public unauthenticated route. Measured in
+  // production 2026-09-09: POST with no body -> 500.
+  it('answers 400, not 500, when the body is not form-encoded', async () => {
+    const res = await POST(new Request(URL_, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ From: '+15551112222', Body: 'hi' }),
+    }))
+    expect(res.status).toBe(400)
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+
+  it('answers 400 when there is no body or Content-Type at all', async () => {
+    const res = await POST(new Request(URL_, { method: 'POST' }))
+    expect(res.status).toBe(400)
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+
+  // The 400 must stay distinguishable from the signature drop: a malformed body
+  // is the caller's error, while an unsigned request is answered with an empty
+  // TwiML 200 on purpose so Twilio does not retry-flood and nothing leaks.
+  it('does not collapse into the signature path: unsigned still returns TwiML 200', async () => {
+    const res = await POST(new Request(URL_, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(base).toString(),
+    }))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<Response/>')
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+})
+
 describe('inbound SMS — replay gate (F-01)', () => {
   it('processes a first delivery', async () => {
     const res = await POST(signedRequest(base))
