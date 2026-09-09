@@ -229,6 +229,25 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
     return { ok: false, error: "override window expired" };
   }
 
+  // T-03 finding: the org check above covers the assignment row only. The
+  // incident and the chosen unit also come from the caller, so pin both to
+  // that row's org before anything is written: the incident must be the one
+  // this assignment belongs to, and the unit must live in the same org.
+  // `incident_assignments_v` exposes incident_id and `units` carries org_id
+  // (verified against prod 2026-09-08). Same error text as "not found" so a
+  // probing caller learns nothing about records in other orgs.
+  const currentOrgId = (current as { org_id: string }).org_id;
+  const currentIncidentId = (current as { incident_id?: string }).incident_id;
+  if (currentIncidentId !== parsed.data.incident_id) {
+    return { ok: false, error: "assignment not found" };
+  }
+  const { data: chosenUnit } = await supabase.from("units")
+    .select("id")
+    .eq("id", parsed.data.chosen_unit_id)
+    .eq("org_id", currentOrgId)
+    .maybeSingle();
+  if (!chosenUnit) return { ok: false, error: "unit not found" };
+
   await supabase.from("incident_assignments")
     .update({ status: "cancelled" })
     .eq("id", parsed.data.current_assignment_id);
@@ -238,8 +257,8 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
     .eq("id", (current as { unit_id: string }).unit_id);
 
   await supabase.from("assignment_overrides").insert({
-    org_id: (current as { org_id: string }).org_id,
-    incident_id: parsed.data.incident_id,
+    org_id: currentOrgId,
+    incident_id: currentIncidentId,
     original_unit_id: (current as { unit_id: string }).unit_id,
     chosen_unit_id: parsed.data.chosen_unit_id,
     reason: parsed.data.reason,
@@ -247,7 +266,7 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
   });
 
   const { data: newAssignment, error } = await supabase.rpc("assign_unit", {
-    p_incident_id: parsed.data.incident_id,
+    p_incident_id: currentIncidentId,
     p_unit_id: parsed.data.chosen_unit_id,
     p_by_kind: "user",
     p_by_user: user.id,
