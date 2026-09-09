@@ -16,7 +16,14 @@
 5. Insert `units` rows pairing a fleet vehicle + responder with a callsign.
 
 ## Failure modes
-- **CAPTAIN down:** deterministic SQL ranking is used; `reasoning_json.captain_skipped=true` is logged.
+- **CAPTAIN down:** deterministic SQL ranking is used; `reasoning_json.captain_skipped=true` is
+  recorded on the assignment row, and `captain-dispatch` appears under `degraded` on `/api/health`
+  with the reason and whether `AIXMOS_AGENT_HOST` was even set.
+- **CAPTAIN unreachable from production (the standing state):** the agent host listens on BRAINIAC
+  `:7777` behind a firewall rule scoped to the tailnet, so Vercel cannot reach it — measured
+  2026-09-09, it had served zero requests in three days. Setting `AIXMOS_AGENT_HOST` to that address
+  would not help; the host has to move somewhere the app can reach, or CAPTAIN stays a local-dev
+  refinement and deterministic ranking is the production path.
 - **OSM tile server down:** map shows blank tiles; queue/forms still work.
 - **Nominatim down or rate-limited:** address autocomplete returns empty; user can still create incidents by entering raw coordinates if you add a fallback input later.
 - **Telegram down:** assignment proceeds; the responder ping is silently skipped.
