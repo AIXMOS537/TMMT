@@ -5,6 +5,7 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import {
   isOwnerHubHost,
+  isTmmtPublicHost,
   shouldBounceTmmtCreditToAixmos,
   aixmosCreditRedirectUrl,
 } from "@/lib/site-domains";
@@ -40,9 +41,19 @@ function isFunnelPublicPath(pathname: string) {
  */
 const NO_ACCESS_PATH = "/no-access";
 
+/**
+ * The public front door for the TMMT hosts. A signed-out visitor on "/" used to
+ * be redirected off-site to the GHL public site, which meant tmmtrentals.com
+ * showed another company's landing page to its own customers. It now RENDERS
+ * this page at "/" — a rewrite, not a redirect, so the URL stays on the brand's
+ * own domain. Signed-in "/" is untouched and still serves the staff home.
+ */
+const WELCOME_PATH = "/welcome";
+
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
+    pathname === WELCOME_PATH ||
     pathname === NO_ACCESS_PATH ||
     pathname === "/robots.txt" ||
     pathname === "/offline" ||
@@ -66,6 +77,7 @@ function isPublicPath(pathname: string) {
 function isPitchPublicPath(pathname: string) {
   return (
     pathname === "/robots.txt" ||
+    pathname === WELCOME_PATH ||
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/dealers" ||
@@ -232,19 +244,31 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && !isPublicPath(pathname)) {
-    // Every signed-out visitor goes to /login, "/" included.
+    // Signed-out visitors: the TMMT hosts show the TMMT front door, everyone
+    // else falls through to /login like every other protected path.
     //
-    // "/" used to bounce to the public GHL site, on the assumption that staff
-    // "use /login directly". That left the app with no reachable front door:
-    // the owner hub host (ops.allinonemanagementsolutions.com) was never
-    // created, and tmmtrentals.com resolves to nothing, so every address the
-    // owner could actually type landed on marketing. Typing the app's own
-    // address and being shown someone else's home page is not a front door.
+    // Two fixes meet here. "/" used to bounce to the public GHL site on the
+    // assumption that staff "use /login directly", which left the app with no
+    // reachable front door — the owner hub host was never created, and
+    // tmmtrentals.com resolves to nothing, so every address the owner could
+    // type landed on someone else's marketing. That bounce is gone.
+    //
+    // On a TMMT host we go one step further and RENDER the TMMT Rentals page
+    // (a rewrite, so the URL stays put). Its header carries a Sign in link, so
+    // the front door still reaches the app in one click. Anywhere else, /login
+    // is the front door.
     //
     // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
     // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
     // and the public reaches marketing on its own domain, which is how they
     // arrive in the first place.
+    if (pathname === "/" && isTmmtPublicHost(host)) {
+      return withRobotsHeader(
+        NextResponse.rewrite(new URL(WELCOME_PATH, request.url), {
+          request: { headers: requestHeaders },
+        })
+      );
+    }
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 

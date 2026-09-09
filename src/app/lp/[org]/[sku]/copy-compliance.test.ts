@@ -7,16 +7,20 @@
  * — a quantified score promise, an unsubstantiated volume claim, and a price
  * anchor, all on the same page. These assertions fail if any of them return.
  *
+ * The rules themselves now live in lib/claim-rules, shared with the public
+ * front door at /welcome, so the two cannot drift apart.
+ *
  * We deliberately do NOT route this copy through lib/compliance's
  * enforceCompliance(): it rewrites "credit repair" -> "credit guidance", which
  * would invert the disclosure "not credit repair" into a false statement.
  */
 import { describe, it, expect } from 'vitest'
+import { findClaimViolations, formatClaimViolations, type Claim } from '@/lib/claim-rules'
 import { COPY, ORG_BRAND } from './copy'
 
 /** Every customer-visible string, flattened with a label for failure messages. */
-function allStrings(): Array<{ where: string; text: string }> {
-  const out: Array<{ where: string; text: string }> = []
+function allStrings(): Claim[] {
+  const out: Claim[] = []
   for (const [sku, c] of Object.entries(COPY)) {
     out.push({ where: `${sku}.headline`, text: c.headline })
     out.push({ where: `${sku}.subhead`, text: c.subhead })
@@ -32,49 +36,9 @@ function allStrings(): Array<{ where: string; text: string }> {
 }
 
 describe('landing copy compliance', () => {
-  it('makes no quantified credit-score claim', () => {
-    // "adds 47 points", "47 point jump", "+47 pts", "raise your score 100"
-    const scoreClaim = /\d+\s*(?:\+\s*)?(?:point|pt)s?\b|\bscore\b[^.]{0,20}\b\d{2,3}\b/i
-    for (const { where, text } of allStrings()) {
-      expect(scoreClaim.test(text), `${where}: quantified score claim -> "${text}"`).toBe(false)
-    }
-  })
-
-  it('makes no unsubstantiated volume or social-proof count', () => {
-    // "12,000+ downloaded", "5000+ clients", "join 900 members"
-    const volumeClaim = /\b\d[\d,]{2,}\s*\+?\s*(?:client|customer|member|student|operator|download|playbook|user|people)/i
-    for (const { where, text } of allStrings()) {
-      expect(volumeClaim.test(text), `${where}: unsubstantiated volume claim -> "${text}"`).toBe(false)
-    }
-  })
-
-  it('makes no competitor or anchor price claim', () => {
-    // "$7K+ elsewhere", "others charge $5,000" — anchors invite substantiation demands.
-    const anchor = /\$\s?\d[\d,]*\s?[Kk]?\s?\+/
-    for (const { where, text } of allStrings()) {
-      expect(anchor.test(text), `${where}: price anchor claim -> "${text}"`).toBe(false)
-    }
-  })
-
-  it('never promises or guarantees an outcome', () => {
-    const promise = /\b(guarantee\w*|promise\w*|assured|certain to|will (?:get|receive|be approved|raise|boost))\b/i
-    for (const { where, text } of allStrings()) {
-      // A negated disclosure ("No score change is promised or guaranteed") is the
-      // one legitimate use, so only flag promises that are not negated.
-      const negated = /\b(no|not|never|without)\b[^.]{0,60}\b(guarantee|promise)/i.test(text)
-      if (negated) continue
-      expect(promise.test(text), `${where}: outcome promise -> "${text}"`).toBe(false)
-    }
-  })
-
-  it('never offers credit repair as a service we perform', () => {
-    for (const { where, text } of allStrings()) {
-      const mentionsRepair = /\bcredit repair\b|\b(?:fix|repair)(?:ing)? your credit\b/i.test(text)
-      if (!mentionsRepair) continue
-      // Mentioning it to disclaim it is required; offering it is not allowed.
-      const disclaimed = /\b(?:not|no|never|isn't|is not)\b[^.]{0,40}\bcredit repair\b/i.test(text)
-      expect(disclaimed, `${where}: offers credit repair without disclaiming -> "${text}"`).toBe(true)
-    }
+  it('makes no score, volume, anchor, promise or credit-repair claim', () => {
+    const violations = findClaimViolations(allStrings())
+    expect(violations, `\n${formatClaimViolations(violations)}\n`).toEqual([])
   })
 
   it('keeps the paid credit SKU carrying its not-credit-repair disclosure', () => {
