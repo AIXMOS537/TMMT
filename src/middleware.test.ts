@@ -260,6 +260,23 @@ describe("unauthenticated requests to protected routes", () => {
     expect(res.status).toBe(200);
   });
 
+  it("a signed-in visitor on / is sent to their own home, not the front door", async () => {
+    // "/" used to BE the operator/staff home - the (admin) group's root page.
+    // Now it is the public front door, so signed-in users are routed onward.
+    // Two page.tsx resolving to "/" is also what Vercel refused to deploy.
+    for (const [role, home] of [
+      ["internal_team", "/desk"],
+      ["admin", "/command"],
+      ["vendor", "/vendor"],
+    ] as const) {
+      signedIn(role);
+      const res = await middleware(req("/"));
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe(home);
+    }
+    signedOut();
+  });
+
   it("the intake forms are public - anonymous visitors are not sent to /login", async () => {
     for (const path of ["/intake", "/intake/rentals", "/intake/thanks"]) {
       const res = await middleware(req(path));
@@ -321,8 +338,8 @@ const roleArg = (r: RoleToken) => (r === "(no role)" ? undefined : r);
 const HOME: Record<(typeof ROLES)[RoleToken], string> = {
   owner: "/command",
   executive: "/executive",
-  operator: "/",
-  staff: "/",
+  operator: "/desk",
+  staff: "/desk",
   investor: "/investor",
   vendor: "/vendor",
   none: "/no-access",

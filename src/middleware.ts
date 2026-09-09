@@ -301,6 +301,16 @@ export async function middleware(request: NextRequest) {
     return withRobotsHeader(NextResponse.redirect(new URL("/command", request.url)));
   }
 
+  // "/" is the public front door now, so a signed-in visitor does not want it -
+  // they want their own home. Before this change "/" WAS the operator/staff home
+  // (the (admin) group's root page), so this keeps them landing on the same
+  // screen, now at its own path, /desk.
+  if (user && pathname === "/") {
+    return withRobotsHeader(
+      NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
+    );
+  }
+
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {
     return withRobotsHeader(
       NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
