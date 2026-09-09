@@ -42,11 +42,11 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | ID | Sev | Area | Symptom | Fix | Status |
 |---|---|---|---|---|---|
 | F-12 | P2 | Phone normalisation | Two implementations disagreed (`leads/webhook/route.ts` rejected non-NANP; `people/upsert.ts` never rejected) | `src/lib/phone.ts` keeps both policies, named (`normalizeNanpPhone` strict for public entry points, `normalizePhoneLoose` for existing records); both callers import the one they mean; no behaviour change | DONE a6140925 (PR #196) |
-| F-13 | P2 | Pricing constants | 4 unsynchronised tables (`SKU_PRICE_CENTS`, `PROGRAM_SKUS`, `highTicketTiers`, two `9700` consts) | One `src/lib/pricing/catalog.ts` **that only re-exports the values that exist today** — no new prices (D-1 is open); callers import from it | TODO |
+| F-13 | P2 | Pricing constants | 4 unsynchronised tables (`SKU_PRICE_CENTS`, `PROGRAM_SKUS`, `highTicketTiers`, two `9700` consts) | One `src/lib/pricing/catalog.ts` **that only re-exports the values that exist today** — no new prices (D-1 is open); callers import from it | DONE f26dbbc8 (PR #213); `LEAD_WEBHOOK_SKU_PRICE_CENTS`, `PROGRAM_FORM_SKUS`, `MEMBER_97_CENTS` (agent handoff threshold and credit Path A cap derive from it); `highTicketTiers` stays in `high-ticket.ts` (display tiers, not skus); header records the D-2 $97/$297 contradiction; `catalog.test.ts` pins every value and blocks inline tables / bare 9700-29700 literals |
 | F-14 | P3 | Supabase clients | 9 construction sites, 4 service-role factories without `server-only` | Collapse to `supabase-service.ts`; delete `agent/supabase-server.ts` after re-pointing 12 importers (turned out to be 15 source importers + 6 test mocks) | DONE 91eb45ff (PR #208); `supabase-factories.test.ts` structural guard; `server-only` aliased in vitest |
 | F-15 | P3 | Role vocabularies | 5 definitions (`AppRoleToken`, `USER_ROLES`, `AccessTier`, `OperatorTier`, verticals stages) | Make `auth-roles.ts` the source; derive `USER_ROLES`; add a test that the DB enum list matches | DONE d809e80f (PR #212); `APP_ROLE_TOKENS` in `auth-roles.ts` is the source; DB-side lists (`user_role` enum, `org_roles` CHECK, `portal_role`) typed in `src/lib/db-vocab.ts` and pinned to prod facts dated 2026-09-08 in `role-vocabulary.test.ts`; `USER_ROLES` re-exported; `OperatorTier` and aixmos-core `UserRole` are different concepts, documented not merged; structural test walks src/shared/packages |
 | F-16 | P3 | Eligibility status | Free text with 3 hard-coded copies | Import `BG_CHECK_DECISIONS` from `queries.ts` everywhere; test that the copies are gone | DONE dc2bd973 (PR #206); source is `src/lib/bg-check-decisions.ts` (re-exported by `queries.ts`); structural test walks src/shared/packages |
-| F-17 | P3 | Formatting | Two `formatCurrency`/`formatDate` with different output | Re-export `src/lib/utils.ts` versions from `packages/aixmos-core`; delete duplicates | TODO |
+| F-17 | P3 | Formatting | Two `formatCurrency`/`formatDate` with different output | Re-export `src/lib/utils.ts` versions from `packages/aixmos-core`; delete duplicates | DONE 1539ea99 (PR #214); one implementation each in `packages/aixmos-core/src/utils.ts` under four names (`formatCurrency`, `formatCurrencyWhole`, `formatDate`, `formatDateTime`), all null-safe; `src/lib/utils.ts` re-exports; five package consumers renamed so output is unchanged; letter generators keep `formatLetterDate`; `formatters.test.ts` pins output + blocks duplicates |
 | F-18 | P3 | Idempotency | Stripe/Cal webhooks have no event-id dedupe; GHL degrades silently to in-memory | Reuse `consumeGhlEventId` pattern with a generic `webhook_events` table (**OWNER-GATED** migration) + loud metric when fallback engages | PARTIAL: stripe `event.id` + cal `payload.uid` deduped in T-02b against `audit_events` (no new table; index STAGED/OWNER); GHL fallback metric still TODO |
 | F-19 | P3 | Timeouts | No GHL/Airtable/ClickUp fetch has a timeout | One `fetchWithTimeout()` helper (8 s default) used by all outbound clients | DONE 315ccdd2 (PR #197); 25 sites in 11 files + structural bare-fetch guard |
 
@@ -112,6 +112,8 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | 2026-09-08 | #200 plan record | merged 9e00dbf8 (docs only) |
 | 2026-09-08 | secret-scan false positive (PR #202) | fixture comment from Codex PR #201 matched the Telegram-token regex and failed every push; one space in the comment; merged 7d96b6d9 |
 | 2026-09-08 | F-24 (PR #203) | 36 names added, 8 retired; `env-example.test.ts` 2/2; full suite 72 files / 622 tests; tsc 0; pre-push 6/6 |
+| 2026-09-09 | F-13 (PR #213) | pricing constants into `src/lib/pricing/catalog.ts`, values pinned, none changed; 86 files / 1132 tests; tsc 0; pre-push 7/7 incl. build smoke |
+| 2026-09-09 | F-17 (PR #214) | four named formatters, one implementation; 86 files / 1210 tests; tsc 0; pre-push 7/7 |
 | 2026-09-08 | T-02b webhook hardening (this PR) | cal 23 + stripe 16 route tests (was 11 + 12); full suite 85 files / 1143 tests; tsc 0; eslint 0 errors / 36 pre-existing warnings; brand up to date; secret-scan clean; build-smoke SKIP (5.4 GB free); replay index STAGED, not applied |
 
 ## Exact next step
@@ -122,7 +124,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 
 **Owner items first:** ~~F-31 apply `20260908120000_is_internal_ops_fail_closed.sql`~~ APPLIED on prod (verified 2026-09-08 20:40) · apply the three staged migrations (SMS replay index, `rate_limit_hit`, audit_events webhook replay indexes) — still not applied · D-19 reason codes · D-21 tenancy migration · dead directories (F-28).
 
-**Next engineering, in order:** F-13/F-17/F-18 · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.  (F-24, F-14, F-16, T-01, T-02 all DONE 2026-09-08: PRs #203-#208; F-15 DONE 2026-09-08: PR #212.)
+**Next engineering, in order:** F-18 GHL fallback metric · T-03 server-action authz tests · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.  (F-24, F-14, F-16, T-01, T-02 all DONE 2026-09-08: PRs #203-#208; F-15 DONE: PR #212; F-13 PR #213 and F-17 PR #214 opened 2026-09-09, awaiting merge.)
 
 ## Appendix — API route gate table (from Recon A, 2026-09-08)
 
