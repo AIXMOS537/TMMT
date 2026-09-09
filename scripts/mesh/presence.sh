@@ -27,8 +27,25 @@ loop() {
   info "presence loop: every ${interval}s, sync + heartbeat as '$role'. Ctrl-C to stop."
   trap 'bash "$SWARM_ROOT/scripts/swarm.sh" beat "$role" offline >/dev/null 2>&1; warn "presence stopped — marked offline"; exit 0' INT TERM
   while true; do
-    bash "$SWARM_ROOT/scripts/sync-machine.sh" >/dev/null 2>&1 || true
-    beat "$role" online
+    # Never sync a tree with unmerged paths: sync-machine would stash the conflict
+    # markers themselves and bury the damage one layer deeper each pass.
+    if [[ -n "$(git ls-files --unmerged 2>/dev/null)" ]]; then
+      warn "unmerged paths in the worktree — skipping sync until they are resolved:"
+      git diff --name-only --diff-filter=U 2>/dev/null | sed 's/^/    /' >&2
+      beat "$role" degraded
+    else
+      local sync_out="" sync_rc=0
+      sync_out="$(bash "$SWARM_ROOT/scripts/sync-machine.sh" 2>&1)" || sync_rc=$?
+      if (( sync_rc != 0 )); then
+        # Previously this was `>/dev/null 2>&1 || true`, so a sync that left the
+        # repo unmerged still logged a clean heartbeat. Surface it instead.
+        warn "sync-machine FAILED (exit ${sync_rc}) — reporting this node degraded:"
+        printf '%s\n' "$sync_out" | sed 's/^/    /' >&2
+        beat "$role" degraded
+      else
+        beat "$role" online
+      fi
+    fi
     sleep "$interval"
   done
 }
