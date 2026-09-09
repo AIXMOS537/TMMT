@@ -15,7 +15,7 @@ const h = vi.hoisted(() => ({
   createDb: vi.fn(),
 }))
 vi.mock('@/lib/agent/tenant', () => ({ resolveOrgBySlug: h.resolveOrg }))
-vi.mock('@/lib/agent/supabase-server', () => ({ createServiceSupabase: h.createDb }))
+vi.mock('@/lib/supabase-service', () => ({ createServiceRoleClient: h.createDb }))
 vi.mock('@/lib/agent/audit', () => ({ emitAudit: h.audit }))
 vi.mock('@/lib/agent/guard', () => ({
   guardOrganization: h.guard,
