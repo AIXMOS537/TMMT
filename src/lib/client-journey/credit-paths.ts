@@ -1,6 +1,8 @@
 import type { BaseCreditPath, CreditBillingPlan, CreditPath } from "./types";
+import { CREDIT_PATH_A_MONTHLY_MAX_CENTS } from "@/lib/pricing/catalog";
 
-export const PATH_A_MONTHLY_MAX_CENTS = 9700;
+// Path A is the $97 monthly enrollment; the cap is the membership price (F-13).
+export const PATH_A_MONTHLY_MAX_CENTS = CREDIT_PATH_A_MONTHLY_MAX_CENTS;
 export const PATH_B_TOTAL_CENTS = 50000;
 export const PATH_B_DOWN_CENTS = 25000;
 export const PATH_B_BALANCE_CENTS = 25000;
