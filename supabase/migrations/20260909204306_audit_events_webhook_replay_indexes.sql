@@ -1,3 +1,13 @@
+-- APPLIED to production 2026-09-09 20:43 UTC (schema_migrations 20260909204306).
+--
+-- DEVIATION FROM THE STAGED BODY, on purpose: `concurrently` was dropped from both
+-- CREATE INDEX statements. It cannot run inside a transaction and the migration
+-- runner uses one. Safe here because the table is 3891 rows and BOTH predicates
+-- match ZERO rows today (cal.booking_created = 0, stripe.payment_collected = 0),
+-- with no duplicate (organization_id, key) groups - checked before applying - so the
+-- build is instant and the brief lock is immaterial. On a large table, restore
+-- `concurrently` and run it outside a transaction.
+--
 -- 20260908000200_audit_events_webhook_replay_indexes_STAGED.sql
 -- STAGED — NOT APPLIED. Production DDL is owner-gated (OWNER_DECISIONS D-18).
 -- Hardens the webhook replay gates shipped in
