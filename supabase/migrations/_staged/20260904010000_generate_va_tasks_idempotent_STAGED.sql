@@ -1,3 +1,23 @@
+-- ===========================================================================
+-- !! DO NOT APPLY - APPLYING THIS WOULD BE A COMPLIANCE REGRESSION !!
+--
+-- TRIAGED 2026-09-09. This file does `create or replace function
+-- public.generate_va_tasks_v2()` and contains ZERO references to
+-- do_not_contact_numbers. The LIVE generate_va_tasks_v2 has carried three DNC
+-- NOT EXISTS filters since 2026-09-06 - two days AFTER this file was written -
+-- and is the function pg_cron runs daily at 12:00 (aixmos_daily_va_sweep).
+--
+-- Applying this file would silently strip do-not-contact enforcement off the
+-- daily outbound-SMS generator and start enqueueing work for people on the
+-- do-not-contact list.
+--
+-- Its actual contribution - the source_table/source_id/seen_count identity
+-- columns and the upsert - is ALREADY LIVE: those columns exist and the
+-- deployed body upserts on (category, source_table, source_id). Nothing here
+-- is outstanding. Superseded by the 2026-09-06 v2 migration and by
+-- 20260909212038_generate_va_tasks_v2_optout_at_enqueue.sql.
+-- ===========================================================================
+
 -- ============================================================================
 -- STAGED — NOT APPLIED. Chain of Trust: stage never sign.
 --

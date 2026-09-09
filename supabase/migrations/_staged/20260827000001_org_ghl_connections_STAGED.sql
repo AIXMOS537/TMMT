@@ -1,3 +1,16 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: NOT APPLIED - correct, but premature.
+--
+-- The migration is sound and its FK targets exist in production
+-- (public.organizations and vault.secrets both present, table absent). But NO
+-- application code references org_ghl_connections - checked across src/ and
+-- scripts/. Applying it now puts an unused table with a vault FK on production
+-- ahead of the code that gives it meaning, which is the schema-ahead-of-code
+-- pattern that produced the orphan-branch problems already in this repo.
+--
+-- Apply it in the SAME change that introduces the code that reads it.
+-- ===========================================================================
+
 -- Per-organization GoHighLevel connections.
 --
 -- Until now the GHL location came from env vars alone — GHL_LOCATION_ID and
