@@ -1,3 +1,12 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: NOT APPLIED, and never will be from this file.
+-- Confirmed against production: exec_va_tasks has the triage columns and the
+-- corrected 20260903185639 / 20260903185722 are recorded. This draft's own
+-- header is right - two statements in it are wrong and it would abort.
+-- Section 5 (cron.unschedule) remains the one open owner decision here.
+-- Kept as the record of what was proposed. Do not run.
+-- ===========================================================================
+
 -- ============================================================================
 -- ⚠️ SUPERSEDED DRAFT — DO NOT RUN.
 --

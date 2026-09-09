@@ -1,3 +1,16 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: NOT APPLIED - this file says "Do not run from an agent",
+-- and that instruction is respected. It is an owner-only production write
+-- against two named customers' contact records.
+--
+-- Related finding, 2026-09-09: `select count(*) from incoming_leads where
+-- opted_out` returns **0** across the whole table. STOP handling in
+-- src/app/api/agent/sms/inbound/route.ts writes that column, and this file
+-- exists precisely because two customers DID send STOP. Either nobody has
+-- texted STOP since that code shipped, or the write is not landing. Worth
+-- checking before assuming opt-out suppression has anything to suppress.
+-- ===========================================================================
+
 -- STAGED — NOT APPLIED. Production write → owner seal (Chain of Trust).
 -- Purpose: two customers sent STOP but have no row in public.do_not_contact_numbers
 --          (found by M1 Rick, RECOVERY-M1-REPORT-20260908 §3): James Braden (…8055), Dominique Hott (…9845).

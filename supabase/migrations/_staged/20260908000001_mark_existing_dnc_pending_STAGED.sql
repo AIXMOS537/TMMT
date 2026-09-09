@@ -1,3 +1,17 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: NOT APPLIED - there is nothing to drain.
+--
+-- This file's own REQUIRED pre-apply check was run against production after
+-- the opt-out enqueue filter landed, and returned ZERO rows: no pending
+-- payment_followup / waitlist_contact / lead_reengagement task matches a
+-- do_not_contact_numbers phone or an opted-out lead. The 2026-09-06
+-- remediation already cleared the backlog (9 rows sit at blocked_dnc).
+--
+-- Applying it would create an empty ledger table and update 0 rows. Its goal
+-- is already met. Re-run the pre-apply check before ever reviving it - if it
+-- returns rows again, this file is the right tool.
+-- ===========================================================================
+
 -- 20260908000001_mark_existing_dnc_pending_STAGED
 -- REC-120 (companion DRAIN) — status-only remediation of the PENDING backlog
 -- that the new opt-out enqueue filter (20260908000000) does not retroactively
