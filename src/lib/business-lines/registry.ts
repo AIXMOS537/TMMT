@@ -1,45 +1,16 @@
-import type { RequestType } from "@/lib/workflow/statuses";
+import {
+  applyTailorToBusinessLines,
+  getTailoredPrimaryPublicLineId,
+} from "@/lib/tailor/apply-business-lines";
+import type { BusinessLineId, TmmtBusinessLine } from "./types";
 
-/** Canonical id on cases, CRM sync, and routing */
-export type BusinessLineId =
-  | "rentals"
-  | "express"
-  | "black"
-  | "auto"
-  | "detailing"
-  | "moving"
-  | "cleaning"
-  | "wholesale-cars"
-  | "luxury"
-  | "restoration"
-  | "management";
+export type { BusinessLineId, IntakeLineConfig, TmmtBusinessLine } from "./types";
 
-export type IntakeLineConfig = {
-  slug: string;
-  title: string;
-  description: string;
-  requestTypes: RequestType[];
-  subjectPlaceholder: string;
-  detailsPlaceholder: string;
-  accent: string;
-};
+/** Public front door — economy rental fleet (overridable in config/tailor.json) */
+export const PRIMARY_PUBLIC_LINE_ID: BusinessLineId = getTailoredPrimaryPublicLineId();
 
-export type TmmtBusinessLine = {
-  id: BusinessLineId;
-  name: string;
-  shortName: string;
-  tagline?: string;
-  description: string;
-  role: "primary_public" | "public_intake" | "command_center_only";
-  intake?: IntakeLineConfig;
-};
-
-/** Public front door — economy rental fleet */
-export const PRIMARY_PUBLIC_LINE_ID: BusinessLineId = "rentals";
-export const PRIMARY_PUBLIC_INTAKE_SLUG = "rentals";
-
-/** TMMT operating lines — one command center, eleven brands (management last). */
-export const TMMT_BUSINESS_LINES: TmmtBusinessLine[] = [
+/** TMMT operating lines — defaults; merged with config/tailor.json at build time. */
+const DEFAULT_TMMT_BUSINESS_LINES: TmmtBusinessLine[] = [
   {
     id: "rentals",
     name: "TMMT Rentals",
@@ -223,6 +194,13 @@ export const TMMT_BUSINESS_LINES: TmmtBusinessLine[] = [
     role: "command_center_only",
   },
 ];
+
+export const TMMT_BUSINESS_LINES: TmmtBusinessLine[] =
+  applyTailorToBusinessLines(DEFAULT_TMMT_BUSINESS_LINES);
+
+const primaryLine = TMMT_BUSINESS_LINES.find((b) => b.id === PRIMARY_PUBLIC_LINE_ID);
+export const PRIMARY_PUBLIC_INTAKE_SLUG =
+  primaryLine?.intake?.slug ?? primaryLine?.id ?? "rentals";
 
 export function getBusinessLine(id: string): TmmtBusinessLine | undefined {
   return TMMT_BUSINESS_LINES.find((b) => b.id === id);

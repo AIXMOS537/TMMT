@@ -249,16 +249,33 @@ describe("unauthenticated requests to protected routes", () => {
     expect(loc.search).toBe("");
   });
 
-  it("the front door (/) sends anonymous visitors to /login, not to the public site", async () => {
-    // Regression: "/" used to redirect to the GHL marketing site. With no
-    // owner-hub host and no DNS on tmmtrentals.com, that left the app with no
-    // reachable front door — the owner typed the app's address and got
-    // marketing. The public funnel keeps its own bounces (see below).
+  it("the front door (/) renders for anonymous visitors - no redirect at all", async () => {
+    // History, in two steps. "/" used to redirect to the GHL marketing site,
+    // which left the app with no reachable front door: the owner typed the
+    // app's address and got marketing. That was changed to redirect to /login
+    // instead, which was correct only because there was no front door to show.
+    // There is one now (src/app/page.tsx), so "/" renders it.
     const res = await middleware(req("/"));
-    expect(res.status).toBe(307);
-    const loc = res.headers.get("location")!;
-    expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
-    expect(new URL(loc).pathname).toBe("/login");
+    expect(res.headers.get("location")).toBe(null);
+    expect(res.status).toBe(200);
+  });
+
+  it("the intake forms are public - anonymous visitors are not sent to /login", async () => {
+    for (const path of ["/intake", "/intake/rentals", "/intake/thanks"]) {
+      const res = await middleware(req(path));
+      expect(res.headers.get("location")).toBe(null);
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it("the public front door does not leak the rest of the app", async () => {
+    // "/" is public, "/customers" is not - isSignedOutFrontDoor matches the
+    // root exactly, so nothing under it inherits the exemption.
+    for (const path of ["/customers", "/command", "/money"]) {
+      const res = await middleware(req(path));
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
+    }
   });
 
   it("the public funnel paths still bounce to the GHL site", async () => {

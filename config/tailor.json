@@ -1,0 +1,53 @@
+{
+  "$comment": "TMMT OS = platform. TMMT Management = command-center / back-office brand. Portal hrefs must be routes that exist in THIS app - the TMMT OS originals (/client/dashboard, /team/dashboard, /admin/dashboard) do not.",
+  "brand": {
+    "name": "TMMT OS",
+    "managementBrand": "TMMT Management",
+    "productName": "TMMT Rentals",
+    "commandCenterLabel": "TMMT Management Command Center",
+    "themeColor": "#f4f6f9",
+    "primaryPublicLineId": "rentals"
+  },
+  "home": {
+    "eyebrow": "TMMT OS · TMMT Management Command Center",
+    "headline": "The TMMT operating system. Every business line, one command center.",
+    "primaryCta": "Book or request help",
+    "staffNote": "operations, cases, dispatch, and GHL sync live in the command center. TMMT OS is the platform; TMMT Management is how you run it.",
+    "otherBusinessesTitle": "Other TMMT businesses",
+    "otherBusinessesDescription": "More TMMT lines on the same command center — each has its own intake form when enabled."
+  },
+  "businessLines": {
+    "enabled": null,
+    "disabled": [],
+    "overrides": {
+      "management": {
+        "name": "TMMT Management",
+        "shortName": "Management",
+        "tagline": "Command center & back office",
+        "description": "Appointments, contracts, fleet, payments, and internal ops — powered by TMMT OS."
+      }
+    }
+  },
+  "portals": [
+    {
+      "title": "Command center",
+      "description": "Operations, cases, dispatch, and GHL sync - staff and owner.",
+      "href": "/command"
+    },
+    {
+      "title": "Operator portal",
+      "description": "Your leads, training, and published instructions.",
+      "href": "/operator"
+    },
+    {
+      "title": "Academy",
+      "description": "Courses, coaching, and the onboarding path.",
+      "href": "/learn"
+    }
+  ],
+  "features": {
+    "showOtherBusinesses": true,
+    "showPortalsSection": true,
+    "maxFeaturedBusinessLines": 6
+  }
+}
