@@ -46,7 +46,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | F-15 | P3 | Role vocabularies | 5 definitions (`AppRoleToken`, `USER_ROLES`, `AccessTier`, `OperatorTier`, verticals stages) | Make `auth-roles.ts` the source; derive `USER_ROLES`; add a test that the DB enum list matches | TODO |
 | F-16 | P3 | Eligibility status | Free text with 3 hard-coded copies | Import `BG_CHECK_DECISIONS` from `queries.ts` everywhere; test that the copies are gone | DONE dc2bd973 (PR #206); source is `src/lib/bg-check-decisions.ts` (re-exported by `queries.ts`); structural test walks src/shared/packages |
 | F-17 | P3 | Formatting | Two `formatCurrency`/`formatDate` with different output | Re-export `src/lib/utils.ts` versions from `packages/aixmos-core`; delete duplicates | TODO |
-| F-18 | P3 | Idempotency | Stripe/Cal webhooks have no event-id dedupe; GHL degrades silently to in-memory | Reuse `consumeGhlEventId` pattern with a generic `webhook_events` table (**OWNER-GATED** migration) + loud metric when fallback engages | TODO / OWNER |
+| F-18 | P3 | Idempotency | Stripe/Cal webhooks have no event-id dedupe; GHL degrades silently to in-memory | Reuse `consumeGhlEventId` pattern with a generic `webhook_events` table (**OWNER-GATED** migration) + loud metric when fallback engages | PARTIAL: stripe `event.id` + cal `payload.uid` deduped in T-02b against `audit_events` (no new table; index STAGED/OWNER); GHL fallback metric still TODO |
 | F-19 | P3 | Timeouts | No GHL/Airtable/ClickUp fetch has a timeout | One `fetchWithTimeout()` helper (8 s default) used by all outbound clients | DONE 315ccdd2 (PR #197); 25 sites in 11 files + structural bare-fetch guard |
 
 ## Batch 3 — tests where none exist (interleave with Batch 1/2 fixes)
@@ -55,6 +55,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 |---|---|---|---|---|
 | T-01 | P3 | `src/middleware.ts` | public paths, tier map, fail-closed on Supabase error, org header stripped | DONE 8be4b6a2 (PR #205); 389 cases; known gap pinned with `it.fails`: `none` tier admitted to rentals desk at the edge (layout still locks it out) |
 | T-02 | P3 | Webhook routes (ghl ×6, airtable ×2, stripe, cal, twilio) | signature/secret rejection, idempotent replay, happy path with mocked DB | DONE 88af6217 (PR #207); 10 route.test.ts + `src/lib/testing/fake-supabase.ts`, 104 tests. Replay is enforced only on ghl* (event id) and stripe (sig timestamp); ghl/overdue, airtable ×2, cal carry `TODO(T-02): no replay guard`. Finding: stripe route resolves the org before verifying the signature (slug probe) — follow-up |
+| T-02b | P2 | Stripe/Cal webhook hardening (the three T-02 follow-ups) | (1) stripe: signature verified BEFORE `resolveOrgBySlug` (secret is env `STRIPE_WEBHOOK_SECRET_<SLUG>`, not the org row, so the reorder is clean) — an unsigned caller gets the same 401 for an unknown and a known slug and costs no DB read; (2) replay gate on cal (`payload.uid`) and stripe (`event.id`): app-side pre-check on the `audit_events` row each route already writes (`src/lib/agent/webhook-replay.ts`, F-01 shape), second delivery = 200 `{ok,duplicate}` with no write and no audit row, fails OPEN on lookup error; `emitAudit` logs 23505 as a caught replay; (3) cal: signed non-JSON / non-object body → 400 (was 500), unsigned garbage still 401 | DONE (this PR); cal 23 + stripe 16 tests; hard layer = `_staged/20260908000200_audit_events_webhook_replay_indexes_STAGED.sql` **OWNER-GATED** — until applied the race between two concurrent deliveries can duplicate the (idempotent) lead update and the audit row |
 | T-03 | P3 | Server actions with authz (`operators`, `dispatch`, `credit-dispute`, `workflow`, `document`) | non-staff rejected, org-scoped access enforced | TODO |
 | T-04 | P3 | License plane routes | provision one-shot, heartbeat kill path | TODO (after F-20 design) |
 | T-05 | P3 | Structural | `internal-links` scanning `src/lib`; outbound-send gate test (F-03) | TODO |
@@ -85,6 +86,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | Item | Decision | Notes |
 |---|---|---|
 | Apply `agent_messages.provider_message_sid` unique index (F-01) | D-18 gate | staged migration + rollback + test SQL shipped with F-01 |
+| Apply `audit_events` webhook replay indexes (T-02b) | D-18 gate | `_staged/20260908000200_audit_events_webhook_replay_indexes_STAGED.sql`: two partial unique expression indexes (cal `booking_uid`, stripe `event_id`, both org-scoped) + rollback + pre-apply TEST; CONCURRENTLY, run outside a transaction |
 | Customer #2 tenancy migration (`customer_payments`, `background_checks` → `is_org_member`) | D-21 | not written yet |
 | Seed `reason_codes` | D-9 / D-19 | business policy |
 | DB advisor: 876 multiple-permissive policies, 44 `auth_rls_initplan`, 59 unindexed FKs, 151 unused indexes, 2 extensions in `public`, 2 anon-executable SECURITY DEFINER fns (`eval_money_rails` token-guarded, `submit_customer_intake` input-capped — both intentional), leaked-password protection off | owner | performance items are safe but still prod DDL |
@@ -109,6 +111,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | 2026-09-08 | #200 plan record | merged 9e00dbf8 (docs only) |
 | 2026-09-08 | secret-scan false positive (PR #202) | fixture comment from Codex PR #201 matched the Telegram-token regex and failed every push; one space in the comment; merged 7d96b6d9 |
 | 2026-09-08 | F-24 (PR #203) | 36 names added, 8 retired; `env-example.test.ts` 2/2; full suite 72 files / 622 tests; tsc 0; pre-push 6/6 |
+| 2026-09-08 | T-02b webhook hardening (this PR) | cal 23 + stripe 16 route tests (was 11 + 12); full suite 85 files / 1143 tests; tsc 0; eslint 0 errors / 36 pre-existing warnings; brand up to date; secret-scan clean; build-smoke SKIP (5.4 GB free); replay index STAGED, not applied |
 
 ## Exact next step
 
@@ -116,7 +119,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 
 **Incident to know:** commit `0723b3d2` ("fix(audit): finish local gate and public abuse hardening") was made on the audit branch inside `C:\dev\TMMT-audit-wt` by a concurrent third writer and reached master through PR #192. It carried the F-33 edits plus drafts of F-11/F-12, which is why #196 and #197 needed re-merging. Rule: work only in `C:\dev\TMMT-b2-wt` (or a fresh worktree), never in a checkout another session can reach; the pre-push gate runs on the working tree, not the commit.
 
-**Owner items first:** ~~F-31 apply `20260908120000_is_internal_ops_fail_closed.sql`~~ APPLIED on prod (verified 2026-09-08 20:40) · apply the two staged migrations (SMS replay index, `rate_limit_hit`) — still not applied · D-19 reason codes · D-21 tenancy migration · dead directories (F-28).
+**Owner items first:** ~~F-31 apply `20260908120000_is_internal_ops_fail_closed.sql`~~ APPLIED on prod (verified 2026-09-08 20:40) · apply the three staged migrations (SMS replay index, `rate_limit_hit`, audit_events webhook replay indexes) — still not applied · D-19 reason codes · D-21 tenancy migration · dead directories (F-28).
 
 **Next engineering, in order:** F-13/F-15/F-17/F-18 · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.  (F-24, F-14, F-16, T-01, T-02 all DONE 2026-09-08: PRs #203-#208.)
 
