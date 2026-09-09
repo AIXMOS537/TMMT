@@ -1,5 +1,17 @@
 import { supabase } from "@/lib/supabase";
 import { cacheRead, cacheReplace, isBrowserOffline } from "@/lib/offline/store";
+import { BG_CHECK_DECISIONS, isBgCheckPending, type BgCheckDecision } from "@/lib/bg-check-decisions";
+
+// The eligibility vocabulary lives in a dependency-free module so server code
+// can import it without this file's browser client. Re-exported here so the
+// existing `from "@/lib/queries"` importers keep working. (Remediation F-16.)
+export {
+  BG_CHECK_DECISIONS,
+  BG_DECISION,
+  isBgCheckDecision,
+  isBgCheckPending,
+  type BgCheckDecision,
+} from "@/lib/bg-check-decisions";
 
 /* ──────────── Re-usable fetcher ──────────── */
 
@@ -166,9 +178,7 @@ export async function getDashboardData() {
     try {
       const queue = await getBgCheckQueue(undefined, 500);
       bgTotal = queue.length;
-      bgPending = queue.filter(
-        (r) => !r.eligibility_status || r.eligibility_status === "Need Manager's Review"
-      ).length;
+      bgPending = queue.filter((r) => isBgCheckPending(r.eligibility_status)).length;
     } catch {
       bgTotal = 0;
       bgPending = 0;
@@ -225,16 +235,6 @@ export type BgCheckQueueRow = {
   date_verified: string | null;
   reviewed_at: string | null;
 };
-
-export const BG_CHECK_DECISIONS = [
-  "Eligible",
-  "Not Eligible",
-  "Need Manager's Review",
-  "out of radius",
-  "Not found",
-] as const;
-
-export type BgCheckDecision = (typeof BG_CHECK_DECISIONS)[number];
 
 export async function isPlatformAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_platform_admin");
