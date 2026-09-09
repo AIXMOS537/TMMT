@@ -5,6 +5,9 @@
  * Spec: docs/superpowers/specs/2026-06-21-moe-legacy-agency-saas-design.md
  */
 
+import type { AppRoleToken } from "@/lib/auth-roles";
+import type { OrgRole } from "@/lib/db-vocab";
+
 export type VerticalSeatStage = "learn" | "earn" | "graduate";
 
 export type VerticalConfig = {
@@ -108,10 +111,19 @@ export function getVerticalByOrgName(orgName: string): VerticalConfig | undefine
   return VERTICALS.find((v) => v.orgName.toLowerCase() === n);
 }
 
-/** Seat stage → auth + org_roles mapping for provisioning */
+/**
+ * Seat stage → auth + org_roles mapping for provisioning.
+ *
+ * `appRole` is written to the JWT (`app_metadata.role`) and `orgRole` to
+ * `org_roles.role`, so both are narrowed from their vocabularies: `Extract`
+ * keeps the literal types callers see today and fails to compile if a value
+ * ever leaves `APP_ROLE_TOKENS` or `ORG_ROLES` (F-15). The same stages live in
+ * `config/verticals.json` for `scripts/provision-tenant-seat.mjs`;
+ * `role-vocabulary.test.ts` checks the two agree on roles.
+ */
 export function seatPlanForStage(stage: VerticalSeatStage): {
-  appRole: "operator" | "partner";
-  orgRole: "tenant_admin" | "dispatcher" | "viewer";
+  appRole: Extract<AppRoleToken, "operator" | "partner">;
+  orgRole: Extract<OrgRole, "tenant_admin" | "dispatcher" | "viewer">;
   revenueSharePct: number;
   level: string;
   certified: boolean;
