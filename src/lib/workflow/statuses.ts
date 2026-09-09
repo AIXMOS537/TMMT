@@ -1,9 +1,18 @@
 // =============================================================================
-// Workflow vocabulary — keep in lock-step with supabase/migrations/0001_init.sql
+// Workflow vocabulary — keep in lock-step with the live schema (the init
+// migration is not in the repo; see supabase/schema/README.md)
 // =============================================================================
 
-export const USER_ROLES = ["admin", "internal_team", "investor", "vendor", "customer"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
+import { DB_USER_ROLES, type DbUserRole } from "@/lib/db-vocab";
+
+/**
+ * The `public.user_role` enum (`profiles.role`). This used to be a second
+ * hand-typed copy; it is now the one in `src/lib/db-vocab.ts`, which is
+ * type-checked as a subset of the app role tokens in `src/lib/auth-roles.ts`
+ * (F-15). Kept under its old name so existing imports keep working.
+ */
+export const USER_ROLES = DB_USER_ROLES;
+export type UserRole = DbUserRole;
 
 export const CASE_STATUSES = [
   "intake_submitted",

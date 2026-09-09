@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { isStaffUser } from "@/lib/auth-roles";
+import type { OrgRole } from "@/lib/db-vocab";
 import { searchAddress } from "@/lib/osm-geocode";
 import { askCaptainDispatch } from "@/lib/captain-client";
 import { notifyResponder } from "@/lib/notify-telegram";
@@ -46,9 +47,10 @@ async function requireAuth() {
  * by id rather than by URL and never passes through the layout that guards its
  * page.
  *
- * Roles per the schema: tenant_admin, dispatcher, responder, viewer.
+ * Roles per the schema: ORG_ROLES in src/lib/db-vocab.ts (tenant_admin,
+ * dispatcher, responder, viewer). The subset below is type-checked against it.
  */
-const ORG_ADMIN_ROLES = ["tenant_admin", "dispatcher"] as const;
+const ORG_ADMIN_ROLES = ["tenant_admin", "dispatcher"] as const satisfies readonly OrgRole[];
 
 async function requireOrgAccess(
   orgId: string | null | undefined,
