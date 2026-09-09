@@ -58,7 +58,25 @@ function verifyTwilioSignature(req: Request, params: Record<string, string>): bo
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
-  const form = await req.formData()
+  // Twilio always POSTs application/x-www-form-urlencoded. formData() throws a
+  // TypeError on any other Content-Type, and that used to escape as a 500 --
+  // a crash where a rejection belongs, on a public unauthenticated route.
+  //
+  // 400, deliberately, NOT the empty-TwiML 200 used for signature failures
+  // below. The signature drop is silent so Twilio does not retry-flood and so
+  // the response leaks nothing about WHY it dropped. A body we cannot parse is
+  // a different thing: it is the caller's error, it can never be a genuine
+  // Twilio delivery, and answering 200 would make a misconfigured sender look
+  // like success -- which is exactly how the lead webhook stayed dead for 13
+  // days. Twilio treats 4xx as permanent and will not retry it.
+  let form: FormData
+  try {
+    form = await req.formData()
+  } catch {
+    console.warn('[agent/sms/inbound] rejected: body was not form-encoded')
+    return new NextResponse(null, { status: 400 })
+  }
+
   const flat: Record<string, string> = {}
   for (const [k, v] of form.entries()) {
     if (typeof v === 'string') flat[k] = v
