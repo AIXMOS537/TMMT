@@ -26,7 +26,7 @@ distinction is a role inside it, not a second deployment.
 
 | App | Project | URL | Role |
 |---|---|---|---|
-| **TMMT Ops** | `tmmt-ops` | https://tmmtrentals.com | The whole app: ops, command center, training, intake |
+| **TMMT Ops** | `tmmt-ops` | https://tmmt-ops.vercel.app | The whole app: ops, command center, training, intake |
 
 Retired and **paused** (reversible, not deleted): `tmmt-command-center`
 (2026-09-09), `tmmt-training-site`, `aixmos-offer`. Kept serving by owner
