@@ -42,7 +42,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 |---|---|---|---|---|---|
 | F-12 | P2 | Phone normalisation | Two implementations disagreed (`leads/webhook/route.ts` rejected non-NANP; `people/upsert.ts` never rejected) | `src/lib/phone.ts` keeps both policies, named (`normalizeNanpPhone` strict for public entry points, `normalizePhoneLoose` for existing records); both callers import the one they mean; no behaviour change | DONE a6140925 (PR #196) |
 | F-13 | P2 | Pricing constants | 4 unsynchronised tables (`SKU_PRICE_CENTS`, `PROGRAM_SKUS`, `highTicketTiers`, two `9700` consts) | One `src/lib/pricing/catalog.ts` **that only re-exports the values that exist today** — no new prices (D-1 is open); callers import from it | TODO |
-| F-14 | P3 | Supabase clients | 9 construction sites, 4 service-role factories without `server-only` | Collapse to `supabase-service.ts`; delete `agent/supabase-server.ts` after re-pointing 12 importers | TODO |
+| F-14 | P3 | Supabase clients | 9 construction sites, 4 service-role factories without `server-only` | Collapse to `supabase-service.ts`; delete `agent/supabase-server.ts` after re-pointing 12 importers (turned out to be 15 source importers + 6 test mocks) | DONE 91eb45ff (PR #208); `supabase-factories.test.ts` structural guard; `server-only` aliased in vitest |
 | F-15 | P3 | Role vocabularies | 5 definitions (`AppRoleToken`, `USER_ROLES`, `AccessTier`, `OperatorTier`, verticals stages) | Make `auth-roles.ts` the source; derive `USER_ROLES`; add a test that the DB enum list matches | TODO |
 | F-16 | P3 | Eligibility status | Free text with 3 hard-coded copies | Import `BG_CHECK_DECISIONS` from `queries.ts` everywhere; test that the copies are gone | TODO |
 | F-17 | P3 | Formatting | Two `formatCurrency`/`formatDate` with different output | Re-export `src/lib/utils.ts` versions from `packages/aixmos-core`; delete duplicates | TODO |
@@ -113,7 +113,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 
 **Owner items first:** F-31 apply `20260908120000_is_internal_ops_fail_closed.sql` (file on master, not applied) · apply the two staged migrations (SMS replay index, `rate_limit_hit`) · D-19 reason codes · D-21 tenancy migration · dead directories (F-28).
 
-**Next engineering, in order:** F-24 `.env.example` completeness · F-14 Supabase client factories (12 importers) · F-16 eligibility status (import `BG_CHECK_DECISIONS` everywhere) · T-01 middleware tests · T-02 webhook route tests · F-13/F-15/F-17/F-18 · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.
+**Next engineering, in order:** F-24 `.env.example` completeness · F-16 eligibility status (import `BG_CHECK_DECISIONS` everywhere) · T-01 middleware tests · T-02 webhook route tests · F-13/F-15/F-17/F-18 · F-03b `addContactTag` gate (needs owner view on tag-driven sends) · F-20..F-23 device hardening after owner scope.
 
 ## Appendix — API route gate table (from Recon A, 2026-09-08)
 
