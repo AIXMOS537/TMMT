@@ -1,3 +1,11 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: NOT APPLIED. Superseded, exactly as its header says.
+-- Verified in production: public.exec_va_tasks.triage exists and
+-- classify_va_tasks(p_dry_run, p_ruleset) is live and cron-bound
+-- (aixmos_daily_va_classify, 12:15 daily). The authoritative copies are
+-- 20260903193844 and 20260903194001. Do not run.
+-- ===========================================================================
+
 -- ============================================================================
 -- ⚠️ SUPERSEDED DRAFT — DO NOT RUN.
 --

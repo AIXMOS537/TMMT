@@ -1,3 +1,21 @@
+-- ===========================================================================
+-- TRIAGED 2026-09-09: SUPERSEDED. Its INTENT shipped; its BODY did not.
+--
+-- The pre-apply diff this file requires was run, and it FAILED its own test.
+-- The reconstructed body here differs from the live definition by more than
+-- the added opt-out blocks:
+--   * live guards `d.phone10 is not null` in all three DNC checks - dropped here
+--   * live wraps the phone in coalesce(...,'') - dropped here
+--   * live's return carries 'dnc_filtered_at_enqueue' - dropped here, despite
+--     this file claiming the return shape is preserved byte-for-byte
+--
+-- Per this file's own STOP rule, it was reconciled rather than applied: the
+-- live body was captured verbatim via pg_get_functiondef and the opt-out
+-- filters added to THAT. See supabase/migrations/
+-- 20260909212038_generate_va_tasks_v2_optout_at_enqueue.sql, which is what
+-- production actually runs. Do not run this file.
+-- ===========================================================================
+
 -- 20260908000000_generate_va_tasks_dnc_at_enqueue_STAGED
 -- REC-120 — do-not-contact AND opt-out enforced at ENQUEUE, not only at execution.
 --
