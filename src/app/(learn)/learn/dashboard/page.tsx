@@ -1,7 +1,7 @@
 "use client";
 
 import { useCube } from "@aixmos/core";
-import { formatCurrency } from "@aixmos/core";
+import { formatCurrencyWhole } from "@aixmos/core";
 
 
 import { ReadinessScoreRing } from "@/components/readiness-score-ring";
@@ -60,11 +60,11 @@ export default function DashboardPage() {
           <Card className="p-5 p-5">
             <CardTitle>Personal snapshot</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
-              <li>Income: {formatCurrency(p.income)}/yr</li>
-              <li>Monthly obligations: {formatCurrency(p.monthlyObligations)}</li>
+              <li>Income: {formatCurrencyWhole(p.income)}/yr</li>
+              <li>Monthly obligations: {formatCurrencyWhole(p.monthlyObligations)}</li>
               <li>Credit range: {p.creditScoreRange}</li>
               <li>Goal: {p.fundingGoal}</li>
-              <li>Target: {formatCurrency(p.desiredFundingAmount)}</li>
+              <li>Target: {formatCurrencyWhole(p.desiredFundingAmount)}</li>
             </ul>
           </Card>
         )}
@@ -73,8 +73,8 @@ export default function DashboardPage() {
             <CardTitle>Business snapshot</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
               <li>{b.businessName}</li>
-              <li>Revenue: {formatCurrency(b.monthlyRevenue)}/mo</li>
-              <li>Avg balance: {formatCurrency(b.averageBankBalance)}</li>
+              <li>Revenue: {formatCurrencyWhole(b.monthlyRevenue)}/mo</li>
+              <li>Avg balance: {formatCurrencyWhole(b.averageBankBalance)}</li>
               <li>Purpose: {b.fundingPurpose}</li>
             </ul>
           </Card>
