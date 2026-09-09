@@ -57,7 +57,7 @@ const h = vi.hoisted(() => {
 // processInbound is the expensive, side-effectful step (LLM call + outbound SMS).
 // Every guard below is judged by ONE question: did this stay uncalled?
 vi.mock('@/lib/agent/process-inbound', () => ({ processInbound: h.processInbound }))
-vi.mock('@/lib/agent/supabase-server', () => ({ createServiceSupabase: () => h.makeDb() }))
+vi.mock('@/lib/supabase-service', () => ({ createServiceRoleClient: () => h.makeDb() }))
 vi.mock('@/lib/agent/tenant', () => ({
   resolveOrgByTwilioNumber: async () => ({ id: 'org-1', name: 'TMMT', partnerAppSlug: 'aixmos' }),
   OrgNotFoundError: class OrgNotFoundError extends Error {},

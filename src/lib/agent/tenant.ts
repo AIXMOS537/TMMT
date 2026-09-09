@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createServiceSupabase } from './supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 export interface OrgContext {
   id: string
@@ -123,21 +123,21 @@ function rowToPublicCtx(row: unknown, lookup: string): PublicOrgContext {
 }
 
 export async function resolveOrgByTwilioNumber(number: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('twilio_inbound_number', number).single()
   if (!data) throw new OrgNotFoundError(`twilio:${number}`)
   return rowToCtx(data, `twilio:${number}`)
 }
 
 export async function resolveOrgById(id: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('id', id).single()
   if (!data) throw new OrgNotFoundError(`id:${id}`)
   return rowToCtx(data, `id:${id}`)
 }
 
 export async function resolveOrgBySlug(slug: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('partner_app_slug', slug).single()
   if (!data) throw new OrgNotFoundError(`slug:${slug}`)
   return rowToCtx(data, `slug:${slug}`)
@@ -150,7 +150,7 @@ export async function resolveOrgBySlug(slug: string): Promise<OrgContext> {
  * that does not gate the caller with a tenant-bound credential.
  */
 export async function resolveOrgBySlugPublic(slug: string): Promise<PublicOrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_PUBLIC).eq('partner_app_slug', slug).single()
   if (!data) throw new OrgNotFoundError(`slug:${slug}`)
   return rowToPublicCtx(data, `slug:${slug}`)

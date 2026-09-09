@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { resolveOrgBySlug } from '@/lib/agent/tenant'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 
@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (evt.triggerEvent === 'BOOKING_CREATED' && evt.payload) {
     const phone = evt.payload.attendees?.[0]?.phone
     if (phone) {
-      const db = createServiceSupabase()
+      const db = createServiceRoleClient()
       await db.from('incoming_leads').update({
         agent_status: 'BOOKED',
       }).eq('phone_e164', phone).eq('organization_id', org.id)

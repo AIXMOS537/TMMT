@@ -7,8 +7,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
  */
 
 const single = vi.fn();
-vi.mock("./supabase-server", () => ({
-  createServiceSupabase: () => ({
+vi.mock("@/lib/supabase-service", () => ({
+  createServiceRoleClient: () => ({
     from: () => ({ select: () => ({ eq: () => ({ single }) }) }),
   }),
 }));

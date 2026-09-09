@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildServiceRoleClient } from "@/lib/supabase-service";
 
 /** Optional read-only bridge to root TMMT Command Center Supabase (contracts, background_checks). */
 export function isCommandCenterBridgeConfigured(): boolean {
@@ -13,5 +14,5 @@ export function createCommandCenterClient(): SupabaseClient<any, "public", any> 
   const url = process.env.COMMAND_CENTER_SUPABASE_URL?.trim();
   const key = process.env.COMMAND_CENTER_SUPABASE_SERVICE_KEY?.trim();
   if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return buildServiceRoleClient(url, key);
 }

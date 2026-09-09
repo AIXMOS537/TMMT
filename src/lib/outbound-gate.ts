@@ -16,7 +16,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { assertSmsAllowed, type SmsType } from '../../shared/compliance-gates/sms-gate'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 export type OutboundCheckArgs = {
   /** Client able to read do_not_contact_numbers and incoming_leads. Defaults to the service client. */
@@ -75,7 +75,7 @@ export async function assertOutboundAllowed(args: OutboundCheckArgs): Promise<Ou
   const p10 = phone10(args.phone)
   if (!p10) return { allowed: true, reason: 'ok', flags }
 
-  const db = args.db ?? createServiceSupabase()
+  const db = args.db ?? createServiceRoleClient()
 
   // 2. Do-not-contact. Fail closed on a read error.
   const dnc = await db
