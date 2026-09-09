@@ -13,7 +13,7 @@ import { isQuietHours } from './compliance/quiet-hours'
 import { applyDisclaimers, hasBlockingPhrase } from './compliance/disclaimers'
 import { findBannedPhrases } from './compliance/banned-phrases'
 import { emitAudit } from './audit'
-import { createServiceSupabase } from './supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { recordMoneyEventSafe } from '@/lib/money-meter'
 
 export interface ProcessInboundArgs {
@@ -154,7 +154,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   // + family) are stamped non-billable by the DB. Best-effort so a metering
   // hiccup never breaks the SMS reply path.
   if (llmCostAccruedUsd > 0) {
-    await recordMoneyEventSafe(createServiceSupabase(), {
+    await recordMoneyEventSafe(createServiceRoleClient(), {
       orgId: args.org.id,
       direction: 'used',
       category: 'ai_llm',

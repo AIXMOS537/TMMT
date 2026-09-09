@@ -73,7 +73,7 @@ Do **not** go live with a generated two-letter monogram. Drop the dealer's real 
 
 - Staff ops: \`https://tmmt-ops-${slug}.vercel.app/login\`
 - Lead form: \`https://tmmt-ops-${slug}.vercel.app/forms/lead-intake\`
-- Owner hub: \`https://tmmt-command-center-${slug}.vercel.app/login\` (Dealer Bundle only)
+- Owner hub: \`https://tmmt-ops-${slug}.vercel.app/command\` (Dealer Bundle only — a role inside the one app, not a second deployment)
 
 ## Day 1
 

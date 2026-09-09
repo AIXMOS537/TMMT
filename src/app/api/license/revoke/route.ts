@@ -5,7 +5,7 @@
  */
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { emitAudit } from '@/lib/agent/audit'
 
 interface RevokeBody {
@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     : { active: false }
   if (mode === 'hard') update.kill_command = 'wipe'
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data, error } = await db
     .from('organization_licenses')
     .update(update)

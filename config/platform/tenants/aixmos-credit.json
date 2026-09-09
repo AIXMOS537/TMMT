@@ -1,0 +1,40 @@
+{
+  "id": "aixmos-credit",
+  "slug": "aixmos_credit",
+  "aliases": ["aixmos-credit", "credit", "moe-legacy", "moe_legacy"],
+  "displayName": "AIXMOS Credit",
+  "legalName": "AIXMOS Credit",
+  "tagline": "The go-to for getting funding-ready and funded",
+  "locale": { "default": "en-US", "currency": "USD", "timezone": "America/New_York" },
+  "region": { "primary": "US", "compliancePack": "us-credit-guidance" },
+  "theme": {
+    "mode": "dark",
+    "primary": "#34d399",
+    "accent": "#059669",
+    "background": "#0a0a0a",
+    "foreground": "#ffffff",
+    "logoPath": "/brands/aixmos-credit/logo.svg",
+    "markPath": "/brands/aixmos-credit/mark.svg",
+    "faviconPath": "/brands/aixmos-credit/favicon.svg"
+  },
+  "domains": {
+    "marketing": "credit.aixmos.internal",
+    "app": "credit.aixmos.internal"
+  },
+  "contact": {
+    "supportEmail": "tmmtautodetail@gmail.com",
+    "salesPhone": "VAULT://public_line"
+  },
+  "agent": {
+    "name": "Riley",
+    "persona": "Credit guidance only — no guaranteed outcomes; compliance-first language."
+  },
+  "offers": {
+    "skus": ["lead-magnet", "intro-97"]
+  },
+  "whiteLabel": {
+    "licenseTier": "tenant",
+    "parentPlatformId": "aixmos-platform",
+    "customizable": ["displayName", "tagline", "theme", "domains", "agent.name"]
+  }
+}

@@ -33,6 +33,28 @@ export type TenantBrand = {
 };
 
 export const TENANTS: Record<string, TenantBrand> = {
+  "aixmos_credit": {
+    id: "aixmos-credit",
+    slug: "aixmos_credit",
+    aliases: ["aixmos-credit","credit","moe-legacy","moe_legacy"],
+    displayName: "AIXMOS Credit",
+    legalName: "AIXMOS Credit",
+    tagline: "The go-to for getting funding-ready and funded",
+    initials: "AC",
+    licenseTier: "tenant",
+    hasCustomLogo: false,
+    theme: {
+      mode: "dark",
+      primary: "#34d399",
+      accent: "#059669",
+      background: "#0a0a0a",
+      foreground: "#ffffff",
+      logoPath: "/brands/aixmos-credit/logo.svg",
+      markPath: "/brands/aixmos-credit/mark.svg",
+      faviconPath: "/brands/aixmos-credit/favicon.svg",
+    },
+    domains: { marketing: "credit.aixmos.internal", app: "credit.aixmos.internal" },
+  },
   "aixmos": {
     id: "aixmos",
     slug: "aixmos",
@@ -53,29 +75,7 @@ export const TENANTS: Record<string, TenantBrand> = {
       markPath: "/brands/aixmos/mark.svg",
       faviconPath: "/brands/aixmos/favicon.svg",
     },
-    domains: { marketing: "aixmos.com", app: "aixmos-landing.vercel.app" },
-  },
-  "moe_legacy": {
-    id: "moe-legacy",
-    slug: "moe_legacy",
-    aliases: ["moe-legacy","moe_legacy"],
-    displayName: "AIXMOS Credit",
-    legalName: "AIXMOS Credit",
-    tagline: "The go-to for getting funding-ready and funded",
-    initials: "AC",
-    licenseTier: "tenant",
-    hasCustomLogo: false,
-    theme: {
-      mode: "dark",
-      primary: "#34d399",
-      accent: "#059669",
-      background: "#0a0a0a",
-      foreground: "#ffffff",
-      logoPath: "/brands/moe-legacy/logo.svg",
-      markPath: "/brands/moe-legacy/mark.svg",
-      faviconPath: "/brands/moe-legacy/favicon.svg",
-    },
-    domains: { marketing: "credit.aixmos.internal", app: "credit.aixmos.internal" },
+    domains: { marketing: "aixmos.com", app: "allinonemanagementsolutions.com" },
   },
   "tmmt_property": {
     id: "tmmt",
@@ -103,17 +103,20 @@ export const TENANTS: Record<string, TenantBrand> = {
 
 /** alias -> canonical slug */
 export const TENANT_ALIASES: Record<string, string> = {
+  "aixmos-credit": "aixmos_credit",
+  "credit": "aixmos_credit",
+  "moe-legacy": "aixmos_credit",
+  "moe_legacy": "aixmos_credit",
   "aixmos537": "aixmos",
-  "moe-legacy": "moe_legacy",
   "tmmt": "tmmt_property",
   "tmmt-rentals": "tmmt_property"
 };
 
 /** hostname (no port, lowercase) -> canonical slug */
 export const TENANT_HOSTS: Record<string, string> = {
+  "credit.aixmos.internal": "aixmos_credit",
   "aixmos.com": "aixmos",
-  "aixmos-landing.vercel.app": "aixmos",
-  "credit.aixmos.internal": "moe_legacy",
+  "allinonemanagementsolutions.com": "aixmos",
   "tmmtrentals.com": "tmmt_property",
   "tmmt-ops.vercel.app": "tmmt_property"
 };

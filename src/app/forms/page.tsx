@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formsForSite, FORM_FAMILY_COLOR, type FormSite } from "@/lib/forms/catalog";
-import { resolveFormSite } from "@/lib/forms/site";
+import { siteFromSearchParam } from "@/lib/forms/site";
 import BrandName from "@/components/brand/BrandName";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export default async function FormsHubPage({
   searchParams: Promise<{ site?: string }>;
 }) {
   const sp = await searchParams;
-  const site: FormSite = await resolveFormSite(sp.site);
+  const site: FormSite = siteFromSearchParam(sp.site) ?? "aixmos";
   const forms = formsForSite(site);
   const full = site === "aixmos";
 
@@ -27,14 +27,14 @@ export default async function FormsHubPage({
         <p className="text-zinc-300 max-w-2xl mb-8">
           {full
             ? "Every public form. Name, phone, and email land in one people record in Supabase. Numbers on each card: what it is, what it costs, how long."
-            : "The simple TMMT set: rent, waitlist, appointment, ticket, driver check. The big AIXMOS doors (school, $50K box, credit) live on the AIXMOS landing site."}
+            : "The simple TMMT set: rent, waitlist, appointment, ticket, driver check. The big AIXMOS doors (school, $50K box, credit) are on the full list."}
         </p>
         {!full && (
           <p className="mb-8 text-sm">
             Need the full set?{" "}
-            <a className="text-cyan-300 underline" href="https://aixmos-landing.vercel.app/forms">
-              Open AIXMOS forms →
-            </a>
+            <Link className="text-cyan-300 underline" href="/forms?site=aixmos">
+              Open every form →
+            </Link>
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

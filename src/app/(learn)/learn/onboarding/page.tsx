@@ -5,9 +5,10 @@ import { useState } from "react";
 import { HeartHandshake } from "lucide-react";
 import { useCube } from "@aixmos/core";
 import type { FundingTrack } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Button, Card, CardDescription, CardTitle } from "@/components/ui";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function OnboardingPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card>
+      <Card className="p-5 p-5">
         <div className="mb-4 flex items-center gap-3">
           <HeartHandshake className="h-8 w-8 text-teal-700" />
           <div>

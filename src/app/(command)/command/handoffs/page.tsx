@@ -26,10 +26,15 @@ type Handoff = {
   accepted_at: string | null;
 };
 
+// moe_legacy is a frozen data key on existing rows, not a brand and not a
+// lane — see docs/UMAR-MOE-TERMINAL-NOTICE.md. Everywhere else already renders
+// that slug as "AIXMOS Credit" (lp copy, brand-shell); this screen was the last
+// place still showing the retired name back to the owner as if it were a live
+// entity. The key stays, because existing handoff rows reference it.
 const ENTITY: Record<string, string> = {
   tmmt: "TMMT",
   aixmos: "AIXMOS",
-  moe_legacy: "MOE Legacy",
+  moe_legacy: "AIXMOS Credit",
 };
 const entityLabel = (slug: string) => ENTITY[slug] ?? slug;
 

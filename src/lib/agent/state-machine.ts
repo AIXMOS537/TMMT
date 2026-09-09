@@ -3,6 +3,8 @@
  * NEW → CONTACTED → QUALIFIED → {BOOKED, CLOSED, LOST, HUMAN_HANDOFF}
  * No side effects; tested in isolation.
  */
+import { AGENT_HUMAN_HANDOFF_THRESHOLD_CENTS } from '@/lib/pricing/catalog'
+
 export type AgentState = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'BOOKED' | 'CLOSED' | 'LOST' | 'HUMAN_HANDOFF'
 
 export interface MachineState {
@@ -37,7 +39,9 @@ export interface StepResult {
 
 const QUALIFIED_BAT_THRESHOLD = 2.0
 const QUALIFIED_CONFIDENCE_THRESHOLD = 0.6
-const HUMAN_PRICE_THRESHOLD_CENTS = 9700  // $97 — below this, agent closes; above, books call
+// $97 — at or below this the agent closes by itself; above it, it books a call.
+// Tied to the membership price in src/lib/pricing/catalog.ts (F-13).
+const HUMAN_PRICE_THRESHOLD = AGENT_HUMAN_HANDOFF_THRESHOLD_CENTS
 
 export function step(prev: MachineState, evt: AgentEvent): StepResult {
   // Terminal-overriding events apply at any state
@@ -74,7 +78,7 @@ export function step(prev: MachineState, evt: AgentEvent): StepResult {
 
   if (prev.state === 'QUALIFIED' && evt.kind === 'continue') {
     const price = prev.skuPriceCents ?? 0
-    const action: AgentAction = price <= HUMAN_PRICE_THRESHOLD_CENTS
+    const action: AgentAction = price <= HUMAN_PRICE_THRESHOLD
       ? { kind: 'send_stripe_link' }
       : { kind: 'send_cal_link' }
     return { state: 'QUALIFIED', sku: prev.sku, skuPriceCents: price, actions: [action] }

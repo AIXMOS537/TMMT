@@ -44,7 +44,7 @@ smoke_app(){ local base="$1" name="$2"; SMOKE_BASE_URL="$base" bash "$ROOT/scrip
   if [ $? -eq 0 ]; then note_pass "Smoke $name"; return 0; fi
   note_warn "Smoke $name — partial (CC may lack /forms/customer-intake by design)"; return 1; }
 smoke_app "https://tmmt-ops.vercel.app" "TMMT Ops" || true
-smoke_app "https://tmmt-command-center.vercel.app" "Command Center" || true
+smoke_app "https://allinonemanagementsolutions.com" "Public site (GHL)" || true
 
 # ── Layer 4: Mesh + secrets ─────────────────────────────────────────────────
 if bash "$ROOT/scripts/swarm-doctor.sh" >/tmp/empire-doctor.log 2>&1; then

@@ -3,7 +3,7 @@
  * Extracted from book_handoff and post_call_summary — same supabase + processInbound args.
  */
 import { processInbound } from "@/lib/agent/process-inbound";
-import { createServiceSupabase } from "@/lib/agent/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-service";
 import type { OrgContext } from "@/lib/agent/tenant";
 
 export interface VoiceLeadRow {
@@ -17,7 +17,7 @@ export async function upsertBookHandoffLead(
   orgId: string,
   phone: string
 ): Promise<VoiceLeadRow | null> {
-  const db = createServiceSupabase();
+  const db = createServiceRoleClient();
   let { data: lead } = await db
     .from("incoming_leads")
     .select("*")
@@ -52,7 +52,7 @@ export async function logPostCallSummary(args: {
   snippet: string;
 }): Promise<{ lead: VoiceLeadRow } | { error: "lead_create_failed" }> {
   const { org, phone, snippet } = args;
-  const db = createServiceSupabase();
+  const db = createServiceRoleClient();
   let { data: lead } = await db
     .from("incoming_leads")
     .select("*")

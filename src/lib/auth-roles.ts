@@ -1,17 +1,34 @@
 import type { User } from "@supabase/supabase-js";
 
-/** Supabase Auth `app_metadata.role` values */
-export type AppRoleToken =
-  | "admin"
-  | "internal_team"
-  | "va"
-  | "executive_va"
-  | "executive"
-  | "operator"
-  | "investor"
-  | "partner"
-  | "vendor"
-  | "customer";
+/**
+ * Supabase Auth `app_metadata.role` values — the ONE app-side source for the
+ * role token vocabulary (remediation F-15).
+ *
+ * These strings are what the JWT carries and what `getTierForUser` switches
+ * on; `scripts/provision-tenant-seat.mjs` writes them from
+ * `config/verticals.json`. The database's `public.user_role` enum
+ * (`profiles.role`) is a five-value SUBSET, pinned against this list in
+ * `src/lib/db-vocab.ts`. Do not re-list these anywhere else:
+ * `src/lib/role-vocabulary.test.ts` walks the tree and fails on a copy.
+ */
+export const APP_ROLE_TOKENS = [
+  "admin",
+  "internal_team",
+  "va",
+  "executive_va",
+  "executive",
+  "operator",
+  "investor",
+  "partner",
+  "vendor",
+  "customer",
+] as const;
+
+export type AppRoleToken = (typeof APP_ROLE_TOKENS)[number];
+
+export function isAppRoleToken(value: unknown): value is AppRoleToken {
+  return typeof value === "string" && (APP_ROLE_TOKENS as readonly string[]).includes(value);
+}
 
 export type AccessTier =
   | "owner"
@@ -25,6 +42,10 @@ export type AccessTier =
    * pages and the everyone-surfaces (/clock, /pocket). This is the fallback,
    * and it has to be: "staff" used to be, which meant an absent or unrecognised
    * `app_metadata.role` silently granted staff.
+   *
+   * Its home is /no-access — a public page that says so and offers sign-out.
+   * It cannot be "/" (the rentals desk): the middleware denies this tier every
+   * desk path, and a home that is itself denied would redirect to itself.
    */
   | "none";
 
@@ -33,6 +54,26 @@ export function getAppRole(user: User | null): string {
   const raw = user.app_metadata?.role;
   return typeof raw === "string" ? raw.trim() : "";
 }
+
+/**
+ * Every `AccessTier`, as a runtime list (for tests and tables that need to
+ * iterate the tiers). `satisfies` pins each entry to the type above, and the
+ * exhaustiveness check below fails to compile if a tier is added to the type
+ * without being listed here — so the two cannot drift.
+ */
+export const ACCESS_TIERS = [
+  "owner",
+  "executive",
+  "operator",
+  "staff",
+  "investor",
+  "vendor",
+  "none",
+] as const satisfies readonly AccessTier[];
+
+type _TierMissingFromList = Exclude<AccessTier, (typeof ACCESS_TIERS)[number]>;
+const _accessTiersExhaustive: [_TierMissingFromList] extends [never] ? true : never = true;
+void _accessTiersExhaustive;
 
 /**
  * Route tier for middleware and post-login redirects.
@@ -98,8 +139,14 @@ export function homePathForTier(tier: AccessTier): string {
       return "/executive";
     case "operator":
     case "staff":
+      // The rentals desk dashboard. It used to live at "/" - the (admin) group's
+      // root page - which collided with the public front door added in this
+      // change: two page.tsx both resolving to "/". Next tolerated it locally
+      // and Vercel refused the deployment outright (ENOENT on
+      // app/(admin)/page_client-reference-manifest.js). Same screen, explicit path.
+      return "/desk";
     case "none":
-      return "/";
+      return "/no-access";
     case "vendor":
       return "/vendor";
     case "investor":

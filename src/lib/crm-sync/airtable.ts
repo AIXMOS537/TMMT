@@ -3,6 +3,8 @@
  * Requires AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_LEADS_TABLE in env.
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 type AirtableFields = Record<string, string | number | boolean | null>;
 
 export async function upsertLeadForVerification(args: {
@@ -47,7 +49,7 @@ export async function upsertLeadForVerification(args: {
     "Content-Type": "application/json",
   };
 
-  const listRes = await fetch(listUrl, { headers, cache: "no-store" });
+  const listRes = await fetchWithTimeout(listUrl, { headers, cache: "no-store" });
   if (!listRes.ok) {
     return { skipped: true, reason: `Airtable list failed: ${listRes.status}` };
   }
@@ -56,7 +58,7 @@ export async function upsertLeadForVerification(args: {
   const existingId = listJson.records?.[0]?.id;
 
   if (existingId) {
-    const patchRes = await fetch(
+    const patchRes = await fetchWithTimeout(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${existingId}`,
       { method: "PATCH", headers, body: JSON.stringify({ fields }) }
     );
@@ -66,7 +68,7 @@ export async function upsertLeadForVerification(args: {
     return { recordId: existingId, skipped: false };
   }
 
-  const createRes = await fetch(
+  const createRes = await fetchWithTimeout(
     `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,
     { method: "POST", headers, body: JSON.stringify({ fields }) }
   );
@@ -87,7 +89,7 @@ export async function patchAirtableSyncFields(args: {
   const table = args.table ?? process.env.AIRTABLE_LEADS_TABLE ?? "Leads";
   if (!apiKey || !baseId) return { ok: false, reason: "Airtable not configured" };
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${args.recordId}`,
     {
       method: "PATCH",
@@ -128,7 +130,7 @@ export async function fetchAirtableRecord(
   const baseId = process.env.AIRTABLE_BASE_ID;
   if (!apiKey || !baseId) return null;
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
     { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
   );

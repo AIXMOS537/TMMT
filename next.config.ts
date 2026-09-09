@@ -51,15 +51,20 @@ const nextConfig: NextConfig = {
 
       // Phase 9 short aliases for marketing surfaces (email, SMS, bio links).
       // Permanent (308) so browsers cache; UTM defaults can be overridden by callers passing their own.
+      // Public marketing lives on the GHL site (allinonemanagementsolutions.com).
+      // Temporary (307) on purpose so the destination can change without
+      // browsers caching a dead hop (the old 308 pointed at the retired landing).
       {
         source: "/funding",
-        destination: "https://aixmos-landing.vercel.app/forms",
-        permanent: true,
+        destination:
+          "https://allinonemanagementsolutions.com/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=credit",
+        permanent: false,
       },
       {
         source: "/credit",
-        destination: "https://aixmos-landing.vercel.app/forms",
-        permanent: true,
+        destination:
+          "https://allinonemanagementsolutions.com/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=credit",
+        permanent: false,
       },
     ];
   },

@@ -21,8 +21,8 @@ vi.mock('@/lib/agent/process-inbound', () => ({
 }))
 
 const mockFrom = vi.fn()
-vi.mock('@/lib/agent/supabase-server', () => ({
-  createServiceSupabase: () => ({ from: mockFrom }),
+vi.mock('@/lib/supabase-service', () => ({
+  createServiceRoleClient: () => ({ from: mockFrom }),
 }))
 
 vi.mock('@/lib/agent/tenant', () => ({

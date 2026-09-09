@@ -8,12 +8,34 @@
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  /* Added for the public front door and the intake forms. Additive only -
+     the three above and every --brand-* below keep their existing values, so
+     no page that already renders changes appearance. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-ring: var(--ring);
 }
 
 :root {
   --border: #e2e8f0;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
+  /* Front-door tokens. Values match the body colours already set below. */
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --ring: #a78bfa;
   /* Ops fallback (TMMT) so `var(--brand-*)` never renders empty outside BrandProvider. */
   --brand-primary: #a78bfa;
   --brand-primary-ink: #ffffff;
@@ -33,6 +55,15 @@
   --border: #334155;
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e293b;
+  --card-foreground: #e2e8f0;
+  --primary: #a78bfa;
+  --primary-foreground: #0f172a;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --ring: #a78bfa;
 }
 
 body {

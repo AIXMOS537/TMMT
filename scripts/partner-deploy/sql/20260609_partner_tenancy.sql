@@ -35,7 +35,11 @@ CREATE TABLE IF NOT EXISTS public.partner_licenses (
   license_id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id          text NOT NULL REFERENCES public.partner_tenants(tenant_id) ON DELETE CASCADE,
   hardware_uuid      text,                       -- Apple Silicon HW UUID, set on first heartbeat
-  enclave_pubkey     text,                       -- Secure Enclave attestation pubkey, set on first heartbeat
+  enclave_pubkey     text,                       -- v1: openssl-generated ed25519 pubkey imported to the login
+                                                 -- Keychain, set at install-token redemption. NOT an attestation
+                                                 -- and NOT Secure-Enclave-generated. A populated value is
+                                                 -- enrollment data only -- never evidence of hardware provenance,
+                                                 -- authentication or authorization.
   active             boolean NOT NULL DEFAULT true,
   kill_command       text                        -- NULL | 'wipe' | 'legal_hold' | 'soft_disable'
                      CHECK (kill_command IS NULL OR kill_command IN ('wipe','legal_hold','soft_disable')),

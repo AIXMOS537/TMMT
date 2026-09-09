@@ -17,13 +17,13 @@ err() { echo "  ✗ $*"; fail=$((fail + 1)); }
 
 cd "$(dirname "$0")/.."
 
-echo "=== 1. Production URLs (3-app ecosystem) ==="
+echo "=== 1. Production URLs (one app + the GHL public site) ==="
 # url|expected-http-code|label
 checks=(
   "https://tmmt-ops.vercel.app/login|200|tmmt-ops /login"
-  "https://tmmt-command-center.vercel.app|307|tmmt-command-center root (redirects to /login)"
-  "https://tmmt-command-center.vercel.app/login|200|tmmt-command-center /login"
-  "https://aixmos-landing.vercel.app|200|aixmos-landing root"
+  "https://tmmt-ops.vercel.app/forms/customer-intake|200|tmmt-ops /forms/customer-intake"
+  "https://tmmt-ops.vercel.app|307|tmmt-ops root (anonymous → GHL public site)"
+  "https://allinonemanagementsolutions.com|200|GHL public site root"
 )
 for entry in "${checks[@]}"; do
   url=${entry%%|*}; rest=${entry#*|}; expect=${rest%%|*}; label=${rest##*|}
@@ -97,13 +97,13 @@ if grep -q '"mapbox' package.json; then err "package.json still has mapbox dep r
 else ok "no mapbox dep residue"; fi
 
 echo
-echo "=== 5. Landing site content sanity ==="
-title=$(curl -sS -L --max-time 15 https://aixmos-landing.vercel.app/ 2>/dev/null | grep -oE "<title>[^<]+</title>" | head -1)
-if echo "$title" | grep -qi "AIXMOS"; then ok "aixmos-landing title: $title"
-else err "aixmos-landing title unexpected: ${title:-empty}"; fi
+echo "=== 5. Public site (GHL) sanity ==="
+bytes=$(curl -sS -L --max-time 15 https://allinonemanagementsolutions.com/ 2>/dev/null | wc -c | tr -d ' ')
+if [ "${bytes:-0}" -gt 10000 ]; then ok "GHL public site renders ($bytes bytes)"
+else err "GHL public site looks empty (${bytes:-0} bytes)"; fi
 
 echo
-echo "=== 6. AIXMOS landing assets live at AIXMOS/public/ ==="
+echo "=== 6. Retired static landing kept for reference at AIXMOS/public/ ==="
 for f in AIXMOS/public/index.html AIXMOS/public/apply.html AIXMOS/public/operator.html AIXMOS/public/thankyou.html AIXMOS/public/ghl-config.js; do
   if [ -f "$f" ]; then ok "$f"
   else err "missing: $f"; fi

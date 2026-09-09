@@ -19,7 +19,7 @@ const withCustomLogo: TenantBrand = {
 
 describe("BrandLogo", () => {
   it("draws a monogram when there is no artwork yet", () => {
-    const { container } = render(<BrandLogo brand={TENANTS.moe_legacy} />);
+    const { container } = render(<BrandLogo brand={TENANTS.aixmos_credit} />);
     expect(container.querySelector("img")).toBeNull();
     expect(within(container).getByText("AC")).toBeTruthy();
     expect(within(container).getByText("AIXMOS Credit")).toBeTruthy();

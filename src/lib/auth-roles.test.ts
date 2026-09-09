@@ -38,10 +38,16 @@ describe("homePathForTier", () => {
   it("routes each tier to its landing path", () => {
     expect(homePathForTier("owner")).toBe("/command");
     expect(homePathForTier("executive")).toBe("/executive");
-    expect(homePathForTier("operator")).toBe("/");
+    expect(homePathForTier("operator")).toBe("/desk");
     expect(homePathForTier("vendor")).toBe("/vendor");
     expect(homePathForTier("investor")).toBe("/investor");
-    expect(homePathForTier("staff")).toBe("/");
+    expect(homePathForTier("staff")).toBe("/desk");
+  });
+
+  it("sends the none tier to /no-access, never to a path the tier is denied", () => {
+    // "/" is the rentals desk. If this ever goes back to "/", the middleware's
+    // deny-the-desk rule for `none` redirects "/" to "/" forever.
+    expect(homePathForTier("none")).toBe("/no-access");
   });
 });
 

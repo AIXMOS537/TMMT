@@ -1,11 +1,12 @@
 "use client";
 
 import { useCube } from "@aixmos/core";
-import { formatCurrency } from "@aixmos/core";
-import { Badge } from "@/components/aixmos-ui/badge";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
+import { formatCurrencyWhole } from "@aixmos/core";
+
+
 import { ReadinessScoreRing } from "@/components/readiness-score-ring";
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Badge, Card, CardDescription, CardTitle } from "@/components/ui";
 
 export default function DashboardPage() {
   const { state } = useCube();
@@ -17,7 +18,7 @@ export default function DashboardPage() {
     <div>
       <WorkflowBanner />
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1 flex flex-col items-center text-center">
+        <Card className="p-5 lg:col-span-1 flex flex-col items-center text-center">
           <CardTitle>Funding readiness</CardTitle>
           <CardDescription>Rules-based MVP score — not a lender decision</CardDescription>
           <div className="my-4">
@@ -32,7 +33,7 @@ export default function DashboardPage() {
 
         <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
           {app.readiness.map((dim) => (
-            <Card key={dim.key}>
+            <Card className="p-5" key={dim.key}>
               <div className="flex items-center justify-between">
                 <p className="font-medium text-slate-900">{dim.label}</p>
                 <Badge tone={dim.status}>{dim.score}</Badge>
@@ -56,24 +57,24 @@ export default function DashboardPage() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         {p && (
-          <Card>
+          <Card className="p-5 p-5">
             <CardTitle>Personal snapshot</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
-              <li>Income: {formatCurrency(p.income)}/yr</li>
-              <li>Monthly obligations: {formatCurrency(p.monthlyObligations)}</li>
+              <li>Income: {formatCurrencyWhole(p.income)}/yr</li>
+              <li>Monthly obligations: {formatCurrencyWhole(p.monthlyObligations)}</li>
               <li>Credit range: {p.creditScoreRange}</li>
               <li>Goal: {p.fundingGoal}</li>
-              <li>Target: {formatCurrency(p.desiredFundingAmount)}</li>
+              <li>Target: {formatCurrencyWhole(p.desiredFundingAmount)}</li>
             </ul>
           </Card>
         )}
         {b && (
-          <Card>
+          <Card className="p-5 p-5">
             <CardTitle>Business snapshot</CardTitle>
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
               <li>{b.businessName}</li>
-              <li>Revenue: {formatCurrency(b.monthlyRevenue)}/mo</li>
-              <li>Avg balance: {formatCurrency(b.averageBankBalance)}</li>
+              <li>Revenue: {formatCurrencyWhole(b.monthlyRevenue)}/mo</li>
+              <li>Avg balance: {formatCurrencyWhole(b.averageBankBalance)}</li>
               <li>Purpose: {b.fundingPurpose}</li>
             </ul>
           </Card>

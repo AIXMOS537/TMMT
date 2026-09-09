@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { refreshApplicationScores, createInitialState } from "@aixmos/core";
 import type { Application, AppState, AuditEntry } from "@aixmos/core";
 import {
@@ -7,15 +6,9 @@ import {
   type ProgramApplicationRow,
 } from "@aixmos/core";
 import { createSSRClient } from "@/lib/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-service";
 import { isStaffUser } from "@/lib/auth-roles";
 import { timingSafeEqualString } from "@/lib/ghl/webhook-auth";
-
-function serviceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase not configured");
-  return createClient(url, key);
-}
 
 export function getLearnBaseUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_AIXMOS_LEARN_BASE_URL;
@@ -33,7 +26,7 @@ export function learnDeepLink(applicationId: string, accessToken?: string): stri
 }
 
 export async function fetchAuditLog(applicationId: string): Promise<AuditEntry[]> {
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const { data } = await supabase
     .from("program_audit_log")
     .select("*")
@@ -61,7 +54,7 @@ export async function fetchAuditLog(applicationId: string): Promise<AuditEntry[]
 export async function fetchApplicationGuard(
   applicationId: string
 ): Promise<{ email: string | null; accessToken: string | null } | null> {
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const { data } = await supabase
     .from("program_applications")
     .select("email, access_token")
@@ -122,7 +115,7 @@ export async function authorizeApplicationAccess(
 export async function loadProgramApplication(
   applicationId: string
 ): Promise<AppState | null> {
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const { data: row, error } = await supabase
     .from("program_applications")
     .select("*")
@@ -145,7 +138,7 @@ export async function loadProgramApplication(
 }
 
 export async function saveProgramApplication(state: AppState): Promise<void> {
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const app = refreshApplicationScores(state.application);
   const payload = applicationToPayload(app);
 
@@ -174,7 +167,7 @@ export async function createProgramApplicationFromGhl(input: {
   tags?: string[];
   track?: Application["track"];
 }): Promise<{ id: string; accessToken: string; learnUrl: string }> {
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const seed = createInitialState("client");
   const app = refreshApplicationScores({
     ...seed.application,
