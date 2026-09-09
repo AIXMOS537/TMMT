@@ -52,6 +52,10 @@ function isPublicPath(pathname: string) {
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
+    // Public request intake, one form per business line. Public for everyone,
+    // signed in or out: a staff member raising a request on a customer's
+    // behalf uses the same form. "/" is deliberately NOT here - see below.
+    pathname.startsWith("/intake") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
@@ -60,6 +64,19 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/api/agent/") ||
     isFunnelPublicPath(pathname)
   );
+}
+
+/**
+ * The public front door, for signed-out visitors only.
+ *
+ * Kept out of isPublicPath on purpose. pathAllowedForTier() returns true for
+ * anything isPublicPath() matches, so putting "/" there would also stop
+ * signed-in staff being routed to their own home page - an operator hitting
+ * "/" would get the marketing front door instead of /operator. Signed out:
+ * render the front door. Signed in: unchanged, the tier rules below decide.
+ */
+function isSignedOutFrontDoor(pathname: string) {
+  return pathname === "/";
 }
 
 /** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
@@ -231,8 +248,10 @@ export async function middleware(request: NextRequest) {
     console.error("middleware: Supabase auth check failed; treating as signed-out", err);
   }
 
-  if (!user && !isPublicPath(pathname)) {
-    // Every signed-out visitor goes to /login, "/" included.
+  if (!user && !isPublicPath(pathname) && !isSignedOutFrontDoor(pathname)) {
+    // Every signed-out visitor goes to /login - except "/", which now renders
+    // the public front door (src/app/page.tsx). The comment below records why
+    // "/" used to redirect: there was no front door to send anyone to.
     //
     // "/" used to bounce to the public GHL site, on the assumption that staff
     // "use /login directly". That left the app with no reachable front door:
