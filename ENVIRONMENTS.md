@@ -77,9 +77,15 @@ together afterwards.
   settle it: Vercel intercepts *before* any app code runs, so no middleware or
   route change can open that door.
 
-  The setting exempts custom domains. `tmmt-ops` has none attached — only
-  `tmmt-ops-aixmos537.vercel.app` — and neither `tmmtrentals.net` nor
-  `tmmtrentals.com` resolves at all. There is currently no public door.
+  The setting exempts custom domains. `tmmtrentals.com` / `.net` ARE attached
+  to `tmmt-ops`, but their DNS zone has never been published — a public
+  resolver returns the name with no address — so neither resolves.
+
+  **The public door is `tmmt-ops.vercel.app`** (re-verified 2026-09-09):
+  `/login` returns `200` with `X-Matched-Path: /login` and the app's own
+  "Sign in · Partner portal & operations" title, not the Vercel SSO wall.
+  Check `X-Matched-Path`, never a bare status code — the SSO wall also
+  answers 200.
 
   Two ways out, owner's call: attach the real custom domain (it bypasses SSO
   under the current setting), or switch SSO off. Attaching the domain is the
@@ -188,12 +194,29 @@ cherry-pick from it. **Never delete that tag.** Because the build was also made
 from a dirty tree (`gitDirty=1`), the tag is the closest reproducible record —
 it is not byte-identical to what was served.
 
-### Teardown steps (owner — needs the Vercel dashboard)
+### Teardown — DONE 2026-09-09
 
-The MCP toolset exposes no pause or delete for projects, so this is manual:
+The Vercel MCP toolset now exposes `pause_project` / `unpause_project`, so step 2
+below no longer needs the dashboard. Executed 2026-09-09:
 
-1. Confirm nothing you care about points at `tmmt-command-center.vercel.app`.
-2. Vercel → project `tmmt-command-center` → Settings → **Pause** (reversible)
-   rather than Delete, until `tmmt-ops` has served canon for a while.
-3. Only then Delete, if you want the name freed.
-4. Leave the archive tag alone regardless.
+1. ~~Confirm nothing you care about points at `tmmt-command-center.vercel.app`.~~
+   Four docs did — `OPERATOR-START-HERE.md` handed operators
+   `tmmt-command-center.vercel.app/login` as *the* login URL. All four repointed
+   at `tmmt-ops.vercel.app` in the same change — the only staff host that
+   actually resolves. `tmmtrentals.com` is attached to the project but its DNS
+   zone has never been published (see the SSO note above), so pointing
+   operators there would have swapped one dead host for another.
+2. ~~Pause the project.~~ **PAUSED** — it now returns 503 `DEPLOYMENT_PAUSED`,
+   matching `tmmt-training-site` and `aixmos-offer`. Reverse with
+   `unpause_project` if anything turns out to depend on it.
+3. Delete: **not done, deliberately.** Pausing is reversible; deleting frees the
+   name and is not. Owner's call.
+4. Archive tag `archive/command-center-2026-05-18` untouched. Leave it alone.
+
+Still serving: **`aixmos-landing`** (`aixmos-landing.vercel.app`, 200, no
+`noindex`, publicly indexable, own price list). **Owner decided 2026-09-09:
+leave it up as-is.** It is therefore NOT retired — `src/lib/site-domains.ts`
+was corrected to stop saying it is. Known and accepted: the price list there is
+its own, not `src/lib/pricing/catalog.ts`, so the two can drift; and with no
+`noindex` it can be indexed alongside the GHL site. Web Analytics is not
+enabled on it, so its traffic is unmeasured.

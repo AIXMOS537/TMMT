@@ -2,8 +2,10 @@
  * ONE app (tmmt-ops on Vercel) serves staff, owner command center, training
  * and the intake forms. Everything PUBLIC — marketing, checkout, funnels —
  * lives on the GHL site at allinonemanagementsolutions.com (twin .net).
- * The old aixmos-landing / tmmt-command-center / tmmt-training-site /
- * aixmos-offer Vercel projects are retired (2026-09-03).
+ * tmmt-command-center / tmmt-training-site / aixmos-offer are retired and
+ * PAUSED on Vercel (503). aixmos-landing is the exception: it is NOT retired
+ * and is still serving at aixmos-landing.vercel.app — owner decision
+ * 2026-09-09, left up as-is. Nothing in this file routes to it.
  *
  * Do NOT default to the apex .com/.net — those already resolve to GHL
  * (Cloudflare → sites.ludicrous.cloud). Do NOT use app.* — that CNAME is

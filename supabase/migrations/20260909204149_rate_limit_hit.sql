@@ -1,5 +1,12 @@
--- 20260908000100_rate_limit_hit_STAGED.sql
--- STAGED — NOT APPLIED. Production DDL is owner-gated (OWNER_DECISIONS D-18).
+-- 20260909204149_rate_limit_hit.sql
+-- APPLIED to production 2026-09-09 20:41 UTC (schema_migrations 20260909204149),
+-- on the owner's instruction to proceed. Additive only; rollback is the two lines
+-- under ROLLBACK below.
+--
+-- Verified after apply: the TEST block returns f, f, t for a cap of 2 in a fresh
+-- window; EXECUTE on the function and all table privileges are postgres +
+-- service_role only; anon and authenticated have neither; RLS is on; test rows
+-- deleted. /api/health reports degraded: [].
 -- Backs src/lib/rate-limit-durable.ts (remediation F-11).
 --
 -- WHY
