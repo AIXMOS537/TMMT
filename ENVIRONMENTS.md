@@ -188,12 +188,24 @@ cherry-pick from it. **Never delete that tag.** Because the build was also made
 from a dirty tree (`gitDirty=1`), the tag is the closest reproducible record —
 it is not byte-identical to what was served.
 
-### Teardown steps (owner — needs the Vercel dashboard)
+### Teardown — DONE 2026-09-09
 
-The MCP toolset exposes no pause or delete for projects, so this is manual:
+The Vercel MCP toolset now exposes `pause_project` / `unpause_project`, so step 2
+below no longer needs the dashboard. Executed 2026-09-09:
 
-1. Confirm nothing you care about points at `tmmt-command-center.vercel.app`.
-2. Vercel → project `tmmt-command-center` → Settings → **Pause** (reversible)
-   rather than Delete, until `tmmt-ops` has served canon for a while.
-3. Only then Delete, if you want the name freed.
-4. Leave the archive tag alone regardless.
+1. ~~Confirm nothing you care about points at `tmmt-command-center.vercel.app`.~~
+   Four docs did — `OPERATOR-START-HERE.md` handed operators
+   `tmmt-command-center.vercel.app/login` as *the* login URL. All four repointed
+   at `tmmtrentals.com` in the same change.
+2. ~~Pause the project.~~ **PAUSED** — it now returns 503 `DEPLOYMENT_PAUSED`,
+   matching `tmmt-training-site` and `aixmos-offer`. Reverse with
+   `unpause_project` if anything turns out to depend on it.
+3. Delete: **not done, deliberately.** Pausing is reversible; deleting frees the
+   name and is not. Owner's call.
+4. Archive tag `archive/command-center-2026-05-18` untouched. Leave it alone.
+
+Still serving: **`aixmos-landing`** (`aixmos-landing.vercel.app`, 200, no
+`noindex`, publicly indexable, own price list). `src/lib/site-domains.ts` calls
+it retired; `WHAT-YOU-HAVE.md` called it the public funnel. It was left up
+rather than paused because nothing proves it gets no traffic — Web Analytics is
+not enabled on it. **Open owner decision.**
