@@ -205,7 +205,9 @@ below no longer needs the dashboard. Executed 2026-09-09:
 4. Archive tag `archive/command-center-2026-05-18` untouched. Leave it alone.
 
 Still serving: **`aixmos-landing`** (`aixmos-landing.vercel.app`, 200, no
-`noindex`, publicly indexable, own price list). `src/lib/site-domains.ts` calls
-it retired; `WHAT-YOU-HAVE.md` called it the public funnel. It was left up
-rather than paused because nothing proves it gets no traffic — Web Analytics is
-not enabled on it. **Open owner decision.**
+`noindex`, publicly indexable, own price list). **Owner decided 2026-09-09:
+leave it up as-is.** It is therefore NOT retired — `src/lib/site-domains.ts`
+was corrected to stop saying it is. Known and accepted: the price list there is
+its own, not `src/lib/pricing/catalog.ts`, so the two can drift; and with no
+`noindex` it can be indexed alongside the GHL site. Web Analytics is not
+enabled on it, so its traffic is unmeasured.
