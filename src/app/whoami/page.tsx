@@ -26,7 +26,7 @@ const TIER_REACH: Record<string, string> = {
   vendor: "Only /vendor.",
   investor: "Only /investor and /partner.",
   staff: "Everything except /vendor, /investor, /partner, /command, /executive, /operator and /money.",
-  none: "Everything except /vendor, /investor, /partner, /command, /executive, /operator and /money.",
+  none: "Only /clock and /pocket. Everything else redirects to /no-access.",
 };
 
 function Row({ label, value, note }: { label: string; value: string; note?: string }) {
