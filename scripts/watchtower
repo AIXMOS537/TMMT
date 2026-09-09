@@ -57,7 +57,7 @@ printf '\n%s   🛰️  FLEET%s\n   ──────────────�
 printf '     BRAINIAC  ssh %s  ollama %s  gateway:4000 %s\n' \
   "$(_port "$BRAINIAC_IP" 22)" "$(_port "$BRAINIAC_IP" 11434)" "$(_port "$BRAINIAC_IP" 4000)"
 printf '     M1        ssh %s  ollama(tailnet) %s %s\n' \
-  "$(_port "$M1_IP" 22)" "$(_port "$M1_IP" 11434)" "${D}(expected down - reached via Carry tunnel)${X}"
+  "$(_port "$M1_IP" 22)" "$(_port "$M1_IP" 11434)" "${D}(M1 serves no inference since 2026-09-09 - ssh only)${X}"
 printf '     CARRY     litellm:4001 %s  ollama:11434 %s\n' \
   "$(_port 127.0.0.1 4001)" "$(_port 127.0.0.1 11434)"
 
@@ -66,7 +66,12 @@ printf '     CARRY     litellm:4001 %s  ollama:11434 %s\n' \
 # router again and closing the lid takes the fleet down with it.
 CFG="$HOME/.config/litellm/config.yaml"
 if [ -r "$CFG" ]; then
-  TUN=$(grep -c 'localhost:1143[67]' "$CFG" 2>/dev/null || echo 0)
+  # grep -c EXITS 1 when the count is zero, so `|| echo 0` fired on top of grep's
+  # own "0" and TUN became "0\n0" — which made the -le test throw
+  # "integer expression expected" and print the warning colour precisely when the
+  # news was good. Count without grep's exit status deciding anything.
+  TUN=$(grep -c 'localhost:1143[67]' "$CFG" 2>/dev/null; true)
+  TUN=$(printf '%s' "${TUN:-0}" | tr -dc '0-9'); TUN=${TUN:-0}
   if [ "$TUN" -le 1 ]; then TUNS="${G}${TUN}${X}"; else TUNS="${Y}${TUN} - Carry is load-bearing${X}"; fi
   printf '     routing   aliases still tunnelled through this laptop: %s\n' "$TUNS"
 fi
