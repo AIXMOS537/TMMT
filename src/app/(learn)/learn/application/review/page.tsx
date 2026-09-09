@@ -1,7 +1,7 @@
 "use client";
 
 import { useCube } from "@aixmos/core";
-import { formatCurrency, formatDate } from "@aixmos/core";
+import { formatCurrencyWhole, formatDateTime } from "@aixmos/core";
 
 
 
@@ -38,11 +38,11 @@ export default function ApplicationReviewPage() {
               <li>Name: {app.personal.legalName}</li>
               <li>DOB: {app.personal.dob}</li>
               <li>Address: {app.personal.address}</li>
-              <li>Income: {formatCurrency(app.personal.income)}</li>
-              <li>Obligations: {formatCurrency(app.personal.monthlyObligations)}/mo</li>
+              <li>Income: {formatCurrencyWhole(app.personal.income)}</li>
+              <li>Obligations: {formatCurrencyWhole(app.personal.monthlyObligations)}/mo</li>
               <li>Credit: {app.personal.creditScoreRange}</li>
               <li>Utilization: {app.personal.creditUtilization}%</li>
-              <li>Requested: {formatCurrency(app.personal.desiredFundingAmount)}</li>
+              <li>Requested: {formatCurrencyWhole(app.personal.desiredFundingAmount)}</li>
             </ul>
           </Card>
         )}
@@ -52,9 +52,9 @@ export default function ApplicationReviewPage() {
             <ul className="mt-3 space-y-1 text-sm text-slate-700">
               <li>{app.business.businessName}</li>
               <li>Entity: {app.business.entityType}</li>
-              <li>Revenue: {formatCurrency(app.business.monthlyRevenue)}/mo</li>
-              <li>Balance: {formatCurrency(app.business.averageBankBalance)}</li>
-              <li>Debt: {formatCurrency(app.business.existingBusinessDebt)}</li>
+              <li>Revenue: {formatCurrencyWhole(app.business.monthlyRevenue)}/mo</li>
+              <li>Balance: {formatCurrencyWhole(app.business.averageBankBalance)}</li>
+              <li>Debt: {formatCurrencyWhole(app.business.existingBusinessDebt)}</li>
               <li>Purpose: {app.business.fundingPurpose}</li>
             </ul>
           </Card>
@@ -98,7 +98,7 @@ export default function ApplicationReviewPage() {
         </Card>
       )}
 
-      <p className="mt-4 text-xs text-slate-500">Last updated {formatDate(app.updatedAt)}</p>
+      <p className="mt-4 text-xs text-slate-500">Last updated {formatDateTime(app.updatedAt)}</p>
     </div>
   );
 }
