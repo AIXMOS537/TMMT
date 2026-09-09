@@ -43,6 +43,12 @@ describe("homePathForTier", () => {
     expect(homePathForTier("investor")).toBe("/investor");
     expect(homePathForTier("staff")).toBe("/");
   });
+
+  it("sends the none tier to /no-access, never to a path the tier is denied", () => {
+    // "/" is the rentals desk. If this ever goes back to "/", the middleware's
+    // deny-the-desk rule for `none` redirects "/" to "/" forever.
+    expect(homePathForTier("none")).toBe("/no-access");
+  });
 });
 
 describe("isStaffUser", () => {

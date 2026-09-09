@@ -130,6 +130,7 @@ describe("public paths render signed-out", () => {
     // isPublicPath
     "/login",
     "/login/reset",
+    "/no-access", // the `none` landing; public so a stale session can never loop
     "/robots.txt",
     "/offline",
     "/manifest.webmanifest",
@@ -293,7 +294,7 @@ const HOME: Record<(typeof ROLES)[RoleToken], string> = {
   staff: "/",
   investor: "/investor",
   vendor: "/vendor",
-  none: "/",
+  none: "/no-access",
 };
 
 /** Which TIERS may reach each route group. Everyone not listed is bounced home. */
@@ -312,11 +313,11 @@ const ROUTE_GROUPS: Array<{ path: string; allowed: Array<(typeof ROLES)[RoleToke
   { path: "/investor", allowed: ["owner", "investor"] },
   { path: "/partner", allowed: ["owner", "investor"] },
   { path: "/partner/fleet", allowed: ["owner", "investor"] },
-  // Rentals desk: everything not claimed by a portal prefix above. NOTE the
-  // `none` tier is currently admitted here too — see the "known gap" test.
-  { path: "/customers", allowed: ["owner", "executive", "operator", "staff", "none"] },
-  { path: "/fleet/units", allowed: ["owner", "executive", "operator", "staff", "none"] },
-  { path: "/api/cron/nightly", allowed: ["owner", "executive", "operator", "staff", "none"] },
+  // Rentals desk: everything not claimed by a portal prefix above. The `none`
+  // tier is NOT on this list — see "the none tier lands on /no-access" below.
+  { path: "/customers", allowed: ["owner", "executive", "operator", "staff"] },
+  { path: "/fleet/units", allowed: ["owner", "executive", "operator", "staff"] },
+  { path: "/api/cron/nightly", allowed: ["owner", "executive", "operator", "staff"] },
   // Everyone-surfaces: every signed-in tier, whatever the role.
   { path: "/clock", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
   { path: "/clock/punch", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
@@ -324,6 +325,9 @@ const ROUTE_GROUPS: Array<{ path: string; allowed: Array<(typeof ROLES)[RoleToke
   { path: "/pocket/chat", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
   { path: "/api/pocket/chat", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
   { path: "/api/offline/merge", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
+  // The refusal landing is public, so every tier passes (it renders "no
+  // access" for `none`, and a way home for anyone who typed the URL).
+  { path: "/no-access", allowed: ["owner", "executive", "operator", "staff", "investor", "vendor", "none"] },
 ];
 
 describe("tier map: JWT app_metadata.role -> route group", () => {
@@ -370,7 +374,7 @@ describe("tier map: JWT app_metadata.role -> route group", () => {
     h.getUser.mockResolvedValue({ data: { user }, error: null });
     const res = await middleware(req("/command"));
     expect(res.status).toBe(307);
-    expect(redirectTarget(res)).toBe("/");
+    expect(redirectTarget(res)).toBe("/no-access");
   });
 
   it("a non-string app_metadata.role does not elevate", async () => {
@@ -380,29 +384,129 @@ describe("tier map: JWT app_metadata.role -> route group", () => {
     } as unknown as User;
     h.getUser.mockResolvedValue({ data: { user }, error: null });
     const res = await middleware(req("/command"));
-    expect(redirectTarget(res)).toBe("/");
+    expect(redirectTarget(res)).toBe("/no-access");
+  });
+});
+
+/**
+ * The `none` tier — signed in, no recognised role — is "entitled to nothing
+ * beyond the public pages and the everyone-surfaces (/clock, /pocket)"
+ * (src/lib/auth-roles.ts). The T-01 PR found the edge admitting it to the
+ * rentals desk exactly like `staff`, with only the (admin) layout holding it
+ * back, and pinned that with `it.fails` because a one-line deny was unsafe:
+ * the tier's home was "/", itself a desk path, so the deny would have looped.
+ *
+ * Closed by giving the tier a real landing, /no-access, which the middleware
+ * treats as public. These cases are the contract for that landing.
+ */
+describe("the none tier lands on /no-access", () => {
+  const NONE_ROLES = ["customer", "garbage_role", undefined] as const;
+
+  const DESK_PATHS = [
+    "/",
+    "/customers",
+    "/customers/123",
+    "/fleet/units",
+    "/payments",
+    "/background-checks",
+    "/insurance",
+    "/interfaces/vehicles",
+    "/tickets",
+    "/api/cron/nightly",
+    "/api/ops/command",
+  ];
+
+  it.each(DESK_PATHS)("role-less user on %s -> 307 /no-access", async (path) => {
+    for (const role of NONE_ROLES) {
+      signedIn(role);
+      const res = await middleware(req(path));
+      expect(res.status, `role=${role}`).toBe(307);
+      expect(redirectTarget(res), `role=${role}`).toBe("/no-access");
+    }
   });
 
-  /**
-   * KNOWN GAP — reported in the T-01 PR, deliberately not fixed here.
-   *
-   * src/lib/auth-roles.ts documents the `none` tier as "entitled to nothing
-   * beyond the public pages and the everyone-surfaces (/clock, /pocket)", and
-   * the (admin) layout locks it out server-side. The middleware, however,
-   * treats `none` exactly like `staff` and admits it to the rentals desk. The
-   * layout still holds, so nothing leaks today, but the edge gate is not the
-   * defence-in-depth it reads as. The obvious one-line fix is not safe: the
-   * `none` home is "/", which is itself a desk path, so denying the desk at the
-   * edge would redirect "/" to "/" forever. It needs a real landing for `none`.
-   *
-   * `it.fails` asserts the DESIRED behaviour and expects it to fail. When the
-   * gap is closed this test will start passing, vitest will flag it, and the
-   * `.fails` (and this comment) should be removed in the same change.
-   */
-  it.fails("KNOWN GAP: the `none` tier should not reach the rentals desk at the edge", async () => {
+  it.each(["/command", "/executive", "/operator", "/vendor", "/investor", "/partner", "/money"])(
+    "role-less user on the portal path %s -> 307 /no-access",
+    async (path) => {
+      signedIn("customer");
+      const res = await middleware(req(path));
+      expect(res.status).toBe(307);
+      expect(redirectTarget(res)).toBe("/no-access");
+    },
+  );
+
+  it.each(["/clock", "/clock/punch", "/pocket", "/pocket/chat", "/api/pocket/chat", "/api/offline/merge"])(
+    "role-less user keeps the everyone-surface %s",
+    async (path) => {
+      for (const role of NONE_ROLES) {
+        signedIn(role);
+        const res = await middleware(req(path));
+        expect(isPassThrough(res), `role=${role}`).toBe(true);
+      }
+    },
+  );
+
+  it("the redirect target itself passes through for the same user (no loop)", async () => {
+    for (const role of NONE_ROLES) {
+      signedIn(role);
+      const first = await middleware(req("/"));
+      expect(first.status, `role=${role}`).toBe(307);
+      const second = await middleware(req(redirectTarget(first)!));
+      expect(isPassThrough(second), `role=${role}`).toBe(true);
+      expect(second.headers.get("location"), `role=${role}`).toBeNull();
+    }
+  });
+
+  it("the redirect drops the original path and query", async () => {
     signedIn("customer");
-    const res = await middleware(req("/customers"));
-    expect(res.status).toBe(307);
+    const res = await middleware(req("/customers/123?token=abc"));
+    const loc = new URL(res.headers.get("location")!);
+    expect(loc.pathname).toBe("/no-access");
+    expect(loc.search).toBe("");
+  });
+
+  it("/login sends a role-less user to /no-access, not to the desk", async () => {
+    signedIn("customer");
+    const res = await middleware(req("/login"));
+    expect(redirectTarget(res)).toBe("/no-access");
+  });
+
+  it("/no-access is public: an anonymous visitor (stale session) renders it rather than looping", async () => {
+    signedOut();
+    const res = await middleware(req("/no-access"));
+    expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("/no-access still runs the session check (the page shows who is signed in)", async () => {
+    signedOut();
+    await middleware(req("/no-access"));
+    expect(h.createMiddlewareClient).toHaveBeenCalledTimes(1);
+  });
+
+  it("/no-access is an exact match; a sibling path is still protected", async () => {
+    signedIn("customer");
+    for (const path of ["/no-accessx", "/no-access/anything"]) {
+      const res = await middleware(req(path));
+      expect(res.status, path).toBe(307);
+      expect(redirectTarget(res), path).toBe("/no-access");
+    }
+  });
+
+  it("every other tier keeps the desk exactly as before", async () => {
+    // Belt and braces on top of the tier map: the fix must not have widened
+    // or narrowed anyone else.
+    for (const role of ["internal_team", "va", "operator", "executive", "admin"]) {
+      signedIn(role);
+      const res = await middleware(req("/customers"));
+      expect(isPassThrough(res), role).toBe(true);
+    }
+    for (const role of ["vendor", "investor", "partner"]) {
+      signedIn(role);
+      const res = await middleware(req("/customers"));
+      expect(res.status, role).toBe(307);
+      expect(redirectTarget(res), role).not.toBe("/no-access");
+    }
   });
 });
 
@@ -553,17 +657,63 @@ describe("owner hub host", () => {
     expect(redirectTarget(res)).toBe("/command");
   });
 
-  it.each(["executive", "operator", "vendor", "investor", "internal_team", "customer"])(
-    "role=%s signed in on the hub is refused every protected path (-> /login?hub=owner)",
+  const NON_OWNER_ROLES = ["executive", "operator", "vendor", "investor", "internal_team", "customer", undefined];
+
+  it.each(NON_OWNER_ROLES)(
+    "role=%s signed in on the hub is refused every protected path (-> /no-access?hub=owner)",
     async (role) => {
       signedIn(role);
-      for (const path of ["/", "/customers", "/command", "/clock", "/executive", "/vendor"]) {
+      for (const path of ["/", "/customers", "/command", "/clock", "/pocket", "/executive", "/vendor", "/money"]) {
         const res = await middleware(hub(path));
         expect(res.status, path).toBe(307);
-        expect(redirectTarget(res), path).toBe("/login?hub=owner");
+        expect(redirectTarget(res), path).toBe("/no-access?hub=owner");
       }
     },
   );
+
+  /**
+   * The old refusal target was /login?hub=owner. A signed-in user on /login is
+   * itself the refused case, so that redirected to /login?hub=owner again —
+   * ERR_TOO_MANY_REDIRECTS. Fail-closed, but as a loop rather than a message.
+   */
+  it.each(NON_OWNER_ROLES)(
+    "role=%s signed in on the hub /login goes to /no-access?hub=owner, never back to /login",
+    async (role) => {
+      signedIn(role);
+      const res = await middleware(hub("/login"));
+      expect(res.status).toBe(307);
+      expect(redirectTarget(res)).toBe("/no-access?hub=owner");
+      expect(new URL(res.headers.get("location")!).pathname).not.toBe("/login");
+    },
+  );
+
+  it.each(NON_OWNER_ROLES)(
+    "role=%s: the refusal target renders for that same user on the hub (no loop)",
+    async (role) => {
+      signedIn(role);
+      const first = await middleware(hub("/customers"));
+      expect(first.status).toBe(307);
+      const second = await middleware(hub(redirectTarget(first)!));
+      expect(isPassThrough(second)).toBe(true);
+      expect(second.headers.get("location")).toBeNull();
+    },
+  );
+
+  it("a non-owner on the hub is refused /no-access's siblings (exact match only)", async () => {
+    signedIn("executive");
+    for (const path of ["/no-accessx", "/no-access/x"]) {
+      const res = await middleware(hub(path));
+      expect(redirectTarget(res), path).toBe("/no-access?hub=owner");
+    }
+  });
+
+  it("an owner on the hub is unchanged: every path passes, /no-access included", async () => {
+    signedIn("admin");
+    for (const path of ["/command", "/customers", "/money", "/clock", "/no-access"]) {
+      const res = await middleware(hub(path));
+      expect(isPassThrough(res), path).toBe(true);
+    }
+  });
 
   it("an anonymous visitor on the hub is still sent to /login (no hub leakage)", async () => {
     const res = await middleware(hub("/command"));
@@ -590,7 +740,11 @@ describe("response hygiene", () => {
     const login = await middleware(req("/login")); // auth'd pass-through
     signedIn("admin");
     const ok = await middleware(req("/command")); // allowed
-    for (const res of [anon, pub, login, ok]) {
+    signedIn("customer");
+    const denied = await middleware(req("/customers")); // none -> /no-access
+    const landing = await middleware(req("/no-access")); // the landing itself
+    const hubRefusal = await middleware(req("/customers", { host: OWNER_HUB_HOST }));
+    for (const res of [anon, pub, login, ok, denied, landing, hubRefusal]) {
       expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     }
   });
