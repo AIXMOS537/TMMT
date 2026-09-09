@@ -29,7 +29,6 @@ ${BD}   THE LEAGUE${X}
    🦾  ${BD}Cyborg${X}     ${D}watches the Watchtower — AIXMOS (public) + HAILMARY (Project X)${X}
    🧠  ${BD}Brainiac${X}   ${D}BRAINIAC 7 — the brain node + control plane (Fatherbox)${X}
    🦅  ${BD}Nightwing${X}  ${D}Ayyan Khan — field-ops lead, runs operators on the ground${X}
-   🐦‍⬛ ${BD}Red Hood${X}   ${D}Umar — Credit Guidance ("guidance," never "repair")${X}
    🚗  ${BD}The Crew${X}   ${D}rentals + TMMT verticals + operators (fenced)${X}
    🦇  ${BD}Batman${X}     ${D}E-commerce — guards the back, keeps everyone safe${X}
 
@@ -39,9 +38,65 @@ EOF
 
 bash "$ROOT/scripts/health.sh" --compact 2>/dev/null
 
+# ---------------------------------------------------------------------------
+# FLEET + APP — added 2026-09-09. This console printed a roster and three local
+# file reads, then called itself a watch. It now reads the things that actually
+# break: whether the workers answer, whether BRAINIAC is carrying the load, and
+# whether the app is up. Every probe is timeout-guarded so the watch can never
+# hang the terminal. Inference tests are deliberately NOT here (they take ~60s)
+# — `mesh` runs those.
+# ---------------------------------------------------------------------------
+BRAINIAC_IP="${BRAINIAC_IP:-100.117.163.93}"
+M1_IP="${M1_IP:-100.98.31.54}"
+
+_port() { nc -z -G4 -w4 "$1" "$2" >/dev/null 2>&1 && printf '%s' "${G}up${X}" || printf '%s' "${R}down${X}"; }
+_http() { c=$(curl -s -o /dev/null --max-time 6 -w '%{http_code}' "$1" 2>/dev/null); \
+          case "$c" in 2*|3*) printf '%s' "${G}${c}${X}";; 000|"") printf '%s' "${R}unreachable${X}";; *) printf '%s' "${Y}${c}${X}";; esac; }
+
+printf '\n%s   🛰️  FLEET%s\n   ─────────────────────────────────────────────\n' "$BD" "$X"
+printf '     BRAINIAC  ssh %s  ollama %s  gateway:4000 %s\n' \
+  "$(_port "$BRAINIAC_IP" 22)" "$(_port "$BRAINIAC_IP" 11434)" "$(_port "$BRAINIAC_IP" 4000)"
+printf '     M1        ssh %s  ollama(tailnet) %s %s\n' \
+  "$(_port "$M1_IP" 22)" "$(_port "$M1_IP" 11434)" "${D}(expected down - reached via Carry tunnel)${X}"
+printf '     CARRY     litellm:4001 %s  ollama:11434 %s\n' \
+  "$(_port 127.0.0.1 4001)" "$(_port 127.0.0.1 11434)"
+
+# The laptop must not be load-bearing. Only `fast` (qwen2.5:14b, M1-only) still
+# needs a Carry-hosted tunnel; if that count grows, the watchtower became a
+# router again and closing the lid takes the fleet down with it.
+CFG="$HOME/.config/litellm/config.yaml"
+if [ -r "$CFG" ]; then
+  TUN=$(grep -c 'localhost:1143[67]' "$CFG" 2>/dev/null || echo 0)
+  if [ "$TUN" -le 1 ]; then TUNS="${G}${TUN}${X}"; else TUNS="${Y}${TUN} - Carry is load-bearing${X}"; fi
+  printf '     routing   aliases still tunnelled through this laptop: %s\n' "$TUNS"
+fi
+
+printf '\n%s   📦  THE APP%s\n   ─────────────────────────────────────────────\n' "$BD" "$X"
+printf '     health    %s   sign-in %s   lead form %s\n' \
+  "$(_http https://tmmt-ops.vercel.app/api/health)" \
+  "$(_http https://tmmt-ops.vercel.app/login)" \
+  "$(_http https://tmmt-ops.vercel.app/forms/lead-intake)"
+DEG=$(curl -s --max-time 6 https://tmmt-ops.vercel.app/api/health 2>/dev/null \
+      | sed -n 's/.*"degraded":\[\([^]]*\)\].*/\1/p')
+[ -n "$DEG" ] && printf '     %sDEGRADED: %s%s\n' "$Y" "$DEG" "$X"
+
+# Work that is finished but not shipped is invisible until someone looks.
+if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  UNP=$(git -C "$ROOT" for-each-ref --format='%(refname:short) %(upstream)' refs/heads \
+        2>/dev/null | awk '$2==""{n++} END{print n+0}')
+  printf '\n%s   🚢  SHIP STATE%s\n   ─────────────────────────────────────────────\n' "$BD" "$X"
+  printf '     local branches with nothing on the remote: %s\n' "$UNP"
+  if command -v gh >/dev/null 2>&1; then
+    PRS=$(timeout 12 gh pr list --repo AIXMOS537/TMMT --state open \
+          --json number --jq 'length' 2>/dev/null)
+    [ -n "$PRS" ] && printf '     open pull requests: %s\n' "$PRS"
+  fi
+fi
+
 cat <<EOF
 
 ${D}   deep checks:  fix (security) · whoami (this device) · mesh (every device) · health
+   fleet + inference proof:  bash ~/.config/tmmt/mesh-verify.sh
    full map:  docs/WATCHTOWER-ROSTER.md${X}
 
 EOF
