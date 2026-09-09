@@ -54,7 +54,7 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | ID | Sev | Target | Minimum coverage | Status |
 |---|---|---|---|---|
 | T-01 | P3 | `src/middleware.ts` | public paths, tier map, fail-closed on Supabase error, org header stripped | DONE 8be4b6a2 (PR #205); 389 cases; known gap pinned with `it.fails`: `none` tier admitted to rentals desk at the edge (layout still locks it out) |
-| T-02 | P3 | Webhook routes (ghl ×6, airtable ×2, stripe, cal, twilio) | signature/secret rejection, idempotent replay, happy path with mocked DB | TODO (F-01, F-07 create the first ones) |
+| T-02 | P3 | Webhook routes (ghl ×6, airtable ×2, stripe, cal, twilio) | signature/secret rejection, idempotent replay, happy path with mocked DB | DONE 88af6217 (PR #207); 10 route.test.ts + `src/lib/testing/fake-supabase.ts`, 104 tests. Replay is enforced only on ghl* (event id) and stripe (sig timestamp); ghl/overdue, airtable ×2, cal carry `TODO(T-02): no replay guard`. Finding: stripe route resolves the org before verifying the signature (slug probe) — follow-up |
 | T-03 | P3 | Server actions with authz (`operators`, `dispatch`, `credit-dispute`, `workflow`, `document`) | non-staff rejected, org-scoped access enforced | TODO |
 | T-04 | P3 | License plane routes | provision one-shot, heartbeat kill path | TODO (after F-20 design) |
 | T-05 | P3 | Structural | `internal-links` scanning `src/lib`; outbound-send gate test (F-03) | TODO |
