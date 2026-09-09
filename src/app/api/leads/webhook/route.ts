@@ -13,6 +13,7 @@ import { isRateLimitedDurable, type RateLimitBackend } from '@/lib/rate-limit-du
 import { routeIncomingLead } from '@/lib/lead-pool'
 import { isAixmosCorsOrigin } from '@/lib/site-domains'
 import { normalizeNanpPhone } from '@/lib/phone'
+import { LEAD_WEBHOOK_SKU_PRICE_CENTS } from '@/lib/pricing/catalog'
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -40,13 +41,9 @@ export async function OPTIONS(req: Request): Promise<NextResponse> {
   return new NextResponse(null, { status: 204, headers: corsHeaders(origin!) })
 }
 
-const SKU_PRICE_CENTS: Record<string, number> = {
-  'lead-magnet': 0,
-  'intro-97': 9700,
-  'training': 700000,
-  'rental-in-a-box': 1500000,
-  'flagship': 5000000,
-}
+// Prices live in src/lib/pricing/catalog.ts (F-13); this table is the public
+// lead-magnet webhook's view of them.
+const SKU_PRICE_CENTS = LEAD_WEBHOOK_SKU_PRICE_CENTS
 
 // Public entry point: North American numbers only (src/lib/phone, strict policy).
 const normalizePhone = normalizeNanpPhone
