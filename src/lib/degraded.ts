@@ -33,7 +33,7 @@
  * so a flapping backend still cannot produce more than one line per interval.
  */
 
-export type DegradedComponent = "ghl-event-dedupe" | "rate-limit";
+export type DegradedComponent = "ghl-event-dedupe" | "rate-limit" | "venture-registry";
 
 export interface DegradedRecord {
   component: DegradedComponent;
