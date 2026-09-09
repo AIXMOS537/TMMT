@@ -54,7 +54,15 @@ if command -v gitleaks >/dev/null 2>&1; then
   while read -r local_ref local_sha remote_ref remote_sha; do
     [[ -z "${local_sha:-}" ]] && continue
     [[ "$local_sha" == "$ZERO" ]] && continue
-    if [[ "$remote_sha" == "$ZERO" ]]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
+    if [[ "$remote_sha" == "$ZERO" ]]; then
+      # New remote branch: scan only what is NEW relative to the default branch.
+      # "$local_sha" alone means the whole reachable history, so one old leak
+      # anywhere in master's past blocked every new branch forever (2026-09-08).
+      base="$(git merge-base "$local_sha" origin/master 2>/dev/null || git merge-base "$local_sha" master 2>/dev/null || true)"
+      if [[ -n "$base" && "$base" != "$local_sha" ]]; then range="$base..$local_sha"; else range="$local_sha"; fi
+    else
+      range="$remote_sha..$local_sha"
+    fi
     gitleaks detect --no-banner --redact --log-opts="$range" 2>/dev/null \
       || { red "BLOCKED push by gitleaks (secret in NEW commits being pushed)."; exit 1; }
   done <<< "$refs_input"
