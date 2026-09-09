@@ -21,6 +21,14 @@ const Body = z.object({
 /**
  * Sync ops_locations from Airtable automation (you + systems engineer).
  * Header: X-Sync-Secret (same as SYNC_WEBHOOK_SECRET)
+ *
+ * No replay guard, by decision (T-02c). The payload has no delivery id or
+ * timestamp, and the only effect is an upsert keyed on slug with the full row
+ * from the body: a retried delivery re-writes identical state and nothing
+ * else happens (no tag, no message, no event log). A guard would have to key
+ * on a content hash, and the Airtable roster automation legitimately re-sends
+ * unchanged rows after any edit — the guard would drop those. Convergence is
+ * pinned in route.test.ts.
  */
 export async function POST(req: NextRequest) {
   if (!secretMatches(req.headers.get("x-sync-secret"), process.env.SYNC_WEBHOOK_SECRET)) {

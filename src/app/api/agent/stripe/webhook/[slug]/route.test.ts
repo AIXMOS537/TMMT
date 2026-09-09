@@ -131,10 +131,38 @@ describe('POST /api/agent/stripe/webhook/[slug] — gate', () => {
     expect(h.resolveOrg).not.toHaveBeenCalled()
   })
 
-  it('500 (fail closed) when the per-tenant secret env is not configured', async () => {
+  it('401 with the bad-signature body when the per-tenant secret env is not configured; misconfig logged server-side (T-02c)', async () => {
+    // Was a 500 answered BEFORE the signature check, so an unsigned probe
+    // could tell a wired slug (401) from an unwired one (500).
     vi.stubEnv(ENV_KEY, undefined)
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = await POST(signed(paymentEvent), params)
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({ error: 'invalid signature' })
+    expect(h.resolveOrg).not.toHaveBeenCalled()
+    expect(h.createDb).not.toHaveBeenCalled()
+    expect(err).toHaveBeenCalledTimes(1)
+    const line = String(err.mock.calls[0][0])
+    expect(line.startsWith('[webhook-misconfig] ')).toBe(true)
+    expect(JSON.parse(line.slice('[webhook-misconfig] '.length))).toMatchObject({
+      route: 'agent/stripe/webhook', slug: SLUG, envKey: ENV_KEY,
+    })
+    err.mockRestore()
+  })
+
+  it('an unsigned probe cannot tell an unconfigured slug from a configured one (T-02c)', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const configured = await POST(signed(paymentEvent, { secret: 'whsec_t02_wrong' }), params)
+    const configuredNoHeader = await POST(new Request(URL_, { method: 'POST', body: JSON.stringify(paymentEvent) }), params)
+    vi.stubEnv(ENV_KEY, undefined)
+    const unconfigured = await POST(signed(paymentEvent, { secret: 'whsec_t02_wrong' }), params)
+    const unconfiguredNoHeader = await POST(new Request(URL_, { method: 'POST', body: JSON.stringify(paymentEvent) }), params)
+    err.mockRestore()
+
+    expect(unconfigured.status).toBe(configured.status)
+    expect(await unconfigured.json()).toEqual(await configured.json())
+    expect(unconfiguredNoHeader.status).toBe(configuredNoHeader.status)
+    expect(await unconfiguredNoHeader.json()).toEqual(await configuredNoHeader.json())
     expect(h.resolveOrg).not.toHaveBeenCalled()
     expect(h.createDb).not.toHaveBeenCalled()
   })

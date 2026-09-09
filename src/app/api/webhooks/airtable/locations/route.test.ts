@@ -110,15 +110,22 @@ describe("POST /api/webhooks/airtable/locations — happy path", () => {
   });
 });
 
-describe("POST /api/webhooks/airtable/locations — replay", () => {
-  // TODO(T-02): no replay guard, but the write is an upsert on slug, so a
-  // retried delivery converges on the same rows. Documenting: two deliveries
-  // issue two upserts each, no other side effect.
-  it("documents current behaviour: a second identical delivery re-upserts the same slugs", async () => {
+describe("POST /api/webhooks/airtable/locations — replay (T-02c: no guard, by decision)", () => {
+  // The payload has no delivery id or timestamp and the only effect is an
+  // upsert keyed on slug with the full row from the body, so a retried
+  // delivery converges: identical rows, no other side effect. A guard would
+  // have to key on a content hash and would then drop the Airtable roster
+  // automation's legitimate re-send of unchanged rows. This test pins the
+  // convergence that makes the guard unnecessary.
+  it("a second identical delivery converges: one upsert per slug per delivery, byte-identical payloads, nothing else", async () => {
     await POST(withSecret(payload));
     await POST(withSecret(payload));
-    const slugs = writes(db).map((c) => (c.payload as { slug: string }).slug);
-    expect(slugs).toEqual(["cville", "rva", "cville", "rva"]);
-    expect(writes(db).every((c) => c.op === "upsert")).toBe(true);
+    const w = writes(db);
+    expect(w.map((c) => (c.payload as { slug: string }).slug)).toEqual(["cville", "rva", "cville", "rva"]);
+    expect(w.every((c) => c.table === "ops_locations" && c.op === "upsert")).toBe(true);
+    expect(w.every((c) => (c.options as { onConflict: string }).onConflict === "slug")).toBe(true);
+    expect(w[2].payload).toEqual(w[0].payload);
+    expect(w[3].payload).toEqual(w[1].payload);
+    expect(db.calls.filter((c) => c.table !== "ops_locations")).toEqual([]);
   });
 });
