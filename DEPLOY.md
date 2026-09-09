@@ -8,7 +8,7 @@ retirement record and `src/lib/site-domains.ts` for the host rules.
 
 | App | Vercel project | URL | State |
 |-----|----------------|-----|-------|
-| TMMT Ops | `tmmt-ops` | https://tmmtrentals.com | **the app** |
+| TMMT Ops | `tmmt-ops` | https://tmmt-ops.vercel.app | **the app** |
 | TMMT Command Center | `tmmt-command-center` | — | retired 2026-08-26, paused 2026-09-09 |
 | TMMT Training Site | `tmmt-training-site` | — | retired, paused |
 | AIXMOS Offer | `aixmos-offer` | — | retired, paused |
@@ -18,7 +18,7 @@ retirement record and `src/lib/site-domains.ts` for the host rules.
 
 | | |
 |---|---|
-| **App URL** | **`https://tmmtrentals.com`** (`tmmt-ops.vercel.app` also resolves) |
+| **App URL** | **`https://tmmt-ops.vercel.app`** (`tmmtrentals.com` is attached to the project but its DNS zone has never been published — it does not resolve) |
 | Vercel project name | **`tmmt-ops`** |
 | Source repo | `AIXMOS537/TMMT` (`origin`) |
 | Production branch | **`master`** |

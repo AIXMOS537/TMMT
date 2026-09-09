@@ -77,9 +77,15 @@ together afterwards.
   settle it: Vercel intercepts *before* any app code runs, so no middleware or
   route change can open that door.
 
-  The setting exempts custom domains. `tmmt-ops` has none attached — only
-  `tmmt-ops-aixmos537.vercel.app` — and neither `tmmtrentals.net` nor
-  `tmmtrentals.com` resolves at all. There is currently no public door.
+  The setting exempts custom domains. `tmmtrentals.com` / `.net` ARE attached
+  to `tmmt-ops`, but their DNS zone has never been published — a public
+  resolver returns the name with no address — so neither resolves.
+
+  **The public door is `tmmt-ops.vercel.app`** (re-verified 2026-09-09):
+  `/login` returns `200` with `X-Matched-Path: /login` and the app's own
+  "Sign in · Partner portal & operations" title, not the Vercel SSO wall.
+  Check `X-Matched-Path`, never a bare status code — the SSO wall also
+  answers 200.
 
   Two ways out, owner's call: attach the real custom domain (it bypasses SSO
   under the current setting), or switch SSO off. Attaching the domain is the
@@ -196,7 +202,10 @@ below no longer needs the dashboard. Executed 2026-09-09:
 1. ~~Confirm nothing you care about points at `tmmt-command-center.vercel.app`.~~
    Four docs did — `OPERATOR-START-HERE.md` handed operators
    `tmmt-command-center.vercel.app/login` as *the* login URL. All four repointed
-   at `tmmtrentals.com` in the same change.
+   at `tmmt-ops.vercel.app` in the same change — the only staff host that
+   actually resolves. `tmmtrentals.com` is attached to the project but its DNS
+   zone has never been published (see the SSO note above), so pointing
+   operators there would have swapped one dead host for another.
 2. ~~Pause the project.~~ **PAUSED** — it now returns 503 `DEPLOYMENT_PAUSED`,
    matching `tmmt-training-site` and `aixmos-offer`. Reverse with
    `unpause_project` if anything turns out to depend on it.
