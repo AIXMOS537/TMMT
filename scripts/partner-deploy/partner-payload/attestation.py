@@ -6,14 +6,17 @@ Runs on the partner's Mac during provisioning. Captures:
   - IOPlatformUUID (hardware UUID, immutable per Mac)
   - Generates an ed25519 keypair in the user's Keychain marked
     non-exportable (so it cannot be copied to another Mac)
-  - Returns the public key + a hash that the license server pins to.
+  - Returns the public key plus a local binding label (NOT sent to the server).
 
 v1 LIMITATION: True Secure Enclave attestation requires Swift + Security.framework.
 v1 uses a Keychain-stored non-exportable ed25519 keypair, which still binds to
 this Mac but is weaker than a true Enclave attestation. v2 must upgrade.
 
 Output: JSON to stdout —
-  {"hardware_uuid": "...", "pubkey_b64": "...", "attestation_hash": "..."}
+NAMING: this file produces NO attestation. It emits a `binding_hash` — a
+non-authoritative label, not evidence of hardware provenance. See binding_hash().
+
+  {"hardware_uuid": "...", "pubkey_b64": "...", "binding_hash": "..."}
 """
 import base64
 import hashlib
@@ -98,8 +101,18 @@ def generate_or_load_keypair(label: str = "tools.aixmos.partner.device") -> byte
         return pub_bytes
 
 
-def attestation_hash(hw_uuid: str, pubkey: bytes) -> str:
-    """Bind the hardware UUID and the public key into a single hash."""
+def binding_hash(hw_uuid: str, pubkey: bytes) -> str:
+    """
+    SHA-256(hardware_uuid || public_key) — a convenience label tying the two
+    values together for logs.
+
+    NON-AUTHORITATIVE METADATA. It must never participate in an authorization
+    decision. Anyone holding the hardware UUID and the public key can compute
+    it, so it proves neither hardware provenance nor possession of the private
+    key. Renamed from the former "attestation" wording, which asserted a
+    security property it does not have. Nothing consumes this value; it is not
+    sent to the server.
+    """
     h = hashlib.sha256()
     h.update(hw_uuid.encode())
     h.update(b"\x00")
@@ -111,10 +124,10 @@ def main() -> int:
     hw = hardware_uuid()
     pub = generate_or_load_keypair()
     pub_b64 = base64.b64encode(pub).decode()
-    att = attestation_hash(hw, pub)
+    binding = binding_hash(hw, pub)
 
     json.dump(
-        {"hardware_uuid": hw, "pubkey_b64": pub_b64, "attestation_hash": att},
+        {"hardware_uuid": hw, "pubkey_b64": pub_b64, "binding_hash": binding},
         sys.stdout,
     )
     print()

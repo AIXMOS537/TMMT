@@ -58,14 +58,16 @@ sync_current() {
     if ! git rebase -q '@{u}'; then
       git rebase --abort || true
       [[ $stashed -eq 1 ]] && git stash pop -q 2>/dev/null || true
-      die "rebase hit a conflict vs upstream — resolve manually, then re-run."
+      die "rebase hit a conflict vs upstream — resolve manually, then re-run.
+   If you had local changes, check 'git stash list' — the restore may also have conflicted."
     fi
   else
     info "no upstream; rebasing onto origin/master..."
     if ! git rebase -q origin/master; then
       git rebase --abort || true
       [[ $stashed -eq 1 ]] && git stash pop -q 2>/dev/null || true
-      die "rebase hit a conflict vs origin/master — resolve manually, then re-run."
+      die "rebase hit a conflict vs origin/master — resolve manually, then re-run.
+   If you had local changes, check 'git stash list' — the restore may also have conflicted."
     fi
   fi
 
@@ -74,7 +76,14 @@ sync_current() {
 
   if [[ $stashed -eq 1 ]]; then
     info "restoring your stashed changes..."
-    git stash pop -q || warn "stash pop conflicted — see 'git stash list' and resolve."
+    if ! git stash pop -q; then
+      die "stash pop conflicted — STOPPING.
+   Your changes are safe: git keeps the stash when a pop conflicts (see 'git stash list').
+   The worktree is now UNMERGED. To recover:
+     1. resolve the conflict markers, 2. 'git add' each file, 3. 'git stash drop'
+   Do NOT re-run sync-machine until 'git status' is clean — it would stash the
+   conflict markers themselves and hide the problem."
+    fi
   fi
   ok "synced ${cur}"
 }

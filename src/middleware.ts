@@ -3,7 +3,11 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import { isOwnerHubHost, shouldBounceTmmtCreditToAixmos, aixmosCreditRedirectUrl } from "@/lib/site-domains";
+import {
+  isOwnerHubHost,
+  shouldBounceTmmtCreditToAixmos,
+  aixmosCreditRedirectUrl,
+} from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
@@ -27,9 +31,19 @@ function isFunnelPublicPath(pathname: string) {
   );
 }
 
+/**
+ * Where a signed-in account with no role lands (homePathForTier("none")), and
+ * where a signed-in non-owner lands on the owner hub (?hub=owner). Public on
+ * purpose: it is the one page every session state can reach, so no deny rule
+ * below can ever redirect to a path that is itself denied. A stale or
+ * half-expired session therefore ends on a message, never in a redirect loop.
+ */
+const NO_ACCESS_PATH = "/no-access";
+
 function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
+    pathname === NO_ACCESS_PATH ||
     pathname === "/robots.txt" ||
     pathname === "/offline" ||
     pathname === "/manifest.webmanifest" ||
@@ -38,6 +52,10 @@ function isPublicPath(pathname: string) {
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
+    // Public request intake, one form per business line. Public for everyone,
+    // signed in or out: a staff member raising a request on a customer's
+    // behalf uses the same form. "/" is deliberately NOT here - see below.
+    pathname.startsWith("/intake") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
@@ -46,6 +64,19 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/api/agent/") ||
     isFunnelPublicPath(pathname)
   );
+}
+
+/**
+ * The public front door, for signed-out visitors only.
+ *
+ * Kept out of isPublicPath on purpose. pathAllowedForTier() returns true for
+ * anything isPublicPath() matches, so putting "/" there would also stop
+ * signed-in staff being routed to their own home page - an operator hitting
+ * "/" would get the marketing front door instead of /operator. Signed out:
+ * render the front door. Signed in: unchanged, the tier rules below decide.
+ */
+function isSignedOutFrontDoor(pathname: string) {
+  return pathname === "/";
 }
 
 /** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
@@ -117,8 +148,15 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
     case "investor":
       return pathname.startsWith("/investor") || pathname.startsWith("/partner");
     case "staff":
-    case "none":
       return isRentalsDeskPath(pathname);
+    case "none":
+      // No recognised role: nothing beyond the public pages and the
+      // everyone-surfaces handled above. This tier used to share the staff
+      // line and reach the rentals desk at the edge, with only the (admin)
+      // layout holding it back. Denied here now; the layout check stays as
+      // defence in depth. The redirect target is /no-access (public), so "/"
+      // being a desk path no longer matters.
+      return false;
     default: {
       const _never: never = tier;
       return _never;
@@ -166,8 +204,8 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Credit + funding landings belong on AIXMOS, not TMMT rentals.
-  // Skip when the AIXMOS landing rewrote here (x-forwarded-host) or we loop.
+  // Marketing entry points (/credit, /funding, credit SKU landings) belong on the
+  // public GHL site. Skip when the public site proxied here (x-forwarded-host).
   if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
     const dest = aixmosCreditRedirectUrl(pathname);
     if (dest) {
@@ -210,9 +248,35 @@ export async function middleware(request: NextRequest) {
     console.error("middleware: Supabase auth check failed; treating as signed-out", err);
   }
 
-  if (!user && !isPublicPath(pathname)) {
+  if (!user && !isPublicPath(pathname) && !isSignedOutFrontDoor(pathname)) {
+    // Every signed-out visitor goes to /login - except "/", which now renders
+    // the public front door (src/app/page.tsx). The comment below records why
+    // "/" used to redirect: there was no front door to send anyone to.
+    //
+    // "/" used to bounce to the public GHL site, on the assumption that staff
+    // "use /login directly". That left the app with no reachable front door:
+    // the owner hub host (ops.allinonemanagementsolutions.com) was never
+    // created, and tmmtrentals.com resolves to nothing, so every address the
+    // owner could actually type landed on marketing. Typing the app's own
+    // address and being shown someone else's home page is not a front door.
+    //
+    // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
+    // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
+    // and the public reaches marketing on its own domain, which is how they
+    // arrive in the first place.
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
+
+  // Owner hub: a signed-in account that is not an owner is refused everything
+  // and told so on /no-access?hub=owner. It used to be sent to /login?hub=owner,
+  // which — still signed in, still on /login — matched this same rule and
+  // redirected to itself until the browser gave up (ERR_TOO_MANY_REDIRECTS).
+  // Fail-closed, but a loop instead of a message. /no-access is public and
+  // exempted below, so the target of this redirect always renders.
+  const hubRefusal = () =>
+    withRobotsHeader(
+      NextResponse.redirect(new URL(`${NO_ACCESS_PATH}?hub=owner`, request.url))
+    );
 
   if (user && pathname === "/login") {
     const tier = getTierForUser(user);
@@ -222,23 +286,29 @@ export async function middleware(request: NextRequest) {
           NextResponse.redirect(new URL("/command", request.url))
         );
       }
-      return withRobotsHeader(
-        NextResponse.redirect(new URL("/login?hub=owner", request.url))
-      );
+      return hubRefusal();
     }
     return withRobotsHeader(
       NextResponse.redirect(new URL(homePathForTier(tier), request.url))
     );
   }
 
-  if (ownerHub && user && getTierForUser(user) !== "owner") {
-    return withRobotsHeader(
-      NextResponse.redirect(new URL("/login?hub=owner", request.url))
-    );
+  if (ownerHub && user && getTierForUser(user) !== "owner" && pathname !== NO_ACCESS_PATH) {
+    return hubRefusal();
   }
 
   if (ownerHub && user && pathname === "/") {
     return withRobotsHeader(NextResponse.redirect(new URL("/command", request.url)));
+  }
+
+  // "/" is the public front door now, so a signed-in visitor does not want it -
+  // they want their own home. Before this change "/" WAS the operator/staff home
+  // (the (admin) group's root page), so this keeps them landing on the same
+  // screen, now at its own path, /desk.
+  if (user && pathname === "/") {
+    return withRobotsHeader(
+      NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
+    );
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {

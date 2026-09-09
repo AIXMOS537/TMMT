@@ -5,10 +5,11 @@ import { useState } from "react";
 import { useCube } from "@aixmos/core";
 import { SAMPLE_BUSINESS } from "@aixmos/core";
 import type { BusinessQuestionnaire } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
-import { Input, Label, Select } from "@/components/aixmos-ui/input";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
+import { Button, Card, CardDescription, CardTitle, Input, Label, Select } from "@/components/ui";
 
 const empty: BusinessQuestionnaire = {
   businessName: "",
@@ -44,7 +45,7 @@ export default function BusinessQuestionnairePage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card>
+      <Card className="p-5 p-5">
         <CardTitle>Business funding questionnaire</CardTitle>
         <CardDescription>
           Use actual revenue and bank activity — do not inflate figures to &quot;look better.&quot;
@@ -119,7 +120,7 @@ export default function BusinessQuestionnairePage() {
           </label>
 
           <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <Button type="button" variant="outline" onClick={() => setForm(SAMPLE_BUSINESS)}>
+            <Button type="button" variant="secondary" onClick={() => setForm(SAMPLE_BUSINESS)}>
               Load demo data
             </Button>
             <Button type="submit">Save & view readiness</Button>

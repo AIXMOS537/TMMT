@@ -27,7 +27,7 @@ describe("canonicalSlug", () => {
   });
   it("maps aliases to the canonical slug", () => {
     expect(canonicalSlug("tmmt")).toBe("tmmt_property");
-    expect(canonicalSlug("moe-legacy")).toBe("moe_legacy");
+    expect(canonicalSlug("moe-legacy")).toBe("aixmos_credit");
     expect(canonicalSlug("aixmos537")).toBe("aixmos");
   });
   it("returns undefined for unknown or empty input", () => {
@@ -61,7 +61,7 @@ describe("resolveTenantByHost", () => {
 
 describe("resolveTenantByPath", () => {
   it("reads the org segment of a landing page path", () => {
-    expect(resolveTenantByPath("/lp/moe_legacy/intro-97")?.slug).toBe("moe_legacy");
+    expect(resolveTenantByPath("/lp/moe_legacy/intro-97")?.slug).toBe("aixmos_credit");
   });
   it("ignores unrelated paths", () => {
     expect(resolveTenantByPath("/command/dispatch")).toBeUndefined();
@@ -77,9 +77,26 @@ describe("tenantOrDefault", () => {
   });
 });
 
+describe("aixmos_credit rename back-compat", () => {
+  // The tenant formerly keyed `moe_legacy` is Taha-owned "AIXMOS Credit"; the key was
+  // renamed 2026-09-03. Legacy identifiers survive as aliases so no live link, landing
+  // page or stored slug breaks. Do not drop these aliases without verifying the DB.
+  it("still resolves both legacy identifiers to the renamed tenant", () => {
+    for (const legacy of ["moe_legacy", "moe-legacy"]) {
+      expect(canonicalSlug(legacy)).toBe("aixmos_credit");
+      expect(resolveTenantBySlug(legacy)?.displayName).toBe("AIXMOS Credit");
+    }
+  });
+  it("resolves the new identifiers too", () => {
+    for (const s of ["aixmos_credit", "aixmos-credit", "credit"]) {
+      expect(resolveTenantBySlug(s)?.displayName).toBe("AIXMOS Credit");
+    }
+  });
+});
+
 describe("resolveTenant", () => {
   it("prefers an explicit slug over the host", () => {
-    expect(resolveTenant({ slug: "moe_legacy", host: "tmmtrentals.com" }).slug).toBe("moe_legacy");
+    expect(resolveTenant({ slug: "moe_legacy", host: "tmmtrentals.com" }).slug).toBe("aixmos_credit");
   });
   it("honours x-forwarded-host when host is the proxy", () => {
     expect(

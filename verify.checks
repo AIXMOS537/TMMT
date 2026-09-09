@@ -5,8 +5,11 @@
 # Add tests/integration lines as they stabilize.
 types|npx tsc --noEmit
 lint|npm run lint
+test|npx vitest run
+brand|npm run brand:check
 compliance|node scripts/compliance-check.mjs content/consumer-facing
 secrets|bash scripts/secret-scan.sh
-# build|npm run build        # uncomment for the full gate (slower)
-# test|npm run test          # when unit tests exist
+# build runs locally only when the box has >= 8 GB free RAM (BUILD_SMOKE=1 forces,
+# BUILD_SMOKE=0 skips); otherwise it logs a skip and CI builds. See scripts/build-smoke.sh.
+build|bash scripts/build-smoke.sh
 # smoke|bash scripts/smoke-prod.sh   # integration, needs a target

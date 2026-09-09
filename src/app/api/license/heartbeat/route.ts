@@ -3,7 +3,7 @@
  * Client posts { organization_id, hardware_uuid }; server returns 200 with continued auth OR 410 with kill_command.
  */
 import { NextResponse } from 'next/server'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { emitAudit } from '@/lib/agent/audit'
 
 interface HeartbeatBody {
@@ -18,7 +18,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const { organization_id, hardware_uuid } = body
   if (!organization_id || !hardware_uuid) return NextResponse.json({ error: 'missing fields' }, { status: 400 })
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data: license } = await db
     .from('organization_licenses')
     .select('active, kill_command, hardware_uuid, install_token_used')

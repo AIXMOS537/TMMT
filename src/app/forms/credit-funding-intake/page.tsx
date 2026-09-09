@@ -138,6 +138,11 @@ export default function CreditFundingIntakePage() {
     fd.set("credit_guidance_disclaimer_linked", "true");
     fd.set("channel", "web_form");
     fd.set("stage_reached", "6");
+    // Carry the partner's link through, so an inbound referral is attributable.
+    // Referrals run both ways with Khan Strategies; without this their sends
+    // arrive anonymous and nobody can be credited for them.
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) fd.set("affiliate_ref", ref);
     const result = await submitCreditFundingIntake(fd);
     setLoading(false);
     if (!result.success) {
@@ -287,7 +292,7 @@ export default function CreditFundingIntakePage() {
             </Button>
 
             <p className="text-[11px] text-gray-500 dark:text-slate-400 leading-relaxed">
-              <strong>Not credit repair.</strong> TMMT and AIXMOS provide educational information about consumer credit, score factors, and lender criteria. We do not represent ourselves to be, and are not, a credit repair organization under the Credit Repair Organizations Act (15 U.S.C. § 1679a). We do not promise to remove, dispute, or alter accurate items on your credit report. If you choose hands-on credit repair services, we refer you exclusively to Moe Legacy, an independent company you contract with directly, on its terms. Results vary; we make no guarantee that any specific action will raise your score by a specific amount or within a specific timeframe. We are not a lender — any introduction to a third-party funding source is on their terms; we may receive a referral fee that does not change your cost or rate. See <Link href="/legal/credit" className="underline">/legal/credit</Link> for full disclosures.
+              <strong>Not credit repair.</strong> TMMT and AIXMOS provide educational information about consumer credit, score factors, and lender criteria. We do not represent ourselves to be, and are not, a credit repair organization under the Credit Repair Organizations Act (15 U.S.C. § 1679a). We do not promise to remove, dispute, or alter accurate items on your credit report. If you choose hands-on credit repair services, we refer you to Khan Strategies LLC, an independent company you contract with directly, on its terms. Results vary; we make no guarantee that any specific action will raise your score by a specific amount or within a specific timeframe. We are not a lender — any introduction to a third-party funding source is on their terms; we may receive a referral fee that does not change your cost or rate. See <Link href="/legal/credit" className="underline">/legal/credit</Link> for full disclosures.
             </p>
           </form>
         </Card>

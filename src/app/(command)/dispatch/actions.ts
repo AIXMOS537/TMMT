@@ -4,13 +4,15 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { isStaffUser } from "@/lib/auth-roles";
+import type { OrgRole } from "@/lib/db-vocab";
 import { searchAddress } from "@/lib/osm-geocode";
 import { askCaptainDispatch } from "@/lib/captain-client";
 import { notifyResponder } from "@/lib/notify-telegram";
 import type { Candidate, AssignmentReasoning, Incident } from "@/lib/dispatch-types";
+import { OrgIdSchema } from "@/lib/agent/tenant";
 
 const NewIncidentSchema = z.object({
-  org_id: z.string().uuid(),
+  org_id: OrgIdSchema,
   reporter_name: z.string().min(1).max(120).optional(),
   reporter_phone: z.string().max(40).optional(),
   location_lat: z.number().refine(n => n >= -90 && n <= 90, "lat out of range"),
@@ -45,9 +47,10 @@ async function requireAuth() {
  * by id rather than by URL and never passes through the layout that guards its
  * page.
  *
- * Roles per the schema: tenant_admin, dispatcher, responder, viewer.
+ * Roles per the schema: ORG_ROLES in src/lib/db-vocab.ts (tenant_admin,
+ * dispatcher, responder, viewer). The subset below is type-checked against it.
  */
-const ORG_ADMIN_ROLES = ["tenant_admin", "dispatcher"] as const;
+const ORG_ADMIN_ROLES = ["tenant_admin", "dispatcher"] as const satisfies readonly OrgRole[];
 
 async function requireOrgAccess(
   orgId: string | null | undefined,
@@ -226,6 +229,25 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
     return { ok: false, error: "override window expired" };
   }
 
+  // T-03 finding: the org check above covers the assignment row only. The
+  // incident and the chosen unit also come from the caller, so pin both to
+  // that row's org before anything is written: the incident must be the one
+  // this assignment belongs to, and the unit must live in the same org.
+  // `incident_assignments_v` exposes incident_id and `units` carries org_id
+  // (verified against prod 2026-09-08). Same error text as "not found" so a
+  // probing caller learns nothing about records in other orgs.
+  const currentOrgId = (current as { org_id: string }).org_id;
+  const currentIncidentId = (current as { incident_id?: string }).incident_id;
+  if (currentIncidentId !== parsed.data.incident_id) {
+    return { ok: false, error: "assignment not found" };
+  }
+  const { data: chosenUnit } = await supabase.from("units")
+    .select("id")
+    .eq("id", parsed.data.chosen_unit_id)
+    .eq("org_id", currentOrgId)
+    .maybeSingle();
+  if (!chosenUnit) return { ok: false, error: "unit not found" };
+
   await supabase.from("incident_assignments")
     .update({ status: "cancelled" })
     .eq("id", parsed.data.current_assignment_id);
@@ -235,8 +257,8 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
     .eq("id", (current as { unit_id: string }).unit_id);
 
   await supabase.from("assignment_overrides").insert({
-    org_id: (current as { org_id: string }).org_id,
-    incident_id: parsed.data.incident_id,
+    org_id: currentOrgId,
+    incident_id: currentIncidentId,
     original_unit_id: (current as { unit_id: string }).unit_id,
     chosen_unit_id: parsed.data.chosen_unit_id,
     reason: parsed.data.reason,
@@ -244,7 +266,7 @@ export async function overrideAssignment(input: unknown): Promise<ActionResult<{
   });
 
   const { data: newAssignment, error } = await supabase.rpc("assign_unit", {
-    p_incident_id: parsed.data.incident_id,
+    p_incident_id: currentIncidentId,
     p_unit_id: parsed.data.chosen_unit_id,
     p_by_kind: "user",
     p_by_user: user.id,
@@ -318,7 +340,7 @@ export async function transitionStatus(input: unknown): Promise<ActionResult<nul
 }
 
 export async function lockExpiredAssignments(orgId: string): Promise<ActionResult<{ locked: number }>> {
-  if (!z.string().uuid().safeParse(orgId).success) return { ok: false, error: "invalid id" };
+  if (!OrgIdSchema.safeParse(orgId).success) return { ok: false, error: "invalid id" };
   const access = await requireOrgAccess(orgId);
   if (!access.ok) return access;
   const { supabase } = access.data;
@@ -378,7 +400,7 @@ export async function setUnitLocation(input: unknown): Promise<ActionResult<null
 }
 
 const ApproveResponderSchema = z.object({
-  org_id: z.string().uuid(),
+  org_id: OrgIdSchema,
   user_id: z.string().uuid(),
   link_kind: z.enum(["vendor","operator","client_volunteer","contractor"]),
   certs: z.record(z.string(), z.unknown()).optional(),

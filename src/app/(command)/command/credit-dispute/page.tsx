@@ -4,12 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, PageHeader, Button } from "@/components/ui";
 import {
-  getClients,
-  getAssessments,
-  roundsSentByItem,
-  setItemAssessment,
+  readLegacyClients,
+  clearLegacyClients,
   type StoredClient,
 } from "@/lib/credit-dispute/data/store";
+import {
+  listDisputeClients,
+  addDisputeRoundsForClient,
+  importClientsFromBrowser,
+  recordItemAssessment,
+} from "./actions";
+import type { DisputeRoundType } from "@/lib/credit-dispute/types";
 import { runGatedDisputeProtocol, type GatedRunResult } from "@/lib/credit-dispute/engine/gated-protocol";
 import type { FactualBasis } from "@/lib/credit-dispute/policy/dispute-policy";
 import {
@@ -18,7 +23,6 @@ import {
   estimateScoreImpact,
   type DeepAuditResult,
 } from "@/lib/credit-dispute/engine/protocol";
-import { addDisputeRounds } from "@/lib/credit-dispute/data/store";
 import { tierLabel, tierColor } from "@/lib/credit-dispute/engine/funding-readiness";
 import { CREDIT_GHL_TAGS } from "@/lib/credit-dispute/ghl-tags";
 import { pathLabel } from "@/lib/client-journey/credit-paths";
@@ -53,51 +57,110 @@ export default function CreditDisputeCommandPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [run, setRun] = useState<GatedRunResult | null>(null);
-  const [assessTick, setAssessTick] = useState(0);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [stranded, setStranded] = useState(0);
+  const [rescuing, setRescuing] = useState(false);
+
+  async function refresh() {
+    const res = await listDisputeClients();
+    if (!res.ok) {
+      setError(res.error);
+      return [];
+    }
+    setError("");
+    setClients(res.data);
+    setSelectedId((current) =>
+      current && res.data.some((c) => c.profile.id === current)
+        ? current
+        : res.data[0]?.profile.id ?? null
+    );
+    return res.data;
+  }
 
   useEffect(() => {
-    const loaded = getClients();
-    setClients(loaded);
-    if (loaded.length > 0 && !selectedId) setSelectedId(loaded[0].profile.id);
-  }, [selectedId]);
+    // Clients live in the database now. Anything still under the old browser
+    // key belongs to whoever imported it on this machine and would otherwise
+    // be invisible, so surface the count and offer to bring it across.
+    setStranded(readLegacyClients().length);
+    refresh().finally(() => setLoading(false));
+  }, []);
+
+  async function handleRescue() {
+    setRescuing(true);
+    setError("");
+    const res = await importClientsFromBrowser(readLegacyClients());
+    setRescuing(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    // Only clear the browser copy once the server has confirmed it holds them.
+    clearLegacyClients();
+    setStranded(0);
+    await refresh();
+    setMessage(
+      `Moved ${res.data.imported} client(s) into the database` +
+        (res.data.skipped ? `, ${res.data.skipped} already there` : "") +
+        ". This browser's copy has been cleared."
+    );
+  }
 
   const selected = clients.find((c) => c.profile.id === selectedId);
   const funding = selected ? assessFundingReadiness(selected.profile, selected.negativeItems) : null;
   const audits = selected ? deepAuditAll(selected.negativeItems) : [];
   const impact = selected ? estimateScoreImpact(selected.negativeItems) : null;
-  // assessTick is read so this recomputes when a call is recorded.
-  void assessTick;
-  const current = selected ? getAssessments(selected.profile.id) : {};
+  // The accuracy calls ride inside the client record itself, which
+  // listDisputeClients() loads from dispute_clients.payload. Recording one
+  // writes through a server action and refresh() brings it back, so this
+  // re-renders without a local copy of anything.
+  const current = selected?.assessments ?? {};
 
-  function handleGenerate() {
+  async function handleGenerate() {
     if (!selected) return;
+    setError("");
 
     // Runs through the accuracy gate. On a fresh import this will usually produce
     // ZERO letters and a list of items awaiting an accuracy call — that is correct,
     // not a fault. Nobody has looked at them yet, and a dispute with no recorded
     // factual basis is the kind that comes back verified.
-    const stored = getAssessments(selected.profile.id);
-    const sent = roundsSentByItem(selected.profile.id);
+    const active = selected.negativeItems.filter(
+      (i) => i.status !== "removed" && i.status !== "closed"
+    );
+
+    // Both inputs come off the record the server just handed us. Rounds already
+    // sent are derived from the stored history rather than tracked separately,
+    // so the two can never disagree about what has actually gone out.
+    const stored = selected.assessments ?? {};
+    const sent: Record<string, DisputeRoundType[]> = {};
+    for (const r of selected.disputeRounds) {
+      (sent[r.negativeItemId] ??= []).push(r.roundType);
+    }
 
     const assessments = Object.fromEntries(
-      selected.negativeItems.map((i) => [
+      active.map((i) => [
         i.id,
         { ...(stored[i.id] ?? { accuracy: "unknown" as const }), roundsSent: sent[i.id] ?? [] },
       ])
     );
 
-    const result = runGatedDisputeProtocol(selected.profile, selected.negativeItems, assessments);
+    const result = runGatedDisputeProtocol(selected.profile, active, assessments);
     setRun(result);
 
-    if (result.lettersGenerated.length > 0) {
-      addDisputeRounds(selected.profile.id, result.lettersGenerated);
-      setClients(getClients());
-      setMessage(
-        `${result.summary} — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`
-      );
-    } else {
+    if (result.lettersGenerated.length === 0) {
       setMessage(`${result.summary} — nothing to send yet.`);
+      return;
     }
+
+    const saved = await addDisputeRoundsForClient(selected.profile.id, result.lettersGenerated);
+    if (!saved.ok) {
+      setError(saved.error);
+      return;
+    }
+    await refresh();
+    setMessage(
+      `${result.summary} — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`
+    );
   }
 
   return (
@@ -113,6 +176,33 @@ export default function CreditDisputeCommandPage() {
           credit_billing_plans, client_journey, shared Supabase. Not a separate product — ops layer on what you already built.
         </p>
       </Card>
+
+      {stranded > 0 && (
+        <Card className="p-4 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-sm">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            {stranded} client record{stranded === 1 ? "" : "s"} are still only in this browser
+          </p>
+          <p className="mt-1 text-amber-800 dark:text-amber-300">
+            They were saved before this desk used the database, so they exist on
+            this machine and nowhere else — clearing your browser data would
+            lose them. Bring them across and they are backed up like everything
+            else.
+          </p>
+          <Button className="mt-3" onClick={handleRescue} disabled={rescuing}>
+            {rescuing ? "Moving…" : `Move ${stranded} into the database`}
+          </Button>
+        </Card>
+      )}
+
+      {error && (
+        <Card className="p-3 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-200">
+          {error}
+        </Card>
+      )}
+
+      {loading && (
+        <Card className="p-3 text-sm text-gray-600 dark:text-slate-400">Loading clients…</Card>
+      )}
 
       {message && (
         <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-200">
@@ -293,26 +383,31 @@ export default function CreditDisputeCommandPage() {
                                   ? "accurate"
                                   : current[a.item.id]?.basis ?? ""
                               }
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const v = e.target.value;
                                 if (!selected) return;
-                                if (v === "") {
-                                  setItemAssessment(selected.profile.id, a.item.id, {
-                                    accuracy: "unknown",
-                                  });
-                                } else if (v === "accurate") {
-                                  setItemAssessment(selected.profile.id, a.item.id, {
-                                    accuracy: "accurate",
-                                  });
-                                } else {
-                                  setItemAssessment(selected.profile.id, a.item.id, {
-                                    accuracy: "inaccurate",
-                                    basis: v as FactualBasis,
-                                  });
+                                const assessment =
+                                  v === ""
+                                    ? { accuracy: "unknown" as const }
+                                    : v === "accurate"
+                                      ? { accuracy: "accurate" as const }
+                                      : { accuracy: "inaccurate" as const, basis: v as FactualBasis };
+
+                                // Server action, not localStorage: the call is part of
+                                // the client record, and that record holds DOB, SSN
+                                // last four and the home address.
+                                setError("");
+                                const res = await recordItemAssessment(
+                                  selected.profile.id,
+                                  a.item.id,
+                                  assessment
+                                );
+                                if (!res.ok) {
+                                  setError(res.error);
+                                  return;
                                 }
-                                setClients(getClients());
-                                setAssessTick((t) => t + 1);
                                 setRun(null);
+                                await refresh();
                               }}
                             >
                               <option value="">Not assessed</option>

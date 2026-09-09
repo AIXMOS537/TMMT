@@ -1,0 +1,23 @@
+-- Defence in depth for public.ghl_webhook_events, matching what
+-- 20260909204149_rate_limit_hit.sql already does for rate_limit_buckets.
+--
+-- APPLIED to production 2026-09-09 21:03 UTC (schema_migrations 20260909210330).
+--
+-- The table is created with RLS on and ZERO policies, which correctly denies
+-- anon/authenticated every ROW-level operation. But Supabase's schema-wide
+-- default grant had still handed both roles ALL privileges, and TRUNCATE is
+-- NOT governed by RLS -- a role holding it can empty the table regardless of
+-- policies. Emptying this table would make every previously-seen GHL webhook
+-- replayable, so the grant is removed rather than left to RLS alone.
+--
+-- Not reachable through PostgREST today (it exposes no TRUNCATE), so this is
+-- hardening, not an incident. service_role and postgres are untouched, and the
+-- server only ever reaches this table as service_role.
+--
+-- Verified after apply: information_schema.table_privileges for this table
+-- lists postgres and service_role only.
+--
+-- ROLLBACK (not recommended):
+--   grant all on public.ghl_webhook_events to anon, authenticated;
+
+revoke all on public.ghl_webhook_events from anon, authenticated;

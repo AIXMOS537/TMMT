@@ -6,12 +6,14 @@
  */
 import { NextResponse } from 'next/server'
 import { resolveOrgBySlugPublic, OrgNotFoundError } from '@/lib/agent/tenant'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
-import { isRateLimited } from '@/lib/rate-limit'
+import { isRateLimitedDurable, type RateLimitBackend } from '@/lib/rate-limit-durable'
 import { routeIncomingLead } from '@/lib/lead-pool'
 import { isAixmosCorsOrigin } from '@/lib/site-domains'
+import { normalizeNanpPhone } from '@/lib/phone'
+import { LEAD_WEBHOOK_SKU_PRICE_CENTS } from '@/lib/pricing/catalog'
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -39,20 +41,12 @@ export async function OPTIONS(req: Request): Promise<NextResponse> {
   return new NextResponse(null, { status: 204, headers: corsHeaders(origin!) })
 }
 
-const SKU_PRICE_CENTS: Record<string, number> = {
-  'lead-magnet': 0,
-  'intro-97': 9700,
-  'training': 700000,
-  'rental-in-a-box': 1500000,
-  'flagship': 5000000,
-}
+// Prices live in src/lib/pricing/catalog.ts (F-13); this table is the public
+// lead-magnet webhook's view of them.
+const SKU_PRICE_CENTS = LEAD_WEBHOOK_SKU_PRICE_CENTS
 
-function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length === 10) return `+1${digits}`
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  return null
-}
+// Public entry point: North American numbers only (src/lib/phone, strict policy).
+const normalizePhone = normalizeNanpPhone
 
 interface WebhookBody {
   phone: string
@@ -78,10 +72,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!slug) return fail({ error: 'org query param required' }, 400)
 
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0]?.trim() || 'unknown'
-  if (isRateLimited(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 })) {
+  // Shared counter across instances when the rate_limit_hit RPC exists; the
+  // per-process limiter otherwise. Never let limiter setup itself fail a lead.
+  let limiter: RateLimitBackend | null = null
+  try { limiter = createServiceRoleClient() } catch { limiter = null }
+  if (await isRateLimitedDurable(`leads:${slug}:${ip}`, { windowMs: 60_000, maxHits: 3 }, limiter)) {
     return fail({ error: 'too many requests' }, 429)
   }
-  if (isRateLimited(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 })) {
+  if (await isRateLimitedDurable(`leads:ip:${ip}`, { windowMs: 60_000, maxHits: 10 }, limiter)) {
     return fail({ error: 'too many requests' }, 429)
   }
 
@@ -110,7 +108,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const sku = body.sku || 'lead-magnet'
   const sku_price_cents = SKU_PRICE_CENTS[sku] ?? 0
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data: existing } = await db.from('incoming_leads')
     .select('id, agent_status')
     .eq('phone_e164', phone_e164)

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useCube } from "@aixmos/core";
 import { prepareManualSubmission, submitApplicationStub } from "@aixmos/core";
-import { formatDate } from "@aixmos/core";
-import { Button } from "@/components/aixmos-ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/aixmos-ui/card";
-import { Badge } from "@/components/aixmos-ui/badge";
+import { formatDateTime } from "@aixmos/core";
+
+
+
 import { WorkflowBanner } from "@/components/learn/workflow-banner";
 import { CUBE_DEMO_CONTROLS } from "@/lib/cube-demo-controls";
+import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui";
 
 export default function StatusPage() {
   const { state, updateApplication, transitionStatus } = useCube();
@@ -57,7 +58,7 @@ export default function StatusPage() {
   return (
     <div>
       <WorkflowBanner />
-      <Card>
+      <Card className="p-5 p-5">
         <CardTitle>Submission status tracker</CardTitle>
         <CardDescription>
           {CUBE_DEMO_CONTROLS
@@ -117,14 +118,14 @@ export default function StatusPage() {
         {result && <p className="mt-4 text-sm text-teal-800">{result}</p>}
       </Card>
 
-      <Card className="mt-6">
+      <Card className="p-5 mt-6">
         <CardTitle>Audit log</CardTitle>
         <ul className="mt-3 max-h-80 overflow-y-auto space-y-2">
           {[...app.auditLog].reverse().map((entry) => (
             <li key={entry.id} className="rounded-lg border border-slate-100 p-3 text-sm">
               <div className="flex justify-between gap-2">
                 <span className="font-medium">{entry.action}</span>
-                <span className="text-xs text-slate-500">{formatDate(entry.timestamp)}</span>
+                <span className="text-xs text-slate-500">{formatDateTime(entry.timestamp)}</span>
               </div>
               <p className="text-slate-600">
                 {entry.actor} ({entry.role})

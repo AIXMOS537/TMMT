@@ -1,4 +1,5 @@
 import { resolveClickUpUserIds } from "./resolve-user";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 export type CreateClickUpTaskInput = {
   listId: string;
@@ -40,7 +41,7 @@ export async function createClickUpTask(
   };
   if (assignees.length > 0) body.assignees = assignees;
 
-  const res = await fetch(`https://api.clickup.com/api/v2/list/${input.listId}/task`, {
+  const res = await fetchWithTimeout(`https://api.clickup.com/api/v2/list/${input.listId}/task`, {
     method: "POST",
     headers: {
       Authorization: token,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase-service";
+import { secretMatches } from "@/lib/secure-compare";
 
 const LocationRow = z.object({
   slug: z.string().min(1),
@@ -20,10 +21,17 @@ const Body = z.object({
 /**
  * Sync ops_locations from Airtable automation (you + systems engineer).
  * Header: X-Sync-Secret (same as SYNC_WEBHOOK_SECRET)
+ *
+ * No replay guard, by decision (T-02c). The payload has no delivery id or
+ * timestamp, and the only effect is an upsert keyed on slug with the full row
+ * from the body: a retried delivery re-writes identical state and nothing
+ * else happens (no tag, no message, no event log). A guard would have to key
+ * on a content hash, and the Airtable roster automation legitimately re-sends
+ * unchanged rows after any edit — the guard would drop those. Convergence is
+ * pinned in route.test.ts.
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.SYNC_WEBHOOK_SECRET;
-  if (!secret || req.headers.get("x-sync-secret") !== secret) {
+  if (!secretMatches(req.headers.get("x-sync-secret"), process.env.SYNC_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

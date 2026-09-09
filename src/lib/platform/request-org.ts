@@ -15,7 +15,7 @@
  *      unknown host is an error for the caller to handle, not a guess to make.
  */
 
-import { createServiceSupabase } from "@/lib/agent/supabase-server";
+import { createServiceRoleClient } from "@/lib/supabase-service";
 import { normalizeHost } from "./tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "./tenant-org";
 
@@ -38,7 +38,7 @@ async function lookupHost(host: string): Promise<string | null> {
 
   let orgId: string | null = null;
   try {
-    const db = createServiceSupabase();
+    const db = createServiceRoleClient();
     const { data } = await db.rpc("org_id_for_host", { p_host: host });
     orgId = (typeof data === "string" && data) || null;
   } catch {

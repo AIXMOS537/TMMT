@@ -35,61 +35,42 @@ export interface StoredClient {
   assessments?: Record<string, ItemAssessment>;
 }
 
-const STORAGE_KEY = "aix-dispute-clients";
+/**
+ * The old browser key.
+ *
+ * Client records used to live here and nowhere else — legal name, email, phone,
+ * date of birth, social-security last four, address and tri-bureau scores, in
+ * localStorage, on whatever machine imported them. They are in the database now
+ * (see the server actions beside the credit-dispute pages); this constant
+ * survives only so the one-time rescue can find what is still stranded in a
+ * browser.
+ *
+ * Nothing writes to it any more. Once a machine has run the rescue and the
+ * count comes back zero, the key can be cleared.
+ */
+export const LEGACY_STORAGE_KEY = "aix-dispute-clients";
 
-export function getClients(): StoredClient[] {
+/** Whatever this browser still holds under the old key. Read-only. */
+export function readLegacyClients(): StoredClient[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as StoredClient[]) : [];
   } catch {
     return [];
   }
 }
 
-export function saveClients(clients: StoredClient[]): void {
+/** Drop the old key. Only call this once the rescue has reported success. */
+export function clearLegacyClients(): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
-}
-
-export function getClientById(id: string): StoredClient | undefined {
-  return getClients().find((c) => c.profile.id === id);
-}
-
-export function upsertClient(client: StoredClient): void {
-  const clients = getClients();
-  const idx = clients.findIndex((c) => c.profile.id === client.profile.id);
-  if (idx >= 0) {
-    clients[idx] = client;
-  } else {
-    clients.push(client);
+  try {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    /* a browser that refuses storage has nothing to clear */
   }
-  saveClients(clients);
-}
-
-export function addDisputeRounds(
-  profileId: string,
-  batches: DisputeLetterBatch[]
-): StoredClient | undefined {
-  const client = getClientById(profileId);
-  if (!client) return undefined;
-
-  const newRounds: StoredDisputeRound[] = batches.map((b, i) => ({
-    id: `round-${Date.now()}-${i}`,
-    negativeItemId: b.negativeItemId,
-    roundNumber: b.roundNumber,
-    roundType: b.roundType,
-    bureau: b.bureau,
-    status: b.status,
-    letterSubject: b.letter.subject,
-    letterBody: b.letter.body,
-    furnisherName: b.furnisherName,
-    createdAt: new Date().toISOString(),
-  }));
-
-  client.disputeRounds = [...client.disputeRounds, ...newRounds];
-  upsertClient(client);
-  return client;
 }
 
 export function generateId(): string {
@@ -97,53 +78,20 @@ export function generateId(): string {
 }
 
 
-/**
- * Record the accuracy call on one item.
+/*
+ * setItemAssessment / getAssessments / roundsSentByItem used to live here.
  *
- * Stamps who and when, because "who decided this was inaccurate, and on what day"
- * is the first question anyone reviewing a dispute will ask.
- */
-export function setItemAssessment(
-  profileId: string,
-  negativeItemId: string,
-  assessment: Omit<ItemAssessment, "assessedAt">,
-  assessedBy?: string
-): void {
-  const clients = getClients();
-  const client = clients.find((c) => c.profile.id === profileId);
-  if (!client) return;
-
-  const existing = client.assessments?.[negativeItemId];
-  client.assessments = {
-    ...(client.assessments ?? {}),
-    [negativeItemId]: {
-      ...assessment,
-      // Rounds already sent are tracked by the dispute history, not re-entered.
-      roundsSent: existing?.roundsSent ?? assessment.roundsSent ?? [],
-      assessedBy: assessedBy ?? existing?.assessedBy,
-      assessedAt: new Date().toISOString(),
-    },
-  };
-  saveClients(clients);
-}
-
-/** The recorded assessments for a client, or an empty map. */
-export function getAssessments(profileId: string): Record<string, ItemAssessment> {
-  return getClientById(profileId)?.assessments ?? {};
-}
-
-/**
- * Rounds already sent for each item, derived from stored dispute history.
+ * They read and wrote the whole client record in localStorage - and that
+ * record carries legal name, email, phone, date of birth, social-security
+ * last four, home address and tri-bureau scores. Storing an accuracy call
+ * there meant storing all of it there.
  *
- * Read from the history rather than tracked separately, so the two can never
- * disagree about what has actually gone out.
+ * They are gone, not moved: their server replacements are
+ * recordItemAssessment() in the desk's actions.ts, and the read side needs no
+ * function at all because listDisputeClients() already returns `assessments`
+ * and `disputeRounds` inside each StoredClient (dispute_clients.payload).
+ *
+ * Do not reintroduce them. The only localStorage left in this file is the
+ * one-way legacy rescue above (readLegacyClients / clearLegacyClients), which
+ * exists to empty the old key, never to fill it.
  */
-export function roundsSentByItem(profileId: string): Record<string, DisputeRoundType[]> {
-  const client = getClientById(profileId);
-  if (!client) return {};
-  const out: Record<string, DisputeRoundType[]> = {};
-  for (const r of client.disputeRounds) {
-    (out[r.negativeItemId] ??= []).push(r.roundType);
-  }
-  return out;
-}

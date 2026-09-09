@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase-service";
 import { authorizeApplicationAccess } from "@/lib/program-applications-server";
 import {
   PROGRAM_DOCUMENTS_BUCKET,
@@ -35,13 +35,6 @@ export type ProgramDocument = {
   verified: boolean;
 };
 
-function serviceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase not configured");
-  return createClient(url, key, { auth: { persistSession: false } });
-}
-
 export async function listProgramDocuments(
   applicationId: string,
   token: string | null
@@ -49,7 +42,7 @@ export async function listProgramDocuments(
   const access = await authorizeApplicationAccess(applicationId, token);
   if (!access.ok) return { ok: false, error: "Not found." };
 
-  const { data, error } = await serviceClient()
+  const { data, error } = await createServiceRoleClient()
     .from("program_documents")
     .select("doc_key, file_name, size_bytes, created_at, verified_at")
     .eq("application_id", applicationId);
@@ -85,7 +78,7 @@ export async function uploadProgramDocument(
   const check = assertProgramUploadFile(file);
   if (!check.ok) return { ok: false, error: check.error };
 
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const storagePath = programDocumentObjectKey(applicationId, docKey, file.name, file.type);
   const bytes = new Uint8Array(await file.arrayBuffer());
 
@@ -158,7 +151,7 @@ export async function removeProgramDocument(
   const access = await authorizeApplicationAccess(applicationId, token);
   if (!access.ok) return { ok: false, error: "Not found." };
 
-  const supabase = serviceClient();
+  const supabase = createServiceRoleClient();
   const { data: row } = await supabase
     .from("program_documents")
     .select("storage_path")
@@ -192,7 +185,7 @@ export async function verifyProgramDocument(
   const access = await authorizeApplicationAccess(applicationId, null);
   if (!access.ok || !access.staff) return { ok: false, error: "Not authorized." };
 
-  const { error } = await serviceClient()
+  const { error } = await createServiceRoleClient()
     .from("program_documents")
     .update({
       verified_at: verified ? new Date().toISOString() : null,

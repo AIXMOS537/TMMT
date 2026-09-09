@@ -2,32 +2,35 @@
 
 TMMT Rentals deploys from the private GitHub repo `AIXMOS537/TMMT`.
 
-**Three separate Vercel apps** work together — see [`docs/THREE-APP-ECOSYSTEM.md`](docs/THREE-APP-ECOSYSTEM.md):
+**One** Vercel app serves everything — staff, owner command center, training
+and intake. `THREE-APP-ECOSYSTEM` is history; see `ENVIRONMENTS.md` for the
+retirement record and `src/lib/site-domains.ts` for the host rules.
 
-| App | Vercel project | URL |
-|-----|----------------|-----|
-| TMMT Ops | `tmmt-ops` | https://tmmt-ops.vercel.app |
-| TMMT Command Center | `tmmt-command-center` | https://tmmt-command-center.vercel.app |
-| AIXMOS | `aixmos-landing` | https://aixmos-landing.vercel.app |
+| App | Vercel project | URL | State |
+|-----|----------------|-----|-------|
+| TMMT Ops | `tmmt-ops` | https://tmmt-ops.vercel.app | **the app** |
+| TMMT Command Center | `tmmt-command-center` | — | retired 2026-08-26, paused 2026-09-09 |
+| TMMT Training Site | `tmmt-training-site` | — | retired, paused |
+| AIXMOS Offer | `aixmos-offer` | — | retired, paused |
+| AIXMOS Landing | `aixmos-landing` | https://aixmos-landing.vercel.app | still serving — owner decision open |
 
-This doc focuses on **Command Center** deploy settings (also the main monorepo checkout). Ops and AIXMOS have their own Vercel project settings — same repo, different env/host routing.
-
-## Vercel project — Command Center
+## Vercel project — tmmt-ops
 
 | | |
 |---|---|
-| **Operator URL** | **`https://tmmt-command-center.vercel.app`** |
-| Vercel project name | **`tmmt-command-center`** |
-| Legacy name (retire) | `tmmt-c919` — migrate env/domains here, then delete |
+| **App URL** | **`https://tmmt-ops.vercel.app`** (`tmmtrentals.com` is attached to the project but its DNS zone has never been published — it does not resolve) |
+| Vercel project name | **`tmmt-ops`** |
 | Source repo | `AIXMOS537/TMMT` (`origin`) |
 | Production branch | **`master`** |
 | Root directory | `./` (confirm in Vercel → Settings → Git) |
 
-Every push to **`master`** triggers deploys on all connected projects. Fix build failures on **each** app you keep; do not delete Ops or AIXMOS thinking they are duplicates.
+Every push to **`master`** deploys `tmmt-ops`. Nothing else is connected to the repo.
 
-## Retire legacy duplicates only
+## Retired projects
 
-Extra projects **`tmmt-c919`** and **`tmmt`** re-deploy the same repo and cause parallel failed builds. **Do not delete** `tmmt-ops`, `tmmt-command-center`, or `aixmos-landing`.
+The retired projects are **paused, not deleted** — pausing is one call to undo
+(`unpause_project`), and `tmmt-command-center`'s orphaned lineage is preserved
+as the tag `archive/command-center-2026-05-18`. **Never delete that tag.**
 
 ```bash
 bash scripts/retire-vercel-duplicates.sh          # dry-run
@@ -40,8 +43,12 @@ Before `--apply`: copy env vars and custom domains off `tmmt-c919` onto the corr
 ## Routine deploy
 
 1. `npm run build` locally (must pass).
-2. Commit and push to the production branch — Vercel builds automatically.
-3. Confirm in Vercel dashboard → each app (`tmmt-ops`, `tmmt-command-center`, `aixmos-landing`).
+2. Merge to `master` — Vercel builds automatically **only when the diff touches app paths**
+   (`src`, `public`, `packages`, `shared`, `config`, and the build/config files listed in
+   `scripts/vercel-ignore.sh`). Docs-only and script-only merges are skipped on purpose; they
+   show as CANCELED in Vercel, which is not a failure.
+3. Confirm in the Vercel dashboard → `tmmt-ops` (the only git-linked project). To undo a deploy,
+   an env change, or a migration, see `docs/ROLLBACK.md`.
 
 ## Required environment variables
 

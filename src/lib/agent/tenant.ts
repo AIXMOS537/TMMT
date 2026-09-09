@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createServiceSupabase } from './supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 export interface OrgContext {
   id: string
@@ -48,8 +48,28 @@ const COLUMNS_FULL =
 
 const COLUMNS_PUBLIC = 'id, name, partner_app_slug, agent_name'
 
+// Zod 4's .uuid() enforces the RFC 9562 version nibble. Three orgs were seeded with
+// repeated-letter placeholder ids - AIXMOS (aaaaaaaa-...), Moe Legacy (bbbbbbbb-...)
+// and Operation Overdrive (cccccccc-...). All three are the right shape and none
+// carries a version digit, so .uuid() rejects them: leads for those orgs 500 out of
+// resolveOrgBySlugPublic, because OrgRowShapeError is not one of the errors the
+// webhook route catches. Zod 3 accepted them; only the upgrade made them invalid.
+//
+// Keep the shape check, drop the version demand. Version-agnostic on purpose: the
+// seeding habit that produced three of these can produce a fourth, and the next one
+// should not be an outage.
+//
+// This guards two different kinds of value, so do not read it as an authorization
+// boundary. Here it checks rows coming back from Postgres. In dispatch/actions.ts it
+// also checks an org_id posted by the client - and there, access is decided by the
+// requireOrgAccess() call that follows every parse, never by whether the id is
+// well formed. Widening the shape does not widen what anyone can reach.
+export const OrgIdSchema = z
+  .string()
+  .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid organization id')
+
 const OrgRowSchema = z.object({
-  id: z.string().uuid(),
+  id: OrgIdSchema,
   name: z.string().min(1),
   partner_app_slug: z.string().nullable(),
   agent_name: z.string().nullable(),
@@ -63,7 +83,7 @@ const OrgRowSchema = z.object({
 })
 
 const PublicOrgRowSchema = z.object({
-  id: z.string().uuid(),
+  id: OrgIdSchema,
   name: z.string().min(1),
   partner_app_slug: z.string().nullable(),
   agent_name: z.string().nullable(),
@@ -103,21 +123,21 @@ function rowToPublicCtx(row: unknown, lookup: string): PublicOrgContext {
 }
 
 export async function resolveOrgByTwilioNumber(number: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('twilio_inbound_number', number).single()
   if (!data) throw new OrgNotFoundError(`twilio:${number}`)
   return rowToCtx(data, `twilio:${number}`)
 }
 
 export async function resolveOrgById(id: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('id', id).single()
   if (!data) throw new OrgNotFoundError(`id:${id}`)
   return rowToCtx(data, `id:${id}`)
 }
 
 export async function resolveOrgBySlug(slug: string): Promise<OrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_FULL).eq('partner_app_slug', slug).single()
   if (!data) throw new OrgNotFoundError(`slug:${slug}`)
   return rowToCtx(data, `slug:${slug}`)
@@ -130,7 +150,7 @@ export async function resolveOrgBySlug(slug: string): Promise<OrgContext> {
  * that does not gate the caller with a tenant-bound credential.
  */
 export async function resolveOrgBySlugPublic(slug: string): Promise<PublicOrgContext> {
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { data } = await db.from('organizations').select(COLUMNS_PUBLIC).eq('partner_app_slug', slug).single()
   if (!data) throw new OrgNotFoundError(`slug:${slug}`)
   return rowToPublicCtx(data, `slug:${slug}`)

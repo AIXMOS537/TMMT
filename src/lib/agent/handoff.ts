@@ -1,5 +1,6 @@
 import type { OrgContext } from './tenant'
 import { redactPii } from './redact-pii'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 
 /**
  * Hostname allowlist for Slack incoming webhooks. If the per-tenant
@@ -38,7 +39,7 @@ async function sendSlackHandoff(webhook: string, text: string): Promise<void> {
     return
   }
   try {
-    const res = await fetch(webhook, {
+    const res = await fetchWithTimeout(webhook, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -62,7 +63,7 @@ async function sendImessageHandoff(target: string, text: string): Promise<void> 
     return
   }
   try {
-    const res = await fetch(relay, {
+    const res = await fetchWithTimeout(relay, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',

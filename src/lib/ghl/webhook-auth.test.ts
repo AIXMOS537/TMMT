@@ -1,13 +1,37 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   consumeGhlEventId,
   resetGhlEventIdsForTests,
   verifyGhlWebhook,
 } from "./webhook-auth";
+import { _resetDegradedForTests, getDegradedComponents } from "@/lib/degraded";
+
+/**
+ * F-18: `reportDegraded` is the real implementation wrapped in a spy, so the
+ * fallback path is observable here while the degraded state (and the
+ * /api/health view of it) behaves exactly as in production.
+ */
+const h = vi.hoisted(() => ({ reportDegraded: vi.fn() }));
+vi.mock("@/lib/degraded", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/degraded")>();
+  h.reportDegraded.mockImplementation(mod.reportDegraded);
+  return { ...mod, reportDegraded: h.reportDegraded };
+});
 
 const SECRET = "flagship-test-secret";
+let errorSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  _resetDegradedForTests();
+  h.reportDegraded.mockClear();
+  errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  errorSpy.mockRestore();
+});
 
 function req(headers: Record<string, string>, rawBody?: string): NextRequest {
   return new NextRequest("https://example.test/api/webhooks/ghl", {
@@ -202,6 +226,16 @@ describe("consumeGhlEventId — in-memory fallback (no supabase client passed)",
       duplicate: true,
     });
   });
+
+  it("reports the missing client as a degraded ghl-event-dedupe (F-18)", async () => {
+    await consumeGhlEventId({ webhookId: "evt-no-client" });
+    expect(h.reportDegraded).toHaveBeenCalledTimes(1);
+    expect(h.reportDegraded).toHaveBeenCalledWith(
+      "ghl-event-dedupe",
+      expect.stringContaining("no service-role client")
+    );
+    expect(getDegradedComponents().map((r) => r.component)).toEqual(["ghl-event-dedupe"]);
+  });
 });
 
 describe("consumeGhlEventId — Supabase-backed (survives cold starts / cross-instance)", () => {
@@ -219,6 +253,8 @@ describe("consumeGhlEventId — Supabase-backed (survives cold starts / cross-in
       ok: true,
       eventId: "evt-db-1",
     });
+    expect(h.reportDegraded).not.toHaveBeenCalled();
+    expect(getDegradedComponents()).toEqual([]);
   });
 
   it("treats a unique_violation (23505) as a duplicate", async () => {
@@ -228,18 +264,50 @@ describe("consumeGhlEventId — Supabase-backed (survives cold starts / cross-in
       status: 409,
       duplicate: true,
     });
+    expect(h.reportDegraded).not.toHaveBeenCalled();
   });
 
   it("falls back to in-memory (not a hard failure) when the table doesn't exist yet", async () => {
     const supabase = fakeSupabase(() => ({
       error: { code: "42P01", message: 'relation "ghl_webhook_events" does not exist' },
     }));
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(consumeGhlEventId({ id: "evt-db-3" }, supabase)).resolves.toEqual({
       ok: true,
       eventId: "evt-db-3",
     });
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    // F-18: the fallback is loud — reported once, as a structured error line.
+    expect(h.reportDegraded).toHaveBeenCalledTimes(1);
+    expect(h.reportDegraded).toHaveBeenCalledWith(
+      "ghl-event-dedupe",
+      'relation "ghl_webhook_events" does not exist',
+      { code: "42P01" }
+    );
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(String(errorSpy.mock.calls[0][0])).toMatch(/^\[degraded\] \{"component":"ghl-event-dedupe"/);
+    expect(getDegradedComponents()).toMatchObject([{ component: "ghl-event-dedupe", count: 1 }]);
+  });
+
+  it("a hot path reports every engagement but logs once; the dedupe itself still works", async () => {
+    const supabase = fakeSupabase(() => ({ error: { code: "42P01", message: "no table" } }));
+    await expect(consumeGhlEventId({ id: "evt-db-4" }, supabase)).resolves.toEqual({ ok: true, eventId: "evt-db-4" });
+    await expect(consumeGhlEventId({ id: "evt-db-4" }, supabase)).resolves.toEqual({
+      ok: false,
+      status: 409,
+      duplicate: true,
+    });
+    await expect(consumeGhlEventId({ id: "evt-db-5" }, supabase)).resolves.toEqual({ ok: true, eventId: "evt-db-5" });
+    expect(h.reportDegraded).toHaveBeenCalledTimes(3);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(getDegradedComponents()).toMatchObject([{ component: "ghl-event-dedupe", count: 3 }]);
+  });
+
+  it("recovers: a clean insert after a fallback clears the degraded flag", async () => {
+    let fail = true;
+    const supabase = fakeSupabase(() => (fail ? { error: { code: "42P01", message: "no table" } } : { error: null }));
+    await consumeGhlEventId({ id: "evt-db-6" }, supabase);
+    expect(getDegradedComponents()).toHaveLength(1);
+    fail = false;
+    await consumeGhlEventId({ id: "evt-db-7" }, supabase);
+    expect(getDegradedComponents()).toEqual([]);
   });
 });

@@ -1,74 +1,61 @@
-# TMMT × AIXMOS — Three-app Vercel ecosystem
+# TMMT × AIXMOS — ONE app (supersedes the three-app plan)
 
-Three **separate** Vercel apps. They share Supabase, GHL tags, and the `AIXMOS537/TMMT` codebase in places, but each has its own URL, audience, and deploy target. **Do not delete one thinking it is a duplicate of another.**
+> Owner decision 2026-09-03: **`tmmt-ops` is the only app.** It carries daily ops,
+> the owner command center (`/command`, `/executive`, `/investor`, `/operators`),
+> training (`/learn`), the operator program (`/work`), and every intake form
+> (`/forms/*`). **Every public visitor is routed to the GHL site
+> `allinonemanagementsolutions.com`** (All In One Management), which is not on
+> Vercel at all (Cloudflare → GHL).
 
-## The three apps
+| Surface | Where | Audience |
+|---|---|---|
+| Ops, command center, training, forms | `tmmt-ops` on Vercel (`tmmt-ops.vercel.app`, git → `master`) | staff, owner, operators, members |
+| Marketing, checkout, funnels | GHL site `allinonemanagementsolutions.com` / `.net` | public |
 
-| App | Vercel project | Live URL | Audience | Primary job |
-|-----|----------------|----------|----------|-------------|
-| **TMMT Ops** | `tmmt-ops` | https://tmmt-ops.vercel.app | Staff / operators | Daily rental ops — fleet, customers, payments, tickets, VA workflows (“TMMT OS”) |
-| **TMMT Command Center** | `tmmt-command-center` | https://tmmt-command-center.vercel.app | Owner + leadership | Portfolio hub, `/command`, role portals (`/executive`, `/operator`, `/investor`), owner desk |
-| **AIXMOS** | `aixmos-landing` | https://aixmos-landing.vercel.app (+ `aixmos.com` on GHL) | Public + members | Marketing, $97 membership, credit guidance funnel, public intake embeds |
+Routing rules in the app (`src/lib/site-domains.ts`, `src/middleware.ts`, `next.config.ts`):
+- anonymous hit on `/` → GHL site (staff use `/login`)
+- `/credit`, `/funding`, `/lp/*/intro-97`, `/lp/*/lead-magnet` → GHL site with UTM
+- `/forms/*` stay on the app; the GHL site links to them; its origins are CORS-allowed for lead POSTs
 
-## How they work together
+## Retired Vercel projects (all deployed this same repo)
 
-```mermaid
-flowchart LR
-  ops["TMMT Ops\nrental delivery"]
-  cc["Command Center\nowner + strategy"]
-  aix["AIXMOS\nmembership + funding"]
-  ghl["GoHighLevel\ntags + checkout"]
-  db[(Supabase)]
+All three are **PAUSED**, not deleted — they return 503 `DEPLOYMENT_PAUSED`, and
+one `unpause_project` call brings any of them back.
 
-  ops -->|"rental-completed, tmmt-customer"| ghl
-  ghl -->|"ready-for-aixmos, member-97"| aix
-  aix -->|"credit-guidance-active"| cc
-  ops --> db
-  cc --> db
-  aix --> db
-```
+| Project | Why it existed | State | What was kept |
+|---|---|---|---|
+| `tmmt-command-center` | May 2026 prototype (disjoint git history) | paused 2026-09-09 | full tree at tag `archive/command-center-2026-05-18`; business records in `docs/archive/command-center-2026-05/`; triage in `COMMAND-CENTER-CARRYOVER.md` |
+| `tmmt-training-site` | never had a production deploy | paused | nothing to keep; academy = `/learn` |
+| `aixmos-offer` | never had a production deploy | paused | nothing to keep |
 
-1. **Ops** runs the car business and marks customers in GHL.
-2. **AIXMOS** converts qualified renters into members and credit-guidance clients.
-3. **Command Center** is where the owner sees everything and publishes operator commands.
+### `aixmos-landing` is NOT retired
 
-See [`AIXMOS-TMMT-FUNNEL.md`](AIXMOS-TMMT-FUNNEL.md) for the step-by-step funnel.
+**Owner decision 2026-09-09: it stays serving at `aixmos-landing.vercel.app`,
+as-is.** It is a standalone static marketing page whose CTAs feed the GHL site.
 
-## What to delete (actual duplicates only)
+- Its Vercel project has **no git link** — pushes to this repo do not touch it.
+  `AIXMOS/public/` is a *copy* of what it serves (same title, same prices), not
+  its deploy source. Editing that folder changes nothing live.
+- It carries its **own** price list, independent of `src/lib/pricing/catalog.ts`.
+  The two can drift and nothing will catch it.
+- It sends no `noindex`, so it can be indexed alongside the GHL site.
 
-These are **extra** Vercel projects hooked to the same repo — they cause five failed deploys per `git push`:
+Those last two are known and accepted, not bugs to fix unasked.
+`AIXMOS/public/README-RETIRED.md` still calls the project retired — stale, and
+left alone here because the folder is reference material either way.
 
-| Project | Action |
-|---------|--------|
-| `tmmt-c919` | **Retire** — legacy internal name; migrate env vars + domains to the correct app above, then delete |
-| `tmmt` | **Retire** — unnamed duplicate |
+Harvest (settings, env var inventory, domains, deployed source) lives at
+`~/Archive/vercel-harvest-20260903/` **on the M1** — it is not on Carry.
+Deletion is owner-only and optional (pausing already achieved the outcome,
+reversibly): `bash scripts/retire-vercel-duplicates.sh --apply`, which now
+refuses to run if that harvest folder is not present on the machine.
 
-**Keep:** `tmmt-ops`, `tmmt-command-center`, `aixmos-landing`.
+`vercel.json` disables deployments from the `swarm-coord` bot branch, which was
+creating a BLOCKED deployment every ~3 minutes on every project.
 
-## Per-app smoke tests
+## Smoke
 
 ```bash
-# TMMT Ops
-curl -sS -o /dev/null -w "ops login: %{http_code}\n" https://tmmt-ops.vercel.app/login
-
-# Command Center (operator canonical URL)
-SMOKE_BASE_URL=https://tmmt-command-center.vercel.app bash scripts/smoke-prod.sh
-
-# AIXMOS landing
-curl -sS -o /dev/null -w "aixmos: %{http_code}\n" https://aixmos-landing.vercel.app/
+bash scripts/smoke-dispatch.sh          # one app + GHL public site
+curl -sS -o /dev/null -w "%{http_code}\n" https://tmmt-ops.vercel.app/login
 ```
-
-## Repo layout
-
-This GitHub repo (`AIXMOS537/TMMT`) is the **primary codebase**. Vercel projects may use:
-
-- Repo root `./` with different env (`NEXT_PUBLIC_*_HOST`) and middleware host routing, or
-- Different root directories / branches per project (check each project’s Vercel → Settings → Git).
-
-Before changing deploy settings, confirm which root each of the three projects uses in the Vercel dashboard.
-
-## Related
-
-- [`DEPLOY.md`](../DEPLOY.md) — env vars, DNS, routine deploy
-- [`FLASH-DRIVE-PRODUCT-LINE.md`](FLASH-DRIVE-PRODUCT-LINE.md) — **retail USB kits, print/ship, collect payment**
-- [`ONE-APP-CONSOLIDATION.md`](ONE-APP-CONSOLIDATION.md) — historical merge notes (superseded by this doc for Vercel topology)

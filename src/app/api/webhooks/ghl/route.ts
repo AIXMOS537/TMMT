@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { tryCreateServiceRoleClient } from "@/lib/supabase-service";
 import { recordGhlPayment, shouldRecordPayment } from "@/lib/ghl-payment-sync";
 import { grantMonthlyTokensForPayment, type TopupOutcome } from "@/lib/token-ledger";
 import { recordCollectedReferral } from "@/lib/referrals";
@@ -14,6 +14,7 @@ import {
   isOpportunityStagePayload,
 } from "@/lib/ghl/payload";
 import { consumeGhlEventId, verifyGhlWebhook } from "@/lib/ghl/webhook-auth";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { dealerProvisionCommand, dealerSkuFromTags } from "@/lib/ghl/dealer-provision-queue";
 
 const INTERNAL_CONSUMED_HEADER = "x-tmmt-ghl-consumed";
@@ -60,10 +61,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const idemSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const idemServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const idemSupabase =
-    idemSupabaseUrl && idemServiceKey ? createClient(idemSupabaseUrl, idemServiceKey) : undefined;
+  const idemSupabase = tryCreateServiceRoleClient() ?? undefined;
   const idem = await consumeGhlEventId(body, idemSupabase);
   if (!idem.ok) {
     return NextResponse.json({ ok: true, duplicate: true }, { status: 409 });
@@ -77,12 +75,10 @@ export async function POST(request: NextRequest) {
     isAppointmentPayload(body);
 
   if (isCrmPayload) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !serviceKey) {
+    const supabase = tryCreateServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
     }
-    const supabase = createClient(url, serviceKey);
     const result = await dispatchGhlWebhook(supabase, body);
     return NextResponse.json(result.body, { status: result.status });
   }
@@ -109,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   if (programTrigger) {
     const origin = request.nextUrl.origin;
-    const programRes = await fetch(`${origin}/api/webhooks/ghl/program`, {
+    const programRes = await fetchWithTimeout(`${origin}/api/webhooks/ghl/program`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -127,13 +123,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
+  const supabase = tryCreateServiceRoleClient();
+  if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
-  const supabase = createClient(url, serviceKey);
   const stamp = new Date().toISOString();
 
   let paymentResult:

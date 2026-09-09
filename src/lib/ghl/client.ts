@@ -6,6 +6,11 @@
  * - GHL_RESTORATION_LOCATION_ID — Credit / LTO / operator journey (falls back to GHL_LOCATION_ID)
  */
 
+import { assertOutboundAllowed } from "@/lib/outbound-gate";
+import { SmsBlockedError, type SmsType } from "../../../shared/compliance-gates/sms-gate";
+
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
 export type GhlLocationKind = "rentals" | "restoration";
@@ -49,7 +54,7 @@ async function findGhlContactInLocation(
     email: email.trim().toLowerCase(),
   });
 
-  const res = await fetch(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
     headers: ghlHeaders(),
     cache: "no-store",
   });
@@ -72,7 +77,7 @@ async function findGhlContactByPhoneInLocation(
     phone: digits.length === 10 ? `+1${digits}` : `+${digits}`,
   });
 
-  const res = await fetch(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/search/duplicate?${params}`, {
     headers: ghlHeaders(),
     cache: "no-store",
   });
@@ -134,7 +139,7 @@ export async function updateContactCustomFields(
 
   if (customFields.length === 0) return;
 
-  const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/${contactId}`, {
     method: "PUT",
     headers: ghlHeaders(),
     body: JSON.stringify({ customFields }),
@@ -153,7 +158,7 @@ export async function addContactTag(
 ): Promise<void> {
   if (!isGhlConfigured(locationKind)) return;
 
-  const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "POST",
     headers: ghlHeaders(),
     body: JSON.stringify({ tags: [tag] }),
@@ -191,7 +196,7 @@ export async function listPipelines(locationId?: string): Promise<GhlPipeline[]>
   const loc = locationOr(locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return [];
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${GHL_BASE}/opportunities/pipelines?locationId=${encodeURIComponent(loc)}`,
     { headers: ghlHeaders(), cache: "no-store" }
   );
@@ -210,7 +215,7 @@ export async function findPipelineStageId(
   const loc = locationOr(locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return null;
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${GHL_BASE}/opportunities/pipelines/${pipelineId}/stages?locationId=${encodeURIComponent(loc)}`,
     { headers: ghlHeaders(), cache: "no-store" }
   );
@@ -244,7 +249,7 @@ export async function updateOpportunityStage(args: {
     );
   }
 
-  const res = await fetch(`${GHL_BASE}/opportunities/${args.opportunityId}`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/opportunities/${args.opportunityId}`, {
     method: "PUT",
     headers: ghlHeaders(),
     body: JSON.stringify({
@@ -262,15 +267,46 @@ export async function updateOpportunityStage(args: {
 
 export type GhlMessageType = "SMS" | "Email";
 
-/** Send SMS or email through GHL Conversations (routes via your LC phone / mail — e.g. OpenPhone for SMS). */
-export async function sendConversationMessage(args: {
-  contactId: string;
-  type: GhlMessageType;
-  message: string;
-  subject?: string;
-  html?: string;
-  locationId?: string;
-}): Promise<void> {
+/**
+ * Send SMS or email through GHL Conversations (routes via your LC phone / mail — e.g. OpenPhone for SMS).
+ *
+ * This is a customer-facing send, so it goes through the outbound gate
+ * (src/lib/outbound-gate: A2P compliance + do-not-contact + per-lead opt-out)
+ * before anything leaves. For SMS the destination phone is REQUIRED — GHL only
+ * needs the contact id, but the compliance checks key on the number, and a send
+ * that cannot be checked is not made. Email skips the phone-based checks.
+ * A refused send throws SmsBlockedError; callers must not swallow it silently.
+ */
+export async function sendConversationMessage(
+  args: {
+    contactId: string;
+    message: string;
+    subject?: string;
+    html?: string;
+    locationId?: string;
+    /** Org whose lead record holds the opt-out flag (SMS). */
+    organizationId?: string;
+    /** A2P vertical for the compliance gate, e.g. "rentals" | "credit_repair" | "funding". */
+    vertical?: string;
+    /** Carrier class. Defaults to transactional. Marketing requires ownerApproved. */
+    smsType?: SmsType;
+    ownerApproved?: boolean;
+  } & ({ type: "SMS"; phone: string } | { type: "Email"; phone?: string })
+): Promise<void> {
+  if (args.type === "SMS") {
+    if (!args.phone?.trim()) {
+      throw new SmsBlockedError("sendConversationMessage: phone is required for SMS so the outbound gate can run");
+    }
+    const gate = await assertOutboundAllowed({
+      phone: args.phone,
+      organizationId: args.organizationId,
+      vertical: args.vertical ?? "",
+      type: args.smsType ?? "transactional",
+      ownerApproved: args.ownerApproved,
+    });
+    if (!gate.allowed) throw new SmsBlockedError(gate.reason);
+  }
+
   const loc = locationOr(args.locationId);
   if (!process.env.GHL_API_KEY?.trim() || !loc) return;
 
@@ -294,7 +330,7 @@ export async function sendConversationMessage(args: {
     body.conversationProviderId = providerId;
   }
 
-  const res = await fetch(`${GHL_BASE}/conversations/messages`, {
+  const res = await fetchWithTimeout(`${GHL_BASE}/conversations/messages`, {
     method: "POST",
     headers: ghlHeaders(),
     body: JSON.stringify(body),

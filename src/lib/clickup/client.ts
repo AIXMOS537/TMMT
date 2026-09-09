@@ -1,4 +1,5 @@
 import { clickupConfigured } from "@/lib/clickup/config";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 const API = "https://api.clickup.com/api/v2";
 
@@ -19,7 +20,7 @@ async function clickupFetch<T>(
   const token = process.env.CLICKUP_API_TOKEN?.trim();
   if (!token) throw new ClickUpError("CLICKUP_API_TOKEN not configured", 503);
 
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetchWithTimeout(`${API}${path}`, {
     ...init,
     headers: {
       Authorization: token,

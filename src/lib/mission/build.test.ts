@@ -18,6 +18,7 @@ function dashboard(overrides: Partial<{
     customers: { total: 20, active: 18 },
     tickets: { total: 7, open: o.openTickets },
     payments: { total: 30, overdue: o.overdue, restricted: false },
+    paperTrail: { rented: 3, contracts: 3, handovers: 3 },
     recentLeads: [],
     recentTickets: [],
   };

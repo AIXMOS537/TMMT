@@ -45,11 +45,35 @@ operator to orchestrator — build for delegation, not hand-holding.
 - **Forgotten/stale open work self-resolves — no human needed.** A scheduled reaper loop
   drives every open PR/branch to merged/closed (escalating only genuine owner decisions).
   Policy: `docs/AUTONOMOUS-SESSION-POLICY.md`. Follow it when sweeping open work.
+- **Migrations: `success: true` is NOT proof the state changed — the postcondition query is.**
+  Inspect the live signature and `pg_proc.proacl` BEFORE writing SQL (a grant to `PUBLIC`
+  makes `REVOKE ... FROM anon` a silent no-op; a guessed signature aborts the whole
+  migration), then re-query the result and re-run the advisors. Never migrate via the
+  dashboard — that is how 214-applied-vs-41-in-repo drift happened. Runbook:
+  `docs/runbooks/PRODUCTION-MIGRATION-WORKFLOW.md`.
 
 ## ARCHITECTURE (nouns)
-- **Mesh:** Tailscale tailnet. Nodes: carry Mac (M5/24GB, Ollama hub `qwen2.5:14b`,
-  served tailnet-only), work Mac, brainiac (main compute — DEFINE), UGREEN NAS
-  (file tier), iPhone (Private LLM + Shortcuts), operator/employee laptops.
+- **Mesh:** Tailscale tailnet. Nodes (measured 2026-09-05, not aspirational):
+  - **carry** — M5, owner console. Ollama hub served loopback-only; LiteLLM on
+    :4001. It does **not** hold `qwen2.5:14b` — that model lives on M1. The
+    `ollama-direct` fallback in `free-lane-guard.sh` still names it, so that path
+    fails silently on carry. Do not "fix" this by pulling the model: decide the
+    routing first, then make the config match.
+  - **rick (M1 Max)** — 10 cores / 32GB, macOS 26.5, Ollama 0.33.2 (13 models,
+    incl. `qwen2.5:14b` + `qwen2.5-coder:14b`), whisper.cpp, ffmpeg 8.1.1,
+    Docker. Never sleeps on AC. Persistent executor.
+  - **brainiac** — Ryzen 9 9900X (12c/24t), 31GB, RX 9070 XT, 524GB free,
+    Win11 + TPM 2.0, Ollama 0.33.2 (14 models), Docker, **Qdrant on 6333/6334**.
+    Never sleeps. The fleet's main compute — and it already has a vector DB, so
+    do not add a second one.
+  - UGREEN NAS (file tier), iPhone (Private LLM + Shortcuts), operator laptops.
+  - **Caveat:** `/usr/local/bin/tailscale status` reports "stopped" on carry even
+    when the tailnet is healthy — it is the OSS CLI talking to a `tailscaled`
+    that is not running, while connectivity comes from Tailscale.app. Verify with
+    `~/.config/tmmt/mesh-verify.sh`, never with that command.
+  - **Carry is a single point of failure for worker inference:** ports :11436
+    (brainiac) and :11437 (M1) are SSH forwards whose client end runs on carry.
+    Close the laptop and both worker GPUs leave the routing fabric.
 - **Cloud hub:** Cloudflare Workers Gateway — role-scoped secrets, tiered model
   routing (Ollama → Haiku → Sonnet → Opus), role-broker for team access.
 - **Backbone:** GHL · Airtable (`appcenWUju039rD7b`) · n8n · Supabase · Qdrant · Redis.
@@ -108,6 +132,17 @@ data encrypted + owner-isolated per operator.
 ## WHEN UNSURE
 Ask the owner. Default to the gate. Never ship a compliance-sensitive change
 without the flag owner (Muhammad Taha — the sole owner) in the loop.
+
+## CONTROL PLANE (Stage 3 — added 2026-09-07)
+Operating script for DB / migration / decision-architecture work:
+`docs/CONTROL-PLANE-OPERATING-SCRIPT.md` (method, command classification, production safety
+rules, Stage 3 package state, open items). Read it before touching Supabase. Highlights:
+rehearse every migration before prod · one named migration at a time, never blind `db push` ·
+tag every claim VERIFIED / INFERRED / REPORTED / UNKNOWN · never invent business-policy values
+(reason codes, pricing, thresholds) — mark them BUSINESS POLICY REQUIRED · complete the existing
+decision architecture (`people`, five eligibility states, `bg_check_decide`, `programs` router,
+consent rail), do not rebuild it. Applied-package records + rollback paths:
+`docs/migrations-applied-2026-09-07/`. Schema of record: `supabase/schema/`.
 
 <!-- AIXMOS-LAUNCH-RULES:START -->
 <!-- Managed by aixmos-launch/install.sh. Edit the packet, re-run install to refresh. -->

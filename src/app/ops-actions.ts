@@ -122,6 +122,7 @@ export async function submitOpsMessage(formData: FormData): Promise<OpsResult> {
   const review =
     skipReview && isOwnerUser(user) && d.audience === "executives"
       ? {
+          reviewed: false,
           aligned: true,
           score: 1,
           issues: [] as string[],
