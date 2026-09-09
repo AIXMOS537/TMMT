@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getBackgroundChecks, isPlatformAdmin } from "@/lib/queries";
+import { getBackgroundChecks, isPlatformAdmin, BG_CHECK_DECISIONS } from "@/lib/queries";
 import StaffReviewQueue from "./StaffReviewQueue";
 import { PageHeader, DataTable, Column, StatusBadge, FilterBar, Button, ExportButton, Modal, FormField, ErrorBanner, inputClass, selectClass } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -12,7 +12,6 @@ import { LicensePhotoControls } from "@/components/AdminDocumentControls";
 
 type BgCheck = Record<string, unknown>;
 
-const eligibilityOptions = ["Eligible", "Not Eligible", "Need Manager's Review", "out of radius", "Not found"];
 const consentOptions = [
   { value: "", label: "Not captured yet" },
   { value: "sms", label: "By SMS reply" },
@@ -131,7 +130,7 @@ export default function BackgroundChecksPage() {
       <FilterBar search={search} onSearchChange={setSearch} placeholder="Search by name, email, phone...">
         <select className={selectClass + " sm:w-48"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Eligibility</option>
-          {eligibilityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+          {BG_CHECK_DECISIONS.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </FilterBar>
 
@@ -159,7 +158,7 @@ export default function BackgroundChecksPage() {
           <FormField label="Eligibility Status">
             <select name="eligibility_status" defaultValue={editing?.eligibility_status as string || ""} className={selectClass}>
               <option value="">Select...</option>
-              {eligibilityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+              {BG_CHECK_DECISIONS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </FormField>
           <FormField label="AIXMOS handoff consent">
