@@ -29,9 +29,11 @@ distinction is a role inside it, not a second deployment.
 | **TMMT Ops** | `tmmt-ops` | https://tmmtrentals.com | The whole app: ops, command center, training, intake |
 
 Retired and **paused** (reversible, not deleted): `tmmt-command-center`
-(2026-09-09), `tmmt-training-site`, `aixmos-offer`. Still serving and awaiting
-an owner decision: `aixmos-landing`. Public marketing lives on the GHL site at
-allinonemanagementsolutions.com — see `src/lib/site-domains.ts`.
+(2026-09-09), `tmmt-training-site`, `aixmos-offer`. Kept serving by owner
+decision 2026-09-09: `aixmos-landing` — a standalone marketing page whose CTAs
+feed the GHL site; it carries its own price list, independent of the app's.
+Public marketing lives on the GHL site at allinonemanagementsolutions.com —
+see `src/lib/site-domains.ts`.
 
 Status as of the last Slack recap (Fri Jun 12): **55 READY / 0 ERROR** across the
 three apps; the old `tmmt-c919` is retired.
