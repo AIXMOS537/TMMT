@@ -249,12 +249,26 @@ describe("unauthenticated requests to protected routes", () => {
     expect(loc.search).toBe("");
   });
 
-  it("the front door (/) sends anonymous visitors to the public site, not /login", async () => {
+  it("the front door (/) sends anonymous visitors to /login, not to the public site", async () => {
+    // Regression: "/" used to redirect to the GHL marketing site. With no
+    // owner-hub host and no DNS on tmmtrentals.com, that left the app with no
+    // reachable front door — the owner typed the app's address and got
+    // marketing. The public funnel keeps its own bounces (see below).
     const res = await middleware(req("/"));
     expect(res.status).toBe(307);
     const loc = res.headers.get("location")!;
-    expect(loc.startsWith(`${AIXMOS_PUBLIC_ORIGIN}/`)).toBe(true);
-    expect(new URL(loc).searchParams.get("utm_campaign")).toBe("front-door");
+    expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
+    expect(new URL(loc).pathname).toBe("/login");
+  });
+
+  it("the public funnel paths still bounce to the GHL site", async () => {
+    for (const path of ["/credit", "/funding"]) {
+      // The bounce is host-gated (shouldBounceTmmtCreditToAixmos), so it only
+      // fires on a real TMMT public host, not the neutral test host.
+      const res = await middleware(req(path, { host: "tmmt-ops.vercel.app" }));
+      expect(res.status).toBe(301);
+      expect(res.headers.get("location")!.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(true);
+    }
   });
 });
 

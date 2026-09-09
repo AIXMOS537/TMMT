@@ -7,7 +7,6 @@ import {
   isOwnerHubHost,
   shouldBounceTmmtCreditToAixmos,
   aixmosCreditRedirectUrl,
-  publicSiteRedirectUrl,
 } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
@@ -233,11 +232,19 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && !isPublicPath(pathname)) {
-    // The app's front door is for staff. Anyone else who lands on "/" goes to
-    // the public All In One Management site (GHL); staff use /login directly.
-    if (pathname === "/") {
-      return withRobotsHeader(NextResponse.redirect(publicSiteRedirectUrl("front-door")));
-    }
+    // Every signed-out visitor goes to /login, "/" included.
+    //
+    // "/" used to bounce to the public GHL site, on the assumption that staff
+    // "use /login directly". That left the app with no reachable front door:
+    // the owner hub host (ops.allinonemanagementsolutions.com) was never
+    // created, and tmmtrentals.com resolves to nothing, so every address the
+    // owner could actually type landed on marketing. Typing the app's own
+    // address and being shown someone else's home page is not a front door.
+    //
+    // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
+    // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
+    // and the public reaches marketing on its own domain, which is how they
+    // arrive in the first place.
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 
