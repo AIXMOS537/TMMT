@@ -80,6 +80,9 @@ function signIn(user: RoleUser | null, membership: Membership = {}) {
       const id = String(eq.id);
       const org = orgOf[id];
       if (!org) return { data: null };
+      // Honour an org_id filter the way Postgres would: a row from another
+      // org is simply not there (overrideAssignment's unit cross-check).
+      if (eq.org_id !== undefined && eq.org_id !== org) return { data: null };
       if (call.table === "incidents" && call.columns === "*") {
         return { data: { id, org_id: org, ref_code: "DSP-1", severity: 2, location_lat: 1, location_lng: 2, location_text: "x", required_capabilities: [], description: null } };
       }
@@ -265,6 +268,25 @@ describe("dispatch: happy paths write org-scoped rows", () => {
     expect(override?.payload).toMatchObject({ org_id: ORG_A, incident_id: INCIDENT_A, chosen_unit_id: UNIT_A, reason: "closer unit", context: { prior: true } });
     const assign = writes(db).find((c) => c.table === "rpc:assign_unit");
     expect(assign?.payload).toMatchObject({ p_incident_id: INCIDENT_A, p_unit_id: UNIT_A, p_by_kind: "user", p_by_user: OPERATOR.id });
+    // The chosen unit was checked against the assignment's org, not trusted.
+    const unitCheck = db.calls.find((c) => c.table === "units" && c.op === "select");
+    expect(unitCheck?.filters).toEqual(expect.arrayContaining([["eq", "id", UNIT_A], ["eq", "org_id", ORG_A]]));
+  });
+
+  it("overrideAssignment refuses an incident_id that is not the assignment's own, writing nothing", async () => {
+    const db = signIn(OPERATOR, dispatcherInA);
+    // Member of A, assignment A, but names org B's incident: the org check on the
+    // assignment row alone would have let assign_unit run against INCIDENT_B.
+    const res = await overrideAssignment({ incident_id: INCIDENT_B, current_assignment_id: ASSIGNMENT_A, chosen_unit_id: UNIT_A, reason: "x" });
+    expect(res).toEqual({ ok: false, error: "assignment not found" });
+    expect(writes(db)).toEqual([]);
+  });
+
+  it("overrideAssignment refuses a chosen unit from another org, writing nothing", async () => {
+    const db = signIn(OPERATOR, dispatcherInA);
+    const res = await overrideAssignment({ incident_id: INCIDENT_A, current_assignment_id: ASSIGNMENT_A, chosen_unit_id: UNIT_B, reason: "x" });
+    expect(res).toEqual({ ok: false, error: "unit not found" });
+    expect(writes(db)).toEqual([]);
   });
 });
 
