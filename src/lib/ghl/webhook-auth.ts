@@ -2,6 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { timingSafeEqualString } from "@/lib/secure-compare";
+import { clearDegraded, reportDegraded } from "@/lib/degraded";
 
 // Re-exported for existing importers; the implementation now lives in secure-compare.
 export { timingSafeEqualString };
@@ -17,9 +18,12 @@ const SIG_HEADERS = ["x-ghl-signature", "x-wh-signature"] as const;
  * as a safety net for when the ghl_webhook_events table (migration
  * 20260825120000) hasn't been applied yet, so shipping this code ahead of
  * running that migration is not a regression from today's behavior.
+ *
+ * Every time this path engages it is reported through `reportDegraded`
+ * (F-18) so the fallback shows up in the logs, in Sentry and on /api/health
+ * instead of one warn line per instance.
  */
 const seenEventIds = new Map<string, true>();
-let warnedNoDbTable = false;
 
 export type GhlWebhookAuthOk = { ok: true };
 export type GhlWebhookAuthFail = { ok: false; status: 401 | 400 };
@@ -192,6 +196,7 @@ export async function consumeGhlEventId(
   const eventId = deriveGhlEventId(body);
 
   if (!supabase) {
+    reportDegraded("ghl-event-dedupe", "no service-role client; in-memory idempotency only");
     return consumeGhlEventIdInMemory(eventId);
   }
 
@@ -200,24 +205,20 @@ export async function consumeGhlEventId(
     .insert({ event_id: eventId });
 
   if (!error) {
+    clearDegraded("ghl-event-dedupe");
     return { ok: true, eventId };
   }
 
   // Postgres unique_violation on the event_id primary key = genuine duplicate.
   if (error.code === "23505") {
+    clearDegraded("ghl-event-dedupe");
     return { ok: false, status: 409, duplicate: true };
   }
 
   // Any other error (table doesn't exist yet, network blip, etc.) -- fall
-  // back rather than fail the webhook. Warn once per instance so this isn't
-  // silent, but don't spam logs on every request.
-  if (!warnedNoDbTable) {
-    warnedNoDbTable = true;
-    console.warn(
-      "[ghl.webhook-auth] ghl_webhook_events insert failed, falling back to in-memory idempotency:",
-      error.message
-    );
-  }
+  // back rather than fail the webhook, and say so loudly (F-18): one
+  // structured error line per instance per interval, Sentry, /api/health.
+  reportDegraded("ghl-event-dedupe", error.message, { code: error.code });
   return consumeGhlEventIdInMemory(eventId);
 }
 
