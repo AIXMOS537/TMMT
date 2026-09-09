@@ -26,6 +26,19 @@
 #   SWARM_INSTALL=1        npm install per worktree instead of symlinking node_modules (Windows-safe)
 
 set -euo pipefail
+
+# ---- bot commit identity (2026-09-05) ----------------------------------------
+# Bot commits were hardcoded to <swarm@tmmt>. Vercel's Hobby plan verifies that a
+# deployed commit's AUTHOR is the team owner; an unverifiable address makes every
+# resulting deployment BLOCKED before it ever reaches the build step. That is
+# exactly what took tmmt-ops down on 2026-09-03 (master tip authored
+# <sork@tmmt.local>).
+#
+# Keep the NAME distinct so board commits stay attributable to the swarm, but
+# take the EMAIL from the repo's configured identity so the commit verifies.
+swarm_email() {
+  git config user.email 2>/dev/null || echo 'swarm@tmmt'
+}
 source "$(dirname "$0")/lib/swarm-common.sh"
 cd "$SWARM_ROOT"
 
@@ -94,7 +107,7 @@ ensure_coord() {
     git rm -rfq . >/dev/null 2>&1 || true
     printf '# id\tstatus\tmachine\tbranch\ttask\n' > "$BOARD_FILE"
     git add "$BOARD_FILE"
-    git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: init board"
+    git -c user.name='swarm' -c user.email="$(swarm_email)" commit -q -m "swarm: init board"
     git_push_retry -u origin "$COORD_BRANCH"
   )
   git worktree remove --force "$tmp" 2>/dev/null || rm -rf "$tmp"
@@ -121,7 +134,7 @@ board_edit() {
       "$mutate" "$tmp/$BOARD_FILE"
       git add -A
       git diff --cached --quiet && exit 0
-      git -c user.name='swarm' -c user.email='swarm@tmmt' commit -q -m "swarm: update coordination state"
+      git -c user.name='swarm' -c user.email="$(swarm_email)" commit -q -m "swarm: update coordination state"
       git push -q origin "HEAD:$COORD_BRANCH"
     ) || rc=$?
     git worktree remove --force "$tmp" 2>/dev/null || rm -rf "$tmp"

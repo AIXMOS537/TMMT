@@ -89,19 +89,16 @@ __pycache__/
 *.pyc
 
 .hailmary-backups/
-
 # AIXMOS Ultimatrix: local PII denylist (owner-local only — NEVER commit PII)
 .aixmos/pii_denylist.local
 .aixmos/face/
 *.bak-*
-
 # AIXMOS runtime artifacts — per-machine, regenerated locally (heartbeat, device
 # integrity scans, secret-scan reports, operator onboarding profiles). Never commit.
 .aixmos/operators/
 .aixmos/heartbeat/
 .aixmos/integrity-*.txt
 .aixmos/secret-scan-report.txt
-
 # Sweep-archive dumps (one-time machine sweeps) — never commit; route real intake
 # files to imports/<area>/ instead. (See docs/security/HISTORY-SCRUB-RUNBOOK.md)
 imports/**/_SWEEP_ARCHIVE_*/
@@ -112,27 +109,28 @@ dist/
 # never commit secrets, bonds, registration numbers, client PII
 secrets/
 *.pii
-
 # aider scratch (local only)
 .aider*
-
 # Git worktrees created by agents (never commit — they are separate checkouts)
 .claude/worktrees/
-
 # Nested Next.js build outputs (monorepo subprojects)
 apps/engine/.next/
 apps/engine/node_modules/
-
 # audit harness - every artifact of a run stays local. The report names live
 # hostnames, table structure and specific failures, so it is generated on
 # demand (npm run audit) rather than committed.
 /audit/
 /test-results/
 /playwright-report/
-
 # Fact-check gate output (scripts/verify-gate.sh writes these on every push).
 # .aixmos/queue and .aixmos/heartbeat ARE tracked — only the generated
 # per-run logs and reports are ignored.
 .aixmos/*.log
 .aixmos/verify-log.ndjson
-.aixmos/secret-scan-report.txt
+# .aixmos local runtime (pii denylist, face models, backups)
+.aixmos/
+# REC-048/051 — nested app build/dep artifacts and credential backups
+# (root-level /node_modules and /.next/ above do not cover apps/<name>/...)
+apps/**/node_modules/
+apps/**/.next/
+auth/*.bak*
