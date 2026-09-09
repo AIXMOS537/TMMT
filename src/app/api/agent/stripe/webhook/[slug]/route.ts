@@ -4,11 +4,14 @@
  * (env `STRIPE_WEBHOOK_SECRET_<SLUG>`), THEN looks up the org by partner_app_slug,
  * advances lead state on payment_intent.succeeded.
  *
- * Order of guards (T-02b):
+ * Order of guards (T-02b, T-02c):
  *   header present → secret configured → SIGNATURE → org → licence → REPLAY GATE → write.
  * The signature check is pure CPU on env-held material, so an unsigned caller
  * never reaches the database and cannot tell an unknown slug (404) from a bad
  * signature (401): both are 401 until the caller proves it holds the secret.
+ * A slug with no secret configured answers that same 401 (T-02c) — it used to
+ * be a 500 that let a probe map which slugs are wired — and the
+ * misconfiguration is logged server-side (`resolveTenantWebhookSecret`).
  */
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
@@ -17,15 +20,17 @@ import { createServiceRoleClient } from '@/lib/supabase-service'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 import { seenWebhookEvent } from '@/lib/agent/webhook-replay'
+import { resolveTenantWebhookSecret } from '@/lib/agent/tenant-webhook-secret'
+
+const unauthorized = () => NextResponse.json({ error: 'invalid signature' }, { status: 401 })
 
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }): Promise<NextResponse> {
   const { slug } = await params
   const sig = req.headers.get('stripe-signature') ?? ''
   if (!sig) return NextResponse.json({ error: 'missing signature' }, { status: 400 })
 
-  const secretEnvKey = `STRIPE_WEBHOOK_SECRET_${slug.toUpperCase().replace(/-/g, '_')}`
-  const secret = process.env[secretEnvKey]
-  if (!secret) return NextResponse.json({ error: `webhook secret ${secretEnvKey} not configured` }, { status: 500 })
+  const secret = resolveTenantWebhookSecret('agent/stripe/webhook', 'STRIPE_WEBHOOK_SECRET', slug)
+  if (!secret) return unauthorized()
 
   const body = await req.text()
   const stripe = new Stripe('sk_placeholder_construct_event_only')
@@ -36,7 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     // body, so a SyntaxError here means the caller proved it holds the secret
     // and sent something that is not JSON: a malformed request, not a forgery.
     if (e instanceof SyntaxError) return NextResponse.json({ error: 'invalid json' }, { status: 400 })
-    return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
+    return unauthorized()
   }
 
   // Signature verified: only now touch the database.

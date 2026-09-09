@@ -5,6 +5,7 @@ import { applyVerifiedSync } from "@/lib/crm-sync/apply-verified";
 import { fetchAirtableRecord } from "@/lib/crm-sync/airtable";
 import { upsertOpsLocationFromAirtable } from "@/lib/routing/ops-locations";
 import { secretMatches } from "@/lib/secure-compare";
+import { seenSyncEvent } from "@/lib/agent/webhook-replay";
 
 const Body = z.object({
   airtable_record_id: z.string().min(1),
@@ -18,6 +19,22 @@ const Body = z.object({
  * Airtable automations:
  * - Leads: Verified checkbox → promote sync record + case
  * - Ops Locations: roster row changed → upsert ops_locations
+ *
+ * Replay (T-02c). The automation payload carries no event id or timestamp.
+ * - lead.verified: keyed on (airtable_record_id, crm_sync_records.id) via the
+ *   `record.verified` sync_events row this route writes, AND the sync record
+ *   currently being `verified`. Both are required because the sync record is
+ *   upserted in place and reset to `pending_verification` on every GHL stage
+ *   change (opportunity-stage handler), after which the VA re-verifies the
+ *   SAME Airtable row — that is a new cycle, not a replay, and must apply.
+ *   A retry after a successful apply is a 200 no-op: no sync_events row, no
+ *   applyVerifiedSync (which re-pushes the stage to GHL and re-syncs portal
+ *   fields). Fails open on lookup error. No unique index backs this key on
+ *   purpose: it legitimately recurs across cycles.
+ * - ops_location.upsert: no guard. The only effect is an upsert on slug that
+ *   converges; a retry re-writes identical state and logs one more processed
+ *   event, which is the cheaper side of a guard that would need a content
+ *   hash and would then drop a legitimate re-sync of an unchanged row.
  */
 export async function POST(req: NextRequest) {
   if (!secretMatches(req.headers.get("x-sync-secret"), process.env.SYNC_WEBHOOK_SECRET)) {
@@ -74,7 +91,7 @@ export async function POST(req: NextRequest) {
 
   const { data: syncRecord, error: findErr } = await supabase
     .from("crm_sync_records")
-    .select("id")
+    .select("id, sync_status")
     .eq("ghl_contact_id", contactId)
     .order("updated_at", { ascending: false })
     .limit(1)
@@ -85,6 +102,25 @@ export async function POST(req: NextRequest) {
       { error: "no crm_sync_record for contact — run GHL webhook first" },
       { status: 404 }
     );
+  }
+
+  // ── REPLAY GATE ────────────────────────────────────────────────────────
+  // See the module comment: already-verified sync record + an existing
+  // record.verified event for this Airtable row = a retried delivery.
+  if (
+    syncRecord.sync_status === "verified" &&
+    (await seenSyncEvent(supabase, {
+      source: "airtable",
+      eventType: "record.verified",
+      externalId: airtable_record_id,
+      syncRecordId: syncRecord.id,
+    }))
+  ) {
+    console.warn("[webhooks/airtable] duplicate lead.verified delivery, dropping replay", {
+      airtable_record_id,
+      sync_record_id: syncRecord.id,
+    });
+    return NextResponse.json({ ok: true, duplicate: true, sync_record_id: syncRecord.id });
   }
 
   await supabase.from("sync_events").insert({
