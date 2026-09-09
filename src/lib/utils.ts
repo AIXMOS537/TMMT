@@ -1,37 +1,7 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount == null) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
-
-export function formatDate(date: string | null | undefined): string {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-export function formatDateTime(date: string | null | undefined): string {
-  if (!date) return "—";
-  return new Date(date).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+// cn and the money/date formatters have ONE implementation, in the workspace
+// package (remediation F-17). They are re-exported here so the ~40 existing
+// `@/lib/utils` importers keep working unchanged.
+export { cn, formatCurrency, formatCurrencyWhole, formatDate, formatDateTime } from "@aixmos/core";
 
 export function statusColor(status: string | null): string {
   if (!status) return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";

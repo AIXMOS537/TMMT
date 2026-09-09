@@ -9,7 +9,7 @@ import type {
 import { BUREAU_ADDRESSES } from "../types";
 import { generateIntentToLitigate } from "./advanced";
 
-function formatDate(d?: string): string {
+function formatLetterDate(d?: string): string {
   if (!d) return "[DATE NOT PROVIDED]";
   return new Date(d).toLocaleDateString("en-US", {
     year: "numeric",
@@ -25,7 +25,7 @@ function formatAddress(addr: CreditProfile["currentAddress"]): string {
 function clientBlock(profile: CreditProfile): string {
   return `${profile.fullName}
 ${formatAddress(profile.currentAddress)}
-${profile.dateOfBirth ? `Date of Birth: ${formatDate(profile.dateOfBirth)}` : ""}
+${profile.dateOfBirth ? `Date of Birth: ${formatLetterDate(profile.dateOfBirth)}` : ""}
 ${profile.ssnLast4 ? `SSN (last 4): XXX-XX-${profile.ssnLast4}` : ""}`.trim();
 }
 
@@ -36,9 +36,9 @@ function itemDescription(item: NegativeItem): string {
     item.reportedBalanceCents
       ? `Reported Balance: $${(item.reportedBalanceCents / 100).toFixed(2)}`
       : null,
-    item.dateReported ? `Date Reported: ${formatDate(item.dateReported)}` : null,
+    item.dateReported ? `Date Reported: ${formatLetterDate(item.dateReported)}` : null,
     item.dateOfFirstDelinquency
-      ? `Date of First Delinquency: ${formatDate(item.dateOfFirstDelinquency)}`
+      ? `Date of First Delinquency: ${formatLetterDate(item.dateOfFirstDelinquency)}`
       : null,
   ].filter(Boolean);
   return parts.join("\n");
@@ -59,7 +59,7 @@ export function generateInitial611(
   const recipient = bureauName(bureau);
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${recipient}
 ${formatAddress(recipientAddress)}
@@ -117,7 +117,7 @@ export function generateMethodOfVerification(
   const recipient = bureauName(bureau);
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${recipient}
 ${formatAddress(recipientAddress)}
@@ -178,7 +178,7 @@ export function generateFactualConfrontation(
 
   const factList = facts.map((f, i) => `${i + 1}. ${f}`).join("\n");
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${recipient}
 ${formatAddress(recipientAddress)}
@@ -235,7 +235,7 @@ export function generateFurnisher623(
     zip: "",
   };
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${item.furnisherName}
 ${formatAddress(addr)}
@@ -295,7 +295,7 @@ export function generateFdcpaValidation(
     zip: "",
   };
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${item.furnisherName}
 ${formatAddress(addr)}
@@ -377,7 +377,7 @@ I am requesting that the CFPB investigate this company's compliance with the Fai
 
 Desired Resolution: Delete the inaccurate item from my credit report.
 
-Submitted: ${formatDate(new Date().toISOString())}`;
+Submitted: ${formatLetterDate(new Date().toISOString())}`;
 
   return {
     subject: `CFPB Complaint — ${bureauName(bureau)} — ${item.furnisherName}`,

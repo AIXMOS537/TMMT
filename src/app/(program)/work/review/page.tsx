@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency, useCube } from "@aixmos/core";
+import { formatCurrencyWhole, useCube } from "@aixmos/core";
 import { ProgramWorkflowBanner } from "@/components/program/WorkflowBanner";
 import { Button, Card } from "@/components/ui";
 
@@ -31,8 +31,8 @@ export default function WorkReviewPage() {
             <h3 className="font-semibold">Personal</h3>
             <ul className="mt-2 text-sm space-y-1 text-gray-600 dark:text-slate-400">
               <li>{app.personal.legalName}</li>
-              <li>Income: {formatCurrency(app.personal.income)}</li>
-              <li>Requested: {formatCurrency(app.personal.desiredFundingAmount)}</li>
+              <li>Income: {formatCurrencyWhole(app.personal.income)}</li>
+              <li>Requested: {formatCurrencyWhole(app.personal.desiredFundingAmount)}</li>
             </ul>
           </Card>
         )}
@@ -41,7 +41,7 @@ export default function WorkReviewPage() {
             <h3 className="font-semibold">Business</h3>
             <ul className="mt-2 text-sm space-y-1 text-gray-600 dark:text-slate-400">
               <li>{app.business.businessName}</li>
-              <li>Revenue: {formatCurrency(app.business.monthlyRevenue)}/mo</li>
+              <li>Revenue: {formatCurrencyWhole(app.business.monthlyRevenue)}/mo</li>
             </ul>
           </Card>
         )}

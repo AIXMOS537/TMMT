@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useCube } from "@aixmos/core";
 import { prepareManualSubmission, submitApplicationStub } from "@aixmos/core";
-import { formatDate } from "@aixmos/core";
+import { formatDateTime } from "@aixmos/core";
 
 
 
@@ -125,7 +125,7 @@ export default function StatusPage() {
             <li key={entry.id} className="rounded-lg border border-slate-100 p-3 text-sm">
               <div className="flex justify-between gap-2">
                 <span className="font-medium">{entry.action}</span>
-                <span className="text-xs text-slate-500">{formatDate(entry.timestamp)}</span>
+                <span className="text-xs text-slate-500">{formatDateTime(entry.timestamp)}</span>
               </div>
               <p className="text-slate-600">
                 {entry.actor} ({entry.role})

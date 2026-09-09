@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCube } from "@aixmos/core";
-import { formatCurrency } from "@aixmos/core";
+import { formatCurrencyWhole } from "@aixmos/core";
 
 
 
@@ -46,7 +46,7 @@ export default function ProductsPage() {
                 {m.type} · {m.lenderType}
               </p>
               <p className="mt-3 text-sm text-slate-700">{m.fitReason}</p>
-              <p className="mt-2 text-sm text-slate-600">Up to {formatCurrency(m.maxAmount)}</p>
+              <p className="mt-2 text-sm text-slate-600">Up to {formatCurrencyWhole(m.maxAmount)}</p>
               <p className="mt-3 text-xs text-amber-900 bg-amber-50 rounded p-2">{m.disclaimer}</p>
             </Card>
           ))
