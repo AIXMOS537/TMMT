@@ -30,6 +30,17 @@ export async function emitAudit(evt: AuditEvent): Promise<void> {
     // misconfigured RLS or schema drift would drop every audit on the floor
     // with zero signal. Surface these so Vercel Functions logs catch them.
     if (error) {
+      // 23505 = unique violation from the STAGED webhook replay indexes
+      // (T-02b): two deliveries of the same provider event raced past the
+      // app-side lookup and the index dropped the second audit row, which is
+      // the intended outcome — a warning, not a broken audit path.
+      if (error.code === '23505') {
+        console.warn(
+          '[audit] duplicate event dropped by unique index (replay)',
+          { action: evt.action, organizationId: evt.organizationId },
+        )
+        return
+      }
       console.error(
         '[audit] insert returned error',
         { action: evt.action, organizationId: evt.organizationId, message: error.message },
