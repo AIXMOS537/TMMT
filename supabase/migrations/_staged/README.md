@@ -46,3 +46,24 @@ that the apply-time gates caught.
 All three are doctrine: `docs/runbooks/PRODUCTION-MIGRATION-WORKFLOW.md`.
 
 Each file carries WHY, SAFETY, ROLLBACK and a pre-apply TEST query in its header. Apply one at a time; move the file into `supabase/migrations/` with its real version number when it lands, and record it in `supabase/schema/`.
+
+## TRIAGE 2026-09-09 - every file in this directory was checked against production
+
+Nothing here is "just waiting for a tap" any more. Each file now carries a banner
+at its head saying which of these it is.
+
+| File | Outcome |
+|---|---|
+| `20260827000001_org_ghl_connections` | **Premature.** Sound, FK targets exist, table absent - but NO app code references it. Apply with the code that reads it. |
+| `20260903000000_audit_hardening` | **Superseded.** Applied correctly as `20260903185639` + `20260903185722`. Section 5 (cron.unschedule) is the one open owner decision. |
+| `20260904000000_exec_va_tasks_triage` | **Superseded.** Applied as `20260903193844` + `20260903194001`; `exec_va_tasks.triage` verified present. |
+| `20260904010000_generate_va_tasks_idempotent` | **DO NOT APPLY - would be a compliance regression.** It replaces `generate_va_tasks_v2()` with a body containing ZERO DNC filters, and that function is what pg_cron runs daily at 12:00. Its identity columns and upsert are already live. |
+| `20260908000000_agent_messages_provider_sid_index` | **Blocked, not gated.** `agent_messages` has no `provider_message_sid` column; it would fail 42703. |
+| `20260908000000_generate_va_tasks_dnc_at_enqueue` | **Intent shipped, body did not.** Its own required pre-apply diff FAILED - the reconstruction dropped live's null guards and the `dnc_filtered_at_enqueue` return key. Reconciled against the live body instead: `20260909212038_generate_va_tasks_v2_optout_at_enqueue.sql`. |
+| `20260908000001_mark_existing_dnc_pending` | **Nothing to drain.** Its required pre-apply check returned ZERO rows after the opt-out filter landed. Would create an empty ledger and update 0 rows. Re-run the check before reviving. |
+| `20260908000002_dnc_stop_rows_braden_hott` | **Owner only.** The file says "Do not run from an agent" and that is respected. |
+
+**Standing lesson from this pass:** a file in `_staged/` can be stale against the live
+schema *or against a later migration*. Before applying any of these, diff the object
+it touches against production first - `pg_get_functiondef`, `information_schema.columns`
+- rather than trusting the file's own description of the world.
