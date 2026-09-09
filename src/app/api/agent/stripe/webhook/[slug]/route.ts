@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { resolveOrgBySlug } from '@/lib/agent/tenant'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { guardOrganization, LicenseDisabledError } from '@/lib/agent/guard'
 import { emitAudit } from '@/lib/agent/audit'
 
@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
 
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object as Stripe.PaymentIntent
-    const db = createServiceSupabase()
+    const db = createServiceRoleClient()
     await db.from('incoming_leads').update({
       agent_status: 'CLOSED',
       closed_at: new Date().toISOString(),

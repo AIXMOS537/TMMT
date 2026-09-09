@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HOUSE_ORG_IDS, ORG_HEADER, HOST_HEADER } from "./tenant-org";
 
 const rpc = vi.fn();
-vi.mock("@/lib/agent/supabase-server", () => ({
-  createServiceSupabase: () => ({ rpc }),
+vi.mock("@/lib/supabase-service", () => ({
+  createServiceRoleClient: () => ({ rpc }),
 }));
 
 const OPERATOR_ORG = "370cd891-f6c0-4fcc-a36a-bc25f27ca229";
