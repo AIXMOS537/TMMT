@@ -20,7 +20,6 @@ migrations that **should** run, once a human has read them.
 
 | Staged draft | Applied as | Version |
 |---|---|---|
-| `20260904010000_generate_va_tasks_idempotent_STAGED.sql` | Superseded — covered `bgcheck_review` only | `20260906022113_generate_va_tasks_idempotent_all_categories.sql` (all five categories) | 2026-09-06 |
 | `20260903000000_audit_hardening_STAGED.sql` | `20260903185639_*`, `20260903185722_*` | 2026-09-03 |
 | `20260904000000_exec_va_tasks_triage_STAGED.sql` | `20260903193844_exec_va_tasks_triage_schema.sql`, `20260903194001_classify_va_tasks_fn.sql` | 2026-09-03 |
 
