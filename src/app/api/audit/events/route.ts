@@ -5,7 +5,7 @@
  */
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 
 const MAX_BYTES = 1_000_000
 const MAX_LINES = 10_000
@@ -38,7 +38,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
   })
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const { error } = await db.from('audit_events').insert(rows)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ accepted: rows.length }, { status: 202 })

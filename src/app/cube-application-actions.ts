@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { createSSRClient } from "@/lib/supabase-server";
+import { tryCreateServiceRoleClient } from "@/lib/supabase-service";
 
 /**
  * The signed-in user's own funding application, if they have one.
@@ -27,17 +27,14 @@ export async function findMyApplicationId(): Promise<string | null> {
   const email = user?.email?.trim();
   if (!email) return null;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
+  const service = tryCreateServiceRoleClient();
+  if (!service) return null;
 
   // ilike is case-insensitive, which is what we want for an email — but it also
   // treats % and _ as wildcards, and an address may legitimately contain them.
   const pattern = email.replace(/([\\%_])/g, "\\$1");
 
-  const { data, error } = await createClient(url, key, {
-    auth: { persistSession: false },
-  })
+  const { data, error } = await service
     .from("program_applications")
     .select("id")
     .ilike("email", pattern)

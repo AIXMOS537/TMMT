@@ -13,7 +13,7 @@ import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { resolveOrgByTwilioNumber, OrgNotFoundError } from '@/lib/agent/tenant'
 import { processInbound } from '@/lib/agent/process-inbound'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
 import { isOptInMessage } from '@/lib/agent/compliance/opt-out'
@@ -85,7 +85,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const db = createServiceSupabase()
+    const db = createServiceRoleClient()
     let { data: lead } = await db.from('incoming_leads')
       .select('*').eq('phone_e164', from).eq('organization_id', org.id).maybeSingle()
     if (!lead) {

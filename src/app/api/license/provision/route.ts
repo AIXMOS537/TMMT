@@ -6,7 +6,7 @@
  */
 import { NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
-import { createServiceSupabase } from '@/lib/agent/supabase-server'
+import { createServiceRoleClient } from '@/lib/supabase-service'
 import { emitAudit } from '@/lib/agent/audit'
 
 interface ProvisionBody {
@@ -30,7 +30,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'missing required fields' }, { status: 400 })
   }
 
-  const db = createServiceSupabase()
+  const db = createServiceRoleClient()
   const tokenHash = hashToken(install_token)
 
   const { data: license } = await db
