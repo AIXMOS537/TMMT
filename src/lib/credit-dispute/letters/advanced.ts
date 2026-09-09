@@ -1,7 +1,7 @@
 import type { CreditProfile, DisputeLetter, NegativeItem } from "../types";
 import { BUREAU_ADDRESSES } from "../types";
 
-function formatDate(d?: string): string {
+function formatLetterDate(d?: string): string {
   if (!d) return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
@@ -13,7 +13,7 @@ function formatAddress(addr: { street: string; city: string; state: string; zip:
 function clientBlock(profile: CreditProfile): string {
   return `${profile.fullName}
 ${formatAddress(profile.currentAddress)}
-${profile.dateOfBirth ? `Date of Birth: ${formatDate(profile.dateOfBirth)}` : ""}
+${profile.dateOfBirth ? `Date of Birth: ${formatLetterDate(profile.dateOfBirth)}` : ""}
 ${profile.ssnLast4 ? `SSN (last 4): XXX-XX-${profile.ssnLast4}` : ""}`.trim();
 }
 
@@ -22,7 +22,7 @@ function itemBlock(item: NegativeItem): string {
     `Creditor/Furnisher: ${item.furnisherName}`,
     item.accountNumberMasked ? `Account: ${item.accountNumberMasked}` : null,
     item.reportedBalanceCents ? `Balance: $${(item.reportedBalanceCents / 100).toFixed(2)}` : null,
-    item.dateOfFirstDelinquency ? `DOFD: ${formatDate(item.dateOfFirstDelinquency)}` : null,
+    item.dateOfFirstDelinquency ? `DOFD: ${formatLetterDate(item.dateOfFirstDelinquency)}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -41,7 +41,7 @@ export function generateIntentToLitigate(
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
   const attempts = priorAttempts.map((a, i) => `${i + 1}. ${a}`).join("\n");
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${recipient}
 ${formatAddress(recipientAddress)}
@@ -109,7 +109,7 @@ export function generateMetro2Dispute(
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
   const violationList = violations.map((v, i) => `${i + 1}. ${v}`).join("\n");
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${recipient}
 ${formatAddress(recipientAddress)}
@@ -161,7 +161,7 @@ export function generateCeaseAndDesist(
     zip: "",
   };
 
-  const body = `${formatDate(new Date().toISOString())}
+  const body = `${formatLetterDate(new Date().toISOString())}
 
 ${item.furnisherName}
 ${formatAddress(addr)}
