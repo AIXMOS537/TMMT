@@ -31,9 +31,8 @@ sensitive is transmitted.
 
 > Netlify, Cloudflare Pages, and GitHub Pages all work the same way — it's a static file.
 
-> Keep this separate from the three production Vercel apps (`tmmt-ops`,
-> `tmmt-command-center`, `aixmos-landing`) — see `docs/THREE-APP-ECOSYSTEM.md`. The build page
-> is its own static deploy.
+> Keep this separate from `tmmt-ops`, which is the one production app — see
+> `docs/THREE-APP-ECOSYSTEM.md`. The build page is its own static deploy.
 
 ## Step 2 — Put your domain on it
 

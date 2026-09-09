@@ -21,13 +21,19 @@ is why it *felt* like chaos. It isn't chaos. It's one system with three layers:
 - **⚙️ TMMT OS** — the running rental business (fleet, customers, payments, dispatch)
 - **📣 The funnel** — turns strangers into customers into owners across verticals
 
-Three apps are live on Vercel (team `aixmos537`):
+**One** app is live on Vercel (team `aixmos537`). The owner-vs-operator
+distinction is a role inside it, not a second deployment.
 
 | App | Project | URL | Role |
 |---|---|---|---|
-| **TMMT Ops** | `tmmt-ops` | https://tmmt-ops.vercel.app | Day-to-day operations engine |
-| **Command Center** | `tmmt-command-center` | https://tmmt-command-center.vercel.app | Owner/leadership cockpit |
-| **AIXMOS Landing** | `aixmos-landing` | https://aixmos-landing.vercel.app | Public funnel |
+| **TMMT Ops** | `tmmt-ops` | https://tmmt-ops.vercel.app | The whole app: ops, command center, training, intake |
+
+Retired and **paused** (reversible, not deleted): `tmmt-command-center`
+(2026-09-09), `tmmt-training-site`, `aixmos-offer`. Kept serving by owner
+decision 2026-09-09: `aixmos-landing` — a standalone marketing page whose CTAs
+feed the GHL site; it carries its own price list, independent of the app's.
+Public marketing lives on the GHL site at allinonemanagementsolutions.com —
+see `src/lib/site-domains.ts`.
 
 Status as of the last Slack recap (Fri Jun 12): **55 READY / 0 ERROR** across the
 three apps; the old `tmmt-c919` is retired.
