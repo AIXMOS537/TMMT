@@ -270,6 +270,52 @@ describe("unauthenticated requests to protected routes", () => {
       expect(res.headers.get("location")!.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(true);
     }
   });
+
+  // The brand's own domain must not hand its own customers to another
+  // company's landing page. On a TMMT host the front door RENDERS /welcome.
+  it("on a TMMT host the front door renders /welcome instead of leaving the site", async () => {
+    const res = await middleware(req("/", { host: TMMT_HOST }));
+    expect(res.headers.get("location")).toBeNull();
+    expect(res.status).not.toBe(307);
+    const rewrite = res.headers.get("x-middleware-rewrite");
+    expect(rewrite, "expected a rewrite to /welcome").not.toBeNull();
+    expect(new URL(rewrite!).pathname).toBe("/welcome");
+  });
+
+  it("the rewrite keeps the visitor's URL on the TMMT host", async () => {
+    const res = await middleware(req("/", { host: TMMT_HOST }));
+    expect(new URL(res.headers.get("x-middleware-rewrite")!).host).toBe(TMMT_HOST);
+  });
+
+  it("a non-TMMT host keeps the /login front door — the welcome page is TMMT-only", async () => {
+    // Pins the earlier fix: rendering TMMT on TMMT hosts must not quietly
+    // restore the GHL bounce anywhere else.
+    const res = await middleware(req("/", { host: NEUTRAL_HOST }));
+    expect(res.status).toBe(307);
+    const loc = res.headers.get("location")!;
+    expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
+    expect(new URL(loc).pathname).toBe("/login");
+  });
+
+  it("the TMMT front door offers a way into the app — a Sign in link", async () => {
+    // The welcome page replaces a /login redirect on these hosts, so it is the
+    // only thing standing between a signed-out owner and the app.
+    const { STAFF } = await import("./app/welcome/copy");
+    expect(STAFF.href).toBe("/login");
+  });
+
+  it("/welcome itself is public — it must not bounce to /login", async () => {
+    for (const host of [TMMT_HOST, NEUTRAL_HOST]) {
+      const res = await middleware(req("/welcome", { host }));
+      expect(res.headers.get("location"), `${host} redirected /welcome`).toBeNull();
+    }
+  });
+
+  it("the front door still carries the tenant header and stays out of search", async () => {
+    const res = await middleware(req("/", { host: TMMT_HOST }));
+    expect(res.headers.get(TENANT_HEADER)).toBe("tmmt_property");
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow, noarchive");
+  });
 });
 
 // ---------------------------------------------------------------------------
