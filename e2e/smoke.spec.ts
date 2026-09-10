@@ -21,9 +21,23 @@ test.describe("Public Forms", () => {
 });
 
 test.describe("Auth", () => {
-  test("unauthenticated user is redirected to login", async ({ page, context }) => {
+  test("unauthenticated user gets the rental front door at /, not a sign-in", async ({ page, context }) => {
+    // This asserted "/" redirects to /login. That was true and it was the bug:
+    // someone who wanted to rent a car was shown a staff sign-in screen. "/" now
+    // renders the rental page via a rewrite, so the URL stays "/". The gate this
+    // test was really protecting — that a signed-out visitor reaches no protected
+    // surface — is covered by the /partner case below and by all-scopes.spec.ts.
     await context.clearCookies();
     await page.goto("/", { waitUntil: "commit" });
+    await expect(page).toHaveURL(/\/$/, { timeout: 15000 });
+    await expect(
+      page.getByRole("heading", { name: /weekly car rental for rideshare/i }),
+    ).toBeVisible();
+  });
+
+  test("a protected surface still sends an unauthenticated user to login", async ({ page, context }) => {
+    await context.clearCookies();
+    await page.goto("/customers", { waitUntil: "commit" });
     await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
     await expect(page.locator("form")).toBeVisible();
   });
