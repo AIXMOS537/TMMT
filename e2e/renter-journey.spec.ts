@@ -17,6 +17,49 @@ const STAMP = process.env.E2E_STAMP ?? "local";
 const testName = (what: string) => `ZZ_E2E_${what}_${STAMP}`;
 
 test.describe("renter journey", () => {
+  test("the front door at / is a rental page, not a staff sign-in", async ({ page }) => {
+    const res = await page.goto("/");
+    expect(res?.status()).toBe(200);
+
+    // The URL must stay on the brand's own address — this is a rewrite, so a
+    // redirect to /login or /welcome would both be failures here.
+    expect(new URL(page.url()).pathname).toBe("/");
+
+    await expect(
+      page.getByRole("heading", { name: /weekly car rental for rideshare/i }),
+    ).toBeVisible();
+    // The sign-in door still exists, but as staff furniture, not the main event.
+    await expect(page.getByRole("link", { name: /staff sign in/i })).toBeVisible();
+  });
+
+  test("the front door offers both ways in, and both work", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /^rent a car$/i }).first().click();
+    await expect(page).toHaveURL(/\/forms\/lead-intake/);
+
+    await page.goto("/");
+    await page.getByRole("link", { name: /^join the waitlist$/i }).first().click();
+    await expect(page).toHaveURL(/\/forms\/waitlist/);
+  });
+
+  test("the front door shows the real fleet, and never a fabricated price", async ({ page }) => {
+    await page.goto("/");
+    const body = (await page.textContent("body")) ?? "";
+    // Whatever it says about money must not be a zero standing in for "unknown".
+    expect(body).not.toMatch(/\$0\s*\/\s*week/);
+    // It must be honest that this is not a live availability board.
+    expect(body).toMatch(/not a live availability board|Nothing is on the lot|can't load the fleet/i);
+  });
+
+  test("the front door never leaks vehicle identity documents", async ({ page }) => {
+    await page.goto("/");
+    const body = (await page.textContent("body")) ?? "";
+    // VIN is 17 chars; plates were readable until the column grants landed.
+    expect(body).not.toMatch(/[A-HJ-NPR-Z0-9]{17}/);
+    expect(body).not.toContain("6GJ4314");
+    expect(body).not.toContain("SXM3874");
+  });
+
   test("a renter can submit a rental inquiry and sees confirmation", async ({ page }) => {
     await page.goto("/forms/lead-intake");
 
