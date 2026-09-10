@@ -27,7 +27,13 @@ const CHECKS = [
   // --- Revenue funnel: must be publicly reachable, never auth-walled. ---
   { name: "kits (dealer demo)", path: "/kits", expect: [200] },
   { name: "build page", path: "/build", expect: [200] },
-  { name: "join (operator funnel)", path: "/join", expect: [200] },
+  // /join is a redirect page by design — it resolves to the $97 checkout when
+  // one is configured and to our own lead form when none is. Either is fine;
+  // what must never happen is it landing on the partner site, which is what it
+  // did until 1f089fa. Asserting 200 here was wrong in both directions: it was
+  // already red in production while /join 307'd to the partner, so the probe
+  // reported the leak as an unrelated status mismatch.
+  { name: "join (operator funnel)", path: "/join", expect: [200, 307, 308], notRedirectTo: AIXMOS },
   { name: "dealers (dealer funnel)", path: "/dealers", expect: [200] },
   // Credit + AIXMOS landings STAY on TMMT Ops. These used to be asserted the
   // other way round — a 301 off to the partner site was treated as correct —
@@ -95,6 +101,21 @@ async function probe(check) {
 function evaluate(check, result) {
   if (result.status === 0) return { ok: false, why: result.error || "request failed" };
 
+  // Leak check runs BEFORE the status check, deliberately.
+  //
+  // It was written after it, and the control run proved that was useless: the
+  // status check returns first, so a redirect to the partner on an unexpected
+  // status was reported as "expected 307/308, got 302" with no mention of where
+  // it went. A leak that only shows up as a status mismatch is how this bug
+  // survived in the first place — name it for what it is, always.
+  if (check.notRedirectTo) {
+    const loc = result.location || "";
+    const host = new URL(check.notRedirectTo).host;
+    if (loc.includes(host)) {
+      return { ok: false, why: `LEAK: must stay on TMMT, but redirects to ${loc}` };
+    }
+  }
+
   if (!check.expect.includes(result.status)) {
     const landed = result.location ? ` → ${result.location}` : "";
     // Name the specific failure mode so the log is self-explanatory at 2am.
@@ -111,16 +132,6 @@ function evaluate(check, result) {
     }
   }
 
-  // A path that must never hand the visitor to another site. Checked on the
-  // Location header whatever the status was, so a 200 that somehow carries one
-  // still trips it.
-  if (check.notRedirectTo) {
-    const loc = result.location || "";
-    const host = new URL(check.notRedirectTo).host;
-    if (loc.includes(host)) {
-      return { ok: false, why: `LEAK: must stay on TMMT, but redirects to ${loc}` };
-    }
-  }
   return { ok: true };
 }
 
