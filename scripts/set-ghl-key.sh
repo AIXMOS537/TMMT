@@ -10,6 +10,8 @@
 #   bash scripts/set-ghl-key.sh            # paste + prove + seat locally
 #   bash scripts/set-ghl-key.sh --check    # verify the token already seated
 #   bash scripts/set-ghl-key.sh --vercel   # also seat on Vercel (owner gate)
+#   bash scripts/set-ghl-key.sh --fleet    # also seat on the other machines over ssh
+#   bash scripts/set-ghl-key.sh --all      # local + fleet + Vercel: one paste, everywhere
 #
 # Where it lands (both chmod 600, both outside git):
 #   .env.local                      GHL_API_KEY
@@ -27,11 +29,21 @@ API_V1="https://rest.gohighlevel.com/v1"
 API_VERSION="2021-07-28"
 STORE="$HOME/.config/tmmt/ghl.env"
 
-DO_CHECK=0; DO_VERCEL=0
+# Every machine that reads a GHL token, and the file each one reads. Measured
+# 2026-09-09: the token lived in FIVE places across the fleet and only one of them
+# had it — Carry's canonical store was empty since INC-001, Vercel had no GHL key
+# at all, and M1 (where the contact sync actually runs) held a revoked one. One
+# paste has to reach all of them or they drift apart again by the next rotation.
+FLEET_HOSTS="${GHL_FLEET_HOSTS:-rick}"
+FLEET_FILES="${GHL_FLEET_FILES:-aixmos-KEYS-canonical/tmmt-os/.env.local .config/tmmt/ghl.env}"
+
+DO_CHECK=0; DO_VERCEL=0; DO_FLEET=0
 for a in "$@"; do
   case "$a" in
     --check)  DO_CHECK=1 ;;
     --vercel) DO_VERCEL=1 ;;
+    --fleet)  DO_FLEET=1 ;;
+    --all)    DO_VERCEL=1; DO_FLEET=1 ;;
     -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown flag: $a" ;;
   esac
@@ -140,7 +152,30 @@ upsert "$STORE"   GHL_LOCATION_ID "$LOC"
 ok ".env.local seated (other keys preserved, chmod 600)"
 ok "$STORE seated (canon secret store, chmod 600)"
 
-# ── 5. Vercel is OPT-IN. Env vars are owner-gated; --vercel is the seal.
+# ── 5. The rest of the fleet. Same prove-then-write rule, over ssh.
+if [ "$DO_FLEET" = "1" ]; then
+  for host in $FLEET_HOSTS; do
+    for rel in $FLEET_FILES; do
+      # The token goes over STDIN, never in argv: arguments are visible in `ps` on
+      # the remote host for as long as the command runs.
+      if printf '%s' "$KEY" | ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" \
+           "f=\"\$HOME/$rel\"; mkdir -p \"\$(dirname \"\$f\")\"; touch \"\$f\"; chmod 600 \"\$f\";
+            k=\$(cat); [ -n \"\$k\" ] || exit 3;
+            grep -v '^GHL_API_KEY=' \"\$f\" > \"\$f.tmp\" 2>/dev/null || : > \"\$f.tmp\";
+            printf 'GHL_API_KEY=%s\\n' \"\$k\" >> \"\$f.tmp\";
+            mv \"\$f.tmp\" \"\$f\"; chmod 600 \"\$f\";
+            grep -q '^GHL_LOCATION_ID=' \"\$f\" || printf 'GHL_LOCATION_ID=%s\\n' '$LOC' >> \"\$f\"" 2>/dev/null; then
+        ok "$host:~/$rel"
+      else
+        printf '%s! %s:~/%s FAILED — seat it there by hand%s\n' "$YEL" "$host" "$rel" "$N"
+      fi
+    done
+  done
+else
+  printf '%s  (this machine only. --fleet seats the other machines, --all does everything.)%s\n' "$DIM" "$N"
+fi
+
+# ── 6. Vercel is OPT-IN. Env vars are owner-gated; --vercel is the seal.
 if [ "$DO_VERCEL" = "1" ]; then
   command -v vercel >/dev/null 2>&1 || die "vercel CLI not found. npm i -g vercel"
   for ENV in production preview development; do
