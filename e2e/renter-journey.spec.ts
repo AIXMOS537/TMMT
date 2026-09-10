@@ -27,6 +27,8 @@ const testName = (what: string) => `ZZ_E2E_${what}_${STAMP}`;
  */
 let ipCounter = 0;
 test.beforeEach(async ({ context }) => {
+  // No effect against a real deployment — Vercel overwrites this header. Kept for
+  // local runs, where it is what stops the suite exhausting its own budget.
   ipCounter += 1;
   await context.setExtraHTTPHeaders({ "X-Forwarded-For": `198.51.100.${ipCounter}` });
 });
@@ -141,6 +143,15 @@ test.describe("renter journey", () => {
   });
 
   test("the form rate limiter fires, and only after a real burst", async ({ request }) => {
+    // Local only. Vercel replaces x-forwarded-for with the true client IP — which
+    // is correct, and is exactly why the header cannot be spoofed to get a clean
+    // bucket against production. Run there, every request in the suite shares the
+    // runner's real address and the limiter trips on a burst it did not cause.
+    test.skip(
+      !!process.env.AUDIT_BASE_URL && !process.env.AUDIT_BASE_URL.includes("localhost"),
+      "rate-limit test needs a spoofable client IP; run it against localhost",
+    );
+
     // A limiter nobody has watched refuse is not a control. Five go through from
     // one address, the sixth does not.
     // A fresh address per run: the limiter's map lives in the server process and
