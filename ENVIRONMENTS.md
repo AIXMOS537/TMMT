@@ -220,3 +220,20 @@ was corrected to stop saying it is. Known and accepted: the price list there is
 its own, not `src/lib/pricing/catalog.ts`, so the two can drift; and with no
 `noindex` it can be indexed alongside the GHL site. Web Analytics is not
 enabled on it, so its traffic is unmeasured.
+
+## `tmmtrentals.com` has never resolved (verified 2026-09-09)
+
+The domain **is attached to the Vercel project** and shows in the project's domain
+list, but its Google Cloud DNS zone has **never published a record** — SOA serial
+`1`, no A, no CNAME — so a public resolver returns the name with no address.
+`www.tmmtrentals.com` is the same. `ops.allinonemanagementsolutions.com`
+(OWNER_HUB_HOST in `src/lib/site-domains.ts`) is **NXDOMAIN** and was never created.
+
+**A Vercel domain listing is not proof of reachability.** This was checked with
+`dig` against a public resolver only after two attempts to reach the host failed
+and were both wrongly blamed on a network sandbox.
+
+The address that works today is **`tmmt-ops.vercel.app`**, which is why the
+operator doc and `DEPLOY.md` point there. Publishing the `tmmtrentals.com` record
+is an open owner task — until it is done, do not repoint any doc, script or
+onboarding template at that domain.
