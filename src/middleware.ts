@@ -3,11 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import {
-  isOwnerHubHost,
-  shouldBounceTmmtCreditToAixmos,
-  aixmosCreditRedirectUrl,
-} from "@/lib/site-domains";
+import { isOwnerHubHost } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
@@ -20,6 +16,11 @@ function isFunnelPublicPath(pathname: string) {
     pathname === "/dealers" ||
     pathname === "/credit" ||
     pathname === "/funding" ||
+    // The opt-in referral page. Public on purpose: it is where someone
+    // chooses to be introduced to the partner, and it must be reachable
+    // without an account. It is also the only page allowed to link out.
+    pathname === "/partners/all-in-one" ||
+    pathname.startsWith("/partners/all-in-one/") ||
     pathname.startsWith("/lp/") ||
     pathname.startsWith("/api/leads/") ||
     pathname === "/api/health" ||
@@ -187,14 +188,19 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Marketing entry points (/credit, /funding, credit SKU landings) belong on the
-  // public GHL site. Skip when the public site proxied here (x-forwarded-host).
-  if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
-    const dest = aixmosCreditRedirectUrl(pathname);
-    if (dest) {
-      return withRobotsHeader(NextResponse.redirect(dest, 301));
-    }
-  }
+  // No automatic hand-off to the partner site.
+  //
+  // What used to sit here: on tmmt-ops.vercel.app / tmmtrentals.com, the paths
+  // /credit, /funding, /lp/*/intro-97 and /lp/*/lead-magnet were answered with
+  // a 301 to allinonemanagementsolutions.com. A 301 is permanent — browsers
+  // cache it and stop asking the server — which is why the app "kept"
+  // redirecting there even after a fix: the hop was in the visitor's browser,
+  // not in the deploy. The /lp/* pages it threw away are real TMMT landing
+  // pages whose form POSTs to our own /api/leads/webhook, so every one of
+  // those visitors was a TMMT lead handed to the partner's homepage.
+  //
+  // Referring someone to the partner is now opt-in only and lives behind a
+  // form on /partners/all-in-one. See src/lib/partner-handoff.ts.
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
@@ -242,9 +248,8 @@ export async function middleware(request: NextRequest) {
     // address and being shown someone else's home page is not a front door.
     //
     // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
-    // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
-    // and the public reaches marketing on its own domain, which is how they
-    // arrive in the first place.
+    // are public paths that render TMMT's own pages and capture the lead
+    // here. The partner site keeps its own domain and its own traffic.
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 

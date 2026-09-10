@@ -29,11 +29,16 @@ const CHECKS = [
   { name: "build page", path: "/build", expect: [200] },
   { name: "join (operator funnel)", path: "/join", expect: [200] },
   { name: "dealers (dealer funnel)", path: "/dealers", expect: [200] },
-  // Credit + AIXMOS landings must leave TMMT Ops (301 from middleware), not render here.
-  { name: "aixmos lead magnet", path: "/lp/aixmos/lead-magnet", expect: [301, 308], redirectTo: `${AIXMOS}/lp/playbook` },
-  { name: "credit intake form", path: "/forms/credit-funding-intake", expect: [301, 308], redirectTo: `${AIXMOS}/forms/credit-funding-intake` },
-  { name: "credit shortlink", path: "/credit", expect: [301, 308], redirectTo: `${AIXMOS}/forms` },
-  { name: "funding shortlink", path: "/funding", expect: [301, 308], redirectTo: `${AIXMOS}/forms` },
+  // Credit + AIXMOS landings STAY on TMMT Ops. These used to be asserted the
+  // other way round — a 301 off to the partner site was treated as correct —
+  // which is how the app spent months handing its own leads away with a green
+  // probe. `notRedirectTo` fails the probe if the partner host appears in the
+  // Location header at all.
+  { name: "aixmos lead magnet", path: "/lp/aixmos/lead-magnet", expect: [200], notRedirectTo: AIXMOS },
+  { name: "credit intake form", path: "/forms/credit-funding-intake", expect: [200], notRedirectTo: AIXMOS },
+  { name: "credit shortlink", path: "/credit", expect: [307, 308], redirectTo: "/forms/credit-funding-intake?entry=credit" },
+  { name: "funding shortlink", path: "/funding", expect: [307, 308], redirectTo: "/forms/credit-funding-intake?entry=funding" },
+  { name: "partner opt-in page", path: "/partners/all-in-one", expect: [200], notRedirectTo: AIXMOS },
 
   // --- Machine surfaces: a redirect here is data loss, not a nuisance. ---
   { name: "agent health", path: "/api/agent/_health", expect: [200] },
@@ -103,6 +108,17 @@ function evaluate(check, result) {
     const loc = result.location || "";
     if (!loc.startsWith(check.redirectTo)) {
       return { ok: false, why: `redirect should land on ${check.redirectTo}, landed on ${loc || "(no location)"}` };
+    }
+  }
+
+  // A path that must never hand the visitor to another site. Checked on the
+  // Location header whatever the status was, so a 200 that somehow carries one
+  // still trips it.
+  if (check.notRedirectTo) {
+    const loc = result.location || "";
+    const host = new URL(check.notRedirectTo).host;
+    if (loc.includes(host)) {
+      return { ok: false, why: `LEAK: must stay on TMMT, but redirects to ${loc}` };
     }
   }
   return { ok: true };
