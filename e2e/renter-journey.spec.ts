@@ -16,6 +16,21 @@ import { test, expect } from "@playwright/test";
 const STAMP = process.env.E2E_STAMP ?? "local";
 const testName = (what: string) => `ZZ_E2E_${what}_${STAMP}`;
 
+/**
+ * Each test presents a distinct client IP.
+ *
+ * The form rate limiter allows five POSTs per IP per hour and the server keeps
+ * that map in memory across runs, so a suite that submits several forms exhausts
+ * its own budget and the last test fails on a 429 that has nothing to do with the
+ * code under test. Separating the IPs measures the app instead of the bucket —
+ * and the limiter itself is covered deliberately, below.
+ */
+let ipCounter = 0;
+test.beforeEach(async ({ context }) => {
+  ipCounter += 1;
+  await context.setExtraHTTPHeaders({ "X-Forwarded-For": `198.51.100.${ipCounter}` });
+});
+
 test.describe("renter journey", () => {
   test("the front door at / is a rental page, not a staff sign-in", async ({ page }) => {
     const res = await page.goto("/");
@@ -123,6 +138,25 @@ test.describe("renter journey", () => {
     await page.fill('input[name="customer_phone"]', "5715550113");
     await page.click('button[type="submit"]');
     await expect(page.getByText(/you're on the list/i)).toBeVisible({ timeout: 15000 });
+  });
+
+  test("the form rate limiter fires, and only after a real burst", async ({ request }) => {
+    // A limiter nobody has watched refuse is not a control. Five go through from
+    // one address, the sixth does not.
+    // A fresh address per run: the limiter's map lives in the server process and
+    // survives between runs, so a fixed IP would arrive already spent and the
+    // test would "pass" on a 429 it did not cause.
+    const ip = `203.0.113.${(Date.now() % 200) + 20}`;
+    const codes: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const res = await request.post("/forms/waitlist", {
+        headers: { "X-Forwarded-For": ip, "Content-Type": "application/json" },
+        data: {},
+      });
+      codes.push(res.status());
+    }
+    expect(codes.slice(0, 5).every((c) => c !== 429), `first five: ${codes}`).toBe(true);
+    expect(codes[5], `sixth should be refused: ${codes}`).toBe(429);
   });
 
   test("no public page hands the visitor to the partner site", async ({ page }) => {
