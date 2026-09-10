@@ -21,6 +21,9 @@ function isFunnelPublicPath(pathname: string) {
     // without an account. It is also the only page allowed to link out.
     pathname === "/partners/all-in-one" ||
     pathname.startsWith("/partners/all-in-one/") ||
+    // The rental front door. "/" is rewritten here for signed-out visitors, and
+    // it must also render if someone reaches the path directly.
+    pathname === "/welcome" ||
     pathname.startsWith("/lp/") ||
     pathname.startsWith("/api/leads/") ||
     pathname === "/api/health" ||
@@ -235,6 +238,23 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser());
   } catch (err) {
     console.error("middleware: Supabase auth check failed; treating as signed-out", err);
+  }
+
+  // The front door. A signed-out visitor on "/" gets the rental page, REWRITTEN
+  // rather than redirected so the URL stays on the brand's own address.
+  //
+  // It cannot simply be src/app/page.tsx: (admin)/page.tsx already resolves to
+  // "/" — it is the staff rentals desk — and a second file on the same path
+  // breaks the build with a duplicate-route manifest error. Worse, if the public
+  // page won that race, homePathForTier() sends operators and staff to "/" and
+  // every one of them would land on marketing instead of their desk. The rewrite
+  // keeps one owner per route: signed out sees the door, signed in sees the desk.
+  if (!user && pathname === "/") {
+    return withRobotsHeader(
+      NextResponse.rewrite(new URL("/welcome", request.url), {
+        request: { headers: requestHeaders },
+      }),
+    );
   }
 
   if (!user && !isPublicPath(pathname)) {

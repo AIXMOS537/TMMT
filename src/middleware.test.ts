@@ -249,16 +249,34 @@ describe("unauthenticated requests to protected routes", () => {
     expect(loc.search).toBe("");
   });
 
-  it("the front door (/) sends anonymous visitors to /login, not to the public site", async () => {
-    // Regression: "/" used to redirect to the GHL marketing site. With no
-    // owner-hub host and no DNS on tmmtrentals.com, that left the app with no
-    // reachable front door — the owner typed the app's address and got
-    // marketing. The public funnel keeps its own bounces (see below).
+  it("the front door (/) serves the rental page, rewritten so the URL stays put", async () => {
+    // "/" has been three things. It redirected to the partner marketing site,
+    // which gave the visitor away. Then it redirected to /login, which showed a
+    // staff sign-in screen to someone who wanted to rent a car. Now it renders
+    // the rental front door.
+    //
+    // A REWRITE, not a redirect: the visitor keeps the brand's own address in
+    // the bar, and "/" keeps a single route owner — (admin)/page.tsx still
+    // serves signed-in staff, so no duplicate-route build break.
     const res = await middleware(req("/"));
-    expect(res.status).toBe(307);
-    const loc = res.headers.get("location")!;
-    expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
-    expect(new URL(loc).pathname).toBe("/login");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+    expect(res.headers.get("x-middleware-rewrite") ?? "").toContain("/welcome");
+  });
+
+  it("the front door never sends the visitor to the partner site", async () => {
+    for (const host of [undefined, "tmmt-ops.vercel.app", "tmmtrentals.com"]) {
+      const res = await middleware(req("/", host ? { host } : {}));
+      const loc = res.headers.get("location") ?? "";
+      expect(loc).not.toContain("allinonemanagementsolutions");
+      expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
+    }
+  });
+
+  it("/welcome renders directly for a signed-out visitor", async () => {
+    const res = await middleware(req("/welcome"));
+    expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get("location")).toBeNull();
   });
 
   it("the public funnel paths stay on TMMT and never bounce to the partner", async () => {
