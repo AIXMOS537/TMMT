@@ -261,13 +261,14 @@ describe("unauthenticated requests to protected routes", () => {
     expect(new URL(loc).pathname).toBe("/login");
   });
 
-  it("the public funnel paths still bounce to the GHL site", async () => {
+  it("the public funnel paths stay on TMMT and never bounce to the partner", async () => {
+    // These used to 301 to the partner site on a TMMT public host. A 301 is
+    // permanent, so the hop lived on in every visitor's browser cache — the
+    // reason the app "kept" redirecting there long after anyone looked at it.
     for (const path of ["/credit", "/funding"]) {
-      // The bounce is host-gated (shouldBounceTmmtCreditToAixmos), so it only
-      // fires on a real TMMT public host, not the neutral test host.
       const res = await middleware(req(path, { host: "tmmt-ops.vercel.app" }));
-      expect(res.status).toBe(301);
-      expect(res.headers.get("location")!.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(true);
+      expect(isPassThrough(res)).toBe(true);
+      expect(res.headers.get("location")).toBeNull();
     }
   });
 });
@@ -802,28 +803,44 @@ describe("/forms POST rate limit", () => {
   });
 });
 
-describe("marketing entry points on a TMMT public host bounce to the public site", () => {
+describe("no marketing entry point is handed to the partner site", () => {
+  /**
+   * The leak this replaces: on a TMMT public host, /credit, /funding and the
+   * /lp/* landing pages answered 301 to allinonemanagementsolutions.com. The
+   * /lp/* pages are real TMMT landing pages whose form POSTs to our own
+   * /api/leads/webhook, so every one of those visitors was a TMMT lead given
+   * to the partner's homepage — and the 301 cached in the browser, so the
+   * visitor never came back to be counted.
+   *
+   * Referral is opt-in only now and lives on /partners/all-in-one.
+   */
   it.each(["/credit", "/funding", "/lp/aixmos/intro-97", "/lp/moe-legacy/lead-magnet"])(
-    "%s -> 301 to the AIXMOS public site",
+    "%s is served by TMMT, with no redirect off the site",
     async (path) => {
       const res = await middleware(req(path, { host: TMMT_HOST }));
-      expect(res.status).toBe(301);
-      expect(res.headers.get("location")!.startsWith(`${AIXMOS_PUBLIC_ORIGIN}/`)).toBe(true);
+      expect(isPassThrough(res)).toBe(true);
+      const loc = res.headers.get("location");
+      expect(loc).toBeNull();
       expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
       expect(h.createMiddlewareClient).not.toHaveBeenCalled();
     },
   );
 
-  it("is skipped when the public site proxied the request (x-forwarded-host)", async () => {
-    const res = await middleware(
-      req("/credit", { host: TMMT_HOST, headers: { "x-forwarded-host": "allinonemanagementsolutions.com" } }),
-    );
-    expect(isPassThrough(res)).toBe(true);
-  });
+  it.each(["/credit", "/funding", "/lp/aixmos/intro-97"])(
+    "%s emits no location header pointing at the partner, on any host",
+    async (path) => {
+      for (const host of [TMMT_HOST, "tmmtrentals.com", "www.tmmtrentals.com", undefined]) {
+        const res = await middleware(req(path, host ? { host } : {}));
+        const loc = res.headers.get("location") ?? "";
+        expect(loc).not.toContain("allinonemanagementsolutions");
+      }
+    },
+  );
 
-  it("does not bounce on a non-TMMT host", async () => {
-    const res = await middleware(req("/credit"));
+  it("the opt-in referral page is public — it must render without an account", async () => {
+    const res = await middleware(req("/partners/all-in-one", { host: TMMT_HOST }));
     expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get("location")).toBeNull();
   });
 });
 
