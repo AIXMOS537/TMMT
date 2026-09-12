@@ -17,6 +17,7 @@ import { createServiceRoleClient } from '@/lib/supabase-service'
 import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
 import { isOptInMessage } from '@/lib/agent/compliance/opt-out'
+import { recordGlobalOptOut } from '@/lib/agent/compliance/record-opt-out'
 import { assertOutboundAllowed, orgSmsVertical } from '@/lib/outbound-gate'
 
 function twiml(body: string): string {
@@ -236,6 +237,20 @@ export async function POST(req: Request): Promise<NextResponse> {
       patch.opted_out_at = new Date().toISOString()
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
+
+    // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
+    // The patch above is scoped to ONE lead row in ONE org. do_not_contact_numbers
+    // is what assertOutboundAllowed() checks on every outbound message for every
+    // org, and nothing in this codebase wrote to it — so a re-imported lead row
+    // (opted_out defaulting to false) or a different org could text this person
+    // again. A person who says stop means stop, not "stop from this record".
+    // Failure is recorded on the message instead of thrown: the customer's reply
+    // must not be lost because a compliance write failed, but it must not be
+    // invisible either.
+    if (result.complianceFlags.includes('opt_out')) {
+      const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+      if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
+    }
 
     if (result.outboundBody) {
       await db.from('agent_messages').insert({
