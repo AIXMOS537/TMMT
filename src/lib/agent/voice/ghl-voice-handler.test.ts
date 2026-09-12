@@ -60,6 +60,10 @@ function supabaseChain(data: unknown = null) {
   chain.update = vi.fn(self)
   chain.eq = vi.fn(self)
   chain.is = vi.fn(self)
+  // Added with the voice replay guard: its contact-window fallback filters on
+  // created_at, and `limit` is used by both the replay lookup and emitAudit.
+  chain.gte = vi.fn(self)
+  chain.limit = vi.fn(self)
   chain.maybeSingle = vi.fn().mockResolvedValue(row)
   chain.single = vi.fn().mockResolvedValue(row)
   return chain
@@ -139,7 +143,15 @@ describe('handleGhlVoiceAction', () => {
     })
     expect(result.ok).toBe(true)
     expect(result.detail).toBe('no_transcript')
-    expect(mockFrom).not.toHaveBeenCalled()
+    // The replay guard now reads audit_events before any action, so a read is
+    // expected. What must NOT happen is a WRITE: recording a no-op would sit in
+    // the replay window and suppress the retry that carries the transcript.
+    const wrote = mockFrom.mock.calls.some(
+      (call: unknown[]) => call[0] !== 'audit_events',
+    )
+    expect(wrote, 'no_transcript must not write anything').toBe(false)
+    const chain = mockFrom.mock.results[0]?.value as Record<string, { mock: { calls: unknown[] } }> | undefined
+    expect(chain?.insert?.mock.calls ?? [], 'no audit row for a no-op').toHaveLength(0)
   })
 })
 

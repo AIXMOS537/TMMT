@@ -13,6 +13,9 @@ import { BELLA_AGENT_NAME } from "@/lib/agent/persona/bella-voice";
 import { VERTICAL_TAGS, applyVerticalTags, bookTags, qualifyTags } from "./ghl-voice-tags";
 import { logPostCallSummary, upsertBookHandoffLead } from "./ghl-voice-leads";
 import { triggerBookedHandoff, triggerVoiceEscalation } from "./ghl-voice-handoff";
+import { emitAudit } from "@/lib/agent/audit";
+import { createServiceRoleClient } from "@/lib/supabase-service";
+import { seenVoiceEvent, voiceAuditAction } from "./voice-replay";
 
 export type VoiceAction =
   | "qualify_lead"
@@ -25,6 +28,9 @@ export interface GhlVoicePayload {
   action: VoiceAction;
   phone?: string;
   contact_id?: string;
+  /** GHL's call identifier, when the custom action is configured to send it.
+   *  Present => exact replay protection. Absent => a short contact window. */
+  call_id?: string;
   vertical?: string;
   transcript_snippet?: string;
   caller_name?: string;
@@ -68,7 +74,23 @@ async function resolveContactId(
   return findGhlContactByPhone(payload.phone, { location: locationKind, tryFallbackLocation: true });
 }
 
-export async function handleGhlVoiceAction(payload: GhlVoicePayload): Promise<{
+type VoiceActionResult = {
+  ok: boolean;
+  action: VoiceAction;
+  detail: string;
+  data?: Record<string, unknown>;
+};
+
+/**
+ * `org` and `contactId` are resolved ONCE by the caller and passed in.
+ * Resolving them here as well meant two GHL contact lookups per webhook — an
+ * extra network round trip on a live call, for the same answer.
+ */
+async function performVoiceAction(
+  payload: GhlVoicePayload,
+  org: OrgContext,
+  contactId: string | null,
+): Promise<{
   ok: boolean;
   action: VoiceAction;
   detail: string;
@@ -76,13 +98,12 @@ export async function handleGhlVoiceAction(payload: GhlVoicePayload): Promise<{
 }> {
   const action = payload.action;
   const locationKind = payload.location_kind ?? "rentals";
-  const org = await resolveOrg(payload.org_slug);
-  const contactId = await resolveContactId(payload, locationKind);
   const phone = payload.phone?.trim() ?? "";
 
   if (!contactId && action !== "post_call_summary") {
     return { ok: false, action, detail: "contact_not_found" };
   }
+
 
   const vertical = (payload.vertical ?? "general").toLowerCase();
   const baseTag = VERTICAL_TAGS[vertical] ?? "bella-set";
@@ -157,4 +178,69 @@ export async function handleGhlVoiceAction(payload: GhlVoicePayload): Promise<{
     default:
       return { ok: false, action, detail: "unknown_action" };
   }
+}
+
+/** Outcomes that report success while performing no side effect. */
+const NO_OP_DETAILS = new Set(["no_transcript", "contact_not_found", "ghl_not_configured"]);
+
+/**
+ * The public entry point: replay check → action → audit.
+ *
+ * Order matters in both directions.
+ *
+ * The check runs BEFORE any side effect, because the whole point is to stop a
+ * replayed book_handoff from booking twice.
+ *
+ * The audit is written AFTER, and ONLY when the action actually succeeded.
+ * Writing it up front looked tidier and was wrong: a `post_call_summary` that
+ * arrives with no transcript returns `no_transcript` having done nothing, and
+ * an audit row for that no-op would sit in the replay window and suppress the
+ * legitimate retry that carries the transcript. An action that did not happen
+ * must not block the one that will. Caught by an existing test that asserted
+ * this handler touches no database on that path.
+ */
+export async function handleGhlVoiceAction(
+  payload: GhlVoicePayload,
+): Promise<VoiceActionResult> {
+  const org = await resolveOrg(payload.org_slug);
+  const locationKind = payload.location_kind ?? "rentals";
+  const contactId = await resolveContactId(payload, locationKind);
+  const db = createServiceRoleClient();
+
+  const replay = await seenVoiceEvent(db, {
+    organizationId: org.id,
+    action: payload.action,
+    callId: payload.call_id,
+    contactId,
+  });
+  if (replay.seen) {
+    return {
+      ok: true,
+      action: payload.action,
+      detail: `duplicate_ignored:${replay.keyed}`,
+    };
+  }
+
+  const result = await performVoiceAction(payload, org, contactId);
+
+  // The audit row is both the compliance trail — this handler emitted none at
+  // all before — and the record the check above reads on the next delivery.
+  //
+  // `ok: true` is not the same as "something happened". post_call_summary
+  // returns ok with detail `no_transcript` having done nothing at all, and
+  // recording that would suppress the retry that carries the transcript.
+  if (result.ok && !NO_OP_DETAILS.has(result.detail)) {
+    await emitAudit({
+      organizationId: org.id,
+      action: voiceAuditAction(payload.action),
+      payload: {
+        call_id: payload.call_id ?? null,
+        contact_id: contactId ?? null,
+        vertical: payload.vertical ?? null,
+        detail: result.detail,
+      },
+    });
+  }
+
+  return result;
 }
