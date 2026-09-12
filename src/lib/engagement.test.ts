@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { phaseSteps, type Engagement } from "@/lib/engagement";
 import {
   CASE_STATUSES,
@@ -114,5 +116,37 @@ describe("phase projection sanity", () => {
   ];
   it.each(cases)("%s reads to the client as %s", (status, expected) => {
     expect(ENGAGEMENT_PHASE_FOR_CASE[status as never]).toBe(expected);
+  });
+});
+
+// Regression: the tracker rendered Aug 13 for a record stamped 2026-08-14.
+// Phase timestamps are UTC midnight, so formatting them in a US local zone
+// walks every date back a day. Caught by looking at the actual screenshot.
+describe("phase dates do not drift a day west of Greenwich", () => {
+  it("formats a UTC-midnight timestamp as that same calendar day", () => {
+    const at = "2026-08-14T00:00:00Z";
+    const local = new Date(at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const utc = new Date(at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+    expect(utc).toBe("Aug 14, 2026");
+    // In any zone behind UTC the naive format is wrong; the point of the fix.
+    if (new Date(at).getTimezoneOffset() > 0) expect(local).not.toBe(utc);
+  });
+
+  it("the view formats dates in UTC, not the viewer's zone", () => {
+    const src = readFileSync(
+      join(process.cwd(), "src/app/(pocket)/pocket/build/BuildTrackerView.tsx"),
+      "utf8",
+    );
+    const fn = src.slice(src.indexOf("function when("));
+    expect(fn.slice(0, fn.indexOf("\n}"))).toContain('timeZone: "UTC"');
   });
 });
