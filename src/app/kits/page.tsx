@@ -189,6 +189,26 @@ export default function KitsLandingPage() {
           </div>
         </article>
 
+        {/*
+          The kits above are bundles. Some buyers do not want a bundle, they
+          want to know what is actually running before they pay — so this is
+          the one link on the page that leads away from a price and toward the
+          honest inventory.
+        */}
+        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 text-center">
+          <h3 className="text-lg font-semibold">Not sure which kit?</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Pick the parts you want one at a time. Every item tells you whether it is
+            running today or not switched on yet.
+          </p>
+          <Link
+            href="/configurator"
+            className="mt-4 inline-block rounded-lg border-2 border-[#1440C4] px-6 py-2.5 text-sm font-semibold text-[#1440C4] hover:bg-blue-50"
+          >
+            Build your own list
+          </Link>
+        </div>
+
         <p id="checkout-pending" className="mt-10 text-center text-sm text-slate-500">
           Buy opens GoHighLevel checkout (or the live GHL site with your kit campaign
           until product links are pasted). Questions: {support}
