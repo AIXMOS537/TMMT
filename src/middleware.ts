@@ -49,6 +49,7 @@ function isPublicPath(pathname: string) {
     pathname === "/manifest.webmanifest" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
@@ -86,6 +87,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/dealers" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
