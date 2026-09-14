@@ -82,4 +82,11 @@ export const POCKET_TILES: PocketTile[] = [
     href: "/pocket/climb",
     memberOnly: false,
   },
+  {
+    key: "build",
+    title: "Your build",
+    blurb: "Where your project is up to, what is next, and how to ask for a change.",
+    href: "/pocket/build",
+    memberOnly: true,
+  },
 ];
