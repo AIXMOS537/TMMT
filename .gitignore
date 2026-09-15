@@ -134,3 +134,6 @@ apps/engine/node_modules/
 apps/**/node_modules/
 apps/**/.next/
 auth/*.bak*
+
+# Counsel-issued retention rule — never commit the live one
+config/retention-policy.json
