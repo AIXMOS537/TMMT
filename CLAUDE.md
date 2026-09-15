@@ -4,6 +4,19 @@
 > `@docs/AIXMOS_MASTER_PROJECT.md` when deep context is needed (it's large; don't
 > import it by default or it bloats every session).
 
+## ACTIVE PROGRAM — AIRTABLE EXIT & FLEET OS PRODUCTIZATION
+Execution plan of record: `AIRTABLE-EXIT-EXECUTION-PLAN.md` (repo root). Work its phases in
+order; a gate is passed by producing its named artifact in `evidence/`, never by believing the
+work is done. Standing rules while that program is open:
+- **Nothing is deleted from Airtable, and the subscription is not cancelled,** until Gate 2
+  (attachments) and Gate 4 (write paths) both pass. Airtable is the sole copy of 706 attachment
+  records including identity documents.
+- **Tag every finding VERIFIED / INFERRED / REPORTED / UNKNOWN / CONFLICT.** UNKNOWN means
+  uncounted — it never means empty.
+- Attachment extraction is blocked on a **written retention rule from counsel**. Claude Code
+  implements that decision; it does not make it.
+- Live status: `evidence/README.md`.
+
 ## WHO / WHAT
 AIXMOS is the AI + automation spine for TMMT Auto Services LLC (PROJECT X HAILMARY, CEO).
 You are working inside the codebase that powers the platform. Owner is moving from
