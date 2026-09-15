@@ -3,7 +3,9 @@
 # Lines starting with # are ignored. Edit freely; blank/TODO url = "unconfigured".
 # (No secrets here — just public URLs to health-check.)
 🚗	Car Rentals / TMMT Ops	The Crew	https://tmmt-ops.vercel.app
-🛡️	Command Center	The Boss	https://tmmt-command-center.vercel.app
+# Command Center — project RETIRED and PAUSED 2026-09-09; it answers 503 by
+# design, so watching it would print a permanent false RED. Its surfaces are
+# roles inside tmmt-ops (/command, /executive).
 🤝	AIXMOS Funnel	The Crew	https://aixmos-landing.vercel.app
 📈	Credit Guidance	AIXMOS	https://tmmt-ops.vercel.app/credit
 🛒	E-commerce	Batman	https://tmmt-ops.vercel.app/build
