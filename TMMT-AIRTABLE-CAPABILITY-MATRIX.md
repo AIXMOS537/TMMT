@@ -44,8 +44,8 @@ governs (see `CHANGE_REQUEST_001.md`).
 | Automations | **51 total, 8 deployed** |
 | Dashboard element types | `bigNumber`, `chart` (donut/bar/pie/line), `list`, `pivotTable` |
 | Aggregations in use | `rowCount`, `sum`, `count`, `average`, `countUnique`, `percentFilled` |
-| **Automations containing `customScript`** | **8 (1 deployed)** — bodies not API-readable, see §7.2 |
-| Automations containing `aiGenerate` | 2 (both undeployed) |
+| **Automations containing `customScript`** | **8, holding 15 script bodies** (1 automation deployed) — bodies not API-readable, see §7.2 |
+| Automations containing `aiGenerate` | 2 (both undeployed) — prompts **are** API-readable and are preserved |
 
 **The shape of the dependency:** Airtable is used overwhelmingly as **forms-in, dashboards-out**,
 over a relational core with heavy linked records. It is *not* used as a spreadsheet — view usage
@@ -178,7 +178,7 @@ change-log. All must write to Supabase, never Airtable.
 | email action | **Yes — customer-facing** | 🟡 `sendSms` gate exists | **Must fail closed on DNC** | **P0** |
 | record create/update actions | Yes | 🟡 | — | P1 |
 | branching / delays / retries | Yes | 🟡 `automation_outbox` | — | P2 |
-| **custom script actions** | **Yes — 8, one deployed** | ❌ | **Logic opaque; must be transcribed from UI before cancellation** | **P1** |
+| **custom script actions** | **Yes — 8 automations / 15 bodies, one automation deployed** | ❌ | **Logic opaque; exit-preservation gate — `evidence/automation-logic-capture.md`** | **P1** |
 | AI generation actions | Yes — 2 (undeployed) | 🟡 brain-router | — | P3 |
 | **execution history** | Airtable-internal | 🟡 `audit_events` | **No per-automation run log** | **P1** |
 | enable/disable + dry-run + test mode | Airtable UI | ❌ | **Safety-critical** — §9.1 | **P0** |
@@ -316,15 +316,17 @@ expensive to retrofit.
 
 | | |
 |---|---|
-| **In current dependency surface?** | **YES — and my prior classification was wrong.** VERIFIED: **8 automations contain `customScript` nodes, and one of them is deployed** — `New Lead Notification and Status Update` (`wfl6aEZPBOZkd1KE7`) runs two scripts on every new lead. Two further automations use `aiGenerate` action nodes. |
+| **In current dependency surface?** | **YES — and my prior classification was wrong.** VERIFIED: **8 automations contain 15 `customScript` bodies, and one automation is deployed** — `New Lead Notification and Status Update` (`wfl6aEZPBOZkd1KE7`) runs two scripts on every new lead. A second (`wfl1oG2fiJvGVbtrX`) has a script as its **only** node. Two further automations use `aiGenerate`, whose prompts **are** API-readable and are preserved. |
 | **Why not required now** | Not deferrable as a *capability*. What is deferrable is a **general user-facing scripting facility**; what is **required** is a replacement for the specific logic these eight scripts encode. |
 | **Architectural implications** | **The script bodies are not retrievable through the API** — `get_automation` returns `inputs: {}` for every `customScript` node. They are readable only in the Airtable UI. Airtable's base export does **not** include automation definitions, so the Gate 0 offline archive **does not capture them**. |
 | **Becomes a requirement when** | Already is, for the porting work. A general sandboxed scripting facility becomes a requirement if operators need per-tenant custom logic. |
 | **Preserve a future path?** | **Yes** — but never as unsandboxed evaluation. Model automation actions as a **typed, registered action catalogue**; a future scripting action becomes one more registered type with an explicit permission and resource budget. |
 
-> **Workstream A consequence.** Eight pieces of undocumented business logic sit in Airtable and
-> are invisible to both the API and the base export. They must be transcribed from the UI before
-> cancellation. Tracked in `evidence/write-path-inventory.md`.
+> **Workstream A consequence — this is an exit-preservation gate, not a documentation task.**
+> Fifteen pieces of undocumented logic sit in Airtable, invisible to both the API and the base
+> export. They must be captured from the live UI with full execution context before cancellation.
+> Register and 14-field capture schema: `evidence/automation-logic-capture.md`.
+> **No cancellation gate may pass while unrecoverable automation logic remains uncaptured.**
 
 ### 7.3 Personal vs shared views
 
@@ -432,18 +434,24 @@ bulk-edited records.* TMMT's native engine must make that structurally impossibl
 ### 9.1a Eight automations contain script logic that neither the API nor the export can reach
 
 VERIFIED 2026-09-16. `get_automation` returns `inputs: {}` for every `customScript` node, so
-the script bodies cannot be read programmatically. Airtable's base export covers **records and
+the bodies cannot be read programmatically. Airtable's base export covers **records and
 attachments, not automation definitions**.
 
-Consequence: the Gate 0 offline archive, as specified, **does not preserve this logic**. Eight
-automations are affected; one — `New Lead Notification and Status Update` — is **deployed and
-runs two scripts on every new lead**. Its other nodes are legible (an internal notification to
-the owner's own inbox, then setting lead `Status` to "New Lead"), but what the two scripts do is
-unknown.
+Consequence: the Gate 0 offline archive, as specified, **does not preserve this logic**.
+**8 automations hold 15 script bodies.** One — `New Lead Notification and Status Update` — is
+**deployed and runs two scripts on every new lead**. Another — `Update GoHighLevel Pipeline
+Stages on Lead Status Change` — has a script as its **only node**, so 100% of its behaviour is
+unknown and its name points at a live external integration.
 
-**This is a Workstream A gap, not only a build input.** The scripts must be transcribed from the
-Airtable UI before cancellation or the logic is lost permanently. Whether any of them encodes a
-business rule that belongs in `docs/business-rules/` is currently **UNKNOWN**.
+**This is a Workstream A exit-preservation gate, not only a build input.** Whether any script
+encodes a business rule belonging in `docs/business-rules/` is **UNKNOWN**, and must not be
+inferred from neighbouring nodes. Full register, per-automation 14-field schema, capture
+procedure and gate condition: `evidence/automation-logic-capture.md`.
+
+The two `aiGenerate` prompts **were** recoverable via the API and are preserved there. One of
+them instructs the model to categorise expenses *"based on predefined rules"* that the prompt
+never supplies — so that categorisation was the model's own judgement, and is flagged
+**BUSINESS POLICY REQUIRED** rather than an encoded rule.
 
 ### 9.2 Seven tables have RLS enabled with ZERO policies — VERIFIED
 

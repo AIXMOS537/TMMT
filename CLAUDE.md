@@ -33,6 +33,11 @@ Standing rules while this program is open:
   of a MISSING file, not a migrated one.
 - Assume concurrent operators/jobs in production: re-check state before mutating; never reset,
   rebase or force-push over other work.
+- **Airtable automation logic is unrecoverable after cancellation.** 8 automations hold 15
+  `customScript` bodies that the API will not return and the base export does not include. They
+  must be captured from the live UI first: `evidence/automation-logic-capture.md`. Never infer a
+  script body from its neighbouring nodes — UNKNOWN until captured. **No cancellation gate may
+  pass while unrecoverable automation logic remains uncaptured.**
 - Live status: `evidence/README.md`.
 
 ## WHO / WHAT

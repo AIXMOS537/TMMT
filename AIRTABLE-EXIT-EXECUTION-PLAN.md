@@ -345,6 +345,7 @@ year later.
 - [ ] No automated write path to Airtable remains
 - [ ] No human workflow depends on Airtable
 - [ ] 30 days read-only completed with breakages logged and resolved
+- [ ] **Airtable automation logic preservation** — 8 script-bearing automations identified, containing **15 `customScript` bodies**; deployed script bodies and execution context must be captured from the live Airtable UI before subscription cancellation. Unknown behaviour must remain explicitly marked UNKNOWN until verified. **No cancellation gate may pass while unrecoverable automation logic remains uncaptured.** Register: `evidence/automation-logic-capture.md`
 
 Only after this gate may the owner cancel the Airtable subscription. The offline archive is
 retained permanently regardless.
@@ -510,6 +511,8 @@ Airtable exits the stack when all of the following are true, each with evidence:
 - [ ] Retention rule agreed with counsel and applied
 - [ ] Business logic written as specification
 - [ ] No automated or human write path remains
+- [ ] **Automation logic preserved** — all 15 `customScript` bodies captured with execution
+      context; nothing unrecoverable left uncaptured
 - [ ] 30 days of clean operation without it
 - [ ] Offline archive stored permanently
 - [ ] Client provisioning path touches Airtable at zero points
