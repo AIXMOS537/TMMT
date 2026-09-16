@@ -50,6 +50,25 @@ Airtable cannot be cancelled until Gates 2 and 4 both pass. Both are blocked on 
 
 Everything else is engineering work and is either done or unblocked.
 
+## Findings added 2026-09-16
+
+- **Concurrent production activity.** `g01_dnc_normalize_20260916` remediated **71
+  `exec_va_tasks` rows at 19:10:39 UTC on 2026-09-16** (rollback table captured prior state);
+  `agent_job.lease_expired` fired twice at 19:35/19:40 UTC. Another operator or scheduled
+  process is active. **No Airtable-exit gate state changed** — credential columns,
+  `documents`/`vehicle_media` at 0 rows, Incoming Leads 871 and `GHL Contact ID` 0 all
+  re-verified unchanged. Re-check state before mutating; never reset/rebase/force-push over it.
+- **7 tables have RLS enabled with zero policies.** Five look deliberate (backups,
+  service-role-only). Two are flagged **INFERRED risk** because 0 rows + no policy is the
+  `outreach_touches` fail-closed signature: `ghl_webhook_events` (0) and `signup_invites` (0).
+  Verify intended behaviour before adding any policy. Detail:
+  `TMMT-AIRTABLE-CAPABILITY-MATRIX.md` §9.2.
+- **Stale finding retired.** `SYSTEM_AUDIT_2026/06_AIRTABLE_PARITY.md` claims 3 of 4 Interfaces
+  screens read a non-existent `status` column. Verified fixed — all four read
+  `payment_status` / `contract_status` / `appointment_status` / `vehicle_status`.
+- **Build verified GREEN** (2026-09-16): `npm ci`, `tsc --noEmit`, `npm run build` all exit 0.
+  `scripts/` is inside the normal typecheck scope; no tsconfig exclusion is needed.
+
 ## Tooling
 
 | Script | Purpose | Safe to run? |
