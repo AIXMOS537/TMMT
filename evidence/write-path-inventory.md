@@ -163,9 +163,13 @@ is **UNKNOWN**.
 Two further automations use `aiGenerate` nodes (both undeployed): *Expense Categorization and
 Monthly Totals Update*, and *Customer Inspection Photos Automation*.
 
-**Action required before cancellation:** transcribe all 8 script bodies from the Airtable UI and
-assess whether any encodes a business rule belonging in `docs/business-rules/`. This is an owner
-or UI-access task; it cannot be done through the API.
+**Action required before cancellation:** capture the **15 `customScript` bodies** and their full
+execution context per the 14-field schema in `evidence/automation-logic-capture.md`, and classify
+each as business rule / integration / notification / transformation / other. This is an owner or
+UI-access task; it cannot be done through the API. **Do not infer a body from its neighbouring
+nodes — UNKNOWN until captured.**
+
+The two `aiGenerate` prompts **were** API-recoverable and are already preserved in that register.
 
 ## 4. NOT covered — owner access required
 
@@ -186,16 +190,15 @@ or UI-access task; it cannot be done through the API.
       create records; 3 more still mutate them**
 - [ ] No human workflow depends on Airtable — **UNKNOWN, needs the owner interview**
 - [ ] 30 days read-only completed with breakages logged — **NOT STARTED**
-- [ ] **(added)** All 8 `customScript` bodies transcribed from the Airtable UI and assessed —
-      **NOT STARTED.** Not API-recoverable and not in the base export; lost at cancellation
-      otherwise. See §3a.
+- [ ] **(added)** **Airtable automation logic preservation** — 8 script-bearing automations identified, containing **15 `customScript` bodies**; deployed script bodies and execution context must be captured from the live Airtable UI before subscription cancellation. Unknown behaviour must remain explicitly marked UNKNOWN until verified. **No cancellation gate may pass while unrecoverable automation logic remains uncaptured.** Register: `evidence/automation-logic-capture.md` — **NOT STARTED.**
 
 ### Recommended order
 
 1. **Disable the 8 deployed automations** — before any extraction or corrective edit (§1).
 2. Owner inventories Zapier and GHL.
-2a. Transcribe the 8 `customScript` bodies from the Airtable UI (§3a) — do this while the
-   subscription is live; it is unrecoverable afterwards.
+2a. Work `evidence/automation-logic-capture.md` — capture the 15 `customScript` bodies and
+   their execution context from the Airtable UI. Do this while the subscription is live; it is
+   unrecoverable afterwards. A1 is deployed and goes first.
 3. Delete the dormant write code (`upsertLeadForVerification` and its call site).
 4. Re-point `export-operators` and `sync:aixmos-people` at Supabase.
 5. Owner interview on human workflows.

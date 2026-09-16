@@ -19,7 +19,7 @@ A gate is passed by producing its named artifact here — not by believing the w
 | 1 — Parity | `parity-report.md` | **3 of 4 lines passed.** All 31 tables counted; field-level sample diff not run (bulk PII read) |
 | 2 — Attachments | `attachment-inventory.md` | **NOT PASSED** — inventory complete (706 records); extraction blocked on counsel |
 | 3 — Business logic | `../docs/business-rules/` | **2 of 3 lines passed.** 7 documents written; owner decisions outstanding |
-| 4 — Write paths | `write-path-inventory.md` | **NOT PASSED** — repo + Airtable automations inventoried; Zapier/GHL outstanding |
+| 4 — Write paths | `write-path-inventory.md` | **NOT PASSED** — repo + Airtable automations inventoried; Zapier/GHL outstanding; **15 script bodies uncaptured** (`automation-logic-capture.md`) |
 | 5 — Multi-tenant | — | NOT STARTED |
 | 6 — Collections | — | NOT STARTED — attorney review is a precondition |
 
@@ -47,6 +47,8 @@ Airtable cannot be cancelled until Gates 2 and 4 both pass. Both are blocked on 
 2. **Carrier credential rotation** (Gate 0) — only the owner can change it at the carrier.
 3. **Zapier / GHL console access** (Gate 4) — cannot be enumerated from here.
 4. **Where the signed contracts live** (Gate 1) — owner knowledge.
+5. **15 `customScript` bodies** (Gate 4) — capturable only from the live Airtable UI, and only
+   while the subscription is active. `automation-logic-capture.md`.
 
 Everything else is engineering work and is either done or unblocked.
 
@@ -66,12 +68,14 @@ Everything else is engineering work and is either done or unblocked.
 - **Stale finding retired.** `SYSTEM_AUDIT_2026/06_AIRTABLE_PARITY.md` claims 3 of 4 Interfaces
   screens read a non-existent `status` column. Verified fixed — all four read
   `payment_status` / `contract_status` / `appointment_status` / `vehicle_status`.
-- **Eight automations contain `customScript` logic the API cannot read** (`get_automation`
-  returns `inputs: {}`), and Airtable's base export covers records/attachments but **not
-  automation definitions**. One is deployed (`New Lead Notification and Status Update`, runs two
-  scripts per new lead). **Gate 0's offline archive does not preserve this logic** — the scripts
-  must be transcribed from the Airtable UI before cancellation or they are lost. Whether any
-  encodes a business rule is UNKNOWN. Detail: `TMMT-AIRTABLE-CAPABILITY-MATRIX.md` §9.1a.
+- **Airtable automation logic is an exit-preservation gate, not a documentation task.**
+  8 automations contain **15 `customScript` bodies**; `get_automation` returns `inputs: {}` for
+  every one, and Airtable's base export covers records/attachments but **not automation
+  definitions**. **Gate 0's offline archive does not preserve them** — cancellation destroys
+  them. One automation is deployed (A1, runs two scripts on every new lead); another (A2) has a
+  script as its *only* node. The two `aiGenerate` prompts **were** recoverable and are preserved.
+  Register + 14-field capture schema: `automation-logic-capture.md`.
+  **No cancellation gate may pass while unrecoverable automation logic remains uncaptured.**
 - **Build verified GREEN** (2026-09-16): `npm ci`, `tsc --noEmit`, `npm run build` all exit 0.
   `scripts/` is inside the normal typecheck scope; no tsconfig exclusion is needed.
 
