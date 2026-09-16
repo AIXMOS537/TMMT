@@ -70,8 +70,13 @@ export async function guardOrganization(organizationId: string): Promise<void> {
 
 /**
  * Sum today's audit_events cost_usd entries for this org and refuse if at/over cap.
- * Today is defined as UTC midnight → now to match audit_events.created_at semantics.
+ * Today is defined as UTC midnight → now, filtered on audit_events.ts (the row
+ * timestamp; the table has no created_at, see audit-events-columns.ts).
  * The audit emitter writes cost_usd into payload on every `agent.llm_call` event.
+ *
+ * This used to filter on `created_at`. PostgREST answered 42703 on every
+ * call, the error branch below failed closed, and every org with a cap (default
+ * 50 USD) was refused on every inbound SMS and voice summary.
  */
 export async function assertLlmCapNotExceeded(
   organizationId: string,
@@ -90,7 +95,7 @@ export async function assertLlmCapNotExceeded(
     .select('payload')
     .eq('organization_id', organizationId)
     .eq('action', 'agent.llm_call')
-    .gte('created_at', since.toISOString())
+    .gte('ts', since.toISOString())
 
   if (error) {
     console.error('[guard.llm_cap] audit_events query failed; failing closed', error.message)
