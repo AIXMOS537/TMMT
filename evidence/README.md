@@ -66,6 +66,12 @@ Everything else is engineering work and is either done or unblocked.
 - **Stale finding retired.** `SYSTEM_AUDIT_2026/06_AIRTABLE_PARITY.md` claims 3 of 4 Interfaces
   screens read a non-existent `status` column. Verified fixed — all four read
   `payment_status` / `contract_status` / `appointment_status` / `vehicle_status`.
+- **Eight automations contain `customScript` logic the API cannot read** (`get_automation`
+  returns `inputs: {}`), and Airtable's base export covers records/attachments but **not
+  automation definitions**. One is deployed (`New Lead Notification and Status Update`, runs two
+  scripts per new lead). **Gate 0's offline archive does not preserve this logic** — the scripts
+  must be transcribed from the Airtable UI before cancellation or they are lost. Whether any
+  encodes a business rule is UNKNOWN. Detail: `TMMT-AIRTABLE-CAPABILITY-MATRIX.md` §9.1a.
 - **Build verified GREEN** (2026-09-16): `npm ci`, `tsc --noEmit`, `npm run build` all exit 0.
   `scripts/` is inside the normal typecheck scope; no tsconfig exclusion is needed.
 

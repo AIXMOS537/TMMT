@@ -143,6 +143,30 @@ from repossession to the ban list, matching the `Repo Status` rule in
 
 ---
 
+## 3a. Script logic inside automations — NOT recoverable via API
+
+VERIFIED 2026-09-16. **8 of the 51 automations contain `customScript` action nodes.** One is
+deployed: `New Lead Notification and Status Update` (`wfl6aEZPBOZkd1KE7`), which fires on every
+record created in `Incoming Leads` and runs **two** scripts.
+
+`get_automation` returns `inputs: {}` for every `customScript` node — the bodies are readable
+only in the Airtable UI. Airtable's base export includes records and attachments, **not
+automation definitions**.
+
+**Therefore the Gate 0 offline archive does not capture this logic.** Cancelling the
+subscription destroys it.
+
+The deployed automation's other nodes are legible: an internal email to the owner's own inbox,
+then an `updateRecord` setting lead `Status` to "New Lead". What the two scripts do in between
+is **UNKNOWN**.
+
+Two further automations use `aiGenerate` nodes (both undeployed): *Expense Categorization and
+Monthly Totals Update*, and *Customer Inspection Photos Automation*.
+
+**Action required before cancellation:** transcribe all 8 script bodies from the Airtable UI and
+assess whether any encodes a business rule belonging in `docs/business-rules/`. This is an owner
+or UI-access task; it cannot be done through the API.
+
 ## 4. NOT covered — owner access required
 
 | Source | Status | Why |
@@ -162,11 +186,16 @@ from repossession to the ban list, matching the `Repo Status` rule in
       create records; 3 more still mutate them**
 - [ ] No human workflow depends on Airtable — **UNKNOWN, needs the owner interview**
 - [ ] 30 days read-only completed with breakages logged — **NOT STARTED**
+- [ ] **(added)** All 8 `customScript` bodies transcribed from the Airtable UI and assessed —
+      **NOT STARTED.** Not API-recoverable and not in the base export; lost at cancellation
+      otherwise. See §3a.
 
 ### Recommended order
 
 1. **Disable the 8 deployed automations** — before any extraction or corrective edit (§1).
 2. Owner inventories Zapier and GHL.
+2a. Transcribe the 8 `customScript` bodies from the Airtable UI (§3a) — do this while the
+   subscription is live; it is unrecoverable afterwards.
 3. Delete the dormant write code (`upsertLeadForVerification` and its call site).
 4. Re-point `export-operators` and `sync:aixmos-people` at Supabase.
 5. Owner interview on human workflows.

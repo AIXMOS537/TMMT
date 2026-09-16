@@ -9,9 +9,12 @@
   phases in order; a gate is passed by producing its named artifact in `evidence/`, never by
   believing the work is done.
 - **Workstream B — TMMT Native Capability.** Map of record: `TMMT-AIRTABLE-CAPABILITY-MATRIX.md`.
-  Goal is **Airtable capability parity where TMMT needs it**, not imitation — §7 of that file
-  lists what is deliberately out of scope. Build against it; do not rebuild from memory of what
-  Airtable offers.
+  Goal is to make TMMT capable of replacing Airtable **broadly**, without prematurely building
+  generic platform infrastructure nothing needs. Capabilities not currently required are
+  **DEFERRED, never "out of scope"** (§7 is a deferral register: each entry records what would
+  make it a requirement and the cheap decision that keeps the path open). Build against it; do
+  not rebuild from memory of what Airtable offers. Current build order: rules/formula engine →
+  attachment provenance → automation safety envelope.
 - A migration blocker does not stop product development. A product feature does not authorize an
   unsafe migration.
 
