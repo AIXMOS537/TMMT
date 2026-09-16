@@ -103,6 +103,8 @@ export default function OutboxPage() {
             <dd>{summary.skippedAlreadyQueued}</dd>
             <dt>No phone</dt>
             <dd>{summary.skippedNoPhone}</dd>
+            <dt>Closed (handled/dismissed)</dt>
+            <dd>{summary.skippedClosed}</dd>
             <dt>Refused by the gate</dt>
             <dd>{summary.refusedByGate}</dd>
           </dl>

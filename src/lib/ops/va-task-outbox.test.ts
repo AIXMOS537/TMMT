@@ -22,8 +22,27 @@ const TASK = (over: Partial<VaTaskRow> = {}): VaTaskRow => ({
   subject_name: "Dominique Hott",
   subject_phone: "+15551112222",
   context: { past_due: "250.00" },
+  status: "pending",
+  handled_at: null,
   ...over,
 });
+
+/**
+ * Evaluate the filters the module actually put on the exec_va_tasks query
+ * against in-memory rows, so the tests exercise the real selection rather than
+ * a fake that returns every row regardless of what was asked.
+ */
+function selectLikePostgrest(rows: VaTaskRow[], filters: Array<[string, unknown, unknown]>): VaTaskRow[] {
+  return rows.filter((row) =>
+    filters.every(([method, column, value]) => {
+      const cell = (row as unknown as Record<string, unknown>)[String(column)] ?? null;
+      if (method === "eq") return cell === value;
+      if (method === "is") return cell === value;
+      if (method === "in") return (value as unknown[]).includes(cell);
+      return true; // order / limit do not change membership
+    })
+  );
+}
 
 /**
  * Fake DB wired for the three tables this module touches. `dnc` and `optedOut`
@@ -35,9 +54,13 @@ function db(opts: {
   dnc?: string[];
   optedOut?: boolean;
   alreadyQueued?: boolean;
+  /** Return every task regardless of the query, to prove the in-loop guard. */
+  ignoreFilters?: boolean;
 }): FakeSupabase {
   return makeFakeSupabase((call) => {
-    if (call.table === "exec_va_tasks") return { data: opts.tasks };
+    if (call.table === "exec_va_tasks") {
+      return { data: opts.ignoreFilters ? opts.tasks : selectLikePostgrest(opts.tasks, call.filters) };
+    }
     if (call.table === "automation_outbox") {
       if (call.op === "insert") return { data: null, error: null };
       return { data: opts.alreadyQueued ? { id: 1 } : null };
@@ -171,5 +194,83 @@ describe("va-task outbox — the wording", () => {
   it("degrades to a neutral phrase when the amount is missing or unparseable", () => {
     expect(draftMessage(TASK({ context: {} }), "Taj")).toContain("a balance");
     expect(draftMessage(TASK({ context: { past_due: "n/a" } }), "Taj")).toContain("a balance");
+  });
+});
+
+describe("va-task outbox — closed tasks are never actionable (G-01)", () => {
+  const HANDLED = "2026-09-08T20:18:05.948Z";
+
+  it("asks the database for open tasks only: status pending AND handled_at null", async () => {
+    const d = db({ tasks: [] });
+    await run(d);
+    const read = d.calls.find((c) => c.table === "exec_va_tasks")!;
+    expect(read.filters).toContainEqual(["eq", "status", "pending"]);
+    expect(read.filters).toContainEqual(["is", "handled_at", null]);
+  });
+
+  it("open + pending + otherwise eligible is considered and staged", async () => {
+    const d = db({ tasks: [TASK()] });
+    const s = await run(d);
+    expect(s.considered).toBe(1);
+    expect(s.staged).toBe(1);
+  });
+
+  it("handled + pending is never staged, even with owner approval", async () => {
+    const d = db({ tasks: [TASK({ handled_at: HANDLED })] });
+    const s = await run(d, { ownerApproved: true });
+    expect(s.considered).toBe(0);
+    expect(s.staged).toBe(0);
+    expect(d.calls.some((c) => c.table === "automation_outbox" && c.op === "insert")).toBe(false);
+  });
+
+  it("dismissed re-engagement + pending is never staged, even with owner approval", async () => {
+    const d = db({
+      tasks: [TASK({ id: "t-dismissed", category: "lead_reengagement", context: {}, handled_at: HANDLED })],
+    });
+    const s = await run(d, { ownerApproved: true });
+    expect(s.staged).toBe(0);
+    expect(s.drafts).toHaveLength(0);
+  });
+
+  it("blocked_dnc is never staged", async () => {
+    const d = db({ tasks: [TASK({ status: "blocked_dnc", handled_at: HANDLED })] });
+    expect((await run(d)).staged).toBe(0);
+  });
+
+  it("open + DNC + otherwise eligible is refused by the gate", async () => {
+    const d = db({ tasks: [TASK()], dnc: ["5551112222"] });
+    const s = await run(d);
+    expect(s.staged).toBe(0);
+    expect(s.refusedByReason.dnc).toBe(1);
+  });
+
+  it("closed + DNC is never staged and never even reaches the gate", async () => {
+    const d = db({ tasks: [TASK({ handled_at: HANDLED })], dnc: ["5551112222"] });
+    const s = await run(d, { ownerApproved: true });
+    expect(s.staged).toBe(0);
+    expect(d.calls.some((c) => c.table === "do_not_contact_numbers")).toBe(false);
+  });
+
+  it("only the open task of a mixed batch is staged; transactional work is unaffected", async () => {
+    const d = db({
+      tasks: [
+        TASK({ id: "open-pay" }),
+        TASK({ id: "closed-pay", handled_at: HANDLED }),
+        TASK({ id: "closed-lead", category: "lead_reengagement", context: {}, handled_at: HANDLED }),
+      ],
+    });
+    const s = await run(d, { ownerApproved: true });
+    expect(s.staged).toBe(1);
+    expect(s.drafts.map((x) => x.taskId)).toEqual(["open-pay"]);
+  });
+
+  it("if the query filter ever regresses, the in-loop guard still skips closed rows", async () => {
+    const d = db({
+      tasks: [TASK({ id: "open" }), TASK({ id: "closed", handled_at: HANDLED })],
+      ignoreFilters: true,
+    });
+    const s = await run(d, { ownerApproved: true });
+    expect(s.skippedClosed).toBe(1);
+    expect(s.drafts.map((x) => x.taskId)).toEqual(["open"]);
   });
 });
