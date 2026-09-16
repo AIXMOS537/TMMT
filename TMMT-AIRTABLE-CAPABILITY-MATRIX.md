@@ -11,8 +11,8 @@ was read, not recalled.
 > have we rebuilt it yet?*
 >
 > It is deliberately **not** a list of Airtable's product features. The target is
-> **capability parity where TMMT needs it** — not imitation. Several Airtable features are
-> explicitly out of scope (§7).
+> **capability parity where TMMT needs it**, built so that broader Airtable replacement stays
+> reachable. Capabilities not currently required are **deferred, not excluded** (§7).
 
 ---
 
@@ -44,6 +44,8 @@ governs (see `CHANGE_REQUEST_001.md`).
 | Automations | **51 total, 8 deployed** |
 | Dashboard element types | `bigNumber`, `chart` (donut/bar/pie/line), `list`, `pivotTable` |
 | Aggregations in use | `rowCount`, `sum`, `count`, `average`, `countUnique`, `percentFilled` |
+| **Automations containing `customScript`** | **8 (1 deployed)** — bodies not API-readable, see §7.2 |
+| Automations containing `aiGenerate` | 2 (both undeployed) |
 
 **The shape of the dependency:** Airtable is used overwhelmingly as **forms-in, dashboards-out**,
 over a relational core with heavy linked records. It is *not* used as a spreadsheet — view usage
@@ -120,7 +122,7 @@ Airtable view usage is **sparse** (Fleet = 2 grid views). Do not build a full vi
 | Kanban / calendar | Minor | ✅ `KanbanBoard`, `CalendarView` | — | — | — |
 | Filter / sort / group | Yes | 🟡 client-side `FilterBar`, not persisted | P2 | — |
 | **Saved view configurations** | Light | ❌ | No `saved_views` table | P3 | — |
-| Personal vs shared views | No evidence | ❌ | **Out of scope until demanded** | P4 | — |
+| Personal vs shared views | No evidence | ❌ | **Deferred** — see §7.3 | P4 | — |
 | Field ordering / hidden fields / widths | Light | ❌ | Presentation metadata | P4 | — |
 | Pagination / bulk actions | Yes | 🟡 | See §4.8 | P2 | — |
 
@@ -176,6 +178,8 @@ change-log. All must write to Supabase, never Airtable.
 | email action | **Yes — customer-facing** | 🟡 `sendSms` gate exists | **Must fail closed on DNC** | **P0** |
 | record create/update actions | Yes | 🟡 | — | P1 |
 | branching / delays / retries | Yes | 🟡 `automation_outbox` | — | P2 |
+| **custom script actions** | **Yes — 8, one deployed** | ❌ | **Logic opaque; must be transcribed from UI before cancellation** | **P1** |
+| AI generation actions | Yes — 2 (undeployed) | 🟡 brain-router | — | P3 |
 | **execution history** | Airtable-internal | 🟡 `audit_events` | **No per-automation run log** | **P1** |
 | enable/disable + dry-run + test mode | Airtable UI | ❌ | **Safety-critical** — §9.1 | **P0** |
 
@@ -278,18 +282,127 @@ Not a commitment — a proposal for the owner to correct.
 
 ---
 
-## 7. Explicitly OUT OF SCOPE
+## 7. DEFERRED / NOT CURRENTLY REQUIRED
 
-Airtable features TMMT should **not** rebuild absent evidence of need:
+**Classification rule.** *Not currently required by the observed TMMT/Airtable dependency
+surface* is **not** the same claim as *permanently excluded*. The product objective is to make
+TMMT capable of replacing Airtable **broadly**, while avoiding premature construction of generic
+platform infrastructure nothing currently needs.
 
-- A generic user-defined table/field builder ("everything is JSON"). Use real Postgres schemas.
-- Airtable's scripting block / custom-script action as a general facility.
-- Marketplace/extensions, Gantt/timeline, Sync-from-external-base, record colouring,
-  per-user personal views, real-time multi-cursor collaboration.
-- Comments, mentions and activity feeds **as a social layer** — build assignment + audit trail
-  instead, unless operations demand discussion threads.
+Everything below is therefore **DEFERRED**. Nothing here is excluded on principle. A capability
+would only move to genuinely out-of-scope if evidence showed it **fundamentally incompatible**
+with TMMT's architecture — and **no capability currently meets that bar.**
 
-**Rationale:** the goal is 100% coverage of *required* capability, not imitation of the product.
+**Do not build these yet.** The build order is §6: rules engine, attachment provenance,
+automation safety envelope.
+
+**The obligation this creates:** deferral must not foreclose. Each entry records the
+architectural decision needed *now* to keep the door open later — these are cheap today and
+expensive to retrofit.
+
+---
+
+### 7.1 Generic user-defined tables / fields
+
+| | |
+|---|---|
+| **In current dependency surface?** | **No.** All 31 tables are fixed-schema; no runtime field creation observed. |
+| **Why not required now** | TMMT's entities are known and stable. Per-tenant schema divergence is not yet a product requirement. |
+| **Architectural implications** | An unbounded "everything is JSON" store would contradict §20 and forfeit relational integrity, constraints and typed queries. |
+| **Becomes a requirement when** | A tenant needs fields TMMT does not model, or the product sells "configure your own tracker". |
+| **Preserve a future path?** | **Yes.** Reserve a **typed custom-field registry** — a `field_definitions` table (entity, key, type, validation, org-scoped) plus a per-entity `custom_values` JSONB column. Core business columns stay real columns; tenant extensions live in the registry. This is additive later **only if** the entity tables are not meanwhile littered with ad-hoc JSON. |
+
+### 7.2 Scripting / extension actions — **CORRECTION: this IS in the dependency surface**
+
+| | |
+|---|---|
+| **In current dependency surface?** | **YES — and my prior classification was wrong.** VERIFIED: **8 automations contain `customScript` nodes, and one of them is deployed** — `New Lead Notification and Status Update` (`wfl6aEZPBOZkd1KE7`) runs two scripts on every new lead. Two further automations use `aiGenerate` action nodes. |
+| **Why not required now** | Not deferrable as a *capability*. What is deferrable is a **general user-facing scripting facility**; what is **required** is a replacement for the specific logic these eight scripts encode. |
+| **Architectural implications** | **The script bodies are not retrievable through the API** — `get_automation` returns `inputs: {}` for every `customScript` node. They are readable only in the Airtable UI. Airtable's base export does **not** include automation definitions, so the Gate 0 offline archive **does not capture them**. |
+| **Becomes a requirement when** | Already is, for the porting work. A general sandboxed scripting facility becomes a requirement if operators need per-tenant custom logic. |
+| **Preserve a future path?** | **Yes** — but never as unsandboxed evaluation. Model automation actions as a **typed, registered action catalogue**; a future scripting action becomes one more registered type with an explicit permission and resource budget. |
+
+> **Workstream A consequence.** Eight pieces of undocumented business logic sit in Airtable and
+> are invisible to both the API and the base export. They must be transcribed from the UI before
+> cancellation. Tracked in `evidence/write-path-inventory.md`.
+
+### 7.3 Personal vs shared views
+
+| | |
+|---|---|
+| **In current dependency surface?** | **No.** View usage is sparse overall (Fleet = 2 grid views) and no per-user view was observed. |
+| **Why not required now** | Operator count is small; shared views have been sufficient. |
+| **Architectural implications** | Low. Ownership is one nullable column. |
+| **Becomes a requirement when** | Multiple operators per tenant want private working sets, or a saved-view feature ships. |
+| **Preserve a future path?** | **Yes, cheaply.** When `saved_views` is built (§4.2, P3), include `owner_user_id NULL = shared` and `org_id` from day one. Retrofitting ownership onto existing shared views is a migration; including the column is free. |
+
+### 7.4 Marketplace / extension ecosystem
+
+| | |
+|---|---|
+| **In current dependency surface?** | **No** third-party Airtable extensions observed. |
+| **Why not required now** | No demand; large surface; each extension is a security and support burden. |
+| **Architectural implications** | Requires stable public APIs, auth scopes and versioning before it is even possible. |
+| **Becomes a requirement when** | Operators or partners need to add capability without TMMT engineering — plausible for the operator-network tier. |
+| **Preserve a future path?** | **Yes, indirectly.** The API work already in §4.8 (P2) with scoped tokens and webhooks *is* the foundation. Build the API as if a third party will consume it. |
+
+### 7.5 Gantt / timeline views
+
+| | |
+|---|---|
+| **In current dependency surface?** | **No.** Time is presented via `CalendarView` and a line chart with `yearMonth` bucketing. |
+| **Why not required now** | No dependency-scheduled work observed. Maintenance and rentals are date-point, not duration-with-dependency. |
+| **Architectural implications** | Needs start/end and optionally dependency edges on the underlying entity. |
+| **Becomes a requirement when** | Rental terms, maintenance windows or recovery workflows need duration and overlap reasoning — plausible for fleet utilisation. |
+| **Preserve a future path?** | **Yes.** Model time-bounded entities with explicit `starts_at`/`ends_at` rather than a single date where a duration genuinely exists. Vehicle status lifecycle (`business-rules/05`) already needs this — it has no transition history, so utilisation is currently underivable. |
+
+### 7.6 Sync from external sources
+
+| | |
+|---|---|
+| **In current dependency surface?** | **No** Airtable Sync configured. External data arrives by webhook (GHL) instead. |
+| **Why not required now** | Webhook + API integration already covers the live path. |
+| **Architectural implications** | A sync source is a second writer — exactly the split-brain risk this whole programme exists to remove. |
+| **Becomes a requirement when** | A tenant must mirror an external system TMMT does not integrate directly. |
+| **Preserve a future path?** | **Yes, with care.** Keep the provenance columns from CR-001 (`source_system`, `source_record_id`) as a **general pattern**, not attachment-only. Any synced row must be traceable and must never silently become authoritative. |
+
+### 7.7 Comments / mentions / activity feeds
+
+| | |
+|---|---|
+| **In current dependency surface?** | **Not materially.** Airtable record comments exist as a feature; no operational reliance observed. The `🔄 Change & Update Log` table (2 rows) is the closest thing — a *form-driven* change-capture process, not threaded discussion. |
+| **Why not required now** | Operations used email and the change-log form. Assignment + audit trail carry most of the value. |
+| **Architectural implications** | Low, if record identity is stable and polymorphic references are possible. |
+| **Becomes a requirement when** | Multi-operator tenants need per-record discussion, or approval workflows need attached rationale — **likely**, given every customer/money/legal action must terminate at an owner-approval step. |
+| **Preserve a future path?** | **Yes.** Give every entity a stable UUID primary key and avoid composite/natural keys, so a polymorphic `comments(entity_type, entity_id)` table can attach later without a data migration. |
+
+### 7.8 Presentation minutiae
+
+Record colouring, column widths, field ordering, real-time multi-cursor editing.
+
+**Deferred.** Not in the dependency surface; each is presentation state on a saved view
+(`owner_user_id` + a JSONB `display_config`) except multi-cursor, which needs a realtime
+transport. **Preserve the path** by keeping view configuration in a JSONB blob rather than
+hard-coded per screen.
+
+---
+
+### Deferral register — summary
+
+| # | Capability | In use today? | Deferred | Path preserved by |
+|---|---|---|---|---|
+| 7.1 | Generic user-defined tables/fields | No | Yes | Typed field registry; no ad-hoc JSON on core tables |
+| 7.2 | **Scripting / extension actions** | **YES (1 deployed)** | **Facility deferred; porting REQUIRED** | Typed action catalogue |
+| 7.3 | Personal vs shared views | No | Yes | `owner_user_id` on `saved_views` |
+| 7.4 | Marketplace / extensions | No | Yes | Build the API for third parties |
+| 7.5 | Gantt / timeline | No | Yes | `starts_at`/`ends_at` + status transition history |
+| 7.6 | External sync | No | Yes | General provenance columns |
+| 7.7 | Comments / collaboration | Not materially | Yes | Stable UUID PKs for polymorphic attachment |
+| 7.8 | Presentation minutiae | No | Yes | View config as JSONB |
+
+**Rationale:** 100% coverage of *required* capability now, with the architecture kept open so
+broader Airtable replacement stays reachable — rather than either a disposable clone or a dead
+end.
 
 ---
 
@@ -315,6 +428,22 @@ email via Gmail**. It is dormant only because no payment is currently due (lates
 **Dormant is not disabled.** This is the design requirement for §4.5's safety envelope: *a
 workflow capable of emailing customers must never fire because someone restored an archive or
 bulk-edited records.* TMMT's native engine must make that structurally impossible.
+
+### 9.1a Eight automations contain script logic that neither the API nor the export can reach
+
+VERIFIED 2026-09-16. `get_automation` returns `inputs: {}` for every `customScript` node, so
+the script bodies cannot be read programmatically. Airtable's base export covers **records and
+attachments, not automation definitions**.
+
+Consequence: the Gate 0 offline archive, as specified, **does not preserve this logic**. Eight
+automations are affected; one — `New Lead Notification and Status Update` — is **deployed and
+runs two scripts on every new lead**. Its other nodes are legible (an internal notification to
+the owner's own inbox, then setting lead `Status` to "New Lead"), but what the two scripts do is
+unknown.
+
+**This is a Workstream A gap, not only a build input.** The scripts must be transcribed from the
+Airtable UI before cancellation or the logic is lost permanently. Whether any of them encodes a
+business rule that belongs in `docs/business-rules/` is currently **UNKNOWN**.
 
 ### 9.2 Seven tables have RLS enabled with ZERO policies — VERIFIED
 
@@ -354,7 +483,9 @@ force-push over it.
 ## 10. Owner decisions required before building
 
 1. **Confirm or correct the §6 sequencing.**
-2. **Approve the §7 out-of-scope list** — the quickest way to prevent scope explosion.
+2. **Approve the §7 deferral register** — confirm each capability is *deferred* rather than
+   required now, and approve the cheap "preserve the path" decisions (UUID PKs,
+   `owner_user_id` on saved views, `starts_at`/`ends_at`, general provenance columns).
 3. **The eligibility truth table** (`business-rules/01`) — three signals → verdict. Never
    encoded; cannot be inferred. Blocks the rules engine.
 4. **The 36 NULL partner percentages** (`business-rules/04`) — real split per vehicle, or
