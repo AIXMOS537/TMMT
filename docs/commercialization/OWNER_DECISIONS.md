@@ -1125,8 +1125,59 @@ required before any customer**.
 
 **NO RECOMMENDATION — this is a legal-structure and relationship choice.**
 
-**Owner Answer (b):**
-_______________________________________________
+**Owner Answer (b) — SETTLED 2026-09-16: NEITHER A NOR B AS FRAMED.** The A/B
+framing was incomplete. The product is a **software-led credit report analysis and
+guided customer journey inside TMMT OS**, with a human consultant only when
+warranted:
+
+`credit path offered → customer explicitly chooses → owner's MyFreeScoreNow
+affiliate link → customer obtains their own report → customer voluntarily uploads
+it → secure storage → parse to structured data with provenance → analysis →
+customer dashboard → customer answers verification questions → guided next-step
+plan → consultant needed? (no: self-service guidance / yes: book consultation) →
+consultant receives a prepared case packet → app keeps tracking next steps`
+
+Binding rules from this answer:
+
+- **Not a referral page, not an autonomous dispute-letter machine.** The dispute
+  engine is a **downstream** capability: report → analysis → customer
+  verification → issue identification → consultant/appropriate review → approved
+  action → dispute workflow only if warranted. Negative ≠ disputable.
+- **MyFreeScoreNow Phase 1 = affiliate link + customer download + voluntary
+  upload.** Never collect MFSN credentials, never scrape, never build unsupported
+  automated access. Direct integration only if MFSN officially supports it.
+  Preserve affiliate attribution without exposing it in the customer flow.
+- **Raw report ≠ operational database.** Raw file in secure storage; normalized
+  data with provenance (report, bureau, section, item, source text, import time);
+  never invent missing values; explicit extraction confidence.
+- **Keep four kinds of truth separate:** what the report says / what the software
+  infers / what the customer confirms / what a consultant concludes.
+- **"Full access"** means the customer knowingly provides the report needed for the
+  requested analysis — not future pulls, unrelated accounts, cross-tenant sharing,
+  sale, unrelated marketing, or indefinite retention.
+- **Credit reports are a high-sensitivity data class**; do not send raw reports to
+  external AI providers; deterministic parsing first, local AI where appropriate,
+  minimal data to any model.
+- **Consultant/provider is modeled as a service-provider organization, not
+  hard-coded.** Khan Strategies may be the first provider, operating in its own
+  tenant; TMMT Rentals gains no automatic access to the provider's service records.
+- One person with separate relationships (rental, credit workflow, referrals,
+  permissions, documents, appointments) — without exposing tenant data across
+  businesses.
+- No outcome promises (score, deletion, financing). #224 stays HOLD.
+- Uploading one's own report does **not** by itself place downstream activity
+  outside credit-repair or consumer-reporting requirements — legal review gate
+  before monetized/live operation.
+
+**Still open (D-22c):** who is the human consultant / service provider after the
+analysis — Khan Strategies, TMMT staff, or another provider — and who contracts,
+bills, supports and owns the service record.
+
+**Next engineering action (authorized):** gap analysis only — no new screens —
+then the smallest dependency-aware sequence to move **one test customer** through
+affiliate entry → report upload → analysis → customer review → consultant booking,
+with no dispute sent, no money charged, and no real customer's report. **Stop for
+owner approval there.**
 
 ---
 
@@ -1149,7 +1200,7 @@ _______________________________________________
 | D-13 founder terms | 🟠 | fence compliance |
 | D-20 vehicle-inclusive offer | 🔴 | **any quote naming a car — HOLD until answered** |
 | D-21 Customer #2 tenant safety | 🔴 | **a safe second tenant; part (a) needs no engineering** |
-| D-22b who performs the credit service | 🔴 | the legal structure the credit engine is finished for; part (a) SETTLED |
+| D-22c who is the consultant / service provider | 🔴 | contracting, billing, provider tenant; D-22a and D-22b SETTLED |
 | D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |

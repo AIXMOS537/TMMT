@@ -2,9 +2,13 @@
 
 Audit date: 2026-09-16 · Master `c8d72c92` · PR #224 head `9bb2b5f3` · prod `uapxakmlwnpfsftfeezx` (read-only SQL, counts only)
 
-Owner decision this serves: **D-22a / A-5** — the credit pathway is ACTIVE and is
-part of the TMMT customer journey. **D-22b (TMMT performs vs refer to Khan
-Strategies) is OPEN** and decides the legal structure below.
+Owner decisions this serves: **D-22a / D-22b → A-5** — the credit pathway is ACTIVE,
+part of the TMMT customer journey, and the product is a **software-led credit report
+analysis and guided journey** (MFSN affiliate link → customer uploads own report →
+parse → analyze → customer verifies → next steps → consultant only when warranted).
+Dispute letters are downstream. **D-22c (who the consultant/provider is) is OPEN.**
+§1–§7 describe the engine as built; **§8 is the gap map against the D-22b journey
+and §9 the smallest sequence to one test customer.**
 
 Labels: **F** fact · **SI** strong inference · **WI** weak inference.
 Status words follow `PROJECT_AUDIT.md`. Nothing here is legal advice; every legal
@@ -24,7 +28,9 @@ item is marked for counsel.
   `dispute_clients.payload` (F).
 - **Contradiction:** `/legal/credit` says TMMT is not a credit repair
   organization, does not dispute, and refers to Khan Strategies LLC. The desk
-  generates FCRA dispute letters in-house (F). D-22b resolves which one changes.
+  generates FCRA dispute letters in-house (F). D-22b (2026-09-16) made the
+  product software-led analysis with letters downstream; the page still needs
+  re-audit and counsel review against that model.
 - **No AI model is used** anywhere in `src/lib/credit-dispute` — templates and
   rules only (F).
 
@@ -179,7 +185,9 @@ which already has `program_track` with `renter` and `credit`) — design item C-
 
 ## 7. What prevents a real customer moving end to end (ordered)
 
-1. **D-22b** — perform vs refer; the legal page and the desk contradict (owner).
+1. ~~D-22b perform vs refer~~ — resolved 2026-09-16 as software-led analysis;
+   `/legal/credit` must be re-audited against that model (not assumed sufficient).
+   D-22c (provider) open.
 2. No contract, authorization or counsel-approved disclosures (legal + C-02).
 3. PR #224 blockers — ungated path, invented letter history, client-side gate (C-01).
 4. Dispute schema not on prod; no status, rounds or results tables (C-04, prod-gated).
@@ -190,3 +198,61 @@ which already has `program_track` with `renter` and `credit`) — design item C-
 9. No enrollment writer, payment wiring or GHL tag push (C-09, after D-22b and D-1/D-6).
 
 Remediation rows: `docs/REMEDIATION_PLAN.md`, Batch 6.
+
+---
+
+## 8. Gap map against the D-22b journey (2026-09-16)
+
+Master `c8d72c92` + read-only prod SQL. Statuses: WORKING · PARTIAL · BROKEN ·
+UNTESTED · MISSING · DUPLICATED · UNSAFE.
+
+| # | Component | What exists | Status | Gap |
+|---|---|---|---|---|
+| 1 | Affiliate entry | no MFSN outbound link or env var in `src` (F); `affiliate_links` (20) is TMMT's own operator program; unapplied `20260707130000_primary_sources.sql` adds `mfsn_member_id`/`mfsn_affiliate_ref`; `/credit`, `/funding` redirect to the GHL site | MISSING | owner's link; link-opened / returned events (nearest: `intake_events`) |
+| 2 | Report upload | token-gated customer upload pattern exists for licences (`/forms/license-upload`, staff-minted expiring token, private bucket); buckets: `program-documents` 12 MB pdf/images, `staff-documents` **no size/MIME limit**; MIME check trusts browser `file.type`, no magic-byte or scan (`document-storage.ts:22-36`) | MISSING (pattern reusable) | credit-report bucket with limits, content sniffing, retention, report record tied to person + org |
+| 3 | Report parsing | `importers/myfreescorenow.ts`, `shared.ts` — **staff-pasted JSON (hand-made schema) or naive CSV; no PDF/HTML/file** (F) | **UNSAFE**, 0 tests | keeps negatives only; drops positive tradelines, payment history, limits, authorized inquiries, pull date; **no provenance**; invents values: pull date = today, **bureau defaults to `experian`**, "Unknown" creditor, $0 balance → undefined; asserts `isUnverifiable` from a missing account number and `isInaccurate` + "no permissible purpose under FCRA §604" for any inquiry marked unauthorized. No real MFSN fixture |
+| 4 | Normalized data | `20260707120000_dispute_engine.sql` — 9 tables, none on prod; `credit_reports.pull_date DEFAULT CURRENT_DATE`, `tradelines.dispute_eligible DEFAULT true`, no FKs to `client_journey`/org | PLANNED, misfit | inquiries, public records, personal-info variants; per-item source text/section, confidence, assertion source; link to raw file; remove eligible-by-default |
+| 5 | Analysis | `engine/deep-audit.ts`, `funding-readiness.ts` (browser, not persisted); #224 `dispute-policy.ts` | **UNSAFE** (master) / PARTIAL (#224) | master marks every open item `eligible: true`, turns a parser guess into "Consumer Disputes Accuracy", a missing account number into "prior investigation failed", attaches invented `removalProbability` 60–95, and says "MUST be deleted immediately under federal law". #224 separates human accuracy calls but the human is staff, not the customer, and there is no source field |
+| 6 | Customer verification loop | nothing (F) | MISSING | per-item questions; answers stored as separate evidence |
+| 7 | Customer dashboard | no customer portal on master; `/learn/*` is a funding-application flow storing state in localStorage, not reachable by a `customer` role (tier "none", not public in middleware) (SI); `profiles.role` customer = 1 | MISSING | customer access (token-gated first), credit dashboard |
+| 8 | Guided next steps | `credit_education_sections` 3 stub rows (61–87 chars); `credit-paths.ts` is pricing/tags only; `funding-readiness` next steps default to "continue dispute rounds" | PARTIAL / UNSAFE default | next-step rules driven by confirmed facts; real content |
+| 9 | Consultant gate + case packet | `/command/handoffs` lists `partner_referrals`; no summary/packet builder (F) | MISSING | gate rules, packet, reviewer access |
+| 10 | Booking | Cal.com webhook (HMAC, replay-guarded, tested) only sets `incoming_leads.agent_status='BOOKED'`; `organizations.cal_com_event_link` null on all 9; `bookings` is the vehicle rental table | PARTIAL, unconfigured | consultation booking tied to a case and provider calendar; do **not** reuse `bookings` |
+| 11 | Identity linking | `client_journey` (35 rows, `org_id` on all, `program_track` includes `credit`, keys profile_id/email/ghl_contact_id); `people` is a GHL mirror | PARTIAL | `client_journey` is the best spine candidate (SI); `dispute_clients` unlinked |
+| 12 | Tenant / provider | `organizations.kind` tmmt/aixmos/partner; **Khan Strategies LLC is `kind=tmmt`, `vertical=rental`** (F); an "AIXMOS Credit" partner org exists; `org_roles` 1 row; `request_handoff()` copies no client data, writes one `partner_referrals` row with text org names | PARTIAL | provider concept; org references by id; scoped data-sharing grant; Khan's org record contradicts its intended role |
+| 13 | Permissions / consent | `program_applications.client_consent_given` (0), `partner_referrals.consent_*`, `credit_education_acknowledgments` (0), disclaimer booleans on `credit_funding_sessions` | MISSING | report-processing authorization, provider-sharing consent, revocation, purpose-specific communication permission |
+| 14 | Document generation | letters engine (§4) | UNSAFE | stays downstream and off the customer path |
+| 15 | Dispute state | `dispute_clients` JSON payload, 0 rows | UNTESTED | out of scope for the test-customer path |
+| 16 | Audit trail | `audit_events` (3,892; 3,880 `lead.received`); 0 credit actions; credit actions don't write to it | MISSING | append-only upload / parse / view / answer / share / book events |
+| 17 | Security | RLS on all credit tables, `documents`, `client_journey`; `dispute_clients`/`documents` platform-admin only; no payload logging; **no AI calls on credit data** (F); staff importer holds the full report in the browser | PARTIAL | report file protections, retention/deletion, provider access, isolation tests |
+| 18 | Testing | 0 tests for importers, deep-audit, funding-readiness, letters, credit-paths; no report fixtures | MISSING | fixture-based parser and analysis tests; e2e on synthetic data |
+
+**Reuse, don't rebuild:** token-gated upload pattern + private buckets; signed-URL
+helper in `(admin)/document-actions.ts`; `client_journey` as spine; `audit_events`;
+Cal.com webhook; `request_handoff` / `partner_referrals` (hardened); #224's
+`dispute-policy` accuracy vocabulary (after C-01).
+
+**Do not reuse as-is:** the parser, `deep-audit.ts`, `funding-readiness` next
+steps, `20260707120000` table defaults, the `bookings` table, `/learn`
+localStorage state.
+
+## 9. Smallest sequence to ONE test customer — PROPOSED, awaiting owner approval
+
+Target: **affiliate entry → report upload → analysis → customer review →
+consultant booking** with a **synthetic or owner-consented sample report**, no
+dispute, no charge, no real customer, no production write without the D-18 gate.
+
+| Step | What | Depends on | Notes |
+|---|---|---|---|
+| **S0 — owner inputs** | (a) the MFSN affiliate link; (b) what file MFSN actually lets a customer download (PDF? printable page?) plus one sample — the owner's own report with his consent, redacted, or a hand-built synthetic; (c) test consultant + a test Cal.com event; (d) MFSN affiliate-terms check on storing/uploading reports | — | parser design is blocked on (b) |
+| **S1 — schema design, not applied** | reconcile `20260707120000` into the smallest set: report upload record (person/journey, org, storage path, sha256, status, retention date), report items with provenance + confidence, `assertion_source` (report / system / customer / consultant), customer answers, one case lifecycle state; fix eligible-by-default and pull-date defaults | S0(b) | written as a staged migration + rollback; applied only on a Supabase branch or local stack (branching may cost money — owner gate) |
+| **S2 — deterministic parser v2** | parse the verified format into S1 shapes; every item carries source; missing = null + flag, never a default; tests on the fixture | S0(b), S1 | no AI; replaces the pasted-JSON path for this flow |
+| **S3 — analysis v2** | categorize (open/closed/collections/lates/utilization inputs/inquiries/age/possible duplicates); everything emitted as `system`-sourced flags; no eligibility, no probabilities, no legal wording | S2 | tests pin "negative ≠ disputable" |
+| **S4 — customer access + upload** | token-gated link (licence-upload pattern), private credit-report bucket with size + content-sniffed PDF limit, report-processing acknowledgment, audit events | S1 | smallest path; full customer login is later |
+| **S5 — customer review** | one question per flagged item; answers stored as `customer`-sourced evidence; nothing becomes a dispute | S3, S4 | |
+| **S6 — case packet + booking** | read-only packet for the test consultant (summary, flags, customer answers, open questions); Cal.com event link on the provider org; webhook ties booking to the case | S5, S0(c) | provider modeled as an org, not hard-coded; isolation test: TMMT Rentals staff cannot read the case |
+| **S7 — end-to-end proof** | e2e on a preview deploy with the synthetic report: link → upload → analysis → answers → booked; audit trail shows each step | S1–S6 | **STOP for owner approval** |
+
+Out of this sequence on purpose: #224 fixes (C-01, still required before any letter
+reaches a customer), billing, disputes, outreach to historical leads, cross-tenant
+transfer of real data, MFSN direct integration.

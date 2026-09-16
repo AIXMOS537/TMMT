@@ -86,10 +86,12 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 
 ## Batch 6 — credit pathway (owner decision D-22a, 2026-09-16)
 
-Evidence and full blocking lists: `docs/credit/CREDIT_ENGINE_AUDIT.md`. Engineering
-readiness only — commercial/legal readiness is a separate gate. **C-01..C-03 are
-safe before D-22b; C-04 onward depend on D-22b** (TMMT performs vs refers to Khan
-Strategies), because they build different things.
+Evidence and full blocking lists: `docs/credit/CREDIT_ENGINE_AUDIT.md` (§8 gap
+map, §9 test-customer sequence). Engineering readiness only — commercial/legal
+readiness is a separate gate. **D-22b settled 2026-09-16: software-led report
+analysis + guided journey; dispute letters downstream. D-22c (consultant/provider)
+open.** C-12..C-19 are the test-customer path and are **PROPOSED — not started
+until the owner approves §9.**
 
 | ID | P | Issue | Fix | Status |
 |---|---|---|---|---|
@@ -104,6 +106,14 @@ Strategies), because they build different things.
 | C-09 | P2 | No enrollment writer, payment wiring (`canCollectFee` unwired), GHL credit tags never pushed | after D-22b, D-1, D-6; fee timing per counsel | OWNER-gated |
 | C-10 | P2 | Credit intake collects first name only — cannot link to a lead | collect contact + consent at intake (after C-06) | TODO |
 | C-11 | P3 | Journey metrics (requested → not served → offered → chose → paid → completed → reported financing) not measurable | falls out of C-05 + C-06; define event log | TODO |
+| C-12 | P0 | Owner inputs for the test path: MFSN affiliate link, the actual downloadable report format + one consented/synthetic sample, MFSN affiliate terms on upload/storage, test consultant + Cal.com event | — | OWNER (S0) |
+| C-13 | P1 | Importer is UNSAFE: staff-pasted JSON/naive CSV, negatives only, no provenance, invents bureau (`experian`), pull date, "Unknown" creditor; asserts FCRA §604 / "unverifiable" without evidence | deterministic parser v2 on the verified format with provenance, confidence, null-not-default; fixture tests (S2) | PROPOSED — needs C-12 |
+| C-14 | P1 | `deep-audit.ts` marks everything eligible, turns guesses into customer disputes, invents `removalProbability`, says "MUST be deleted immediately under federal law"; `funding-readiness` defaults to "continue dispute rounds" | analysis v2: categorize only, system-sourced flags, no eligibility/probabilities/legal wording; keep old engine off the customer path (S3) | PROPOSED |
+| C-15 | P1 | No schema for report uploads, provenance, assertion source (report/system/customer/consultant), customer answers, one case lifecycle; `20260707120000` defaults `dispute_eligible=true`, `pull_date=today` | reconcile into staged migration + rollback; apply on branch/local only (S1) | PROPOSED — D-18 gate for prod |
+| C-16 | P1 | No customer access or credit-report upload; `staff-documents` bucket has no size/MIME limits; MIME trusts browser `file.type` | token-gated upload (licence pattern), private bucket, content-sniffed limits, processing acknowledgment, audit events (S4) | PROPOSED |
+| C-17 | P1 | No customer verification loop | per-flagged-item questions, answers stored as customer-sourced evidence (S5) | PROPOSED |
+| C-18 | P1 | No case packet, no case-linked booking; `cal_com_event_link` null on all orgs; Khan Strategies org is `kind=tmmt, vertical=rental`; no provider concept | read-only packet, provider-org calendar, webhook links booking to case, isolation test (S6) | PROPOSED — needs D-22c for the real provider |
+| C-19 | P1 | No end-to-end proof | e2e on preview with synthetic report; audit trail per step; STOP for owner (S7) | PROPOSED |
 
 ## Owner-gated production items (tracked, not executed)
 

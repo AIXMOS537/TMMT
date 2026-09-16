@@ -162,7 +162,7 @@ write and remains owner-gated (D-21b, D-18). It is not written and not applied.
 
 ---
 
-## A-5 · CREDIT PATHWAY — active, one customer journey *(settles D-22a)*
+## A-5 · CREDIT PATHWAY — active, one customer journey, software-led analysis *(settles D-22a, D-22b)*
 
 **Decision (2026-09-16):** The credit-dispute engine is **ACTIVE** work. It is a
 secondary pathway inside the TMMT customer journey — for people who cannot
@@ -182,11 +182,23 @@ project.
   reviewed by a human/the customer before use.
 - One person across both paths — no duplicate person records as a design choice.
 
-**Not settled:** D-22b, who performs the service (TMMT vs Khan Strategies on
-referral). **Not authorized:** commercial launch, customer enrolment, outreach,
-billing, or any production write. Commercial readiness is a separate gate.
+**Product shape (D-22b, 2026-09-16):** a software-led credit report analysis and
+guided journey inside TMMT OS — customer obtains their own report through the
+owner's MyFreeScoreNow affiliate link, voluntarily uploads it, the app parses and
+analyzes it with provenance, the customer verifies facts, the app builds next
+steps, and a consultant is booked only when warranted and receives a prepared case
+packet. Dispute letters are downstream and never automatic. No MFSN credentials or
+scraping. No raw reports to external AI. Consultant/provider is a
+service-provider organization, not hard-coded. Full text: `OWNER_DECISIONS.md`
+D-22.
 
-**Status:** SETTLED (part a).
+**Not settled:** D-22c, who the consultant/service provider is and who contracts,
+bills and owns the service record. **Not authorized:** new screens before the gap
+analysis is approved, commercial launch, customer enrolment, outreach, billing,
+sending disputes, real customer reports, cross-tenant data transfer, or any
+production write. Commercial readiness is a separate gate.
+
+**Status:** SETTLED (parts a and b).
 
 ---
 
@@ -196,6 +208,6 @@ billing, or any production write. Commercial readiness is a separate gate.
 products · `D-6` `dist/` · `D-7` founder terms · `D-8` agent production authority
 *(default in force: owner gate stays)* · `D-9` S3-05 reason codes · `D-11`
 `packages` billing model *(now a dependency of A-1)* · `D-21b` tenant-safety
-migration · `D-22b` who performs the credit service · and the remaining rows in `OWNER_DECISIONS.md`.
+migration · `D-22c` credit consultant / service provider · and the remaining rows in `OWNER_DECISIONS.md`.
 
 **Their default is `NO CHANGE / HOLD`. Silence is not approval.**
