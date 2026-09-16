@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeFakeSupabase, type FakeDbCall, type FakeSupabase } from '@/lib/testing/fake-supabase'
-import { _resetDegradedForTests, getDegradedComponents } from '@/lib/degraded'
 import { AUDIT_EVENTS_COLUMNS } from './audit-events-columns'
 import { seenWebhookEvent, type WebhookReplayKey } from './webhook-replay'
 
 /**
  * C-20 regression. The route tests answer `audit_events` lookups no matter
  * which column they name, so `.select('created_at')` passed there while
- * production failed every call with 42703 and the guard failed open.
+ * production answers that column with 42703, which the guard treats as "not seen".
  *
  * `strictAuditEvents` does what PostgREST does: a column that is not in
  * AUDIT_EVENTS_COLUMNS gets the 42703 error. A lookup that names a wrong
@@ -49,13 +48,11 @@ function strictAuditEvents(rows: Row[]): FakeSupabase {
 }
 
 beforeEach(() => {
-  _resetDegradedForTests()
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
 })
 afterEach(() => {
   vi.restoreAllMocks()
-  _resetDegradedForTests()
 })
 
 describe('seenWebhookEvent against the real audit_events columns (C-20)', () => {
@@ -72,10 +69,9 @@ describe('seenWebhookEvent against the real audit_events columns (C-20)', () => 
     expect(unknownColumn(call)).toBeUndefined()
   })
 
-  it('finds a stored event, so the replay is caught (was: 42703, failed open, processed again)', async () => {
+  it('finds a stored event, so the replay is caught (was: 42703, treated as not seen)', async () => {
     const db = strictAuditEvents([stored])
     await expect(seenWebhookEvent(db, KEY)).resolves.toBe(true)
-    expect(getDegradedComponents()).toEqual([])
   })
 
   it('returns false for an event it has not seen', async () => {
@@ -85,24 +81,14 @@ describe('seenWebhookEvent against the real audit_events columns (C-20)', () => 
 })
 
 describe('seenWebhookEvent on a lookup error', () => {
-  const failing = () => makeFakeSupabase((call) =>
-    call.table === 'audit_events' ? { error: { code: '42703', message: 'column audit_events.created_at does not exist' } } : undefined)
-
-  it('fails open (processes the event) but reports webhook-replay as degraded', async () => {
-    await expect(seenWebhookEvent(failing(), KEY)).resolves.toBe(false)
-    expect(getDegradedComponents()).toEqual([
-      expect.objectContaining({
-        component: 'webhook-replay',
-        reason: 'column audit_events.created_at does not exist',
-        meta: { action: 'cal.booking_created', code: '42703' },
-      }),
-    ])
-  })
-
-  it('clears the degraded flag once a lookup succeeds again', async () => {
-    await seenWebhookEvent(failing(), KEY)
-    expect(getDegradedComponents()).toHaveLength(1)
-    await seenWebhookEvent(strictAuditEvents([]), KEY)
-    expect(getDegradedComponents()).toEqual([])
+  // Pins the CURRENT behaviour only. Fail-open vs retry/quarantine/fail-closed
+  // per webhook class is an open decision (C-20, docs/REMEDIATION_PLAN.md).
+  it('treats the error as "not seen" (fails open) and logs a warning', async () => {
+    const db = makeFakeSupabase((call) =>
+      call.table === 'audit_events' ? { error: { code: '42703', message: 'column audit_events.created_at does not exist' } } : undefined)
+    await expect(seenWebhookEvent(db, KEY)).resolves.toBe(false)
+    expect(console.warn).toHaveBeenCalledWith('[webhook-replay] lookup failed, processing anyway', {
+      action: 'cal.booking_created', message: 'column audit_events.created_at does not exist',
+    })
   })
 })
