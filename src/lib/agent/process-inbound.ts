@@ -30,6 +30,12 @@ export interface ProcessInboundArgs {
 export interface ProcessInboundResult {
   newState: AgentState
   outboundBody: string | null
+  /**
+   * The reply that was generated (or the fixed opt-out text), even when
+   * quiet hours withheld `outboundBody`. The SMS route stores it as a held
+   * draft when the org is not authorised for automatic replies.
+   */
+  draftBody: string | null
   complianceFlags: string[]
   actions: Array<{ kind: string }>
   llmAssessment?: { B: number; A: number; T: number; confidence: number }
@@ -54,6 +60,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     return {
       newState: 'LOST',
       outboundBody: optOutAutoReply(),
+      draftBody: optOutAutoReply(),
       complianceFlags: ['opt_out'],
       actions: [{ kind: 'send_opt_out_reply' }],
     }
@@ -201,6 +208,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   return {
     newState: nextState,
     outboundBody: quiet ? null : outBody,
+    draftBody: outBody || null,
     complianceFlags: flags,
     actions,
     llmAssessment: llmResult?.parsed.assessment,
