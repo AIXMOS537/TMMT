@@ -5,18 +5,26 @@
  *
  * Order of guards, and why each sits where it does:
  *   signature → parse → org → lead/conversation → REPLAY GATE → record inbound
- *   → OPT-IN → OPT-OUT → OUTBOUND GATE (A2P + do-not-contact) → agent → reply.
- * Everything expensive or customer-visible (the LLM call, the state transition,
- * the human handoff, the TwiML reply) sits after every guard.
+ *   → COMMUNICATION CONTROL (STOP keyword → suppress; START; stop-like → hold)
+ *   → OPTED-OUT GUARD → OUTBOUND GATE (A2P + do-not-contact) → agent → reply.
+ * Communication control sits before every AI guard and the LLM: honouring a
+ * stop never depends on the licence, the kill switch, the spend cap or the
+ * model. Everything expensive or customer-visible (the LLM call, the state
+ * transition, the human handoff, the AI reply) sits after every guard.
  */
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { resolveOrgByTwilioNumber, OrgNotFoundError } from '@/lib/agent/tenant'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { resolveOrgByTwilioNumber, OrgNotFoundError, type OrgContext } from '@/lib/agent/tenant'
 import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceRoleClient } from '@/lib/supabase-service'
-import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
+import {
+  LicenseDisabledError, OperationalKillError, LlmCapExceededError, isOperationalKillEngaged,
+} from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
-import { isOptInMessage } from '@/lib/agent/compliance/opt-out'
+import { emitAudit } from '@/lib/agent/audit'
+import { optOutAutoReply } from '@/lib/agent/compliance/opt-out'
+import { classifyCommunicationControl } from '@/lib/agent/compliance/communication-control'
 import { assertOutboundAllowed, orgSmsVertical } from '@/lib/outbound-gate'
 
 function twiml(body: string): string {
@@ -27,6 +35,29 @@ function twiml(body: string): string {
 
 function xmlResp(body: string, status = 200): NextResponse {
   return new NextResponse(body, { status, headers: { 'content-type': 'text/xml' } })
+}
+
+/**
+ * May a FIXED compliance acknowledgement (never AI text) go out? The kill
+ * switch and the outbound gate (do-not-contact, opt-out) still apply to the
+ * acknowledgement. A refusal or a gate error withholds only the
+ * acknowledgement; the caller records the opt-out / opt-in regardless.
+ */
+async function complianceAckDecision(
+  db: SupabaseClient,
+  phone: string,
+  org: OrgContext,
+): Promise<{ allowed: boolean; flags: string[] }> {
+  if (isOperationalKillEngaged()) return { allowed: false, flags: ['ack_withheld_kill_switch'] }
+  try {
+    const d = await assertOutboundAllowed({
+      db, phone, organizationId: org.id, vertical: orgSmsVertical(org), type: 'transactional',
+    })
+    return { allowed: d.allowed, flags: d.allowed ? d.flags : [...d.flags, 'ack_withheld'] }
+  } catch (e) {
+    console.warn('[agent/sms/inbound] acknowledgement gate errored; withholding the acknowledgement only', e)
+    return { allowed: false, flags: ['ack_withheld_gate_error'] }
+  }
 }
 
 /**
@@ -167,29 +198,100 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw inboundInsert.error
     }
 
+    // ── COMMUNICATION CONTROL ──────────────────────────────────────────────
+    // Deterministic, and ahead of every AI guard (kill switch, licence, LLM
+    // spend cap) and the LLM. Before this, keyword STOP was only detected
+    // inside processInbound AFTER those guards, so a guard failure meant the
+    // opt-out was never recorded, and "stop texting me" went to the LLM and got
+    // an ordinary reply. See compliance/communication-control.ts.
+    const control = classifyCommunicationControl(body)
+
+    // Explicit opt-out keyword: record suppression, never call the LLM.
+    if (control.kind === 'opt_out') {
+      if (lead.opted_out) {
+        console.warn('[agent/sms/inbound] opt-out keyword from an already opted-out lead, no reply sent')
+        return xmlResp(twiml(''))
+      }
+      // Ask about the acknowledgement BEFORE writing the flag: the gate reads
+      // opted_out and would refuse it afterwards. A refusal or gate error only
+      // withholds the acknowledgement; it never skips the suppression below.
+      const ack = await complianceAckDecision(db, from, org)
+      const now = new Date().toISOString()
+      const suppressed = await db.from('incoming_leads')
+        .update({ opted_out: true, opted_out_at: now, agent_status: 'LOST', lost_at: now })
+        .eq('id', lead.id)
+      if (suppressed.error) {
+        console.error('[agent/sms/inbound] OPT-OUT NOT RECORDED', suppressed.error.message)
+        await emitAudit({
+          organizationId: org.id,
+          action: 'compliance.opt_out_record_failed',
+          payload: { lead_id: lead.id, conversation_id: conv.id, message: suppressed.error.message },
+        })
+        return xmlResp(twiml(''))
+      }
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.opt_out_received',
+        payload: { lead_id: lead.id, conversation_id: conv.id, ack_sent: ack.allowed },
+      })
+      const ackBody = ack.allowed ? optOutAutoReply() : ''
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: ackBody,
+        compliance_flags: ['opt_out', ...ack.flags],
+      })
+      return xmlResp(twiml(ackBody))
+    }
+
     // ── OPT-IN ─────────────────────────────────────────────────────────────
     // The opt-out auto-reply promises "Reply START anytime to opt back in".
-    // isOptInMessage() existed and was never called, and opted_out was never
-    // cleared. Without this, the guard below would silence someone permanently
-    // with no way back.
-    if (isOptInMessage(body)) {
+    // START clears only this org's per-lead flag. It does not touch
+    // do_not_contact_numbers, and Twilio's own opt-out state is separate.
+    // The fixed confirmation goes through the same acknowledgement check as
+    // STOP, so it is not sent to a do-not-contact number or while the kill
+    // switch is engaged (it used to be sent in both cases).
+    if (control.kind === 'opt_in') {
       if (lead.opted_out) {
         await db.from('incoming_leads')
           .update({ opted_out: false, opted_out_at: null })
           .eq('id', lead.id)
       }
-      return xmlResp(twiml("You're opted back in. Reply STOP at any time to opt out."))
+      const ack = await complianceAckDecision(db, from, org)
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.opt_in_received',
+        payload: { lead_id: lead.id, conversation_id: conv.id, was_opted_out: Boolean(lead.opted_out), ack_sent: ack.allowed },
+      })
+      return xmlResp(twiml(ack.allowed ? "You're opted back in. Reply STOP at any time to opt out." : ''))
     }
 
     // ── OPT-OUT GUARD ──────────────────────────────────────────────────────
     // opted_out was written but never read, so an opted-out person still got a
-    // full LLM reply on their next message. Carrier-level STOP is blocked by
-    // Twilio upstream; isOptOutMessage() also catches app-level phrasing
-    // ("stop texting me", "remove me") that carriers do NOT filter, and those
-    // are the people this protects. The inbound message is recorded above, so
-    // the audit trail stays complete — only the reply is withheld.
+    // full LLM reply on their next message. The inbound message is recorded
+    // above, so the audit trail stays complete — only the reply is withheld.
     if (lead.opted_out) {
       console.warn('[agent/sms/inbound] inbound from opted-out lead, no reply sent')
+      return xmlResp(twiml(''))
+    }
+
+    // ── STOP-LIKE HOLD ─────────────────────────────────────────────────────
+    // A stop signal that is not an explicit keyword ("stop texting me",
+    // "take me off your list", "STOP ALL"). Not treated as a formal opt-out and
+    // not interpreted by an LLM: held for a human, no reply of any kind.
+    if (control.kind === 'stop_like') {
+      console.warn(`[agent/sms/inbound] stop-like message held for human review (${control.signal})`)
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: '',
+        compliance_flags: ['stop_like_hold', `stop_signal:${control.signal}`],
+      })
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.stop_like_held',
+        payload: { lead_id: lead.id, conversation_id: conv.id, signal: control.signal },
+      })
       return xmlResp(twiml(''))
     }
 
