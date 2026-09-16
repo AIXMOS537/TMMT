@@ -256,3 +256,167 @@ dispute, no charge, no real customer, no production write without the D-18 gate.
 Out of this sequence on purpose: #224 fixes (C-01, still required before any letter
 reaches a customer), billing, disputes, outreach to historical leads, cross-tenant
 transfer of real data, MFSN direct integration.
+
+---
+
+## 10. S0 — gate before S1 (2026-09-16)
+
+Owner approved S0–S7 as the target prototype path **conceptually**; **S1 does not
+start** until the report format and provider permission are understood and the
+owner approves again. Prototype consultant = test/placeholder provider; booking =
+test calendar. The unsafe reader/analysis (§8 #3, #5) is preserved for history,
+never exposed to customers, never the foundation.
+
+### S0-A — MyFreeScoreNow findings
+
+Source: MFSN public Terms and Conditions, **revised Feb 11, 2026**, read at
+myfreescorenow.com (Terms link) on 2026-09-16; Zapier's MFSN app listing. Public
+material only — **the affiliate agreement (behind the affiliate portal login) was
+not available and may differ.**
+
+| Question | Finding | Label |
+|---|---|---|
+| 1. What the customer receives | Credit monitoring membership (trial → monthly auto-renew) with 3-bureau reports/scores (Experian, TransUnion, Equifax) delivered **on the Site** for members; one-time 1- or 3-bureau reports viewable **for 30 days**; session logs out after 20 minutes idle. Data sourced through service providers including Equifax | F (terms §4, §18) |
+| 2. Download / export | Terms do not mention download, print, PDF or export | UNKNOWN |
+| 3. Formats | not stated publicly | UNKNOWN |
+| 4. Official integration | Zapier app exposes **member/enrollment events only** (new authentication; enrolled/upgraded snapshot leads; active/abandoned/suspended/pending-closed members; referred affiliate list) — **no report content** (F, Zapier listing). No public report API found (F). Repo comment agrees: "No public API" (`myfreescorenow.ts:14`) | F |
+| 5. May the customer give the report to an independent app for analysis? | Public terms **restrict** it: use only for "your own personal, lawful, noncommercial purposes"; no copying, transmitting, distributing or creating derivative works of Content "except as expressly permitted"; no use of Content for "algorithmic analysis of any kind"; no "any other commercial purpose" | **conflicts with the proposed flow — not permitted by public terms; affiliate agreement unknown** |
+| 6. May an affiliate store/process it? | not addressed publicly; the restrictions in 5 apply to "Content" generally | UNKNOWN |
+| 7. Other restrictions | **no creating "synthetic data", datasets, feature sets or embeddings from Content**; no AI training/evaluation on it; no automated access, scrapers or "AI agents"; no use of MFSN trademarks/logos; MFSN states it is not a credit repair organization | F |
+
+**UPLOAD / STORAGE PERMISSION STATUS: UNKNOWN — public terms point toward
+PROHIBITED.** The consumer terms bind the member; only a written permission from
+MFSN (affiliate agreement or support confirmation) can change that for this
+workflow. Do not infer permission from the fact that credit-repair tools and
+affiliates commonly work with MFSN members.
+
+**Consequences for the plan (F from the terms above):**
+- The S7 fixture strategy "synthetic reports modeled on the real format" is itself
+  restricted ("synthetic data … from the Site, Content"). Do **not** build fixtures
+  from an MFSN report until permission is written.
+- Using the owner's own MFSN report as a development fixture is also
+  "algorithmic analysis" / dataset creation under the same terms — **hold it.**
+- The existing staff importer's premise ("operators capture report data via
+  affiliate portal") may already conflict with these terms — add to the §8 #3
+  finding; not a reason to delete history.
+- The affiliate **link** itself (entry + attribution) is unaffected; store it as
+  provider configuration, not in source.
+
+**Exact question for MFSN affiliate support (send in writing, keep the reply):**
+
+> We are an MFSN affiliate. Our proposed workflow: a consumer enrolls through our
+> affiliate link, then — on their own initiative and with their written
+> authorization — gives us a copy of their MFSN 3-bureau report so our software
+> can organize it, ask them questions about it, and prepare a summary for a
+> consultation. We would store the report securely, not share it beyond that
+> consultation, not use it to train or evaluate AI, and delete it on a set
+> schedule.
+>
+> 1. Does our affiliate agreement permit this, given Terms §3 (personal,
+>    noncommercial use; no algorithmic analysis; no derivative works)?
+> 2. If yes: what form may the report take (PDF download, print-to-PDF, other),
+>    and is there an official export, partner feed or API for authorized
+>    affiliates instead of customer uploads?
+> 3. May we store it, for how long, and may the consultant who reviews it be an
+>    independent company?
+> 4. May we create fully fictional test reports in the same layout for software
+>    testing, or must test data be unrelated to MFSN's format?
+> 5. Any branding, attribution or disclosure requirements for describing MFSN in
+>    this flow?
+
+**Architecture that survives any answer:** make the report source a pluggable
+**provider** (per tenant/provider configuration). If MFSN says no, the same
+S1–S7 path can target another permitted source — e.g., reports the consumer
+obtains from AnnualCreditReport.com or directly from the bureaus — after **that**
+source's terms are checked the same way. Not checked yet.
+
+### S0-B — sample report
+
+**Status: NONE; HOLD.** No MFSN-derived sample or synthetic fixture until S0-A
+permission is written. When allowed, strip from any real report before it touches
+development: full name and aliases, SSN/ITIN (any digits), date of birth, all
+current/previous addresses, phone numbers, email, employer names, account
+numbers (all digits), creditor-assigned reference numbers, report/confirmation
+IDs, member IDs, dates that could re-identify (shift consistently), and any
+free-text remarks naming people. Permanent automated tests use fully fictional
+fixtures only.
+
+### S0-C — consultant
+
+Prototype: test/placeholder service-provider org + test Cal.com event. **D-22c
+OPEN** for commercial operation (who provides the human service, contracts, bills,
+owns service records, can access the report, retains documents, is responsible for
+downstream actions). Khan Strategies org is currently `kind=tmmt,
+vertical=rental`; do not remodel it yet — document the gap only.
+
+### S0-D — what S1, S4 and S6 can reuse (read-only check, master `c8d72c92` + prod)
+
+**S1 tables**
+
+| Concept | Reuse | Verdict |
+|---|---|---|
+| Person spine | `client_journey` (profile_id, customer_email, ghl_contact_id, `program_track`, org_id; 35 rows) | reuse; add `journey_id` on the case |
+| Case | `cases` (org_id FK, status, metadata, `required_capabilities`, customer read policy; 4 rows) + `case_status_history` + `case_client_updates`; `documents.case_id` already points here | **extend** — add journey + provider org |
+| Report file / supporting doc | `documents` (case_id, kind, storage_path, visibility, org_id; admin-only RLS; 0 rows) | extend — sha256, mime, size, retention_until, customer-uploaded marker |
+| Bureau | no enum on prod; unapplied `credit_bureau` values | reuse values; nullable, **no default** |
+| Report, section, item, extracted fact (+ provenance, confidence, assertion source), analysis flag, customer response/correction, consultant review | none fit; unapplied `credit_reports`/`tradelines` are misfits (no org_id, invented pull date, `dispute_eligible DEFAULT true`) | **new** tables |
+| Appointment | `appointments` is rental-shaped with an **anon INSERT `with check true`** policy; `ghl_appointments` never sets organization_id; `bookings` is vehicle rentals | **do not reuse**; small case-linked booking table |
+| Audit | `audit_events` + `emitAudit()` (`src/lib/agent/audit.ts`) | reuse; **not append-only** (no trigger; service_role can update/delete) — put `case_id` in payload |
+| Link / intake events | `intake_events` | **do not use** — triggers auto-route and enqueue agents |
+| Affiliate link config | no settings table; nearest: a column beside `organizations.cal_com_event_link`, or the existing `verticals` row `credit-building` | provider configuration per org, never in source |
+
+**Tenant capability (Khan):** `org_has_module(p_module)` reads the caller's own
+org licence in `organization_licenses` (modules text[], `full_os` passes every
+module). Only TMMT RENTALS lists `credit_repair`; Khan Strategies has **no licence
+row**, is `kind=tmmt, vertical=rental`, and `org_vertical` has no credit value.
+Khan can become a provider **by data** (custom licence `{credit_repair}`,
+`credit-building` vertical row, Cal link) without remodeling — but a check of "does
+this case's provider org have the module" needs a new function taking an org id.
+Waits for D-22c.
+
+**S4 access + storage**
+
+- Existing token patterns are weak for credit reports: licence-upload token is a
+  plain uuid on the row, 7-day expiry, single use by nulling **non-atomically**,
+  not rate-limited, not audited; `program_applications.access_token` **never
+  expires and is reusable**. Upload checks trust browser `file.type`.
+- No magic-link / OTP sign-in exists; a magic link would create an auth user whose
+  email-matching read policies (`cases_client_email_read`,
+  `client_journey_client_read`) reach every org the email appears in.
+- **Recommended smallest approach:** case-scoped access token table storing only a
+  sha256 hash, ≤72 h expiry, atomic `UPDATE … RETURNING` redemption,
+  revocation, audit per use; server actions authorize first (the
+  `authorizeApplicationAccess` shape); new private `credit-reports` bucket, PDF
+  only, size-limited, `%PDF-` magic-byte check; staff signed URLs 1 h
+  (`getSignedDocumentUrl`).
+
+**S6 Cal.com**
+
+- Reuse: `api/agent/cal/webhook/[slug]/route.ts` (HMAC, per-tenant secret
+  `CAL_WEBHOOK_SECRET_<SLUG>`, 20 tests), `tenant.ts` `calComEventLink`.
+- Today it only handles `BOOKING_CREATED` → marks a lead BOOKED by phone.
+- Needed: pass an opaque case ref via Cal booking metadata or a hidden question,
+  handle rescheduled/cancelled, insert a case-linked booking row scoped by org.
+- **Live defect found:** `seenWebhookEvent` (`src/lib/agent/webhook-replay.ts`)
+  selects `created_at`, but prod `audit_events` has `ts` — the replay lookup
+  errors every call and fails open (Cal and Stripe). The applied unique index
+  still blocks the duplicate audit row, but only after the lead update runs.
+  Mocked tests do not catch it.
+
+**Tests:** Vitest (`vitest.config.ts`), colocated tests, `fake-supabase.ts`; no
+fixture folders exist — proposed `src/lib/credit-report/__fixtures__/`, fictional
+only.
+
+### S0 verdict
+
+| Item | Status |
+|---|---|
+| MFSN report format | UNKNOWN (not public) |
+| MFSN integration | enrollment/member events only (Zapier); no report API found |
+| Upload / storage permission | **UNKNOWN — public terms restrict it**; written MFSN answer required |
+| Sample report | NONE — hold until permission |
+| Reusable for S1 / S4 / S6 | mapped above |
+| D-22c | OPEN |
+
+**S1 stays blocked** on the MFSN written answer (or an owner choice of a different
+permitted report source) plus owner approval.
