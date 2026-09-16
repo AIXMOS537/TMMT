@@ -162,12 +162,40 @@ write and remains owner-gated (D-21b, D-18). It is not written and not applied.
 
 ---
 
+## A-5 · CREDIT PATHWAY — active, one customer journey *(settles D-22a)*
+
+**Decision (2026-09-16):** The credit-dispute engine is **ACTIVE** work. It is a
+secondary pathway inside the TMMT customer journey — for people who cannot
+currently access a suitable rental/vehicle path and may choose credit-related help
+while working toward financing their own vehicle. It is not an unrelated side
+project.
+
+**Binding rules:**
+
+- **No outcome promises** — no guaranteed improvement, removals, scores, financing
+  approval, vehicle, or timeline, in software, copy, or AI output.
+- **No automatic enrolment**; rental-marketing consent does **not** cover
+  credit-service marketing; **no outreach to historical leads** about the credit
+  service until consent, suppression and channel rules are verified.
+- **PR #224 is review-required and must not be auto-merged.**
+- AI output that is consequential must be traceable to stored source data and
+  reviewed by a human/the customer before use.
+- One person across both paths — no duplicate person records as a design choice.
+
+**Not settled:** D-22b, who performs the service (TMMT vs Khan Strategies on
+referral). **Not authorized:** commercial launch, customer enrolment, outreach,
+billing, or any production write. Commercial readiness is a separate gate.
+
+**Status:** SETTLED (part a).
+
+---
+
 ## STILL OPEN — not settled, not approved
 
 `D-3` Khan referral rate · `D-4` rev-share / royalty / affiliate · `D-5` GHL
 products · `D-6` `dist/` · `D-7` founder terms · `D-8` agent production authority
 *(default in force: owner gate stays)* · `D-9` S3-05 reason codes · `D-11`
 `packages` billing model *(now a dependency of A-1)* · `D-21b` tenant-safety
-migration · and the remaining rows in `OWNER_DECISIONS.md`.
+migration · `D-22b` who performs the credit service · and the remaining rows in `OWNER_DECISIONS.md`.
 
 **Their default is `NO CHANGE / HOLD`. Silence is not approval.**
