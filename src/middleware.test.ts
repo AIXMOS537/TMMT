@@ -142,6 +142,10 @@ describe("public paths render signed-out", () => {
     "/forms/intake",
     "/legal",
     "/legal/privacy",
+    // A renter holding a staff-minted link has no account. If this ever stops
+    // being public, every real visitor to their own status page is bounced to a
+    // login they can never pass.
+    "/status/d1111111-0000-4000-8000-000000000002",
     "/api/auth/callback",
     "/api/webhooks/ghl",
     "/api/forms/submit",

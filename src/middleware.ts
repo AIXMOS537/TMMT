@@ -56,6 +56,10 @@ function isPublicPath(pathname: string) {
     // signed in or out: a staff member raising a request on a customer's
     // behalf uses the same form. "/" is deliberately NOT here - see below.
     pathname.startsWith("/intake") ||
+    // A renter's own application status, reached by a staff-minted expiring link.
+    // The token in the path IS the credential; the holder has no account and never
+    // has had one, so requiring a session here would lock out every real visitor.
+    pathname.startsWith("/status/") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
