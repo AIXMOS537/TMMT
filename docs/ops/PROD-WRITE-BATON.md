@@ -38,5 +38,23 @@ select ops.release_prod_baton(<id>, '<session>', '<result>', '<evidence>'); -- 5
 - **Locked down.** `anon` and `authenticated` have no access to schema `ops`. The table holds no PII, and history is kept.
 - **Rehearsal:** `node scripts/tests/sql/prod-write-baton.rehearsal.mjs` (12 checks).
 
-## Not yet enforced (next step, needs owner approval)
-A Claude Code `PreToolUse` hook that refuses `apply_migration` or `gh pr merge` unless the session holds the baton, and optionally a DDL event trigger backstop. Until then, enforcement is by rule (`~/.claude/rules/prod-write-baton.md`) and by the `assert` call.
+## Enforcement hook (Claude Code, BRAINIAC)
+Source: `tools/prod-baton-hook/`. Installed 2026-09-16.
+- **Runtime:** `%LOCALAPPDATA%\tmmt\baton-hook\` (venv with pg8000, pinned Supabase Root 2021 CA).
+- **Settings:** `~/.claude/settings.json` has `PreToolUse` entries for the Supabase MCP, the Vercel MCP, `Bash` and `PowerShell`. A backup was taken first.
+- **Hooks load at session start:** sessions already running before installation are **not** covered until they restart.
+- **Identity:** a session's holder name is `claude:<session_id>`. The deny message states the exact name to use.
+- **Decisions:**
+  - Not a recognised production write: allowed, no database call.
+  - Holder with an unexpired baton: allowed.
+  - Free, expired, or held by someone else: **deny**, with holder, workstream, times and the next safe action.
+  - Baton state unreadable (DB down, credential missing): **ask** for manual confirmation. Never a silent allow.
+- **Baton calls themselves** (`ops.*_prod_baton`) are allowed, so a session can acquire. Mixing them with a write in the same call is still treated as a write.
+- **Recognised writes:**
+  - Supabase MCP: `apply_migration`, `execute_sql` with DDL/DML or known mutating functions, branch/edge/project mutations.
+  - Vercel MCP: deploy, pause/unpause, protection, purchases.
+  - Shell: `gh pr merge`, pushes to master/main (including `work-baton.ps1 -Mode Push`), `vercel --prod`/env/alias/promote/rollback, `supabase db push`/`--linked`/`functions deploy`/`secrets set`, `psql` against prod, and POST/PUT/PATCH/DELETE to the prod Supabase, GHL, Vercel, Twilio or Slack APIs.
+- **Credential:** DB login `baton_reader` (migration `20260916201201`) can only `EXECUTE ops.prod_baton_status()`. Its password was generated locally, is DPAPI-encrypted for the Windows user, and only the SCRAM verifier was sent to the database.
+- **Known conservative false positive:** a push to `master` in a non-deploying repository (for example `tmmt-control-plane`) also needs the baton.
+- **Tests:** `python -m unittest tools/prod-baton-hook/test_baton_guard.py` (15). Live-tested against real states: held by other, free, held by this session, expired, recovered, DB/credential unavailable, read-only SQL, local tests.
+- **Not covered:** Cursor/other agents, and humans at a terminal. A database-side DDL event-trigger backstop is not built.
