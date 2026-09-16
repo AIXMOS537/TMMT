@@ -84,6 +84,27 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | F-29 | P4 | 35 repo-wide hook-pattern lint warnings remain after local unused-code cleanup | TODO |
 | F-30 | P3 | Schema of record: 195 applied migrations missing from repo; `mesh_nodes` orphan | run `scripts/migrations-pull.mjs` (needs DB URL — OWNER supplies) | OWNER |
 
+## Batch 6 — credit pathway (owner decision D-22a, 2026-09-16)
+
+Evidence and full blocking lists: `docs/credit/CREDIT_ENGINE_AUDIT.md`. Engineering
+readiness only — commercial/legal readiness is a separate gate. **C-01..C-03 are
+safe before D-22b; C-04 onward depend on D-22b** (TMMT performs vs refers to Khan
+Strategies), because they build different things.
+
+| ID | P | Issue | Fix | Status |
+|---|---|---|---|---|
+| C-01 | P1 | PR #224: ungated `[id]` generate, client-side-only gate, letters with invented history (drafts counted as sent, no `priorAttempts`), unvalidated `basis`/`basisNote`, obsolescence math | the 10-item blocking list in the audit §4; split vehicle-owner migration + non-credit docs out | TODO — do not auto-merge |
+| C-02 | P1 | Compliance-facing text unreviewed: CROA disclosures/contract/cancel form, deletion-demand and §§616/617 wording, "must be deleted" doc line | remove overstated wording now; counsel supplies disclosure + contract text | OWNER + counsel |
+| C-03 | P2 | PR #224 hygiene: `pii-archive/`, `airtable-archive/` not gitignored; staff personal email and owner-name/plate stocktake in docs | gitignore + remove from repo | TODO |
+| C-04 | P1 | Typed dispute schema (`20260707120000`) never applied to prod; live store is one JSON blob with no status/rounds/results | decide keep-blob vs apply schema after D-22b; staged migration + rollback | OWNER (D-22b, D-18) |
+| C-05 | P1 | No person spine: lead, waitlist, `people`, `client_journey`, `dispute_clients` are disconnected; state lives in ~10 overlapping columns | design one person key + one lifecycle carrier (candidate `client_journey`) before adding any credit-path statuses | TODO (design) |
+| C-06 | P1 | No consent by purpose/channel; `do_not_contact_numbers` (78) vs `incoming_leads.opted_out` (0) disagree | purpose+channel consent model; reconcile DNC; **no credit outreach to historical leads until done** | TODO (with D-15) |
+| C-07 | P2 | No delivery, tracking, response intake, follow-up reminders, PDF | after C-04/C-05 | TODO |
+| C-08 | P2 | Engine, importers, letters untested on master | characterization tests before changing behaviour | TODO |
+| C-09 | P2 | No enrollment writer, payment wiring (`canCollectFee` unwired), GHL credit tags never pushed | after D-22b, D-1, D-6; fee timing per counsel | OWNER-gated |
+| C-10 | P2 | Credit intake collects first name only — cannot link to a lead | collect contact + consent at intake (after C-06) | TODO |
+| C-11 | P3 | Journey metrics (requested → not served → offered → chose → paid → completed → reported financing) not measurable | falls out of C-05 + C-06; define event log | TODO |
+
 ## Owner-gated production items (tracked, not executed)
 
 | Item | Decision | Notes |

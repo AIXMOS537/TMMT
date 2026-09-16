@@ -1053,6 +1053,83 @@ invariant exists to make safe.
 
 ---
 
+## D-22 🔴 The credit pathway — part of the TMMT journey, and who performs it
+
+**Decision.** (a) Is the credit-dispute engine active work, and how does it relate
+to rentals? (b) Who delivers the credit service to the customer — TMMT itself, or
+Khan Strategies LLC on referral?
+
+**Why now.** PR #224 (credit compliance rails, letter engine, brain ingestion) has
+sat unmerged partly because the credit side was assumed parked. Part (b) decides
+which legal structure the engine is being finished for.
+
+**Evidence** (repository, 2026-09-16):
+
+- The repo already designs a credit hand-off: "every lead that cannot be served —
+  declined renters, credit-blocked applicants — routes to Khan Strategies with
+  consent captured" (`COMMERCIAL_MASTER.md` §8). `referToPartner` →
+  `request_handoff('tmmt','khan_strategies',…)` with a mandatory consent channel;
+  `partner_referrals` has 0 rows (D-3).
+- `CLAIMS_AUDIT.md`: credit legal gates are **CLOSED** — no attorney-approved CROA
+  suite, no VDACS registration, no surety bond. Approved wording is "software and
+  education, hands-on credit work referred to Khan Strategies LLC".
+- ⚠️ **Naming collision.** In these documents **"Customer #2" means the Khan
+  Strategies tenant** (D-21, `CUSTOMER_2_*.md`), not "the credit side of TMMT".
+  A 2026-09-16 session used "Customer #2" loosely for the credit engine; the
+  owner answer below uses the term in that looser sense. Read it as **the credit
+  pathway**.
+
+**Owner Answer — SETTLED 2026-09-16 (part a): CREDIT PATHWAY ACTIVE.**
+
+- **Status:** ACTIVE — continue audit and development. Not parked.
+- **Purpose:** an appropriate secondary pathway for TMMT leads/customers who
+  cannot currently access a suitable rental/vehicle path and may need
+  credit-related help while working toward financing their **own** vehicle.
+- **Relationship to rentals:** one connected customer journey, not a side
+  project. A person moving from rental interest to the credit path should remain
+  one person, not a second disconnected record; the two paths must stay
+  measurable together (requested → could not be served → why → offered → chose →
+  paid → completed → reported financing outcome).
+- **No outcome promises.** Software, copy and AI must never represent that credit
+  will improve, items will be removed, a score will be reached, financing will be
+  approved, a vehicle will be obtained, or a timeline will hold. Track process and
+  status; keep customer **goals** separate from **outcomes**.
+- **No automatic enrolment.** The customer chooses. Prior rental-marketing consent
+  is **not** assumed to cover credit-service marketing. **No messaging of the
+  historical lead database about the credit service** until consent, suppression,
+  channel rules and applicable requirements are verified (see D-15).
+- **PR #224:** REVIEW REQUIRED — **do not auto-merge.** Code labelled
+  "compliance" is not evidence of legal compliance; review separates software
+  control / legal requirement / owner policy.
+- **AI:** may not fabricate account data, dates, payment history, identity,
+  report facts, legal claims, customer statements, creditor actions or bureau
+  responses. Every consequential generated document must trace to stored source
+  information and pass human/customer review.
+- **Commercial status:** NOT assumed ready. Engineering readiness and
+  commercial/legal readiness are separate gates.
+- **Next engineering action:** audit #224 and reconstruct the existing credit
+  engine end to end before building further features; place its requirements
+  into `REMEDIATION_PLAN.md` by dependency.
+
+**Part (b) — who performs the service — OPEN.**
+
+**Option A — TMMT refers; Khan Strategies performs** (the design already in the
+repo). *Consequence:* TMMT's side is intake, consent and referral; the credit
+contract, disclosures and fees sit with Khan Strategies, who operate the engine as
+a tenant (A-4 applies). D-3's rate becomes the TMMT revenue line.
+
+**Option B — TMMT performs the service itself.** *Consequence:* TMMT likely takes
+on the credit-services obligations the closed gates describe (contract,
+disclosures, cancellation, fee timing, state registration/bond) — **legal review
+required before any customer**.
+
+**NO RECOMMENDATION — this is a legal-structure and relationship choice.**
+
+**Owner Answer (b):**
+_______________________________________________
+
+---
+
 ## SUMMARY — what blocks what
 
 | Decision | Priority | Blocks |
@@ -1072,6 +1149,7 @@ invariant exists to make safe.
 | D-13 founder terms | 🟠 | fence compliance |
 | D-20 vehicle-inclusive offer | 🔴 | **any quote naming a car — HOLD until answered** |
 | D-21 Customer #2 tenant safety | 🔴 | **a safe second tenant; part (a) needs no engineering** |
+| D-22b who performs the credit service | 🔴 | the legal structure the credit engine is finished for; part (a) SETTLED |
 | D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |
