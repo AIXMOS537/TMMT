@@ -10,14 +10,24 @@
  *
  * Two layers:
  *   soft — this lookup, run BEFORE any side effect (lead update, audit row);
- *   hard — the STAGED unique partial indexes in
- *          `supabase/migrations/_staged/20260908000200_audit_events_webhook_replay_indexes_STAGED.sql`
- *          make the second audit INSERT fail with 23505 when two deliveries
- *          race past the lookup. Applying them is OWNER-GATED (D-18).
+ *   hard — the unique partial indexes in
+ *          `supabase/migrations/20260909204306_audit_events_webhook_replay_indexes.sql`
+ *          (APPLIED 2026-09-09) make the second audit INSERT fail with 23505
+ *          when two deliveries race past the lookup. They only stop the audit
+ *          row; the lead update before it has already run.
  *
- * Fails OPEN on a lookup error: dropping a legitimate event on a DB blip would
- * lose it for good (both providers treat 200 as final), whereas processing a
- * duplicate is idempotent by effect. The warning makes the blip diagnosable.
+ * Fails OPEN on a lookup error, and LOUDLY. Failing closed would turn any
+ * error that repeats, like the missing column below, into dropping every
+ * booking and payment. Cal.com's retries cannot be relied on, and Stripe
+ * retries for three days and then may disable the endpoint. Processing a
+ * duplicate is close to harmless: Cal sets the same `agent_status`, Stripe
+ * sets `CLOSED` again and moves `closed_at` later, and the index drops the
+ * second audit row. What a silent fail-open costs is that nobody sees the
+ * guard is off. C-20: the lookup selected `created_at`, which `audit_events`
+ * does not have (the column is `ts`, see ./audit-events-columns.ts), so every
+ * call failed open from the day T-02b shipped with only a `console.warn`. A
+ * lookup error now also reports `webhook-replay` through `src/lib/degraded.ts`,
+ * so it shows up in `/api/health` and Sentry.
  *
  * `seenSyncEvent` (T-02c) is the same pre-check against `sync_events`, the
  * row the Airtable verified-lead webhook already writes. That route's key
@@ -27,6 +37,7 @@
  * status and there is deliberately NO unique index behind it.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { clearDegraded, reportDegraded } from '@/lib/degraded'
 
 export interface WebhookReplayKey {
   organizationId: string
@@ -41,7 +52,7 @@ export interface WebhookReplayKey {
 export async function seenWebhookEvent(db: SupabaseClient, k: WebhookReplayKey): Promise<boolean> {
   const { data, error } = await db
     .from('audit_events')
-    .select('created_at')
+    .select('ts')
     .eq('organization_id', k.organizationId)
     .eq('action', k.action)
     .eq(`payload->>${k.keyField}`, k.key)
@@ -49,8 +60,10 @@ export async function seenWebhookEvent(db: SupabaseClient, k: WebhookReplayKey):
     .maybeSingle()
   if (error) {
     console.warn('[webhook-replay] lookup failed, processing anyway', { action: k.action, message: error.message })
+    reportDegraded('webhook-replay', error.message, { action: k.action, code: error.code })
     return false
   }
+  clearDegraded('webhook-replay')
   return Boolean(data)
 }
 
