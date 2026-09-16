@@ -137,6 +137,14 @@ The `Commercial Use Cleared` description states the reasoning:
 > *"CRITICAL GATE. A personal auto policy generally voids the moment the car is rented for
 > money. Do not onboard until this is resolved."*
 
+> ⚠️ **DEFECT FOUND WHILE PORTING (2026-09-16) — a blank Finance Status passes the gate.**
+> In Airtable, `{Blank} != "Leased"` is TRUE and `{Blank} != "Unknown"` is TRUE, so a vehicle
+> whose Finance Status was never filled in reads **CLEAR** — on a gate whose stated purpose is a
+> hard stop — and the blocker branch never flags it either. The port in
+> `src/lib/rules/partner-economics.ts` reproduces this faithfully and raises a
+> `fidelityWarning`, with a test pinning the behaviour. **Whether blank should block is
+> BUSINESS POLICY REQUIRED.** Reported, not silently fixed.
+
 **Consistently enforced?** **Unenforceable in practice — the table holds 0 records.** The gate
 is well-built and has never run on real data. It postdates the operating business.
 

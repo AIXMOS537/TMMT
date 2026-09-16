@@ -56,6 +56,17 @@ permanent option because Airtable creates a new choice on free typing. Anyone fi
 decision was reached; `Eligible` / `Not Eligible` describe *what* it was. A client-facing
 system needs `status` and `reason_code` as separate fields.
 
+> **CONFIRMED WHILE PORTING (2026-09-16) — `ou` cannot be migrated as-is.**
+> TMMT already has the canonical vocabulary in `src/lib/bg-check-decisions.ts`, and the live
+> `bg_check_decide` RPC validates against exactly five values: `Eligible`, `Not Eligible`,
+> `Need Manager's Review`, `out of radius`, `Not found`. **`ou` is not among them and the RPC
+> rejects it**, so any Airtable row still holding it cannot be written through the decision
+> contract. Reclassification is a prerequisite, not a tidy-up.
+>
+> Also confirmed: `bg_check_decide` **records** a staff decision — it does not compute one. So
+> the truth-table gap below is real in both systems, not just in Airtable.
+> `src/lib/rules/eligibility.ts` therefore refuses rather than defaulting.
+
 **Disposition: DECISION REQUIRED.**
 - Canonical states — recommend `eligible` / `not_eligible` / `manager_review`.
 - Reason codes — **BUSINESS POLICY REQUIRED.** Per `CLAUDE.md`, reason codes are never invented.

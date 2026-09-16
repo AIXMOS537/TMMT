@@ -108,7 +108,7 @@ Do not re-raise it.
 | Reciprocal relationships | Yes | ❌ | No reverse-relation convention | P2 | — | Reverse panel renders |
 | Lookups | Yes (`multipleLookupValues`) | 🟡 | Hand-written joins in `queries.ts` | P2 | — | Lookup matches source |
 | Rollups / counts | Yes (Tickets balance) | 🟡 | `getVehicleStats` only; no general rollup | **P1** | — | Rollup recomputes, never stale |
-| Formula fields | **Yes — business-critical** | ❌ | **No rules engine.** See §5 | **P0** | **Yes** | Each documented rule reproduced |
+| Formula fields | **Yes — business-critical** | 🟡 **engine landed** `src/lib/rules/` | Partner economics ported + tested; 5 of 7 rule domains blocked on owner policy. See §5 | **P0** | **Yes** | Each documented rule reproduced |
 | Attachments | Yes — 706 records | ❌ | `documents`/`vehicle_media` = **0 rows**, no provenance columns | **P0** | **Yes** | CR-001 + Gate 2 |
 | `aiText` fields | Yes — 4 tables | 🟡 | AI summary fields; FCRA-sensitive on Background Checks | P3 | **Yes** | Counsel review before reuse |
 
@@ -264,7 +264,9 @@ Not a commitment — a proposal for the owner to correct.
 
 **Tier 0 — unblocks everything else**
 1. Attachment provenance + storage (CR-001) — also unblocks Gate 2
-2. Rules/formula engine core, driven by `docs/business-rules/`
+2. Rules/formula engine core, driven by `docs/business-rules/` — **STARTED.** `src/lib/rules/`
+   ports partner economics + the onboarding gate with 28 tests; reuses the existing
+   `bg-check-decisions` contract. Remaining domains need owner policy, not engineering.
 3. Automation safety envelope (enabled/disabled, dry-run, execution log, DNC fail-closed)
 
 **Tier 1 — restores daily operations**
