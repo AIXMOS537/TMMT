@@ -279,7 +279,7 @@ not available and may differ.**
 | 1. What the customer receives | Credit monitoring membership (trial → monthly auto-renew) with 3-bureau reports/scores (Experian, TransUnion, Equifax) delivered **on the Site** for members; one-time 1- or 3-bureau reports viewable **for 30 days**; session logs out after 20 minutes idle. Data sourced through service providers including Equifax | F (terms §4, §18) |
 | 2. Download / export | Terms do not mention download, print, PDF or export | UNKNOWN |
 | 3. Formats | not stated publicly | UNKNOWN |
-| 4. Official integration | Zapier app exposes **member/enrollment events only** (new authentication; enrolled/upgraded snapshot leads; active/abandoned/suspended/pending-closed members; referred affiliate list) — **no report content** (F, Zapier listing). No public report API found (F). Repo comment agrees: "No public API" (`myfreescorenow.ts:14`) | F |
+| 4. Official integration | Zapier app (checked 2026-09-16) exposes trigger **New Authentication** and actions **Fetch Enrolled Snapshot Leads, Fetch Upgraded Snapshot Leads, Fetch Active Member List, Fetch Pending Closed Members, Fetch Suspended Members, Fetch Abandoned Members, Fetch Referred Affiliate List** (F). The public listing documents **no output fields** (F). Zapier also lists MFSN integrations with credit-service systems (Credit Repair Cloud, Client Dispute Manager) (F). No public report API found; repo comment says "No public API" (`myfreescorenow.ts:14`). **Affiliate/member data integration = CONFIRMED. Credit report content, report file/PDF, tradeline/bureau data via integration = UNKNOWN** until the fields are inspected in the owner's authorized account | F / UNKNOWN |
 | 5. May the customer give the report to an independent app for analysis? | Public terms **restrict** it: use only for "your own personal, lawful, noncommercial purposes"; no copying, transmitting, distributing or creating derivative works of Content "except as expressly permitted"; no use of Content for "algorithmic analysis of any kind"; no "any other commercial purpose" | **conflicts with the proposed flow — not permitted by public terms; affiliate agreement unknown** |
 | 6. May an affiliate store/process it? | not addressed publicly; the restrictions in 5 apply to "Content" generally | UNKNOWN |
 | 7. Other restrictions | **no creating "synthetic data", datasets, feature sets or embeddings from Content**; no AI training/evaluation on it; no automated access, scrapers or "AI agents"; no use of MFSN trademarks/logos; MFSN states it is not a credit repair organization | F |
@@ -302,28 +302,67 @@ affiliates commonly work with MFSN members.
 - The affiliate **link** itself (entry + attribution) is unaffected; store it as
   provider configuration, not in source.
 
-**Exact question for MFSN affiliate support (send in writing, keep the reply):**
+**Support request (owner sends from the affiliate account; keep the written reply):**
 
-> We are an MFSN affiliate. Our proposed workflow: a consumer enrolls through our
-> affiliate link, then — on their own initiative and with their written
-> authorization — gives us a copy of their MFSN 3-bureau report so our software
-> can organize it, ask them questions about it, and prepare a summary for a
-> consultation. We would store the report securely, not share it beyond that
-> consultation, not use it to train or evaluate AI, and delete it on a set
-> schedule.
+> Subject: Affiliate — permitted use of member credit report data in our software
 >
-> 1. Does our affiliate agreement permit this, given Terms §3 (personal,
->    noncommercial use; no algorithmic analysis; no derivative works)?
-> 2. If yes: what form may the report take (PDF download, print-to-PDF, other),
->    and is there an official export, partner feed or API for authorized
->    affiliates instead of customer uploads?
-> 3. May we store it, for how long, and may the consultant who reviews it be an
->    independent company?
-> 4. May we create fully fictional test reports in the same layout for software
->    testing, or must test data be unrelated to MFSN's format?
-> 5. Any branding, attribution or disclosure requirements for describing MFSN in
->    this flow?
+> Hello MyFreeScoreNow Affiliate Support,
+>
+> We operate TMMT OS, a business software platform, and we participate in the
+> MyFreeScoreNow affiliate program. We want a customer who enrolls through our
+> affiliate relationship to be able to use TMMT OS to understand and organize
+> their own credit information. Only at the customer's explicit request, our
+> software would organize the report, ask the customer questions about it, and
+> prepare a summary for a consultation with a human consultant the customer
+> authorizes. We do not want customers' MyFreeScoreNow usernames or passwords,
+> and we will not scrape or automate access to your site.
+>
+> Please confirm in writing:
+>
+> 1. Whether an affiliate may receive or access a customer's credit report data
+>    through an official MyFreeScoreNow integration, API, export, or other
+>    authorized workflow.
+> 2. If so, exactly which official integration method we should use.
+> 3. Whether the customer may export or download their report and voluntarily
+>    provide it to our application.
+> 4. Whether TMMT OS may securely store and programmatically analyze that
+>    customer-provided report when the customer explicitly requests the service.
+> 5. Whether we may derive structured data from the report — for example
+>    accounts, balances, utilization inputs, inquiries, collections, dates — and
+>    generate review questions for the customer.
+> 6. Whether a human consultant authorized by the customer may review the report
+>    and the derived case summary.
+> 7. What retention and deletion requirements apply.
+> 8. Whether we may create completely fictional test data modeled on the report
+>    layout for software testing, without copying any real customer data.
+> 9. Whether there are restrictions on automated or algorithmic analysis, AI
+>    processing, derivative data, commercial use, branding, disclosures, or
+>    downstream service providers.
+> 10. Whether our affiliate agreement grants different permissions than the
+>     public consumer Terms and Conditions (revised February 11, 2026) — in
+>     particular Section 3, which limits use to personal, noncommercial purposes
+>     and restricts algorithmic analysis and derivative works.
+>
+> Where possible, please name the agreement or document that controls each
+> answer. Also, could you tell us which fields are returned by the Zapier actions
+> Fetch Enrolled Snapshot Leads, Fetch Upgraded Snapshot Leads and Fetch Active
+> Member List?
+>
+> Thank you,
+> [Name] · TMMT OS · Affiliate ID [ID]
 
+A reply is a business answer from the provider, not legal advice; counsel still
+reviews the final operating model.
+
+**Authorized-account field inspection (owner does this; Claude does not log in):**
+in Zapier, create a draft Zap with a MyFreeScoreNow action (Fetch Enrolled
+Snapshot Leads, then Upgraded Snapshot Leads, then Active Member List), connect the
+affiliate account, click **Test action**, and send back **field names only** —
+screenshot the left-hand field list with values covered, or type the names. Do not
+publish the Zap. Alternatively, send the column headers of any member export in
+the affiliate portal. Classify each field as: member identity · membership status ·
+enrollment/auth · lead metadata · **score · bureau · tradeline/account · report
+content · report URL/file · report identifier.** Nothing is sent to any AI.
 **Architecture that survives any answer:** make the report source a pluggable
 **provider** (per tenant/provider configuration). If MFSN says no, the same
 S1–S7 path can target another permitted source — e.g., reports the consumer
@@ -412,7 +451,7 @@ only.
 | Item | Status |
 |---|---|
 | MFSN report format | UNKNOWN (not public) |
-| MFSN integration | enrollment/member events only (Zapier); no report API found |
+| MFSN integration | affiliate/member data integration CONFIRMED (Zapier, 8 capabilities); report content, report file, tradeline/bureau data UNKNOWN; public report API not found |
 | Upload / storage permission | **UNKNOWN — public terms restrict it**; written MFSN answer required |
 | Sample report | NONE — hold until permission |
 | Reusable for S1 / S4 / S6 | mapped above |
@@ -420,3 +459,45 @@ only.
 
 **S1 stays blocked** on the MFSN written answer (or an owner choice of a different
 permitted report source) plus owner approval.
+
+### S0-E — alternative report sources (public research, 2026-09-16; no recommendation)
+
+Architecture principle recorded: TMMT OS must not depend on MFSN's layout —
+**report source adapter → normalized credit data → provenance → analysis →
+customer verification → consultant workflow.** Not implemented.
+
+| | A. MFSN affiliate | B. Customer-provided report (AnnualCreditReport.com / bureau sites) | C. Bureau / reseller data access | D. Monitoring services built for credit-service software |
+|---|---|---|---|---|
+| Customer experience | paid MFSN membership via affiliate link | free reports (weekly, all three bureaus); customer saves and uploads | vendor-hosted consent flow, soft pull | paid monitoring membership |
+| Format | UNKNOWN (credit-repair CRM help mentions pasted report JSON — SI: exists inside the consumer session) | browser print-to-PDF; layout differs per bureau (SI) | structured JSON / MISMO / PDF (F: Soft Pull Solutions, CRS) | UNKNOWN |
+| Official integration | Zapier member/lead actions; **fields undocumented** | none — manual upload | REST APIs with credentialing | CRM "integrations" advertised (IDIQ); method undocumented |
+| Portability | UNKNOWN | high (consumer holds file) | vendor-bound | vendor-bound |
+| Automation | member status; report import documented **only by customer credentials** (Credit Repair Cloud, Client Dispute Manager) | parsing only; brittle per-bureau layouts | high | **credentials only** in every documented case |
+| Commercial-use restrictions | public terms restrictive (§10) | **UNKNOWN** — AnnualCreditReport.com terms page returned 403; bureau help pages silent on sharing | **Experian Connect bars "credit repair"**; **iSoftpull does not serve credit repair**; others need FCRA permissible purpose, credentialing, often site inspection | not reviewed |
+| Customer authorization | membership + affiliate terms | bureau identity check; TMMT's own consent + upload terms | FCRA written instruction / permissible purpose via vendor | membership + credentials (ruled out) |
+| Technical complexity | low (status) / unknown (report) | moderate (PDF extraction, per-bureau templates, provenance by page/line) | high (onboarding, compliance) | n/a (credential model) |
+| Vendor dependency | high | low | high | high |
+
+**Major restrictions:** MFSN public terms; Experian Connect "credit repair"
+exclusion and one-time-use/no-disclosure terms; iSoftpull excludes credit repair;
+every documented report import for MFSN and D-type providers uses customer
+credentials, which TMMT has ruled out; option C requires FCRA permissible purpose
+and credentialing.
+
+**Unresolved:** (A) Zapier action fields; whether the affiliate agreement overrides
+the consumer terms; any non-credential partner report feed. (B) AnnualCreditReport.com
+and bureau consumer terms on giving one's own report to a business; stability of
+printed layouts. (C) whether any reseller will credential a business that analyzes
+reports for consumers, under which permissible purpose, and who is the end user of
+record. (D) any partner API without credentials; their commercial-use terms.
+(All) whether analysis plus consultant review brings the operator under CROA or
+state credit-services law regardless of source — counsel.
+
+Sources: zapier.com/apps/myfreescorenow/integrations ·
+help.creditrepaircloud.com/en/articles/9190918 ·
+clientdisputemanagersoftware.com/import-and-credit-monitoring-service ·
+idiq.com/partnerships/credit-education · consumer.ftc.gov/articles/free-credit-reports ·
+consumerrights.law (AnnualCreditReport save-as-PDF guide) ·
+experian.com/connect/legal/terms · isoftpull.com/landing-pages/soft-pulls-v4 ·
+softpullsolutions.com/api-integration · crscreditapi.com/consumer-credit ·
+developers.bloomcredit.io · plaid.com/docs/check
