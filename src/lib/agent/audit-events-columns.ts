@@ -4,11 +4,15 @@
  * (docs/SCHEMA-DRIFT.md), so nothing type-checks a query against it and the
  * route tests run on `src/lib/testing/fake-supabase.ts`, which accepts any
  * column name. That is how `seenWebhookEvent` shipped selecting `created_at`,
- * a column that does not exist, and failed open on every call (C-20).
+ * a column that does not exist, so every lookup errored and was treated as
+ * "not seen" (C-20).
  *
- * The timestamp column is `ts`, not `created_at`. Matches the row shape
- * `/api/audit/events` inserts. Pinned by `audit-events-columns.test.ts`, which
- * checks every `from('audit_events')` chain in src against this list.
+ * The timestamp column is `ts`, not `created_at`. Verified read-only against
+ * production on 2026-09-16 (information_schema.columns, in ordinal order:
+ * id bigint, ts timestamptz, organization_id uuid, hardware_uuid text,
+ * ip inet, action text, payload jsonb). Update this list only from the live
+ * catalog, never to make a query pass. `audit-events-columns.test.ts` checks
+ * every `from('audit_events')` chain in src against this list.
  */
 export const AUDIT_EVENTS_COLUMNS = [
   'id',
