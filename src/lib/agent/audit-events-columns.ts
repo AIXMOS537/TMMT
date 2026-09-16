@@ -10,8 +10,10 @@
  * The timestamp column is `ts`, not `created_at`. Verified read-only against
  * production on 2026-09-16 (information_schema.columns, in ordinal order:
  * id bigint, ts timestamptz, organization_id uuid, hardware_uuid text,
- * ip inet, action text, payload jsonb). Update this list only from the live
- * catalog, never to make a query pass. `audit-events-columns.test.ts` checks
+ * ip inet, action text, payload jsonb). Recorded by hand: it is NOT kept in
+ * sync with production automatically, because the repo has no generated
+ * Supabase types or table definition to derive it from. Update it only from
+ * the live catalog, never to make a query pass. `audit-events-columns.test.ts` checks
  * every `from('audit_events')` chain in src against this list.
  */
 export const AUDIT_EVENTS_COLUMNS = [

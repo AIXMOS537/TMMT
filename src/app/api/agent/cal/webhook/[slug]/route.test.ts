@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeFakeSupabase, writes, type FakeDbCall, type FakeSupabase } from '@/lib/testing/fake-supabase'
+import { auditEventsColumnError } from '@/lib/testing/audit-events-schema'
 import type { AuditEvent } from '@/lib/agent/audit'
 
 /**
@@ -57,10 +58,16 @@ let db: FakeSupabase
 const auditCalls = () => (h.audit.mock.calls as unknown as Array<[AuditEvent]>).map(([e]) => e)
 const replayLookups = () => db.calls.filter((c) => c.table === 'audit_events' && c.op === 'select')
 
-/** The replay lookup is answered from the rows the audit emitter was asked to write. */
+/**
+ * The replay lookup is answered from the rows the audit emitter was asked to
+ * write. A lookup naming a column `audit_events` does not have gets 42703, as
+ * in production (C-20), so these tests fail if the lookup drifts off schema.
+ */
 function auditBackedDb(fail = false): FakeSupabase {
   return makeFakeSupabase((call: FakeDbCall) => {
     if (call.table !== 'audit_events' || call.op !== 'select') return undefined
+    const schemaError = auditEventsColumnError(call)
+    if (schemaError) return schemaError
     if (fail) return { error: { message: 'boom' } }
     const org = call.filters.find(([m, col]) => m === 'eq' && col === 'organization_id')?.[2]
     const action = call.filters.find(([m, col]) => m === 'eq' && col === 'action')?.[2]
@@ -305,6 +312,8 @@ describe('POST /api/agent/cal/webhook/[slug] — replay (T-02b)', () => {
   })
 
   it('fails open when the replay lookup errors: the booking is processed once, not dropped', async () => {
+    // Pins CURRENT behaviour, intentional for now: not a decision that fail-open
+    // is the right long-term policy for this webhook class (C-20, open).
     db = auditBackedDb(true)
     h.createDb.mockReturnValue(db)
     const res = await POST(signed(booking), params)

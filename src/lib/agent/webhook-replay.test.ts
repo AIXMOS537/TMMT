@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { makeFakeSupabase, type FakeDbCall, type FakeSupabase } from '@/lib/testing/fake-supabase'
+import { makeFakeSupabase, type FakeSupabase } from '@/lib/testing/fake-supabase'
+import { auditEventsColumnError, unknownAuditEventsColumn } from '@/lib/testing/audit-events-schema'
 import { AUDIT_EVENTS_COLUMNS } from './audit-events-columns'
 import { seenWebhookEvent, type WebhookReplayKey } from './webhook-replay'
 
@@ -9,7 +10,8 @@ import { seenWebhookEvent, type WebhookReplayKey } from './webhook-replay'
  * production answers that column with 42703, which the guard treats as "not seen".
  *
  * `strictAuditEvents` does what PostgREST does: a column that is not in
- * AUDIT_EVENTS_COLUMNS gets the 42703 error. A lookup that names a wrong
+ * AUDIT_EVENTS_COLUMNS (verified read-only on production 2026-09-16, recorded
+ * by hand, not auto-synced) gets the 42703 error. A lookup that names a wrong
  * column now returns `false` for an event that IS stored, and the hit test
  * below fails.
  */
@@ -20,20 +22,12 @@ type Row = { ts: string; organization_id: string; action: string; payload: Recor
 const stored: Row = { ts: '2026-09-16T00:00:00.000Z', organization_id: ORG, action: 'cal.booking_created', payload: { booking_uid: 'bk_c20' } }
 
 const known = new Set<string>(AUDIT_EVENTS_COLUMNS)
-/** `payload->>booking_uid` filters on the `payload` column. */
-const baseColumn = (col: string) => col.split('->')[0].trim()
-
-function unknownColumn(call: FakeDbCall): string | undefined {
-  const selected = (call.columns ?? '*').split(',').map((c) => c.trim()).filter((c) => c && c !== '*')
-  const filtered = call.filters.filter(([m]) => m !== 'limit' && m !== 'range').map(([, col]) => String(col))
-  return [...selected, ...filtered].map(baseColumn).find((c) => !known.has(c))
-}
 
 function strictAuditEvents(rows: Row[]): FakeSupabase {
   return makeFakeSupabase((call) => {
     if (call.table !== 'audit_events') return undefined
-    const bad = unknownColumn(call)
-    if (bad) return { error: { code: '42703', message: `column audit_events.${bad} does not exist` } }
+    const schemaError = auditEventsColumnError(call)
+    if (schemaError) return schemaError
     const match = rows.find((r) =>
       call.filters.every(([m, col, value]) => {
         if (m !== 'eq') return true
@@ -66,11 +60,19 @@ describe('seenWebhookEvent against the real audit_events columns (C-20)', () => 
     await seenWebhookEvent(db, KEY)
     const [call] = db.calls
     expect(call.columns).toBe('ts')
-    expect(unknownColumn(call)).toBeUndefined()
+    expect(unknownAuditEventsColumn(call)).toBeUndefined()
   })
 
   it('finds a stored event, so the replay is caught (was: 42703, treated as not seen)', async () => {
     const db = strictAuditEvents([stored])
+    await expect(seenWebhookEvent(db, KEY)).resolves.toBe(true)
+  })
+
+  it('first delivery is not seen; once its audit row is recorded, the same provider event is seen', async () => {
+    const rows: Row[] = []
+    const db = strictAuditEvents(rows)
+    await expect(seenWebhookEvent(db, KEY)).resolves.toBe(false)
+    rows.push(stored) // what emitAudit writes after the side effect
     await expect(seenWebhookEvent(db, KEY)).resolves.toBe(true)
   })
 
@@ -81,8 +83,10 @@ describe('seenWebhookEvent against the real audit_events columns (C-20)', () => 
 })
 
 describe('seenWebhookEvent on a lookup error', () => {
-  // Pins the CURRENT behaviour only. Fail-open vs retry/quarantine/fail-closed
-  // per webhook class is an open decision (C-20, docs/REMEDIATION_PLAN.md).
+  // Pins CURRENT behaviour, intentional for now. It is not a decision that
+  // fail-open is the right long-term policy: fail-open vs retry/quarantine/
+  // fail-closed per webhook class (payments vs bookings) is open (C-20,
+  // docs/REMEDIATION_PLAN.md).
   it('treats the error as "not seen" (fails open) and logs a warning', async () => {
     const db = makeFakeSupabase((call) =>
       call.table === 'audit_events' ? { error: { code: '42703', message: 'column audit_events.created_at does not exist' } } : undefined)
