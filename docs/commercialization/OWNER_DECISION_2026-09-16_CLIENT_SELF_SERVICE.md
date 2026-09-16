@@ -99,6 +99,36 @@ reading until told otherwise:
   renter's own documents, but re-exposing them through a link widens the attack surface
   on the most sensitive PII in the system for no stated business need
 
+### CONFIRMED BY THE OWNER, 2026-09-16 (second pass)
+
+> *"renter only sees the decision"*
+
+The protective default above is now **confirmed policy, not an assumption.** The
+withheld list stays withheld. No screening-report content ships to a renter.
+
+**The complete payload, read back from the live function — 11 fields, nothing omitted:**
+
+```json
+{
+  "status": "decided",          "decided": true,
+  "eligibility_status": "Not Eligible",
+  "reason_label": "Document / administrative deficiency",
+  "reason_description": "Missing, invalid, or incomplete documentation or application data.",
+  "recoverable": true,          "date_verified": "2026-09-16",
+  "has_license": false,         "has_insurance_proof": false,
+  "has_paystub": false,         "verification_form_submitted": false
+}
+```
+
+**One judgement call, flagged so it can be reversed with one word.** The four
+`has_*` / `verification_form_submitted` booleans are not part of the decision — they
+are a **receipt for the renter's own uploads** ("we received your paystub"). They are
+kept because without them the *pending* state is a blank page: an applicant cannot
+tell what is still missing, and the most common support call becomes unanswerable.
+They disclose nothing the renter did not themselves submit, and no document content.
+**If "only the decision" is meant strictly, say so and they come out** — it is four
+columns in one function, no other change.
+
 ### ⚖️ NEEDS LICENSED REVIEW
 Showing a consumer their own screening report, and declining someone on the basis of
 one, engages **FCRA adverse-action** duties — notice content, the source of the report,
