@@ -69,7 +69,7 @@ function auditBackedDb(fail = false): FakeSupabase {
     const hit = auditCalls().some(
       (e) => e.organizationId === org && e.action === action && e.payload?.[field] === keyFilter?.[2],
     )
-    return { data: hit ? { created_at: '2026-09-08T00:00:00.000Z' } : null }
+    return { data: hit ? { ts: '2026-09-08T00:00:00.000Z' } : null }
   })
 }
 

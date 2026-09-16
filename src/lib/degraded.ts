@@ -12,6 +12,10 @@
  * production has been on the rate-limit fallback since F-11 shipped and
  * nothing said so.
  *
+ * The webhook replay lookup (`seenWebhookEvent`, C-20) reports as
+ * `webhook-replay` when its `audit_events` query errors and it processes the
+ * event without the dedupe check.
+ *
  * This module does not change what the fallbacks do. It makes engaging one
  * visible three ways:
  *
@@ -33,7 +37,7 @@
  * so a flapping backend still cannot produce more than one line per interval.
  */
 
-export type DegradedComponent = "ghl-event-dedupe" | "rate-limit";
+export type DegradedComponent = "ghl-event-dedupe" | "rate-limit" | "webhook-replay";
 
 export interface DegradedRecord {
   component: DegradedComponent;
