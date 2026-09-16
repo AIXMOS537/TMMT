@@ -27,6 +27,7 @@
  */
 
 import { assertOutboundAllowed, type OutboundReason } from "@/lib/outbound-gate";
+import { isOpenVaTask, onlyOpenVaTasks } from "@/lib/ops/va-task-lifecycle";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -59,12 +60,16 @@ export interface VaTaskRow {
   subject_name: string | null;
   subject_phone: string | null;
   context: Record<string, unknown> | null;
+  status?: string | null;
+  handled_at?: string | null;
 }
 
 export interface StageSummary {
   dryRun: boolean;
   considered: number;
   staged: number;
+  /** Rows that came back closed (handled/dismissed/blocked). Always 0 unless the query filter regresses. */
+  skippedClosed: number;
   skippedNotMessageable: number;
   skippedNoPhone: number;
   skippedAlreadyQueued: number;
@@ -160,6 +165,7 @@ export async function stageVaTaskMessages(opts: StageOptions = {}): Promise<Stag
     dryRun,
     considered: 0,
     staged: 0,
+    skippedClosed: 0,
     skippedNotMessageable: 0,
     skippedNoPhone: 0,
     skippedAlreadyQueued: 0,
@@ -168,10 +174,11 @@ export async function stageVaTaskMessages(opts: StageOptions = {}): Promise<Stag
     drafts: [],
   };
 
-  const { data, error } = await db
-    .from("exec_va_tasks")
-    .select("id, category, subject_name, subject_phone, context")
-    .eq("status", "pending")
+  // Open means status='pending' AND handled_at IS NULL. A dismissed task keeps
+  // status='pending', so filtering on status alone re-staged dismissed work.
+  const { data, error } = await onlyOpenVaTasks(
+    db.from("exec_va_tasks").select("id, category, subject_name, subject_phone, context, status, handled_at")
+  )
     .in("category", wanted)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -181,6 +188,12 @@ export async function stageVaTaskMessages(opts: StageOptions = {}): Promise<Stag
 
   for (const task of tasks) {
     summary.considered += 1;
+
+    // Defence in depth: never trust the query alone to have excluded closed work.
+    if (!isOpenVaTask(task)) {
+      summary.skippedClosed += 1;
+      continue;
+    }
 
     const smsType = MESSAGEABLE[task.category];
     if (!smsType) {
