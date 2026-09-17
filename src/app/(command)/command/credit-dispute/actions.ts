@@ -5,6 +5,7 @@ import { createSSRClient } from "@/lib/supabase-server";
 import { isOwnerUser } from "@/lib/auth-roles";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
 import type { DisputeLetterBatch } from "@/lib/credit-dispute/engine/protocol";
+import type { ItemAssessment } from "@/lib/credit-dispute/policy/dispute-policy";
 
 /**
  * The credit dispute desk, moved out of the browser.
@@ -119,6 +120,57 @@ export async function addDisputeRoundsForClient(
   const updated: StoredClient = {
     ...existing.data,
     disputeRounds: [...existing.data.disputeRounds, ...newRounds],
+  };
+
+  const saved = await upsertDisputeClient(updated);
+  if (!saved.ok) return saved;
+  return { ok: true, data: updated };
+}
+
+/**
+ * Record the accuracy call on one negative item.
+ *
+ * The accuracy gate refuses to write a letter for an item nobody has assessed,
+ * so this is the write that unlocks one. It lived in the browser store, keyed
+ * off the same localStorage record that held the client's date of birth,
+ * social-security last four and home address; the assessment rides inside that
+ * record, so storing it there meant storing all of it there. It goes through
+ * the request-scoped owner-checked client now, like everything else on this
+ * desk.
+ *
+ * `roundsSent` is deliberately not settable here. It is derived from the stored
+ * dispute history, so the two can never disagree about what has actually gone
+ * out, and an existing value is carried forward rather than re-entered.
+ */
+export async function recordItemAssessment(
+  profileId: string,
+  negativeItemId: string,
+  assessment: Omit<ItemAssessment, "assessedAt" | "roundsSent" | "assessedBy">
+): Promise<DisputeResult<StoredClient | null>> {
+  const supabase = await requireOwner();
+  if (!supabase) return { ok: false, error: "Not authorized." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const existing = await getDisputeClient(profileId);
+  if (!existing.ok) return existing;
+  if (!existing.data) return { ok: false, error: "Client not found." };
+
+  const prior = existing.data.assessments?.[negativeItemId];
+  const updated: StoredClient = {
+    ...existing.data,
+    assessments: {
+      ...(existing.data.assessments ?? {}),
+      [negativeItemId]: {
+        ...assessment,
+        roundsSent: prior?.roundsSent ?? [],
+        // Who decided this, and on what day, is the first question anyone
+        // reviewing a dispute asks.
+        assessedBy: user?.email ?? prior?.assessedBy,
+        assessedAt: new Date().toISOString(),
+      },
+    },
   };
 
   const saved = await upsertDisputeClient(updated);
