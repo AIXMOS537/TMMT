@@ -31,7 +31,7 @@ vi.mock("@/lib/supabase-server", () => ({
   }),
 }));
 
-import { loadBoard, placeHold } from "./actions";
+import { addVehicleToBoard, loadBoard, placeHold } from "./actions";
 
 const WINDOW = ["2026-10-01T10:00:00.000Z", "2026-10-08T10:00:00.000Z"] as const;
 
@@ -114,5 +114,50 @@ describe("placeHold authz — nothing is written by a rejected caller", () => {
     const res = await placeHold(input);
     expect(res.ok).toBe(false);
     expect(db.touched).not.toContain("bookings");
+  });
+});
+
+describe("addVehicleToBoard — the tier decision, guarded", () => {
+  const ok = { fleetId: "f-1", tier: "economy" };
+
+  it("refuses an anonymous caller without touching the database", async () => {
+    db.getUser.mockResolvedValue({ data: { user: null } });
+    expect(await addVehicleToBoard(ok)).toEqual({ ok: false, error: "Sign in first." });
+    expect(db.touched).toEqual([]);
+  });
+
+  it("refuses a non-staff caller without touching the database", async () => {
+    db.getUser.mockResolvedValue({ data: { user: { app_metadata: { role: "customer" } } } });
+    expect(await addVehicleToBoard(ok)).toEqual({ ok: false, error: "Staff only." });
+    expect(db.touched).toEqual([]);
+  });
+
+  it("refuses a bogus tier rather than defaulting to economy", async () => {
+    const res = await addVehicleToBoard({ fleetId: "f-1", tier: "sport_bike" });
+    expect(res.ok).toBe(false);
+    expect(db.touched).toEqual([]);
+  });
+
+  it("REFUSES a car with no posted price instead of letting the rate card guess", async () => {
+    // The card prices a 7 Series at $1,550/wk against a $300-550 gig fleet.
+    // Falling back to it is the money bug, so an unpriced car is refused.
+    db.rows.fleet = [{ id: "f-1", vehicle_make: "Toyota", org_id: "org-1", weekly_prices: null }];
+    const res = await addVehicleToBoard(ok);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toMatch(/no posted weekly price/);
+  });
+
+  it("refuses a car with no organisation", async () => {
+    db.rows.fleet = [{ id: "f-1", vehicle_make: "Toyota", org_id: null, weekly_prices: ["400"] }];
+    const res = await addVehicleToBoard(ok);
+    expect(res.ok).toBe(false);
+  });
+
+  it("refuses a car that is already on the board", async () => {
+    db.rows.fleet = [{ id: "f-1", vehicle_make: "Toyota", org_id: "org-1", weekly_prices: ["400"] }];
+    db.rows.vehicles = [{ id: "veh-existing" }];
+    const res = await addVehicleToBoard(ok);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toMatch(/already on the board/);
   });
 });

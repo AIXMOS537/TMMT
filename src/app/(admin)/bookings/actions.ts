@@ -303,3 +303,158 @@ export async function placeHold(input: {
   };
   return { ok: false, error: messages[result.reason] ?? "The booking was refused." };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Putting a car ON the board.
+ *
+ * `bookings.vehicle_id` is a foreign key to `vehicles`, which holds 2 rows,
+ * while `fleet` — the real inventory — holds 43. So 41 cars cannot be booked at
+ * all. A bridge script ran once on 2026-06-26, did two cars and stopped.
+ *
+ * The blocker was never technical: `vehicles.tier` decides which rate card row
+ * a car can match and which coverage it is sold, so it is a PRICING decision.
+ * `fleet.vehicle_class` cannot supply it — 3 of 43 rows are populated and all
+ * three are wrong in production (a Tesla Model 3 filed as "sport_bike").
+ *
+ * So rather than a migration that guesses tiers on the owner's behalf, this is
+ * the decision made where it belongs: an operator picks the tier, sees the rate
+ * that will result, and puts the car on the board.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export type FleetCandidate = {
+  fleetId: string;
+  label: string;
+  make: string | null;
+  model: string | null;
+  year: number | null;
+  vehicleStatus: string | null;
+  postedWeekly: string | null;
+  floorWeekly: string | null;
+};
+
+/** Fleet cars that are not yet on the board. Retired cars are never offered. */
+export async function listFleetCandidates() {
+  const supabase = await createSSRClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Sign in first." };
+  if (!isStaffUser(user)) return { ok: false as const, error: "Staff only." };
+
+  const { data: bridged } = await supabase.from("vehicles").select("fleet_vehicle_id");
+  const taken = new Set(
+    (bridged ?? []).map((r) => r.fleet_vehicle_id).filter((x): x is string => typeof x === "string")
+  );
+
+  const { data: fleet, error } = await supabase
+    .from("fleet")
+    .select("id, vehicle_name, vehicle_make, vehicle_model, year, vehicle_status, weekly_prices, lowest_possible_price");
+  if (error) return { ok: false as const, error: `Could not read the fleet: ${error.message}` };
+
+  const out: FleetCandidate[] = [];
+  for (const f of fleet ?? []) {
+    const id = String(f.id);
+    if (taken.has(id)) continue;
+    if ((f.vehicle_status as string | null) === "Retired") continue;
+    if (!f.vehicle_make) continue;
+
+    const yearRaw = f.year;
+    const yearNum =
+      typeof yearRaw === "number" ? yearRaw : typeof yearRaw === "string" ? Number(yearRaw.replace(/\D/g, "")) : NaN;
+    const weekly = Array.isArray(f.weekly_prices) && f.weekly_prices.length > 0 ? String(f.weekly_prices[0]) : null;
+
+    out.push({
+      fleetId: id,
+      label:
+        (f.vehicle_name as string) ||
+        `${Number.isFinite(yearNum) ? `${yearNum} ` : ""}${String(f.vehicle_make).trim()} ${String(f.vehicle_model ?? "").trim()}`.trim(),
+      make: String(f.vehicle_make).trim(),
+      model: f.vehicle_model ? String(f.vehicle_model).trim() : null,
+      year: Number.isFinite(yearNum) ? yearNum : null,
+      vehicleStatus: (f.vehicle_status as string | null) ?? null,
+      postedWeekly: weekly,
+      floorWeekly: f.lowest_possible_price != null ? String(f.lowest_possible_price) : null,
+    });
+  }
+
+  out.sort((a, b) => a.label.localeCompare(b.label));
+  return { ok: true as const, candidates: out };
+}
+
+/**
+ * Put one fleet car on the board at a stated tier.
+ *
+ * Refuses a car with no posted weekly price. Such a car would fall through to
+ * the tier rate card, and that card prices a luxury business ($1,550/wk for a
+ * 7 Series) against a $300-550/wk gig fleet — five of its seven make/model rules
+ * match no vehicle at all. Guessing a rate is exactly the money bug the floor
+ * guard exists to prevent, so the answer is "price it first", not a default.
+ *
+ * daily_rate = weekly / 7, matching the convention of the two rows the original
+ * 2026-06-26 bridge left behind.
+ */
+export async function addVehicleToBoard(input: { fleetId: string; tier: string }) {
+  const supabase = await createSSRClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Sign in first." };
+  if (!isStaffUser(user)) return { ok: false as const, error: "Staff only." };
+  if (!isTier(input.tier)) return { ok: false as const, error: "Pick a tier: economy, mid or luxury." };
+
+  const { data: f, error: fErr } = await supabase
+    .from("fleet")
+    .select("id, vehicle_name, vehicle_make, vehicle_model, year, vin, license_plate, vehicle_status, weekly_prices, lowest_possible_price, org_id")
+    .eq("id", input.fleetId)
+    .maybeSingle();
+  if (fErr || !f) return { ok: false as const, error: "That car is not in the fleet." };
+  if (!f.org_id) return { ok: false as const, error: "That car has no organisation set." };
+
+  const { data: already } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("fleet_vehicle_id", input.fleetId)
+    .maybeSingle();
+  if (already) return { ok: false as const, error: "That car is already on the board." };
+
+  const weeklyRaw = Array.isArray(f.weekly_prices) && f.weekly_prices.length > 0 ? String(f.weekly_prices[0]) : "";
+  const weekly = Number(weeklyRaw.replace(/[$,\s]/g, ""));
+  if (!Number.isFinite(weekly) || weekly <= 0) {
+    return {
+      ok: false as const,
+      error: "This car has no posted weekly price. Set its price on the fleet record first — the rate card would misprice it.",
+    };
+  }
+
+  const yearRaw = f.year;
+  const yearNum =
+    typeof yearRaw === "number" ? yearRaw : typeof yearRaw === "string" ? Number(yearRaw.replace(/\D/g, "")) : NaN;
+
+  const label =
+    (f.vehicle_name as string) ||
+    `${Number.isFinite(yearNum) ? `${yearNum} ` : ""}${String(f.vehicle_make ?? "").trim()} ${String(f.vehicle_model ?? "").trim()}`.trim();
+
+  const { error: insErr } = await supabase.from("vehicles").insert({
+    label,
+    make: f.vehicle_make ? String(f.vehicle_make).trim() : null,
+    model: f.vehicle_model ? String(f.vehicle_model).trim() : null,
+    year: Number.isFinite(yearNum) ? yearNum : null,
+    vin: f.vin ?? null,
+    plate: f.license_plate ?? null,
+    weekly_rate: weekly,
+    daily_rate: Math.round((weekly / 7) * 100) / 100,
+    tier: input.tier,
+    active: (f.vehicle_status as string | null) !== "Retired",
+    fleet_vehicle_id: input.fleetId,
+    org_id: f.org_id,
+    metadata: {
+      source: "board_add",
+      added_by: user.id,
+      posted_weekly_at_add: weeklyRaw,
+      floor_weekly_at_add: f.lowest_possible_price ?? null,
+    },
+  });
+  if (insErr) return { ok: false as const, error: `Could not add the car: ${insErr.message}` };
+
+  return { ok: true as const, label, weekly };
+}
