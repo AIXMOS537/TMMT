@@ -32,6 +32,13 @@ begin;
 -- The Drive-to-Own opt-in, and the record of a lender's decision.
 \i supabase/migrations/20260917000000_financing_applications_and_ownership_optin.sql
 
+-- ── SECTION 2b ────────────────────────────────────────────────────────────────────
+-- Makes the FIRST gate of the ladder clearable. credit_education_acknowledgments.profile_id
+-- is NOT NULL, and 0 of 35 journeys carry a profile_id because renters have no accounts, so
+-- gate 10 is currently unevidencable for every renter alive. Adds a nullable journey_id,
+-- drops the NOT NULL, and adds a CHECK requiring at least one subject -- strictly no weaker.
+\i supabase/migrations/20260917010000_education_ack_by_journey.sql
+
 -- ── SECTION 3 — RATE CARD CORRECTIONS ─────────────────────────────────────────────
 -- These REMOVE WRONG DATA. They do not set new prices — deciding what to charge is the
 -- owner's call and is deliberately left alone. See the note at the end.
@@ -76,6 +83,8 @@ commit;
 -- select count(*) from public.rental_pricing_rules where active;                 -- 5
 -- select count(*) from public.incoming_leads
 --  where contact_name='Test User' and opted_out;                                 -- 2
+-- select is_nullable from information_schema.columns
+--  where table_name='credit_education_acknowledgments' and column_name='profile_id'; -- YES
 --
 -- ═══════════════════════════════════════════════════════════════════════════════════
 -- STILL THE OWNER'S CALL — deliberately NOT in this script
