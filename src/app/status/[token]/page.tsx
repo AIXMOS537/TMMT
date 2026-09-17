@@ -18,6 +18,8 @@ import { createServiceRoleClient } from "@/lib/supabase-service";
 import JourneyLadder from "@/components/drive-to-own/JourneyLadder";
 import FinancingReadinessPanel from "@/components/drive-to-own/FinancingReadinessPanel";
 import OwnershipOptIn from "@/components/drive-to-own/OwnershipOptIn";
+import CreditEducation from "@/components/drive-to-own/CreditEducation";
+import { loadEducationProgress } from "@/lib/drive-to-own/education";
 import { Card } from "@/components/ui";
 import { CheckCircle, Clock, FileText, XCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
@@ -53,8 +55,13 @@ export default async function ClientStatusPage({
   const journey = status ? await getClientJourneyForToken(token) : null;
   let ladder = null;
   let standing = null;
+  let education = null;
   if (journey) {
     const svc = createServiceRoleClient();
+    // Only loaded once they have chosen this path — see the opt-in note below.
+    if (journey.ownership_opt_in_at) {
+      education = await loadEducationProgress(svc, journey.id);
+    }
     ladder = evaluateLadder(await loadLadderEvidence(svc, journey));
     standing = assessStanding({
       overduePayments: null,
@@ -149,6 +156,15 @@ export default async function ClientStatusPage({
       {/* Opted in -> show the journey. Not opted in -> offer it, and show nothing else.
           A renter who never asked for this should not arrive at a page grading their credit. */}
       {journey && !journey.ownership_opt_in_at && <OwnershipOptIn token={token} />}
+
+      {journey?.ownership_opt_in_at && education && education.requiredTotal > 0 && (
+        <CreditEducation
+          token={token}
+          sections={education.sections}
+          requiredTotal={education.requiredTotal}
+          requiredAcknowledged={education.requiredAcknowledged}
+        />
+      )}
 
       {journey?.ownership_opt_in_at && ladder && (
         <JourneyLadder position={ladder} standing={standing} />
