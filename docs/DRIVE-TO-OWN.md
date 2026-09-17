@@ -33,8 +33,34 @@ definition, not an invention of this document:
 | 40 | `training_core_complete` | All core rebuild modules at 100% |
 | 50 | `mentorship_dfy_active` | Path C $1,000 paid — **optional, see below** |
 | 60 | `day_90_good_standing` | 90 consecutive days in good standing |
-| 70 | `lto_eligible` | All gates met for lease-to-own |
-| 80 | `vehicle_turnover_complete` | Turnover docs signed, vehicle swapped |
+| 70 | `lto_eligible` | Every step TMMT controls is cleared — **ready to APPLY** |
+| — | *(external)* | **A lender decides. TMMT does not, and some renters will be declined.** |
+| 80 | `vehicle_turnover_complete` | Financing approved, docs signed, vehicle handed over |
+
+### ⛔ THE LADDER DOES NOT HAND OUT CARS
+
+**Owner, 2026-09-16:**
+
+> *"Not everyone will get to own the car. Ideally the renter only owns the car if and when
+> their credit is fixed and they can get approved for financing."*
+
+This is the most important constraint in the document, and it is a **legal** one as much as
+a product one. TMMT does not finance the car and does not approve anyone. A renter can clear
+every gate, do everything asked, and still be declined by a lender.
+
+So the engine is built so that:
+- Clearing all eight gates yields **`readyToSeekFinancing: true`** — ready to *apply*.
+  There is deliberately no field on `LadderPosition` that means "will own a car."
+- `financingDecision` defaults to **`pending`**. Silence is never read as approval.
+- `vehicle_turnover_complete` **cannot open on internal progress alone.** Even a row
+  hand-marked as turned over does not complete the ladder without an approval on file.
+- A decline is recorded plainly and **does not erase the work** — good standing stays met,
+  `readyToSeekFinancing` stays true. They can apply again.
+
+Two tests enforce the language itself: every gate's wording is run through the repo's
+existing `findBannedPhrases` gate (which already bans *guaranteed approval*, *100% approval*
+and *fix your credit*), and no wording may contain "guarantee". **Promising an approval is
+the exact thing that turns this into an actionable claim.**
 
 ### Why this design is the legal one — and must stay that way
 
@@ -127,8 +153,21 @@ Nothing here is new design. Each is a write path into a table that already exist
 | 4 | Emit checkpoint events as gates clear | `journey_checkpoint_events` | Nothing writes it |
 | 5 | Link journey → booking | `client_journey.booking_id` | **0 of 35 populated**; waits on the booking write path |
 | 6 | Per-module completion read | — | `coreModulesComplete` is refused today rather than guessed |
-| 7 | Buyout terms | `lto_agreements.weekly_buyout_cents` | ⛔ **Owner pricing decision** — not invented here |
-| 8 | Rent-to-Credit furnishing | — | ⚖️ Counsel on furnisher agreements + e-OSCAR ($90) |
+| 7 | Record the lender's decision | *(no table exists)* | **Nothing records financing applications or outcomes.** `financingApproved` is hard-wired to null until a source exists — it must never be derived from internal progress |
+| 8 | Buyout / sale terms | `lto_agreements.weekly_buyout_cents` | ⛔ **Owner decision** — and see the conflict note below |
+| 9 | Rent-to-Credit furnishing | — | ⚖️ Counsel on furnisher agreements + e-OSCAR ($90) |
 
-**#7 is yours.** What does a renter pay weekly to buy the car, and over how many weeks?
-Until that is decided, the ladder can tell someone they qualify but not what it costs.
+### ⚠️ A CONFLICT TO RESOLVE — lease-to-own vs third-party financing
+
+Checkpoint 70 is named `lto_eligible` and `lto_agreements` carries `weekly_buyout_cents`
+and `term_weeks` — that schema describes **TMMT financing the car itself** (lease-to-own).
+The owner's 2026-09-16 statement describes the renter **getting approved for financing**,
+which is a third-party lender.
+
+These are different businesses. Financing it yourself makes TMMT a creditor — Reg Z / TILA
+disclosure, state lender or rent-to-own licensing, repossession law. Sending the renter to a
+lender avoids all of that and is what the owner described.
+
+**The code follows the owner's statement**, and the schema naming is treated as legacy. If
+lease-to-own is genuinely still on the table, that is a much larger legal conversation than
+this ladder, and it needs counsel before any buyout figure is set.
