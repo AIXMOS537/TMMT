@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { recordMetCheckpoints, loadCheckpointHistory } from "./checkpoint-events";
 import { evaluateLadder, type LadderEvidence } from "./ladder";
 
