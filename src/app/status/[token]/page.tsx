@@ -9,7 +9,14 @@
  * licence-upload path. There is no client bundle here to leak it into.
  */
 import type { Metadata } from "next";
-import { getClientBgStatus } from "@/lib/client-self-service";
+import { getClientBgStatus, getClientJourneyForToken } from "@/lib/client-self-service";
+import { loadLadderEvidence } from "@/lib/drive-to-own/queries";
+import { evaluateLadder } from "@/lib/drive-to-own/ladder";
+import { assessStanding } from "@/lib/drive-to-own/standing";
+import { assessFinancingReadiness } from "@/lib/drive-to-own/financing-readiness";
+import { createServiceRoleClient } from "@/lib/supabase-service";
+import JourneyLadder from "@/components/drive-to-own/JourneyLadder";
+import FinancingReadinessPanel from "@/components/drive-to-own/FinancingReadinessPanel";
 import { Card } from "@/components/ui";
 import { CheckCircle, Clock, FileText, XCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
@@ -39,6 +46,33 @@ export default async function ClientStatusPage({
 }) {
   const { token } = await params;
   const status = await getClientBgStatus(token);
+
+  // The ownership journey is shown only when this renter unambiguously has one. No
+  // journey, or an ambiguous email, renders nothing rather than someone else's progress.
+  const journey = status ? await getClientJourneyForToken(token) : null;
+  let ladder = null;
+  let standing = null;
+  if (journey) {
+    const svc = createServiceRoleClient();
+    ladder = evaluateLadder(await loadLadderEvidence(svc, journey));
+    standing = assessStanding({
+      overduePayments: null,
+      oldestOverdueDays: null,
+      // Production: 0 of 308 tickets carry customer_linked, so tolls are not attributable.
+      obligations: { attributable: false, unpaidCount: null, oldestUnpaidDays: null },
+      missedInspections: null,
+      onRestrictionList: null,
+    });
+  }
+
+  // No credit report is on file for anyone yet, so this renders the invitation to pull one.
+  const readiness = journey
+    ? assessFinancingReadiness(null, null, {
+        goodStandingDays: journey.good_standing_days,
+        goodStanding: journey.good_standing,
+        paymentsFurnished: null,
+      })
+    : null;
 
   // Unknown, expired, revoked and malformed all land here — deliberately the same
   // answer, so this page cannot be used to probe which links exist.
@@ -110,6 +144,10 @@ export default async function ClientStatusPage({
           </>
         )}
       </Card>
+
+      {ladder && <JourneyLadder position={ladder} standing={standing} />}
+
+      {readiness && <FinancingReadinessPanel readiness={readiness} />}
 
       <Card>
         <h2 className="flex items-center gap-2 text-sm font-semibold">

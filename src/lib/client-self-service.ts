@@ -59,3 +59,67 @@ export async function getClientBgStatus(token: string): Promise<ClientBgStatus |
   const row = (data ?? [])[0];
   return row ? (row as ClientBgStatus) : null;
 }
+
+/**
+ * Resolve the renter's Drive-to-Own journey from the same link token.
+ *
+ * WHY EMAIL, AND WHY THIS IS SAFE HERE. `background_checks` carries no journey id, so the
+ * only available link is email. That is the same shape of join that was REFUSED for
+ * payments, so it was measured before being used (production, 2026-09-16):
+ *
+ *   client_journey  35 rows, 35 with an email, **0 duplicate emails**  <- unique
+ *   background_checks 292 of 299 with an email, 19 matching a journey
+ *
+ * The journey side being unique is what makes this safe: one email can only ever resolve to
+ * one journey, so nobody can be shown someone else's progress. The payments join failed that
+ * test (16 phone numbers appeared on more than one row) and was refused. If the journey side
+ * ever stops being unique this function must refuse too — hence the explicit check below
+ * rather than a bare `.single()` that would throw somewhere unhelpful.
+ *
+ * Returns null when: no token match, no journey for that email, or more than one journey.
+ * "More than one" is deliberately a refusal, never a pick-the-first.
+ */
+export type ClientJourneyRow = {
+  id: string;
+  good_standing: boolean | null;
+  good_standing_days: number | null;
+  lto_eligible: boolean | null;
+  program_track: string | null;
+};
+
+export async function getClientJourneyForToken(
+  token: string,
+): Promise<ClientJourneyRow | null> {
+  if (!UUID_RE.test(token.trim())) return null;
+  const svc = createServiceRoleClient();
+
+  const { data: bg, error: bgErr } = await svc
+    .from("background_checks")
+    .select("email")
+    .eq("license_upload_token", token.trim())
+    .gt("license_upload_token_expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (bgErr) {
+    console.error("[getClientJourneyForToken] bg lookup", bgErr.message);
+    throw new Error("We could not load your status right now.");
+  }
+
+  const email = (bg?.email ?? "").trim().toLowerCase();
+  if (!email) return null;
+
+  const { data: journeys, error: jErr } = await svc
+    .from("client_journey")
+    .select("id, good_standing, good_standing_days, lto_eligible, program_track")
+    .ilike("customer_email", email)
+    .limit(2);
+
+  if (jErr) {
+    console.error("[getClientJourneyForToken] journey lookup", jErr.message);
+    throw new Error("We could not load your status right now.");
+  }
+
+  // Exactly one, or nothing. An ambiguous email must never show one person another's progress.
+  if (!journeys || journeys.length !== 1) return null;
+  return journeys[0] as ClientJourneyRow;
+}
