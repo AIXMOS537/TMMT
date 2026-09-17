@@ -49,6 +49,17 @@ export type LadderEvidence = {
   mentorshipDfyActive: boolean | null;
   /** A signed lto_agreements row. */
   ltoAgreementSigned: boolean | null;
+  /**
+   * THE EXTERNAL DECISION. A lender's financing approval for this renter.
+   *
+   * TMMT does not make this call and must never imply it can. Owner, 2026-09-16:
+   * "not everyone will get to own the car — the renter only owns the car if and when
+   * their credit is fixed and they can get approved for financing."
+   *
+   * null = no decision on file (pending or untracked). false = declined or not yet
+   * approved. Clearing every TMMT gate does NOT set this.
+   */
+  financingApproved: boolean | null;
   /** Vehicle turnover documents signed and the swap done. */
   vehicleTurnoverComplete: boolean | null;
 };
@@ -69,8 +80,13 @@ export type LadderPosition = {
   clearedThrough: CheckpointSlug | null;
   /** The first gate that is not met — what to work on next. Null when the ladder is complete. */
   nextGate: CheckpointSlug | null;
-  /** True only when every required gate up to and including lto_eligible is `met`. */
-  ltoEligible: boolean;
+  /**
+   * Every gate TMMT controls is cleared, so the renter is ready to APPLY for financing.
+   * This is NOT a prediction that they will be approved, and NOT a promise of a car.
+   */
+  readyToSeekFinancing: boolean;
+  /** The lender's decision. `pending` is the honest default — never assume approval. */
+  financingDecision: "approved" | "not_approved" | "pending";
   /** Set when advancement is held by a source nobody writes, rather than by the renter. */
   blockedByUnknown: CheckpointSlug[];
   complete: boolean;
@@ -146,14 +162,34 @@ function evaluateGate(slug: CheckpointSlug, e: LadderEvidence): [GateState, stri
       // Deliberately NOT read from client_journey.lto_eligible. That column is a stored
       // flag; this is the computation that should set it. Trusting the flag would let a
       // stale or hand-edited row grant a car.
-      return ["not_met", "Earned by clearing every gate above."];
+      //
+      // NOTE THE WORDING. Clearing this gate means READY TO APPLY for financing. It is
+      // not approval, and it is not a car. The lender decides, and may decline.
+      return ["not_met", "Reached by clearing every step above."];
 
-    case "vehicle_turnover_complete":
+    case "vehicle_turnover_complete": {
+      // Ownership transfers only after a LENDER approves financing. TMMT clearing its own
+      // gates is necessary and nowhere near sufficient, so this gate refuses to open on
+      // internal progress alone -- that refusal is the whole point of the owner's
+      // correction on 2026-09-16.
+      if (e.financingApproved !== true) {
+        if (e.financingApproved === false) {
+          return ["not_met", "Financing was not approved. The steps above still count."];
+        }
+        // No decision on file. If the handover is untracked too, we know nothing about
+        // this gate and must say so -- asserting `not_met` would claim knowledge we do
+        // not have. UNKNOWN IS NOT NO applies here exactly as it does upstream.
+        if (e.vehicleTurnoverComplete === null) {
+          return ["unknown", "Not tracked yet — nothing records this."];
+        }
+        return ["not_met", "Waiting on a financing decision from the lender."];
+      }
       return tri(
         e.vehicleTurnoverComplete,
-        "Vehicle turnover complete — the car is theirs.",
-        "Turnover documents not signed yet.",
+        "Handover complete.",
+        "Financing approved — handover paperwork still to sign.",
       );
+    }
   }
 }
 
@@ -216,7 +252,13 @@ export function evaluateLadder(evidence: LadderEvidence): LadderPosition {
     gates: gates.sort((a, b) => a.sortOrder - b.sortOrder),
     clearedThrough: cleared ? cleared.slug : null,
     nextGate: next ? next.slug : null,
-    ltoEligible: lto.state === "met",
+    readyToSeekFinancing: lto.state === "met",
+    financingDecision:
+      evidence.financingApproved === true
+        ? "approved"
+        : evidence.financingApproved === false
+          ? "not_approved"
+          : "pending",
     blockedByUnknown,
     complete: turnover.state === "met",
   };

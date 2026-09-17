@@ -106,5 +106,11 @@ export async function loadLadderEvidence(
     ltoAgreementSigned: ltoSigned === null ? null : ltoSigned > 0,
     // Turnover is recorded on the agreement's status once that write path exists.
     vehicleTurnoverComplete: null,
+
+    // THE LENDER'S DECISION. Nothing in this schema records it yet -- there is no
+    // financing-application table -- so it is null, which the ladder reads as `pending`.
+    // It must NEVER be derived from internal progress: the owner's rule is that a renter
+    // owns the car only if and when a lender approves them, and some never will.
+    financingApproved: null,
   };
 }

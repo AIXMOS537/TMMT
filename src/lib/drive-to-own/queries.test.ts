@@ -73,7 +73,7 @@ describe("an unwired source is unknown, not a failure", () => {
     const p = evaluateLadder(e);
     expect(p.gates.find(g => g.slug === "credit_education_acknowledged")!.state).toBe("unknown");
     expect(p.blockedByUnknown.length).toBeGreaterThan(0);
-    expect(p.ltoEligible).toBe(false);
+    expect(p.readyToSeekFinancing).toBe(false);
   });
 });
 
