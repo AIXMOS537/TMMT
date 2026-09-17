@@ -271,3 +271,40 @@
 20260910133510
 20260910140445
 20260910140513
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Refreshed 2026-09-17 from the live ledger (271 applied). The eight 20260916*
+# versions were applied by another session; the seven 20260917* below were
+# applied by this one, under the runbook, each verified by postcondition.
+#
+# ⚠️ apply_migration ASSIGNS ITS OWN VERSION. The repo filename is NOT the
+# applied version, so these seven repo files still read as "unapplied" to the
+# drift check below even though their SQL is live. The mapping:
+#
+#   20260917195950  <- 20260916230000_client_and_org_scoped_sensitive_access.sql
+#   20260917200051  <- 20260916235900_bookings_no_double_booking.sql
+#   20260917200155  <- 20260917000000_financing_applications_and_ownership_optin.sql
+#   20260917200241  <- 20260917010000_education_ack_by_journey.sql
+#   20260917200339  <- 20260917040500_partner_tenancy.sql
+#   20260917200633  <- 20260917000100_fleet_to_vehicles_bridge_resume.sql
+#   20260917200710  <- partner_status_overview security_invoker fix
+#
+# Re-running those six files would be harmless (IF NOT EXISTS / CREATE OR
+# REPLACE / not-exists guards throughout) but it would still be a re-run, so
+# they are counted as drift rather than quietly marked applied.
+# ─────────────────────────────────────────────────────────────────────────────
+20260916191024
+20260916191039
+20260916193606
+20260916193847
+20260916194231
+20260916194644
+20260916200655
+20260916201201
+20260917195950
+20260917200051
+20260917200155
+20260917200241
+20260917200339
+20260917200633
+20260917200710

@@ -41,7 +41,7 @@ describe('the good key — call_id', () => {
     const v = await seenVoiceEvent(db, { organizationId: ORG, action: 'book_handoff', callId: 'call-1', contactId: 'c1' })
     expect(v.keyed).toBe('call_id')
     expect(filters.some((f) => f.col === 'payload->>call_id' && f.val === 'call-1')).toBe(true)
-    expect(filters.some((f) => f.col === 'created_at')).toBe(false)
+    expect(filters.some((f) => f.col === 'ts')).toBe(false)
   })
 
   it('reports a replay when that call_id already acted', async () => {
@@ -65,7 +65,7 @@ describe('the fallback — contact within a short window', () => {
     expect(v.keyed).toBe('contact_window')
     expect(filters.some((f) => f.col === 'payload->>contact_id' && f.val === 'c1')).toBe(true)
     expect(filters.some((f) => f.col === 'action' && f.val === 'voice.escalate_human')).toBe(true)
-    const since = filters.find((f) => f.col === 'created_at')!
+    const since = filters.find((f) => f.col === 'ts')!
     expect(new Date(since.val).toISOString()).toBe(
       new Date(now.getTime() - VOICE_REPLAY_WINDOW_SECONDS * 1000).toISOString(),
     )
