@@ -4,9 +4,12 @@ import { useState } from "react";
 import { submitWaitlist } from "@/app/forms/actions";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle, CalendarCheck } from "lucide-react";
+import { crossSellServices } from "@/lib/business-lines/cross-sell";
 import BrandName from "@/components/brand/BrandName";
 
 const vehicleTypes = ["Compact/Hatchback", "Sedan", "SUV", "Minivan", "Electric/Hybrid"];
+
+const SERVICES = crossSellServices();
 
 export default function WaitlistForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -83,6 +86,41 @@ export default function WaitlistForm() {
             <FormField label="Additional Notes">
               <textarea name="desired_specs_notes" rows={3} className={inputClass} placeholder="Any other preferences or requirements..." />
             </FormField>
+
+            {/*
+              While they wait. Nothing is ticked by default and nothing is
+              recorded unless they tick it — the services write to
+              customer_services with an opted_in_at consent stamp, and an
+              untouched form produces no rows at all.
+            */}
+            <fieldset className="rounded-lg border border-gray-200 dark:border-slate-600 p-4">
+              <legend className="px-1 text-sm font-medium text-gray-700 dark:text-slate-300">
+                While you wait — anything else we can help with?
+              </legend>
+              <p className="mb-3 text-xs text-gray-500 dark:text-slate-400">
+                Optional. Tick anything you&apos;d like to hear about; leave it blank and
+                we&apos;ll only contact you about your vehicle.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {SERVICES.map((svc) => (
+                  <label
+                    key={svc.slug}
+                    className="flex items-start gap-2 rounded-md p-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800"
+                  >
+                    <input
+                      type="checkbox"
+                      name="services"
+                      value={svc.slug}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span>
+                      <span className="font-medium text-gray-800 dark:text-slate-200">{svc.name}</span>
+                      <span className="block text-xs text-gray-500 dark:text-slate-400">{svc.blurb}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Submitting..." : "Join Waitlist"}
             </Button>

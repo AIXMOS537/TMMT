@@ -21,16 +21,25 @@ test.describe("Public Forms", () => {
 });
 
 test.describe("Auth", () => {
-  test("signed-out visitor gets the public front door at /, not a redirect", async ({ page, context }) => {
-    // UPDATED 2026-09-16. This test used to assert "/" redirects to /login, and
-    // had been failing ever since that stopped being true. src/middleware.ts
-    // exempts "/" via isSignedOutFrontDoor() deliberately: "/" used to bounce
-    // to marketing, which left the app with no reachable front door of its own.
-    // Protected paths still redirect — the test below this one proves that.
+  test("unauthenticated user gets the rental front door at /, not a sign-in", async ({ page, context }) => {
+    // This asserted "/" redirects to /login. That was true and it was the bug:
+    // someone who wanted to rent a car was shown a staff sign-in screen. "/" now
+    // renders the rental page via a rewrite, so the URL stays "/". The gate this
+    // test was really protecting — that a signed-out visitor reaches no protected
+    // surface — is covered by the /partner case below and by all-scopes.spec.ts.
     await context.clearCookies();
     await page.goto("/", { waitUntil: "commit" });
-    await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
-    await expect(page.locator("body")).toBeVisible();
+    await expect(page).toHaveURL(/\/$/, { timeout: 15000 });
+    await expect(
+      page.getByRole("heading", { name: /weekly car rental for rideshare/i }),
+    ).toBeVisible();
+  });
+
+  test("a protected surface still sends an unauthenticated user to login", async ({ page, context }) => {
+    await context.clearCookies();
+    await page.goto("/customers", { waitUntil: "commit" });
+    await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
+    await expect(page.locator("form")).toBeVisible();
   });
 
   test("unauthenticated user cannot open partner portal", async ({ page }) => {

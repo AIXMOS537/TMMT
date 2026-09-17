@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { tierActionUrl, highTicketTiers, type HighTicketTier, consultUrl } from "./high-ticket";
-import { GHL_PUBLIC_SITE } from "./ghl-offers";
 
 const base: HighTicketTier = {
   id: "x", name: "X", tagline: "", audience: "", priceLabel: "", depositAmount: 0,
@@ -14,10 +13,12 @@ describe("tierActionUrl", () => {
       .toBe("https://pay.example/x");
   });
 
-  it("falls back to GHL when no product checkout URL is set", () => {
+  it("falls back to TMMT's own lead form when no checkout URL is set", () => {
+    // A five-figure reserve button that sent the buyer to the partner's
+    // homepage was worse than a dead button: it looked like it worked.
     const url = tierActionUrl({ ...base, cta: "reserve", checkoutUrl: "  " });
-    expect(url.startsWith("https://")).toBe(true);
-    expect(url).toContain(new URL(GHL_PUBLIC_SITE).host);
+    expect(url).not.toContain("allinonemanagementsolutions");
+    expect(url.startsWith("/forms/lead-intake?")).toBe(true);
   });
 
   it("routes call tiers to the GHL consult offer", () => {
