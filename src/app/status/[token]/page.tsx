@@ -20,6 +20,9 @@ import FinancingReadinessPanel from "@/components/drive-to-own/FinancingReadines
 import OwnershipOptIn from "@/components/drive-to-own/OwnershipOptIn";
 import CreditEducation from "@/components/drive-to-own/CreditEducation";
 import { loadEducationProgress } from "@/lib/drive-to-own/education";
+import { loadTraining } from "@/lib/drive-to-own/training";
+import TrainingModules from "@/components/drive-to-own/TrainingModules";
+import { recordMetCheckpoints } from "@/lib/drive-to-own/checkpoint-events";
 import { Card } from "@/components/ui";
 import { CheckCircle, Clock, FileText, XCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
@@ -56,13 +59,26 @@ export default async function ClientStatusPage({
   let ladder = null;
   let standing = null;
   let education = null;
+  let training = null;
   if (journey) {
     const svc = createServiceRoleClient();
     // Only loaded once they have chosen this path — see the opt-in note below.
     if (journey.ownership_opt_in_at) {
       education = await loadEducationProgress(svc, journey.id);
+      training = await loadTraining(svc, journey.id);
     }
     ladder = evaluateLadder(await loadLadderEvidence(svc, journey));
+
+    // Write down what they have cleared. Idempotent by the table's UNIQUE(journey, slug),
+    // so running it on every view costs one refused insert rather than a duplicate. A
+    // failure here must never take the renter's page down — they still get to see it.
+    if (journey.ownership_opt_in_at) {
+      try {
+        await recordMetCheckpoints(svc, journey.id, ladder);
+      } catch (e) {
+        console.error("[status] checkpoint record failed", e);
+      }
+    }
     standing = assessStanding({
       overduePayments: null,
       oldestOverdueDays: null,
@@ -163,6 +179,15 @@ export default async function ClientStatusPage({
           sections={education.sections}
           requiredTotal={education.requiredTotal}
           requiredAcknowledged={education.requiredAcknowledged}
+        />
+      )}
+
+      {journey?.ownership_opt_in_at && training && training.modules.length > 0 && (
+        <TrainingModules
+          token={token}
+          modules={training.modules}
+          coreTotal={training.coreTotal}
+          coreComplete={training.coreComplete}
         />
       )}
 
