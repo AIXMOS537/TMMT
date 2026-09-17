@@ -27,7 +27,33 @@ async function insertRow(
   person?: PersonStamp,
 ): Promise<FormResult> {
   const supabase = await createSSRClient();
-  const { data, error } = await supabase.from(table).insert(record).select("id").maybeSingle();
+  let { data, error } = await supabase.from(table).insert(record).select("id").maybeSingle();
+
+  // A public visitor submits as `anon`, and anon deliberately has INSERT but NOT
+  // SELECT on the intake tables — it must never be able to read the book back.
+  // Postgres evaluates the RETURNING clause that `.select("id")` adds, hits the
+  // missing SELECT grant, and fails the WHOLE statement with 42501
+  // "permission denied for table <t>". The row is never written and the visitor
+  // is told "Submission failed. Please try again."
+  //
+  // Found 2026-09-16 by an end-to-end run of the lead-intake form: the insert
+  // grant and the anon_insert_leads policy were both correct and in place; the
+  // returning clause alone was losing every public lead.
+  //
+  // So: retry once WITHOUT the returning clause. The first statement wrote
+  // nothing, so this cannot duplicate a row. We lose the generated id — that is
+  // the correct trade, because the alternative is granting anon SELECT over
+  // every lead in the table.
+  if (error?.code === "42501") {
+    const retry = await supabase.from(table).insert(record);
+    if (retry.error) {
+      console.error(`[${table}] insert failed (no-returning retry):`, retry.error.message);
+      return { success: false, error: "Submission failed. Please try again." };
+    }
+    error = null;
+    data = null;
+  }
+
   if (error) {
     console.error(`[${table}] insert failed:`, error.message);
     return { success: false, error: "Submission failed. Please try again." };
