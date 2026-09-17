@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader, Button, ErrorBanner, Modal, FormField, inputClass, StatusBadge } from "@/components/ui";
-import { CalendarDays, Lock, Ban, AlertTriangle, Check } from "lucide-react";
-import { loadBoard, placeHold, type BoardVehicle } from "./actions";
+import { CalendarDays, Lock, Ban, AlertTriangle, Check, Plus } from "lucide-react";
+import {
+  loadBoard,
+  placeHold,
+  listFleetCandidates,
+  addVehicleToBoard,
+  type BoardVehicle,
+  type FleetCandidate,
+} from "./actions";
 
 /**
  * THE RENTAL BOARD — the screen TMMT OS shipped 110 routes without.
@@ -40,6 +47,11 @@ export default function BookingsBoardPage() {
   const [saving, setSaving] = useState(false);
   const [holdError, setHoldError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<string | null>(null);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [candidates, setCandidates] = useState<FleetCandidate[]>([]);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
   const refresh = useCallback(() => setReloadKey((k) => k + 1), []);
@@ -107,6 +119,21 @@ export default function BookingsBoardPage() {
       <PageHeader
         title="Rental Board"
         description={`${free.length} bookable · ${blocked.length} unavailable · ${days} day${days === 1 ? "" : "s"}`}
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setAddOpen(true);
+              setAddError(null);
+              void listFleetCandidates().then((r) =>
+                r.ok ? setCandidates(r.candidates) : setAddError(r.error)
+              );
+            }}
+          >
+            <Plus size={16} />
+            Put a car on the board
+          </Button>
+        }
       />
 
       <div className="mb-5 flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -262,6 +289,66 @@ export default function BookingsBoardPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={addOpen}
+        onClose={() => { setAddOpen(false); setAddError(null); setAdding(false); }}
+        title="Put a car on the board"
+      >
+        <div className="space-y-4">
+          {addError && <ErrorBanner message={addError} />}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            A car has to be on the board before it can be booked. Pick its tier — that decides which
+            rate card row it can match and which coverage it is sold, so it is a pricing call, not a
+            data-entry one. The car keeps its own posted weekly price either way.
+          </p>
+          {candidates.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-gray-300 p-5 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Every fleet car is already on the board.
+            </p>
+          ) : (
+            <ul className="max-h-80 divide-y divide-gray-200 overflow-y-auto rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+              {candidates.map((c) => (
+                <li key={c.fleetId} className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{c.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {c.vehicleStatus ?? "No status"} ·{" "}
+                      {c.postedWeekly ? `$${c.postedWeekly}/wk` : "no posted price"}
+                      {c.floorWeekly ? ` · floor $${c.floorWeekly}` : ""}
+                    </p>
+                  </div>
+                  {c.postedWeekly ? (
+                    <div className="flex gap-1">
+                      {(["economy", "mid", "luxury"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          disabled={adding}
+                          onClick={async () => {
+                            setAdding(true);
+                            setAddError(null);
+                            const res = await addVehicleToBoard({ fleetId: c.fleetId, tier: t });
+                            setAdding(false);
+                            if (!res.ok) { setAddError(res.error); return; }
+                            setCandidates((list) => list.filter((x) => x.fleetId !== c.fleetId));
+                            refresh();
+                          }}
+                          className="rounded border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700 hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300"
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-amber-600 dark:text-amber-500">Price it first</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Modal>
     </div>
   );
