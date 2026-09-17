@@ -191,6 +191,10 @@ export default function DealersPage() {
             Legal & disclaimers
           </Link>
           {" · "}
+          <Link href="/trust" className="text-[#1440C4] hover:underline">
+            How we handle your data
+          </Link>
+          {" · "}
           <Link href="/login" className="text-[#1440C4] hover:underline">
             Staff login
           </Link>
