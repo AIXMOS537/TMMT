@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock, MessageCircle, GraduationCap, DollarSign, Compass, TrendingUp, Coins, Activity } from "lucide-react";
+import { Lock, MessageCircle, GraduationCap, DollarSign, Compass, TrendingUp, Coins, Activity, Hammer } from "lucide-react";
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { resolveOrgIdByEmail, getTokenBalance } from "@/lib/token-ledger";
@@ -24,6 +24,7 @@ const ICONS: Record<string, React.ReactNode> = {
   compass: <Compass className="h-5 w-5" />,
   climb: <TrendingUp className="h-5 w-5" />,
   agents: <Activity className="h-5 w-5" />,
+  build: <Hammer className="h-5 w-5" />,
 };
 
 function Tile({ tile, member }: { tile: PocketTile; member: boolean }) {

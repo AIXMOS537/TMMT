@@ -59,4 +59,12 @@ describe("every pocket tile can actually render", () => {
     // copy has to say so on the hub, not only once they are inside.
     expect(copy, "the hub copy does not tell a worried customer they can stop it").toContain("stop");
   });
+
+  it("actually reaches the build tracker, which was unreachable before this", () => {
+    const build = POCKET_TILES.find((t) => t.href === "/pocket/build");
+    expect(build, "the client build tracker is orphaned again").toBeDefined();
+    // Members only: it shows a specific client's engagement, dates and change
+    // requests. A signed-out visitor must land on activation, not on the page.
+    expect(build!.memberOnly).toBe(true);
+  });
 });
