@@ -134,3 +134,7 @@ apps/engine/node_modules/
 apps/**/node_modules/
 apps/**/.next/
 auth/*.bak*
+
+# Outbound email drafts. These hold real customer addresses and message bodies —
+# PII. Never commit them. Path is overridable via EMAIL_OUTBOX_DIR.
+.outbox/
