@@ -53,6 +53,7 @@ function isPublicPath(pathname: string) {
     pathname === "/manifest.webmanifest" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
     // The trust page is a selling point; it must be readable signed-out.
     pathname === "/trust" ||
@@ -75,6 +76,7 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/dealers" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
     // The trust page is a selling point; it must be readable signed-out.
     pathname === "/trust" ||
