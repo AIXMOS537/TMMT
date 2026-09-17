@@ -73,6 +73,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         : typeof body.contact_id === "string"
           ? body.contact_id
           : undefined,
+    // Exact replay protection when the custom action is configured to send it.
+    // Absent, the handler falls back to a short contact window. See voice-replay.ts.
+    call_id:
+      typeof merged.call_id === "string"
+        ? merged.call_id
+        : typeof body.call_id === "string"
+          ? body.call_id
+          : undefined,
     vertical: typeof merged.vertical === "string" ? merged.vertical : typeof body.vertical === "string" ? body.vertical : undefined,
     transcript_snippet:
       typeof merged.transcript_snippet === "string"
