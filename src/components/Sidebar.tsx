@@ -31,6 +31,7 @@ import {
   Menu,
   X,
   LogOut,
+  CalendarDays,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { signOut } from "@/app/(admin)/actions";
@@ -82,6 +83,7 @@ const navGroups = [
   {
     label: "Fleet",
     items: [
+      { href: "/bookings", label: "Rental Board", icon: CalendarDays },
       { href: "/inspections", label: "Car Inspections", icon: ClipboardCheck },
       { href: "/maintenance", label: "Maintenance", icon: Wrench },
       { href: "/insurance", label: "Insurance", icon: Shield },
