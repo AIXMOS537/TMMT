@@ -21,11 +21,16 @@ test.describe("Public Forms", () => {
 });
 
 test.describe("Auth", () => {
-  test("unauthenticated user is redirected to login", async ({ page, context }) => {
+  test("signed-out visitor gets the public front door at /, not a redirect", async ({ page, context }) => {
+    // UPDATED 2026-09-16. This test used to assert "/" redirects to /login, and
+    // had been failing ever since that stopped being true. src/middleware.ts
+    // exempts "/" via isSignedOutFrontDoor() deliberately: "/" used to bounce
+    // to marketing, which left the app with no reachable front door of its own.
+    // Protected paths still redirect — the test below this one proves that.
     await context.clearCookies();
     await page.goto("/", { waitUntil: "commit" });
-    await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
-    await expect(page.locator("form")).toBeVisible();
+    await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
+    await expect(page.locator("body")).toBeVisible();
   });
 
   test("unauthenticated user cannot open partner portal", async ({ page }) => {
