@@ -75,7 +75,7 @@ describe("a missing build-time env var must not white-screen the app", () => {
   it("says so loudly rather than swallowing it", () => {
     supa.authAccessThrows = true;
     render(<AnalyticsProvider />);
-    const logged = errorSpy.mock.calls.map((c) => String(c[0])).join(" ");
+    const logged = errorSpy.mock.calls.map((c: unknown[]) => String(c[0])).join(" ");
     expect(logged).toContain("[analytics]");
   });
 
