@@ -47,7 +47,14 @@ triggers (`handle_new_auth_user`, `handle_new_user`), and foreign-key cascades.
   `scripts/` and `supabase/functions/` is a read (checked 2026-09-17).
 - `scripts/set-admin-role.mjs` uses `service_role` + `auth.admin`, so it is unaffected.
 - **Deliberate change:** an admin's own session can no longer change a role or
-  email through the API. Do those through `service_role` or SQL. Nothing does it today.
+  email, or insert or delete profiles, through the API. Do those through
+  `service_role` or SQL. Nothing does it today.
+- Column grants are checked on every column named in the statement, so a client
+  that PATCHes a whole profile object (unchanged `role` included) is refused.
+  None exists; send only the fields being edited.
+- **Public signup is open.** `GET /auth/v1/settings` (read-only, 2026-09-17)
+  returned `disable_signup=false`, so before this fix anyone could register and
+  use the self-edit hole, not just the 3 existing accounts.
 - Production has 3 accounts. All have confirmed emails that match their profile.
 
 ## Evidence
@@ -75,9 +82,10 @@ or leaving the `email` column grant each makes the suite fail.
 
 1. **Email is still the customer identity.** After this fix nobody can *change*
    a profile email. But customer rows match on email, so whoever first registers
-   an address inherits rows already filed under it. That is safe only while
-   Supabase Auth requires email confirmation, which is a dashboard setting and
-   **was not verified**. Longer term, customer policies should key on
+   an address inherits rows already filed under it. Supabase Auth requires email
+   confirmation (`mailer_autoconfirm=false`, verified read-only 2026-09-17), so
+   registering an address needs control of that inbox. That holds only while
+   the setting stays on. Longer term, customer policies should key on
    `auth.uid()` (or on a confirmed `auth.users.email`). That is a policy and data
    migration across 18 tables, deliberately not part of this fix.
 2. **SECURITY DEFINER functions owned by `postgres` bypass the trigger** by

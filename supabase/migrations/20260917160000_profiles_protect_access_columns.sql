@@ -39,15 +39,19 @@
 -- src/, scripts/, supabase/functions/ on 2026-09-17: every call is a SELECT).
 -- scripts/set-admin-role.mjs uses service_role and auth.admin, unaffected.
 -- Deliberate behaviour change: an ADMIN's own JWT can no longer change role,
--- email or other access columns through the API either. Those changes go
--- through service_role (a script or server action) or SQL. Nothing does this
--- today. Policies are not modified.
+-- email or other access columns, or insert or delete profiles, through the API
+-- either. Those go through service_role (a script or server action) or SQL.
+-- Nothing does this today. A client that PATCHes a whole profile object, even
+-- with unchanged role/email values, is refused too; none exists. Policies are
+-- not modified.
 --
 -- NOT COVERED HERE (see docs/security/PROFILES-ACCESS-COLUMNS.md)
 -- - Customer row matching still keys on email, not auth.uid(). With this
 --   migration a user can no longer CHANGE their profile email, but whoever first
---   registers an address owns it. Safe only while Supabase Auth requires email
---   confirmation, which is a dashboard setting and was not verified.
+--   registers an address owns it. Mitigated while Supabase Auth requires email
+--   confirmation: GET /auth/v1/settings on 2026-09-17 returned
+--   mailer_autoconfirm=false. It also returned disable_signup=false, so public
+--   signup is OPEN and the self-edit hole above is reachable by anyone.
 -- - SECURITY DEFINER functions owned by postgres bypass the trigger by design.
 --   A future such function that writes profiles from caller input must do its
 --   own authorization.
