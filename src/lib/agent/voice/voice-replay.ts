@@ -91,7 +91,12 @@ export async function seenVoiceEvent(
     .eq('organization_id', k.organizationId)
     .eq('action', auditAction)
     .eq('payload->>contact_id', contactId)
-    .gte('created_at', since.toISOString())
+    // audit_events timestamps its rows in `ts`, not `created_at`. Naming a column
+    // that does not exist makes PostgREST return an error, and the handler above
+    // treats an error as "not seen" and processes the call anyway -- so this typo
+    // silently disabled the very replay window it was added to enforce. Caught by
+    // audit-events-columns.test.ts (C-20), which exists for exactly this class of bug.
+    .gte('ts', since.toISOString())
     .limit(1)
     .maybeSingle()
   if (error) {

@@ -52,7 +52,27 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 38;
+const KNOWN_UNAPPLIED = 49;
+
+/*
+ * 38 -> 49 on 2026-09-17, deliberately, in two parts:
+ *
+ * +6  Six files WERE applied to production today under the runbook, each
+ *     verified by postcondition. They still count as drift because
+ *     `apply_migration` assigns its own version string, so the ledger records
+ *     20260917195950..20260917200633 while the repo files are named
+ *     20260916230000..20260917040500. The SQL is live; the version numbers do
+ *     not match. LEDGER-SNAPSHOT.txt carries the full mapping. Re-running them
+ *     would be harmless (IF NOT EXISTS / CREATE OR REPLACE / not-exists guards)
+ *     but it would still be a re-run, so they are counted rather than hidden.
+ *
+ * +5  Carried in by the ten branches merged into master today. They were
+ *     already drift on their own branches; landing those branches moved the
+ *     drift here rather than creating it.
+ *
+ * The direction of travel is still down. This number must shrink as files are
+ * reconciled, and must never move up again without a note like this one.
+ */
 
 describe("migration drift stays pinned", () => {
   it("can read both sides, or it is measuring nothing", () => {
