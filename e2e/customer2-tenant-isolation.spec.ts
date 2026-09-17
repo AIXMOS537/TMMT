@@ -21,14 +21,18 @@ import { createClient } from "@supabase/supabase-js";
  *   other-org rows = 0  (they cannot reach the neighbour)
  * Only the pair distinguishes "isolated" from "broken".
  *
- * EXPECTED RESULT AT TIME OF WRITING (2026-09-08)
- *   vehicles          own PASS · cross PASS
- *   tickets           own PASS · cross PASS
- *   customer_payments own FAIL · cross PASS   <- admin-only, no org path
- *   background_checks own FAIL · cross PASS   <- admin-only, no org path
- * The two own-org failures are the Customer #2 blocker. They are deliberate
- * (20260828000000_sensitive_tables_admin_only.sql) and must NOT be "fixed" by
- * widening the table policy — see CUSTOMER_2_READINESS.md.
+ * RESOLVED 2026-09-17. When this was written the two admin-only tables returned zero to a
+ * scoped member and that was called the Customer #2 blocker. It was never going to be
+ * fixed by widening the table policy — doing so would expose raw licences, paystubs and
+ * insurance payloads to every member of every org.
+ *
+ * The answer shipped instead as masked, org-scoped RPCs
+ * (20260916230000_client_and_org_scoped_sensitive_access.sql), and the product requirement
+ * is asserted against THAT path in `masked-rpc-access.spec.ts`, which passes.
+ *
+ * So this file now asserts what is actually true and actually desired:
+ *   vehicles / tickets          own > 0  · cross = 0
+ *   customer_payments / checks  own = 0  · cross = 0   <- the raw tables stay shut
  *
  * SETUP (owner-authorised production writes; not performed by this file):
  *   two Auth users, neither admin nor internal_team, each with a single
@@ -44,6 +48,14 @@ const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // to run this at all until two scoped users exist in production.
 const TMMT_ORG = process.env.E2E_TMMT_ORG_ID ?? "8e651b25-e7c8-4356-af64-1716a82053b0";
 const PILOT_ORG = process.env.E2E_PILOT_ORG_ID ?? "";
+
+/**
+ * Admin-only at the row level since 20260828000000. A scoped member reads nothing from
+ * these directly, by design — their access is the masked RPC, covered in
+ * `masked-rpc-access.spec.ts`. Widening these policies would expose raw licences,
+ * paystubs and insurance payloads to every member of every org.
+ */
+const ADMIN_ONLY = new Set(["customer_payments", "background_checks"]);
 
 const SCOPED_TABLES = [
   "vehicles",
@@ -97,15 +109,31 @@ test.describe("Customer #2 tenant isolation", () => {
       // Cross-tenant is the security assertion. It must hold unconditionally.
       expect(
         cross.data ?? [],
-        `${table}: Pilot must not read any TMMT RENTALS rows`,
+        `${table}: Pilot must not read any other org's rows`,
       ).toHaveLength(0);
 
-      // Own-org is the product assertion. It currently fails for the two
-      // admin-only tables; that failure IS the Customer #2 blocker, not a flaky test.
-      expect(
-        (own.data ?? []).length,
-        `${table}: Pilot must be able to read its own rows`,
-      ).toBeGreaterThan(0);
+      if (ADMIN_ONLY.has(table)) {
+        // These two are admin-only at the row level by deliberate hardening
+        // (20260828000000). A scoped member reading ZERO from the raw table is the
+        // control WORKING, not the blocker it was described as when this file was
+        // written on 2026-09-08.
+        //
+        // The product requirement — "a customer org member can see their own payments
+        // and screening" — is real and is satisfied through the masked, org-scoped
+        // RPCs, which is where it is now asserted: `masked-rpc-access.spec.ts`.
+        // Asserting it here as well left two tests permanently red against an
+        // architecture that was never going to satisfy them, and a suite that is always
+        // red is a suite people stop reading.
+        expect(
+          own.data ?? [],
+          `${table}: the raw table must stay shut even to its own org — access is via the masked RPC`,
+        ).toHaveLength(0);
+      } else {
+        expect(
+          (own.data ?? []).length,
+          `${table}: Pilot must be able to read its own rows`,
+        ).toBeGreaterThan(0);
+      }
     });
 
     test(`${table}: TMMT reads its own rows and none of Pilot's`, async () => {

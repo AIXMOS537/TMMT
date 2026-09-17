@@ -62,3 +62,54 @@ These ran against the throwaway with the migration applied there. **Production h
 the migration nor a single scoped user.** Until the owner-run script lands,
 `is_staff()` still carries no org predicate in production and any staff account still reads
 every tenant's 299 background checks.
+
+---
+
+# UPDATE 2026-09-17 — the permanently-red tests are gone, and the suite still bites
+
+## The problem with leaving two tests red forever
+
+`customer2-tenant-isolation.spec.ts` asserted that a scoped member can read their own rows
+from `customer_payments` and `background_checks` **directly from the table**. Those two
+failed on 2026-09-16 and were correctly described then as the Customer #2 blocker.
+
+They were never going to pass. Both tables are admin-only at the row level by deliberate
+hardening (`20260828000000`), and widening that policy would expose raw licences, paystubs
+and insurance payloads to every member of every org. The requirement was real; the path was
+wrong.
+
+**The answer shipped as masked, org-scoped RPCs** (`20260916230000`, now live in
+production). So the product requirement is asserted where it is actually satisfied —
+`masked-rpc-access.spec.ts` — and the isolation spec now asserts what is true and desired:
+
+```
+vehicles / tickets           own > 0   · cross = 0
+customer_payments / checks   own = 0   · cross = 0   <- the raw tables stay shut
+```
+
+A suite that is always red is a suite people stop reading. **15 passed, 0 failed.**
+
+## Proving I did not simply weaken it
+
+Changing an assertion from `> 0` to `= 0` on two tables deserves proof that the file still
+catches a real breach, so isolation was deliberately broken: the Bravo member was given an
+`org_roles` row in Alpha's org.
+
+```
+Error: vehicles: Pilot must not read any other org's rows
+Received length: 1
+Received array:  [{"id": "a1111111-..."}]
+1 failed
+```
+
+Caught, with the right message. The breach was then reverted and the suite returned green.
+
+## Previously-skipped specs now run
+
+`dispatch-rls` needed two seeded incidents; `internal-ops-fail-closed` needed an admin
+user. Both are now in the throwaway fixture, along with the two non-admin members and a
+platform admin.
+
+**Caveat worth recording:** Supabase auth rate-limits repeated `signInWithPassword` calls.
+Running these suites back to back produces `Request rate limit reached` failures that have
+nothing to do with the code. One flaky result above is exactly that, and it passed on retry.

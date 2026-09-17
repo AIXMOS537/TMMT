@@ -178,7 +178,6 @@ export default async function ClientStatusPage({
           token={token}
           sections={education.sections}
           requiredTotal={education.requiredTotal}
-          requiredAcknowledged={education.requiredAcknowledged}
         />
       )}
 
@@ -187,7 +186,6 @@ export default async function ClientStatusPage({
           token={token}
           modules={training.modules}
           coreTotal={training.coreTotal}
-          coreComplete={training.coreComplete}
         />
       )}
 

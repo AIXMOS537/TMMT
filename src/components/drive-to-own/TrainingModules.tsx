@@ -15,12 +15,10 @@ export default function TrainingModules({
   token,
   modules,
   coreTotal,
-  coreComplete,
 }: {
   token: string;
   modules: TrainingModule[];
   coreTotal: number;
-  coreComplete: number;
 }) {
   const [pending, start] = useTransition();
   const [done, setDone] = useState<Set<string>>(
