@@ -52,9 +52,17 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 49;
+const KNOWN_UNAPPLIED = 50;
 
 /*
+ * 49 -> 50 on 2026-09-17: `20260917120000_training_progress_by_journey.sql`.
+ * Written and rehearsed on the throwaway (three constraints watched refusing: progress
+ * belonging to nobody, a 250% percentage, and a duplicate row). NOT applied to production —
+ * it is queued behind the same owner approval as the rest, so it is counted here rather
+ * than hidden. Until it lands, gates 30 and 40 of the Drive-to-Own ladder stay
+ * unevidencable in production for every renter, exactly as gate 10 was before
+ * 20260917010000.
+ *
  * 38 -> 49 on 2026-09-17, deliberately, in two parts:
  *
  * +6  Six files WERE applied to production today under the runbook, each
