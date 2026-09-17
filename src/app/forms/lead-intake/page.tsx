@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { submitLeadIntake } from "@/app/forms/actions";
 import { trackEvent } from "@/lib/analytics";
 import { Card, FormField, inputClass, selectClass, Button, ErrorBanner } from "@/components/ui";
 import { Car, CheckCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
+import { offerLabel } from "@/lib/offer-labels";
 
 const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
 
@@ -34,6 +36,10 @@ export default function LeadIntakeForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // useSearchParams, not window.location in an effect: it is stable across the
+  // server and client passes, so the heading is right on first paint instead of
+  // flipping after hydration.
+  const offer = offerLabel(useSearchParams().get("offer"));
   const attribution = useRef<Record<string, string>>({});
 
   useEffect(() => {
@@ -49,6 +55,10 @@ export default function LeadIntakeForm() {
     attr.source = inferSource(attr.utm_source ?? "", document.referrer);
     attr.source_campaign = attr.utm_campaign ?? params.get("campaign") ?? "";
     attr.source_medium = attr.utm_medium ?? "";
+    // Carry the offer id itself, so a lead from a money CTA is identifiable on
+    // the row and not only inferable from utm_campaign.
+    const offerId = params.get("offer");
+    if (offerId) attr.utm_content = attr.utm_content || offerId;
     attribution.current = attr;
   }, []);
 
@@ -94,8 +104,26 @@ export default function LeadIntakeForm() {
             <Car className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             <BrandName className="text-2xl font-bold text-gray-900 dark:text-white" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">Vehicle Rental Inquiry</h1>
-          <p className="text-gray-500 text-sm mt-1">Fill out the form below and we&apos;ll get back to you</p>
+          {/*
+            The heading follows what they clicked. This form is the fallback
+            for every money CTA whose checkout link is not configured yet, so a
+            fixed "Vehicle Rental Inquiry" told a $50K buyer they were in the
+            wrong place. An unrecognised or absent ?offer= keeps the rental
+            wording, which is what a direct visitor is here for.
+          */}
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-slate-200">
+            {offer ? "Request Details" : "Vehicle Rental Inquiry"}
+          </h1>
+          {offer ? (
+            <p className="mt-2 inline-block rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
+              {offer}
+            </p>
+          ) : null}
+          <p className="text-gray-500 text-sm mt-1">
+            {offer
+              ? "Tell us how to reach you and we'll take it from here."
+              : "Fill out the form below and we'll get back to you"}
+          </p>
         </div>
 
         <Card className="p-6">

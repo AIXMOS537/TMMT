@@ -7,6 +7,7 @@ import { processUnifiedIntake } from "@/lib/intake/unified";
 import type { RequestType } from "@/lib/workflow/statuses";
 import { linkFormToPerson } from "@/lib/people/upsert";
 import { PROGRAM_FORM_SKUS } from "@/lib/pricing/catalog";
+import { crossSellNameForSlug } from "@/lib/business-lines/cross-sell";
 
 // ─── Shared helpers ──────────────────────────────
 
@@ -21,37 +22,40 @@ type PersonStamp = {
   phone?: string | null;
 };
 
+/**
+ * Postgres error for insufficient privilege — RLS refusing the row, or refusing
+ * to hand it back. Both arrive here as 42501.
+ */
+const INSUFFICIENT_PRIVILEGE = "42501";
+
 async function insertRow(
   table: string,
   record: Record<string, unknown>,
   person?: PersonStamp,
 ): Promise<FormResult> {
   const supabase = await createSSRClient();
-  let { data, error } = await supabase.from(table).insert(record).select("id").maybeSingle();
 
-  // A public visitor submits as `anon`, and anon deliberately has INSERT but NOT
-  // SELECT on the intake tables — it must never be able to read the book back.
-  // Postgres evaluates the RETURNING clause that `.select("id")` adds, hits the
-  // missing SELECT grant, and fails the WHOLE statement with 42501
-  // "permission denied for table <t>". The row is never written and the visitor
-  // is told "Submission failed. Please try again."
+  // `.select("id")` makes this an INSERT ... RETURNING, and RETURNING is checked
+  // against the SELECT policy, not the INSERT one. A public visitor is `anon`,
+  // which is allowed to INSERT into these tables and — correctly — not allowed to
+  // read them, since the waitlist and the lead book are full of other people's
+  // details. So the write was refused for wanting the row back, not for writing
+  // it, and every public submission failed while the visitor saw a success screen.
   //
-  // Found 2026-09-16 by an end-to-end run of the lead-intake form: the insert
-  // grant and the anon_insert_leads policy were both correct and in place; the
-  // returning clause alone was losing every public lead.
+  // Postgres rolls the whole statement back when RETURNING is refused, so the
+  // retry below cannot double-insert. Verified against production before it was
+  // written: the RETURNING attempt left no row behind.
   //
-  // So: retry once WITHOUT the returning clause. The first statement wrote
-  // nothing, so this cannot duplicate a row. We lose the generated id — that is
-  // the correct trade, because the alternative is granting anon SELECT over
-  // every lead in the table.
-  if (error?.code === "42501") {
+  // Staff keep the id (they have a SELECT policy); anon submissions simply lose
+  // the destination id on the form_submissions link, which is a reporting nicety,
+  // not the submission.
+  const first = await supabase.from(table).insert(record).select("id").maybeSingle();
+  let data = first.data;
+  let error = first.error;
+  if (error?.code === INSUFFICIENT_PRIVILEGE) {
     const retry = await supabase.from(table).insert(record);
-    if (retry.error) {
-      console.error(`[${table}] insert failed (no-returning retry):`, retry.error.message);
-      return { success: false, error: "Submission failed. Please try again." };
-    }
-    error = null;
     data = null;
+    error = retry.error;
   }
 
   if (error) {
@@ -327,13 +331,53 @@ const waitlistSchema = z.object({
   desired_specs_notes: z.string().max(2000).optional(),
 });
 
+/**
+ * Records the services a waitlisted person asked to hear about.
+ *
+ * Only ticked boxes arrive in FormData, and anything whose slug is not a real
+ * public TMMT line is dropped rather than stored — a service row is a consent
+ * record, so it may only ever say what the person actually chose. No ticks
+ * means no rows and no follow-up: the default is silence.
+ *
+ * Best-effort by design. The waitlist entry is the thing the person came for;
+ * if the opt-in write fails they are still on the list, and a failure here must
+ * never turn their submission into an error.
+ */
+async function recordServiceOptIns(
+  supabase: Awaited<ReturnType<typeof createSSRClient>>,
+  person: { name: string; phone: string; email: string | null },
+  slugs: string[],
+): Promise<void> {
+  const rows = slugs
+    .map((slug) => ({ slug, name: crossSellNameForSlug(slug) }))
+    .filter((s): s is { slug: string; name: string } => s.name !== null)
+    .map((s) => ({
+      customer_name: person.name,
+      contact_phone: person.phone,
+      contact_email: person.email,
+      service_slug: s.slug,
+      service_name: s.name,
+      status: "requested",
+      channel: "waitlist-form",
+      opted_in_at: new Date().toISOString(),
+      metadata: { source: "forms/waitlist" },
+    }));
+  if (rows.length === 0) return;
+  const { error } = await supabase.from("customer_services").insert(rows);
+  if (error) console.error("[waitlist] service opt-in insert failed:", error.message);
+}
+
 export async function submitWaitlist(formData: FormData): Promise<FormResult> {
   const raw = Object.fromEntries(formData);
   const parsed = waitlistSchema.safeParse(raw);
   if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
 
+  // getAll, not Object.fromEntries: a multi-checkbox field collapses to its
+  // LAST value there, so nine ticked services would have been recorded as one.
+  const serviceSlugs = formData.getAll("services").map(String).filter(Boolean);
+
   const d = parsed.data;
-  return insertRow("waitlist", {
+  const result = await insertRow("waitlist", {
     customer_name: d.customer_name.trim(),
     customer_phone: d.customer_phone,
     customer_email: d.customer_email || null,
@@ -351,6 +395,22 @@ export async function submitWaitlist(formData: FormData): Promise<FormResult> {
     email: d.customer_email || null,
     phone: d.customer_phone,
   });
+
+  // Only after the waitlist row exists. An opt-in belonging to nobody is worse
+  // than no opt-in: it would be followed up on with no request behind it.
+  if (result.success && serviceSlugs.length > 0) {
+    const supabase = await createSSRClient();
+    await recordServiceOptIns(
+      supabase,
+      {
+        name: d.customer_name.trim(),
+        phone: d.customer_phone,
+        email: d.customer_email || null,
+      },
+      serviceSlugs,
+    );
+  }
+  return result;
 }
 
 // ─── 5. Ticket ───────────────────────────────────

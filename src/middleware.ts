@@ -3,11 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import {
-  isOwnerHubHost,
-  shouldBounceTmmtCreditToAixmos,
-  aixmosCreditRedirectUrl,
-} from "@/lib/site-domains";
+import { isOwnerHubHost } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
@@ -20,6 +16,14 @@ function isFunnelPublicPath(pathname: string) {
     pathname === "/dealers" ||
     pathname === "/credit" ||
     pathname === "/funding" ||
+    // The opt-in referral page. Public on purpose: it is where someone
+    // chooses to be introduced to the partner, and it must be reachable
+    // without an account. It is also the only page allowed to link out.
+    pathname === "/partners/all-in-one" ||
+    pathname.startsWith("/partners/all-in-one/") ||
+    // The rental front door. "/" is rewritten here for signed-out visitors, and
+    // it must also render if someone reaches the path directly.
+    pathname === "/welcome" ||
     pathname.startsWith("/lp/") ||
     pathname.startsWith("/api/leads/") ||
     pathname === "/api/health" ||
@@ -52,14 +56,6 @@ function isPublicPath(pathname: string) {
     pathname === "/explainer" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
-    // Public request intake, one form per business line. Public for everyone,
-    // signed in or out: a staff member raising a request on a customer's
-    // behalf uses the same form. "/" is deliberately NOT here - see below.
-    pathname.startsWith("/intake") ||
-    // A renter's own application status, reached by a staff-minted expiring link.
-    // The token in the path IS the credential; the holder has no account and never
-    // has had one, so requiring a session here would lock out every real visitor.
-    pathname.startsWith("/status/") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
@@ -68,19 +64,6 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/api/agent/") ||
     isFunnelPublicPath(pathname)
   );
-}
-
-/**
- * The public front door, for signed-out visitors only.
- *
- * Kept out of isPublicPath on purpose. pathAllowedForTier() returns true for
- * anything isPublicPath() matches, so putting "/" there would also stop
- * signed-in staff being routed to their own home page - an operator hitting
- * "/" would get the marketing front door instead of /operator. Signed out:
- * render the front door. Signed in: unchanged, the tier rules below decide.
- */
-function isSignedOutFrontDoor(pathname: string) {
-  return pathname === "/";
 }
 
 /** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
@@ -208,14 +191,19 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Marketing entry points (/credit, /funding, credit SKU landings) belong on the
-  // public GHL site. Skip when the public site proxied here (x-forwarded-host).
-  if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
-    const dest = aixmosCreditRedirectUrl(pathname);
-    if (dest) {
-      return withRobotsHeader(NextResponse.redirect(dest, 301));
-    }
-  }
+  // No automatic hand-off to the partner site.
+  //
+  // What used to sit here: on tmmt-ops.vercel.app / tmmtrentals.com, the paths
+  // /credit, /funding, /lp/*/intro-97 and /lp/*/lead-magnet were answered with
+  // a 301 to allinonemanagementsolutions.com. A 301 is permanent — browsers
+  // cache it and stop asking the server — which is why the app "kept"
+  // redirecting there even after a fix: the hop was in the visitor's browser,
+  // not in the deploy. The /lp/* pages it threw away are real TMMT landing
+  // pages whose form POSTs to our own /api/leads/webhook, so every one of
+  // those visitors was a TMMT lead handed to the partner's homepage.
+  //
+  // Referring someone to the partner is now opt-in only and lives behind a
+  // form on /partners/all-in-one. See src/lib/partner-handoff.ts.
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
@@ -252,10 +240,25 @@ export async function middleware(request: NextRequest) {
     console.error("middleware: Supabase auth check failed; treating as signed-out", err);
   }
 
-  if (!user && !isPublicPath(pathname) && !isSignedOutFrontDoor(pathname)) {
-    // Every signed-out visitor goes to /login - except "/", which now renders
-    // the public front door (src/app/page.tsx). The comment below records why
-    // "/" used to redirect: there was no front door to send anyone to.
+  // The front door. A signed-out visitor on "/" gets the rental page, REWRITTEN
+  // rather than redirected so the URL stays on the brand's own address.
+  //
+  // It cannot simply be src/app/page.tsx: (admin)/page.tsx already resolves to
+  // "/" — it is the staff rentals desk — and a second file on the same path
+  // breaks the build with a duplicate-route manifest error. Worse, if the public
+  // page won that race, homePathForTier() sends operators and staff to "/" and
+  // every one of them would land on marketing instead of their desk. The rewrite
+  // keeps one owner per route: signed out sees the door, signed in sees the desk.
+  if (!user && pathname === "/") {
+    return withRobotsHeader(
+      NextResponse.rewrite(new URL("/welcome", request.url), {
+        request: { headers: requestHeaders },
+      }),
+    );
+  }
+
+  if (!user && !isPublicPath(pathname)) {
+    // Every signed-out visitor goes to /login, "/" included.
     //
     // "/" used to bounce to the public GHL site, on the assumption that staff
     // "use /login directly". That left the app with no reachable front door:
@@ -265,9 +268,8 @@ export async function middleware(request: NextRequest) {
     // address and being shown someone else's home page is not a front door.
     //
     // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
-    // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
-    // and the public reaches marketing on its own domain, which is how they
-    // arrive in the first place.
+    // are public paths that render TMMT's own pages and capture the lead
+    // here. The partner site keeps its own domain and its own traffic.
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 
@@ -303,16 +305,6 @@ export async function middleware(request: NextRequest) {
 
   if (ownerHub && user && pathname === "/") {
     return withRobotsHeader(NextResponse.redirect(new URL("/command", request.url)));
-  }
-
-  // "/" is the public front door now, so a signed-in visitor does not want it -
-  // they want their own home. Before this change "/" WAS the operator/staff home
-  // (the (admin) group's root page), so this keeps them landing on the same
-  // screen, now at its own path, /desk.
-  if (user && pathname === "/") {
-    return withRobotsHeader(
-      NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
-    );
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {

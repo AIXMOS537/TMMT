@@ -1,13 +1,27 @@
 /**
- * Every public AIXMOS / TMMT money CTA resolves to GoHighLevel.
+ * Every TMMT / AIXMOS money CTA resolves to a real checkout — or, when that
+ * checkout is not configured yet, to OUR OWN lead form.
  *
  * If a product-specific checkout URL is set in Vercel, that wins.
- * Otherwise we send the person to the live All In One Management GHL site
- * with a campaign tag so the contact lands in the right pipeline.
+ *
+ * What changed: the fallback used to be the partner's homepage. Every one of
+ * the NEXT_PUBLIC_GHL_CHECKOUT_* variables is currently unset, so in practice
+ * all fourteen offers — $97/mo through the $50K ecosystem — were buttons that
+ * dropped a buyer on allinonemanagementsolutions.com with a utm tag and no
+ * checkout. The buyer was lost and so was the lead. The fallback is now
+ * /forms/lead-intake on TMMT, which captures the person into TMMT's own
+ * pipeline and lets a human close them.
  *
  * Never leave a dead #anchor. Existing TMMT clients use utm_source=tmmt.
  */
-export const GHL_PUBLIC_SITE = "https://allinonemanagementsolutions.com";
+import { tmmtOfferFallbackPath, PARTNER_SITE_ORIGIN } from "./partner-handoff";
+
+/**
+ * The partner's public site. Exported only so the owner hub can put a link to
+ * it in Rick's own navigation — an owner clicking through on purpose. It is
+ * never a fallback for a customer-facing CTA any more; see ghlOffer below.
+ */
+export const GHL_PUBLIC_SITE = PARTNER_SITE_ORIGIN;
 
 export function isLiveHttpUrl(url: string): boolean {
   const t = (url ?? "").trim();
@@ -22,12 +36,18 @@ export type GhlUtm = {
   utm_term?: string;
 };
 
+/**
+ * Adds utm params to an absolute checkout URL. Relative in-app fallbacks are
+ * handled by the caller and never reach here, so a URL that will not parse is
+ * a misconfigured checkout link, not a partner hand-off: it is dropped in
+ * favour of our own lead form rather than silently sending traffic away.
+ */
 export function withUtm(url: string, utm: GhlUtm): string {
-  let parsed: URL;
+  let parsed: URL | null = null;
   try {
     parsed = new URL(url);
   } catch {
-    parsed = new URL(GHL_PUBLIC_SITE);
+    return relativeWithUtm(tmmtOfferFallbackPath("unknown"), utm);
   }
   const defaults: GhlUtm = {
     utm_source: "aixmos",
@@ -108,12 +128,39 @@ function defs(): Record<GhlOfferId, OfferDef> {
   };
 }
 
-/** Resolve an offer to a live GHL URL. Always http(s). */
+/** Appends utm params to an in-app path, keeping any it already carries. */
+function relativeWithUtm(path: string, utm: GhlUtm): string {
+  const [base, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
+  const merged: GhlUtm = { utm_source: "aixmos", utm_medium: "web", ...utm };
+  for (const [k, v] of Object.entries(merged)) {
+    if (v) params.set(k, v);
+  }
+  return `${base}?${params.toString()}`;
+}
+
+/**
+ * Resolve an offer to its checkout. A configured http(s) link wins; with none
+ * configured the person stays on TMMT at our own lead form.
+ *
+ * This never returns the partner's site. Referring someone there is opt-in
+ * only and lives on /partners/all-in-one (see @/lib/partner-handoff).
+ */
 export function ghlOffer(id: GhlOfferId, utm: GhlUtm = {}): string {
   const offer = defs()[id];
   const campaign = utm.utm_campaign || offer.campaign;
-  const base = isLiveHttpUrl(offer.env ?? "") ? offer.env!.trim() : GHL_PUBLIC_SITE;
-  return withUtm(base, { ...utm, utm_campaign: campaign });
+  if (!isLiveHttpUrl(offer.env ?? "")) {
+    return relativeWithUtm(tmmtOfferFallbackPath(id, utm.utm_content), {
+      ...utm,
+      utm_campaign: campaign,
+    });
+  }
+  return withUtm(offer.env!.trim(), { ...utm, utm_campaign: campaign });
+}
+
+/** True when this offer has a real checkout configured. Drives UI copy. */
+export function offerHasLiveCheckout(id: GhlOfferId): boolean {
+  return isLiveHttpUrl(defs()[id].env ?? "");
 }
 
 /** Existing TMMT renter → higher AIXMOS rung. */
