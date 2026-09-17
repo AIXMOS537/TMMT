@@ -171,3 +171,70 @@ lender avoids all of that and is what the owner described.
 **The code follows the owner's statement**, and the schema naming is treated as legacy. If
 lease-to-own is genuinely still on the table, that is a much larger legal conversation than
 this ladder, and it needs counsel before any buyout figure is set.
+
+---
+
+## STAYING ON THE LADDER — THE THREE DISQUALIFIERS
+
+**Owner, 2026-09-16:**
+
+> *"The lease-to-own journey is clients renting until they can get approved for financing,
+> unless they get disqualified if they miss a payment, and/or are reluctant to catch up on
+> any other tolls or payments and such things of that nature, or don't show up for routine
+> inspections of the vehicle to confirm it is still in good standing condition and working
+> order."*
+
+**This also settles the lease-to-own question left open earlier: TMMT is not the creditor.**
+The renter rents while working toward a *lender's* approval. Nothing in this journey creates
+a credit obligation, so none of the Reg Z / TILA / lender-licensing exposure applies.
+
+`src/lib/drive-to-own/standing.ts` implements it. Four checks, each
+`clear` / `breach` / `unenforceable`.
+
+### "Reluctant to catch up" is the key phrase, and it is encoded literally
+
+Owing money is not the failure — **refusing to deal with it is.** So an overdue payment or an
+unpaid toll opens a **cure window** (default 14 days). Inside it, the renter is `at_risk` and
+is told exactly how long they have. Only an *uncured* balance is a breach. Someone who picked
+up a toll yesterday has not failed anything, and the system says so.
+
+### A lapse is recoverable. Removal is not, so it needs real evidence.
+
+| Outcome | Trigger | Effect |
+|---|---|---|
+| `at_risk` | inside the cure window | nothing lost; renter is warned |
+| `lapsed` | uncured payment, uncured toll, repeated missed inspections | 90-day clock restarts; **nothing already earned is lost** |
+| `removed_from_path` | on the `do_not_rent_list` | off the journey |
+
+A single missed payment **restarts the clock; it does not end the journey.** The owner said
+"disqualified", not "banned", and one bad week should not end someone's route to ownership.
+The harsher reading is available as `missedPaymentRemovesFromPath` but is **not** the default.
+⛔ Confirm which you want before this drives a real decision.
+
+### 🔴 THE TOLL RULE CANNOT BE ENFORCED TODAY
+
+Verified in production 2026-09-16, and this is the reason the check abstains:
+
+| `tickets` | 308 rows |
+|---|---|
+| carrying `customer_linked` | **0** |
+| carrying `date_closed` | **0** |
+| distinct values in `total_customer_ticket_balance` | **1** |
+| `status` populated | **0** |
+
+**Not one toll in the system can be attributed to a renter.** A check built on that would
+either clear everybody or convict everybody, and both are fabricated verdicts on somebody's
+path to owning a car. So it returns `unenforceable`, costs the renter nothing, and is
+reported loudly so the gap gets closed.
+
+**To make the toll rule real, `tickets` needs `customer_linked` populated and a usable
+open/closed status.** That is a data problem, not a code one.
+
+### Policy numbers that are owner decisions, not business rules
+
+`DEFAULT_STANDING_POLICY` ships with the forgiving reading of each, because every one of
+these numbers decides whether a real person keeps their path to a car:
+
+- `cureWindowDays: 14`
+- `missedInspectionsAllowed: 1`
+- `missedPaymentRemovesFromPath: false`
