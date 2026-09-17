@@ -128,7 +128,7 @@ const base = { From: '+15551112222', To: '+15550000000', Body: 'hello', MessageS
 
 beforeEach(() => {
   process.env.TWILIO_AUTH_TOKEN = TOKEN
-  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false }
+  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteFails: false }
   h.state.audits = []
   delete process.env.B3_KILL_SWITCH
   processInbound.mockReset()
