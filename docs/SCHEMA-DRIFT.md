@@ -87,3 +87,46 @@ has RLS statements for these but never their `CREATE TABLE`).
 Apply migrations through the repo, not through the dashboard. Every change made
 directly against production is a change the next person cannot reproduce, and
 this file is what 220-against-39 looks like after four months of it.
+
+## Schema-drift register (silent-fallback family)
+
+Opened 2026-09-16 after C-20 and C-21. Both had the same shape:
+
+**application query → column that does not exist → PostgREST error → caught →
+read as a business condition.** C-20: "duplicate check unavailable" read as
+"not a duplicate, process it". C-21: "spend check unavailable" read as "over
+the cap, refuse".
+
+How the candidates were found: every `.from(table)` chain in `src` was scanned
+for selected/filtered column names, and the list was compared with production
+`information_schema.columns` (uapxakmlwnpfsftfeezx, 2026-09-16, read-only).
+The scanner is regex-based, so every row below was checked by hand; two scanner
+hits (`crm_sync_records.status`, `org_responder_links.email`) were false
+positives from embedded selects and are not listed.
+
+Priority: **P0** safety or compliance control, **P1** money / customer data
+written to the wrong place, **P2** staff tooling broken, **P3** already visible
+or parked by design.
+
+| # | Table | Code location | Code expects | Production | Failure mode | Fallback | Business impact | Confirmed | Priority | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| SD-01 | `audit_events` | `src/lib/agent/webhook-replay.ts` `seenWebhookEvent` | `created_at` | only `ts` | 42703 every call | fail OPEN: event processed as unseen | Cal/Stripe replay dedupe never worked (0 such events in prod so far) | yes | P0 | **fixed**, #237 merged |
+| SD-02 | `audit_events` | `src/lib/agent/guard.ts` `assertLlmCapNotExceeded` | `created_at` | only `ts` | 42703 every call | fail CLOSED: `LlmCapExceededError` | every AI SMS reply refused; also hid the missing controls below it | yes | P0 | #238, **do-not-merge** until containment #244/#245/#246 reviewed |
+| SD-03 | `active_customers` | `src/app/api/webhooks/ghl/route.ts` (`.ilike("email", …)` on active_customers) | `email` | `contact_email` | error ignored, `rows` undefined | falls through to the `incoming_leads` email match | GHL events for an active customer never land in `active_customers.service_notes`; they go to a lead or nowhere | yes | P2 (active_customers is history since SQUARE ONE) | open |
+| SD-04 | `vendors` | `src/lib/ops-command/resolve.ts` `resolveVendorByName` | `company_name` | `name`, `contact_name` | error ignored, returns `null` | ops command answers "No vendor matching …" | the ops-command "assign vendor" action can never resolve a vendor | yes | P2 | open |
+| SD-05 | `cases` (embedded in `vendor_jobs`) | `src/lib/queries.ts` `getVendorJobsForStaff`, `getVendorPortalJobs` | `cases(case_number, title)` | no `case_number`, no `title` | error | **throws** `QueryError` (visible, not silent) | staff case page vendor jobs and the vendor portal job list fail to load | yes | P2 | open |
+| SD-06 | `lead_pool`, `lead_routes`, `pocket_referral_codes`, `pocket_referral_earnings` | `src/lib/lead-pool.ts`, `src/app/(operator)/operator/leads/actions.ts`, `src/lib/referrals.ts` | tables exist | absent (parked on purpose, see above) | error | lead-pool returns "skipped" by design; referrals surface the failure since 2026-09-01 | documented above; port to live tables, do not apply the parked migrations | yes | P3 | known |
+| SD-07 | `company_policies` | `src/lib/ops-policy.ts` | table exists | absent | error caught | falls back to the policy file in the repo | none if the file is current; investigate before assuming code or prod is wrong | table absence yes | P3 | investigate |
+| SD-08 | `ops_threads`, `ops_messages` | `src/lib/queries.ts`, `src/app/ops-actions.ts` | tables exist (defined in `20260516140000_ops_command_center.sql`) | absent | error | queries throw (visible); `ops-actions` logs | ops threads feature cannot work; migration in repo never applied | table absence yes | P3 | investigate |
+| SD-09 | `investor_updates` | `src/lib/queries.ts`, `src/app/(investor)/investor/page.tsx` | table exists | absent | error | throws (visible) | investor page cannot load updates | table absence yes | P3 | investigate |
+| SD-10 | `ops_locations` | `src/lib/routing/locations.ts`, `src/lib/routing/ops-locations.ts`, `src/app/api/webhooks/airtable/locations/route.ts` | table exists | absent | error | not triaged | location routing / Airtable location sync | table absence yes | P3 | investigate |
+| SD-11 | `dispatch_loads` | `src/lib/routing/execute.ts` | table exists | absent | error | not triaged | dispatch routing execution | table absence yes | P3 | investigate |
+
+**Rule for new rows.** Record the fallback, not just the error: the defect is
+never the missing column alone, it is what the code decides when the query
+fails. A missing table is not automatically a code bug; check whether a parked
+or unapplied migration explains it first.
+
+**Direction.** The same comparison can run in CI against a checked-in snapshot
+of production's `information_schema` (C-20's `audit-events-columns.test.ts` is
+the single-table version). Not built yet.
