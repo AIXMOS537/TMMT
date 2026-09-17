@@ -198,6 +198,10 @@ export default function KitsLandingPage() {
       <footer className="border-t border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
         <p>AIXMOS · one operating system · dealer flagship or $97 operator seat.</p>
         <p className="mt-2">
+          <Link href="/trust" className="text-[#1440C4] hover:underline">
+            How we handle your data
+          </Link>
+          {" · "}
           <Link href="/login" className="text-[#1440C4] hover:underline">
             Staff login
           </Link>

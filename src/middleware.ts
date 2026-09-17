@@ -54,6 +54,8 @@ function isPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/explainer" ||
+    // The trust page is a selling point; it must be readable signed-out.
+    pathname === "/trust" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
@@ -74,6 +76,8 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/build" ||
     pathname === "/dealers" ||
     pathname === "/explainer" ||
+    // The trust page is a selling point; it must be readable signed-out.
+    pathname === "/trust" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
