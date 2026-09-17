@@ -4,6 +4,8 @@
  * pausing someone else's business, writing the terminal 'wipe' command, or
  * a client clearing a kill command that we set.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   getAgentFleet,
@@ -167,8 +169,7 @@ describe('starting it again', () => {
 
 describe('the module never reaches for a wipe', () => {
   it('contains no path that can write wipe', () => {
-    const src = require('node:fs').readFileSync(
-      require('node:path').join(process.cwd(), 'src/lib/agent-visibility.ts'), 'utf8')
+    const src = readFileSync(join(process.cwd(), 'src/lib/agent-visibility.ts'), 'utf8')
     const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
     expect(code).not.toContain("'wipe'")
     expect(code).not.toContain('"wipe"')
@@ -177,9 +178,7 @@ describe('the module never reaches for a wipe', () => {
 
 // The security model of the stop button lives in the server action, not the UI.
 describe('the server action takes the org from the session, never the request', () => {
-  const fs = require('node:fs'); const path = require('node:path')
-  const src = fs.readFileSync(
-    path.join(process.cwd(), 'src/app/(pocket)/pocket/agents/actions.ts'), 'utf8')
+  const src = readFileSync(join(process.cwd(), 'src/app/(pocket)/pocket/agents/actions.ts'), 'utf8')
 
   it('resolves the organization from the signed-in user', () => {
     expect(src).toContain('supabase.auth.getUser()')
