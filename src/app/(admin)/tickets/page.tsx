@@ -36,7 +36,11 @@ export default function TicketsPage() {
 
   const columns: Column<Ticket>[] = [
     { key: "ticket_id", label: "ID", render: (r) => <span className="font-mono text-sm font-bold">#{r.ticket_id as number}</span> },
-    { key: "requested_by_customer", label: "Customer" },
+    // NOT the customer. Verified in production 2026-09-16: this column holds 12 distinct
+    // values and they are STAFF names (the person who raised the ticket). Zero of the 308
+    // tickets carry customer_linked, so no toll in this table is attributable to a renter.
+    // Labelling it "Customer" invited chasing the wrong person for money.
+    { key: "requested_by_customer", label: "Raised by" },
     { key: "violation_type", label: "Violation", render: (r) => <StatusBadge status={r.violation_type as string} /> },
     { key: "citation_number", label: "Citation #" },
     { key: "amount", label: "Amount", render: (r) => <span className="font-semibold">{formatCurrency(r.amount as number)}</span> },
@@ -92,7 +96,7 @@ export default function TicketsPage() {
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(null); setError(null); setSaving(false); }} title={editing ? "Edit Ticket" : "New Ticket"} wide>
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
-          <FormField label="Customer"><input name="requested_by_customer" defaultValue={editing?.requested_by_customer as string || ""} className={inputClass} /></FormField>
+          <FormField label="Raised by (staff)"><input name="requested_by_customer" defaultValue={editing?.requested_by_customer as string || ""} className={inputClass} /></FormField>
           <FormField label="Citation #"><input name="citation_number" defaultValue={editing?.citation_number as string || ""} className={inputClass} /></FormField>
           <FormField label="Violation Type">
             <select name="violation_type" defaultValue={editing?.violation_type as string || ""} className={selectClass}>
