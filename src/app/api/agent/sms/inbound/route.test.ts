@@ -12,9 +12,10 @@ const h = vi.hoisted(() => {
   }))
   const outboundGate = vi.fn(async () => ({ allowed: true, reason: 'ok', flags: ['gate_allow', 'dnc_clear'] }))
   const state = {
-    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false },
+    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteFails: false },
     audits: [] as Array<{ action: string; payload?: Record<string, unknown> }>,
     updates: [] as Record<string, unknown>[],
+    upserts: [] as { table: string; row: Record<string, unknown> }[],
     inserted: [] as Record<string, unknown>[],
     sidLookups: [] as Record<string, unknown>[],
   }
@@ -25,6 +26,13 @@ const h = vi.hoisted(() => {
       const self = () => api
       Object.assign(api, {
         select: self, is: self, neq: self, order: self, limit: self,
+        // do_not_contact_numbers is written with upsert() on the deterministic
+        // opt-out path. Without this stub the fake throws and every STOP test
+        // fails with an empty TwiML body that looks like a routing bug.
+        upsert: async (row: Record<string, unknown>) => {
+          state.upserts.push({ table, row })
+          return { error: state.scenario.dncWriteFails ? { message: 'dnc write failed' } : null }
+        },
         eq: (k: string, v: unknown) => { filters[k] = v; return api },
         maybeSingle: async () => {
           if (table === 'incoming_leads') {
@@ -77,10 +85,19 @@ vi.mock('@/lib/agent/audit', () => ({
     h.state.audits.push({ action: e.action, payload: e.payload })
   }),
 }))
-vi.mock('@/lib/outbound-gate', () => ({
-  assertOutboundAllowed: h.outboundGate,
-  orgSmsVertical: (org: { partnerAppSlug?: string | null }) => org.partnerAppSlug ?? '',
-}))
+// phone10 must come through REAL. recordGlobalOptOut now runs on the
+// deterministic opt-out path (it used to sit inside the mocked processInbound),
+// and a partial mock made it throw "No phone10 export is defined", which the
+// route caught and turned into an empty TwiML - so every STOP test failed
+// looking like a routing bug rather than a missing mock export.
+vi.mock('@/lib/outbound-gate', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/outbound-gate')>()
+  return {
+    ...actual,
+    assertOutboundAllowed: h.outboundGate,
+    orgSmsVertical: (org: { partnerAppSlug?: string | null }) => org.partnerAppSlug ?? '',
+  }
+})
 
 const processInbound = h.processInbound
 const ORG_ID = '11111111-1111-4111-8111-111111111111'
