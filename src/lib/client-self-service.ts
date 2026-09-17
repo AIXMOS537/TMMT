@@ -85,6 +85,8 @@ export type ClientJourneyRow = {
   good_standing_days: number | null;
   lto_eligible: boolean | null;
   program_track: string | null;
+  /** When this renter chose the Drive-to-Own path. Null = never opted in. */
+  ownership_opt_in_at: string | null;
 };
 
 export async function getClientJourneyForToken(
@@ -110,7 +112,7 @@ export async function getClientJourneyForToken(
 
   const { data: journeys, error: jErr } = await svc
     .from("client_journey")
-    .select("id, good_standing, good_standing_days, lto_eligible, program_track")
+    .select("id, good_standing, good_standing_days, lto_eligible, program_track, ownership_opt_in_at")
     .ilike("customer_email", email)
     .limit(2);
 

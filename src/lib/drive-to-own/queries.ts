@@ -26,7 +26,43 @@ export type JourneyRow = {
   good_standing_days: number | null;
   lto_eligible: boolean | null;
   program_track: string | null;
+  /** When the renter opted in to the Drive-to-Own path. Null = never opted in. */
+  ownership_opt_in_at?: string | null;
 };
+
+/**
+ * The lender's verdict, read from `financing_applications` — the only source allowed to
+ * answer this. Returns:
+ *   true  — the most recent application was approved
+ *   false — it was declined, withdrawn or expired
+ *   null  — still pending, or no application on file at all
+ *
+ * `pending` and `no application` deliberately collapse to null, because the ladder treats
+ * both as "no decision yet" and neither is the renter's failure. Silence is never approval.
+ */
+async function latestFinancingOutcome(
+  db: SupabaseClient,
+  journeyId: string,
+): Promise<boolean | null> {
+  const { data, error } = await db
+    .from("financing_applications")
+    .select("outcome, applied_at")
+    .eq("journey_id", journeyId)
+    .order("applied_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    // The table may not exist yet in an environment where the migration has not run.
+    // That is "no decision on file", not an approval, and must not take the page down.
+    console.error("[drive-to-own] financing_applications read failed:", error.message);
+    return null;
+  }
+
+  const outcome = data?.[0]?.outcome as string | undefined;
+  if (outcome === "approved") return true;
+  if (outcome === "declined" || outcome === "withdrawn" || outcome === "expired") return false;
+  return null;
+}
 
 async function countAll(db: SupabaseClient, table: string): Promise<number> {
   const { count, error } = await db.from(table).select("*", { count: "exact", head: true });
@@ -107,10 +143,9 @@ export async function loadLadderEvidence(
     // Turnover is recorded on the agreement's status once that write path exists.
     vehicleTurnoverComplete: null,
 
-    // THE LENDER'S DECISION. Nothing in this schema records it yet -- there is no
-    // financing-application table -- so it is null, which the ladder reads as `pending`.
-    // It must NEVER be derived from internal progress: the owner's rule is that a renter
-    // owns the car only if and when a lender approves them, and some never will.
-    financingApproved: null,
+    // THE LENDER'S DECISION, read from financing_applications and nowhere else. It is
+    // never derived from internal progress: the owner's rule is that a renter owns the car
+    // only if and when a lender approves them, and some never will.
+    financingApproved: await latestFinancingOutcome(db, journey.id),
   };
 }

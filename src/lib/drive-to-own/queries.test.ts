@@ -7,7 +7,12 @@ import { evaluateLadder } from "./ladder";
  * feature is unwired, or empty for this renter while other renters have rows. Those two
  * must not produce the same verdict.
  */
-function fakeDb(totals: Record<string, number>, mine: Record<string, number> = {}) {
+function fakeDb(
+  totals: Record<string, number>,
+  mine: Record<string, number> = {},
+  /** Latest financing_applications outcome for the journey, if any. */
+  financingOutcome?: string,
+) {
   return {
     from(table: string) {
       const chain = {
@@ -18,6 +23,16 @@ function fakeDb(totals: Record<string, number>, mine: Record<string, number> = {
         eq() {
           chain._filtered = true;
           return chain;
+        },
+        order() {
+          return chain;
+        },
+        // financing_applications is read as ROWS, not a count.
+        limit() {
+          return Promise.resolve({
+            data: financingOutcome ? [{ outcome: financingOutcome, applied_at: "2026-09-16" }] : [],
+            error: null,
+          });
         },
         then(resolve: (v: { count: number; error: null }) => void) {
           resolve({
@@ -127,5 +142,41 @@ describe("an error is not an empty result", () => {
       },
     } as never;
     await expect(loadLadderEvidence(broken, JOURNEY)).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("the lender's verdict is read from financing_applications and nowhere else", () => {
+  it("no application on file is pending, not a decline", async () => {
+    const e = await loadLadderEvidence(fakeDb(PRODUCTION_TODAY), JOURNEY);
+    expect(e.financingApproved).toBeNull();
+    expect(evaluateLadder(e).financingDecision).toBe("pending");
+  });
+
+  it("a pending application is still pending", async () => {
+    const e = await loadLadderEvidence(fakeDb(PRODUCTION_TODAY, {}, "pending"), JOURNEY);
+    expect(e.financingApproved).toBeNull();
+  });
+
+  it("an approval is the ONLY thing that returns true", async () => {
+    const e = await loadLadderEvidence(fakeDb(PRODUCTION_TODAY, {}, "approved"), JOURNEY);
+    expect(e.financingApproved).toBe(true);
+  });
+
+  it.each(["declined", "withdrawn", "expired"])("%s is a recorded no", async outcome => {
+    const e = await loadLadderEvidence(fakeDb(PRODUCTION_TODAY, {}, outcome), JOURNEY);
+    expect(e.financingApproved).toBe(false);
+  });
+
+  it("internal progress can never produce an approval", async () => {
+    // Every internal source fully satisfied, no application on file: still pending.
+    const e = await loadLadderEvidence(
+      fakeDb(
+        { ...PRODUCTION_TODAY, credit_education_acknowledgments: 9, credit_enrollments: 9, training_module_progress: 9 },
+        { credit_education_acknowledgments: 3, credit_enrollments: 1, training_module_progress: 8 },
+      ),
+      { ...JOURNEY, good_standing_days: 365 },
+    );
+    expect(e.financingApproved).toBeNull();
+    expect(evaluateLadder(e).complete).toBe(false);
   });
 });
