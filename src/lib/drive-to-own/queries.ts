@@ -22,6 +22,12 @@ import type { LadderEvidence } from "./ladder";
 /** Rows the ladder needs from client_journey. */
 export type JourneyRow = {
   id: string;
+  /**
+   * The renter's profile, if they have one. VERIFIED PRODUCTION 2026-09-16: **0 of 35
+   * journeys carry this**, because renters have no accounts. Two evidence tables key on
+   * it, so for those the honest answer is `unknown`, not zero.
+   */
+  profile_id?: string | null;
   good_standing: boolean | null;
   good_standing_days: number | null;
   lto_eligible: boolean | null;
@@ -100,6 +106,27 @@ async function wiredCount(
   return countFor(db, table, column, value);
 }
 
+/**
+ * Acknowledgements for this renter, counted by journey AND by profile.
+ *
+ * A renter with no account acknowledges against their journey; a staff-linked profile may
+ * also carry historical rows. Either counts. Returns null only when the whole table is
+ * unwired, so an empty table never reads as "they skipped it".
+ */
+async function acknowledgementCount(
+  db: SupabaseClient,
+  journey: JourneyRow,
+): Promise<number | null> {
+  const total = await countAll(db, "credit_education_acknowledgments");
+  if (total === 0) return null;
+
+  const byJourney = await countFor(db, "credit_education_acknowledgments", "journey_id", journey.id);
+  const byProfile = journey.profile_id
+    ? await countFor(db, "credit_education_acknowledgments", "profile_id", journey.profile_id)
+    : 0;
+  return Math.max(byJourney, byProfile);
+}
+
 export async function loadLadderEvidence(
   db: SupabaseClient,
   journey: JourneyRow,
@@ -109,15 +136,28 @@ export async function loadLadderEvidence(
   const requiredSections = await countAll(db, "credit_education_sections");
   const coreModulesTotal = await countAll(db, "training_modules");
 
-  const acknowledged = await wiredCount(
-    db,
-    "credit_education_acknowledgments",
-    "profile_id",
-    journey.id,
-  );
+  // ── JOIN KEYS ARE NOT INTERCHANGEABLE. Verified against production 2026-09-16:
+  //     credit_education_acknowledgments -> profile_id
+  //     training_module_progress         -> profile_id
+  //     credit_enrollments               -> journey_id
+  //     lto_agreements                   -> journey_id
+  // An earlier version of this file passed the JOURNEY id to the two profile-keyed tables.
+  // Both are empty today so it returned null either way and the mistake was invisible --
+  // exactly the kind of bug that only surfaces once real data arrives, by which time it
+  // reports every renter as having done nothing.
+  //
+  // `credit_education_acknowledgments` also accepts a journey_id since
+  // 20260917010000, because a renter has no account and their acknowledgement needs
+  // somewhere to live. Counted across BOTH keys.
+  const acknowledged = await acknowledgementCount(db, journey);
 
   const enrollments = await wiredCount(db, "credit_enrollments", "journey_id", journey.id);
-  const moduleProgress = await wiredCount(db, "training_module_progress", "profile_id", journey.id);
+
+  // No profile means this is unevidencable for this renter, which is `unknown` and never 0.
+  const moduleProgress = journey.profile_id
+    ? await wiredCount(db, "training_module_progress", "profile_id", journey.profile_id)
+    : null;
+
   const ltoSigned = await wiredCount(db, "lto_agreements", "journey_id", journey.id);
 
   return {
