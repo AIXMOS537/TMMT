@@ -162,12 +162,52 @@ write and remains owner-gated (D-21b, D-18). It is not written and not applied.
 
 ---
 
+## A-5 · CREDIT PATHWAY — active, one customer journey, software-led analysis *(settles D-22a, D-22b)*
+
+**Decision (2026-09-16):** The credit-dispute engine is **ACTIVE** work. It is a
+secondary pathway inside the TMMT customer journey — for people who cannot
+currently access a suitable rental/vehicle path and may choose credit-related help
+while working toward financing their own vehicle. It is not an unrelated side
+project.
+
+**Binding rules:**
+
+- **No outcome promises** — no guaranteed improvement, removals, scores, financing
+  approval, vehicle, or timeline, in software, copy, or AI output.
+- **No automatic enrolment**; rental-marketing consent does **not** cover
+  credit-service marketing; **no outreach to historical leads** about the credit
+  service until consent, suppression and channel rules are verified.
+- **PR #224 is review-required and must not be auto-merged.**
+- AI output that is consequential must be traceable to stored source data and
+  reviewed by a human/the customer before use.
+- One person across both paths — no duplicate person records as a design choice.
+
+**Product shape (D-22b, 2026-09-16):** a software-led credit report analysis and
+guided journey inside TMMT OS — customer obtains their own report through the
+owner's MyFreeScoreNow affiliate link, voluntarily uploads it, the app parses and
+analyzes it with provenance, the customer verifies facts, the app builds next
+steps, and a consultant is booked only when warranted and receives a prepared case
+packet. Dispute letters are downstream and never automatic. No MFSN credentials or
+scraping. No raw reports to external AI. Consultant/provider is a
+service-provider organization, not hard-coded. Full text: `OWNER_DECISIONS.md`
+D-22.
+
+**Not settled:** D-22c, who the consultant/service provider is and who contracts,
+bills and owns the service record. **Not authorized:** new screens before the gap
+analysis is approved, commercial launch, customer enrolment, outreach, billing,
+sending disputes, real customer reports, cross-tenant data transfer, or any
+production write. Commercial readiness is a separate gate.
+
+**Status:** SETTLED (parts a and b).
+
+---
+
 ## STILL OPEN — not settled, not approved
 
 `D-3` Khan referral rate · `D-4` rev-share / royalty / affiliate · `D-5` GHL
 products · `D-6` `dist/` · `D-7` founder terms · `D-8` agent production authority
 *(default in force: owner gate stays)* · `D-9` S3-05 reason codes · `D-11`
 `packages` billing model *(now a dependency of A-1)* · `D-21b` tenant-safety
-migration · and the remaining rows in `OWNER_DECISIONS.md`.
+migration · `D-22c` credit consultant / service provider · and the remaining rows in `OWNER_DECISIONS.md`.
 
 **Their default is `NO CHANGE / HOLD`. Silence is not approval.**

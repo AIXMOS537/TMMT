@@ -84,6 +84,73 @@ Status: TODO · IN PROGRESS · DONE (commit) · BLOCKED (why) · OWNER (decision
 | F-29 | P4 | 35 repo-wide hook-pattern lint warnings remain after local unused-code cleanup | TODO |
 | F-30 | P3 | Schema of record: 195 applied migrations missing from repo; `mesh_nodes` orphan | run `scripts/migrations-pull.mjs` (needs DB URL — OWNER supplies) | OWNER |
 
+## Batch 6 — credit pathway (owner decision D-22a, 2026-09-16)
+
+Evidence and full blocking lists: `docs/credit/CREDIT_ENGINE_AUDIT.md` (§8 gap
+map, §9 test-customer sequence). Engineering readiness only — commercial/legal
+readiness is a separate gate. **D-22b settled 2026-09-16: software-led report
+analysis + guided journey; dispute letters downstream. D-22c (consultant/provider)
+open.** C-12..C-19 are the test-customer path and are **PROPOSED — not started
+until the owner approves §9.**
+
+| ID | P | Issue | Fix | Status |
+|---|---|---|---|---|
+| C-01 | P1 | PR #224: ungated `[id]` generate, client-side-only gate, letters with invented history (drafts counted as sent, no `priorAttempts`), unvalidated `basis`/`basisNote`, obsolescence math | the 10-item blocking list in the audit §4; split vehicle-owner migration + non-credit docs out | TODO — do not auto-merge |
+| C-02 | P1 | Compliance-facing text unreviewed: CROA disclosures/contract/cancel form, deletion-demand and §§616/617 wording, "must be deleted" doc line | remove overstated wording now; counsel supplies disclosure + contract text | OWNER + counsel |
+| C-03 | P2 | PR #224 hygiene: `pii-archive/`, `airtable-archive/` not gitignored; staff personal email and owner-name/plate stocktake in docs | gitignore + remove from repo | TODO |
+| C-04 | P1 | Typed dispute schema (`20260707120000`) never applied to prod; live store is one JSON blob with no status/rounds/results | decide keep-blob vs apply schema after D-22b; staged migration + rollback | OWNER (D-22b, D-18) |
+| C-05 | P1 | No person spine: lead, waitlist, `people`, `client_journey`, `dispute_clients` are disconnected; state lives in ~10 overlapping columns | design one person key + one lifecycle carrier (candidate `client_journey`) before adding any credit-path statuses | TODO (design) |
+| C-06 | P1 | No consent by purpose/channel; `do_not_contact_numbers` (78) vs `incoming_leads.opted_out` (0) disagree | purpose+channel consent model; reconcile DNC; **no credit outreach to historical leads until done** | TODO (with D-15) |
+| C-07 | P2 | No delivery, tracking, response intake, follow-up reminders, PDF | after C-04/C-05 | TODO |
+| C-08 | P2 | Engine, importers, letters untested on master | characterization tests before changing behaviour | TODO |
+| C-09 | P2 | No enrollment writer, payment wiring (`canCollectFee` unwired), GHL credit tags never pushed | after D-22b, D-1, D-6; fee timing per counsel | OWNER-gated |
+| C-10 | P2 | Credit intake collects first name only — cannot link to a lead | collect contact + consent at intake (after C-06) | TODO |
+| C-11 | P3 | Journey metrics (requested → not served → offered → chose → paid → completed → reported financing) not measurable | falls out of C-05 + C-06; define event log | TODO |
+| C-12 | P0 | **S0 ACCEPTED 2026-09-16 — WAITING ON EXTERNAL EVIDENCE** (see External dependencies below). S0 gate (owner approved S0–S7 conceptually; S1 blocked). MFSN public terms (rev. 2026-02-11) restrict Content to personal noncommercial use, ban "algorithmic analysis of any kind", derivative works and synthetic data from Content; no report API found | owner sends the written question in audit §10 to MFSN affiliate support, or picks another permitted report source; affiliate link stored as per-org provider config | OWNER — BLOCKS C-13..C-19 |
+| C-20 | P1 | **Live:** `seenWebhookEvent` selects `created_at` but prod `audit_events` has `ts` → replay guard errors and fails open for Cal and Stripe webhooks. Prod 2026-09-16: 0 `cal.*` / 0 `stripe.*` audit rows — no evidence of past duplicates (≠ duplicates impossible) | separate PR, minimal: correct column, fix stale "STAGED" comment (both unique indexes are live), regression test against the real schema contract (not only mocks), preview duplicate-delivery test. No DB change, not in #235 | IN PROGRESS (separate session) |
+| C-24 | P2 | Replay lookups **fail open** on error (`webhook-replay.ts`) — inherited, never decided | owner/engineering decision per webhook class: check unavailable → process anyway vs retry / quarantine / fail closed (payments and bookings may differ). Longer term: provider + provider event id → unique processing record; redelivery acknowledged with no repeated side effect | DECISION NEEDED |
+| C-21 | P2 | `appointments` has an anon INSERT policy `with check true`; `ghl_appointments` upsert never sets organization_id | tighten policy (prod-gated); set org id in handler | TODO / OWNER for policy |
+| C-22 | P2 | `audit_events` is append-only by convention only (service_role can update/delete; no trigger) | append-only trigger before credit events rely on it | TODO (prod-gated) |
+| C-23 | P2 | Existing access tokens: licence token non-atomic single use; `program_applications.access_token` never expires | atomic redemption + expiry; hash at rest | TODO |
+| C-13 | P1 | Importer is UNSAFE: staff-pasted JSON/naive CSV, negatives only, no provenance, invents bureau (`experian`), pull date, "Unknown" creditor; asserts FCRA §604 / "unverifiable" without evidence | deterministic parser v2 on the verified format with provenance, confidence, null-not-default; fixture tests (S2) | PROPOSED — needs C-12 |
+| C-14 | P1 | `deep-audit.ts` marks everything eligible, turns guesses into customer disputes, invents `removalProbability`, says "MUST be deleted immediately under federal law"; `funding-readiness` defaults to "continue dispute rounds" | analysis v2: categorize only, system-sourced flags, no eligibility/probabilities/legal wording; keep old engine off the customer path (S3) | PROPOSED |
+| C-15 | P1 | No schema for report uploads, provenance, assertion source (report/system/customer/consultant), customer answers, one case lifecycle; `20260707120000` defaults `dispute_eligible=true`, `pull_date=today` | reconcile into staged migration + rollback; apply on branch/local only (S1) | PROPOSED — D-18 gate for prod |
+| C-16 | P1 | No customer access or credit-report upload; `staff-documents` bucket has no size/MIME limits; MIME trusts browser `file.type` | token-gated upload (licence pattern), private bucket, content-sniffed limits, processing acknowledgment, audit events (S4) | PROPOSED |
+| C-17 | P1 | No customer verification loop | per-flagged-item questions, answers stored as customer-sourced evidence (S5) | PROPOSED |
+| C-18 | P1 | No case packet, no case-linked booking; `cal_com_event_link` null on all orgs; Khan Strategies org is `kind=tmmt, vertical=rental`; no provider concept | read-only packet, provider-org calendar, webhook links booking to case, isolation test (S6) | PROPOSED — needs D-22c for the real provider |
+| C-19 | P1 | No end-to-end proof | e2e on preview with synthetic report; audit trail per step; STOP for owner (S7) | PROPOSED |
+
+### External dependencies (check here before re-researching)
+
+| Dependency | Status | Owner action | Wakes |
+|---|---|---|---|
+| MyFreeScoreNow report rights + format | BLOCKED — vendor response | send the support request in `CREDIT_ENGINE_AUDIT.md` §10; keep the written reply and the controlling agreement | Credit S1 |
+| MFSN Zapier / affiliate action fields | BLOCKED — owner inspection | field names only, values redacted (§10 steps) | Credit S1 |
+| Alternative report source rights (AnnualCreditReport.com / bureaus / resellers) | UNVERIFIED | only if the owner chooses to pursue | Credit S1 (trigger B) |
+| D-22c consultant / service provider | OWNER DECISION | — | commercial operation, not the prototype |
+
+**Credit S1 wakes only on:** (A) clear written MFSN authorization + technical format;
+(B) another report source selected with rights and format established; or (C) the
+owner explicitly chooses a different prototype strategy. **On wake, do not code
+first** — return a delta report (new evidence · what it resolves · still unknown ·
+supported format · acquisition method · storage/processing rights · consultant
+access · AI processing restrictions · retention · changes to S1–S7) and ask for
+approval.
+
+Standing rules while waiting: source-neutral design (authorized source → source
+adapter → normalized facts → provenance → analysis → customer verification → next
+steps → consultant); MFSN layout never becomes the data model; old reader
+quarantined; no credentials, scraping, login automation, or real customer reports.
+
+### Cross-cutting invariant — an error is not an empty result
+
+C-20 is one instance of a system-wide pattern: a query or schema failure handled as
+if it had returned a valid "nothing found" (not seen → process; not suppressed →
+send; no permission row → default; empty queue → idle). Audit every such path in
+payments, permissions, DNC/suppression, bookings and worker queues. Each must either
+fail closed or make the degraded decision explicit, logged and reviewed. (A sibling
+session is fixing the same `created_at` shape in an LLM cap guard.)
+
 ## Owner-gated production items (tracked, not executed)
 
 | Item | Decision | Notes |
