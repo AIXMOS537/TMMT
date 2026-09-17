@@ -5,6 +5,8 @@
  * `do_not_contact_numbers` was never written, so the list the outbound gate
  * actually consults stayed empty except for hand-entered rows.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { recordGlobalOptOut } from './record-opt-out'
 
@@ -93,8 +95,8 @@ describe('recordGlobalOptOut', () => {
 
 describe('the inbound route actually calls it', () => {
   it('wires recordGlobalOptOut into the opt-out branch', () => {
-    const src = require('node:fs').readFileSync(
-      require('node:path').join(process.cwd(), 'src/app/api/agent/sms/inbound/route.ts'),
+    const src = readFileSync(
+      join(process.cwd(), 'src/app/api/agent/sms/inbound/route.ts'),
       'utf8',
     )
     expect(src).toContain('recordGlobalOptOut')

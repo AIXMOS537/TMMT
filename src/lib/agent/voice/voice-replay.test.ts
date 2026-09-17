@@ -3,6 +3,8 @@
  * Anyone who captures one valid request can resend it forever, and these
  * actions book, page a human, and mutate contacts. These tests hold the guard.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { seenVoiceEvent, voiceAuditAction, VOICE_REPLAY_WINDOW_SECONDS } from './voice-replay'
 
@@ -112,12 +114,10 @@ describe('audit action naming', () => {
 })
 
 describe('the handler is actually wired to all of this', () => {
-  const fs = require('node:fs')
-  const path = require('node:path')
-  const src = fs.readFileSync(
-    path.join(process.cwd(), 'src/lib/agent/voice/ghl-voice-handler.ts'), 'utf8')
-  const route = fs.readFileSync(
-    path.join(process.cwd(), 'src/app/api/agent/voice/ghl/route.ts'), 'utf8')
+  const src = readFileSync(
+    join(process.cwd(), 'src/lib/agent/voice/ghl-voice-handler.ts'), 'utf8')
+  const route = readFileSync(
+    join(process.cwd(), 'src/app/api/agent/voice/ghl/route.ts'), 'utf8')
 
   it('calls seenVoiceEvent', () => {
     const i = src.indexOf('seenVoiceEvent(db')

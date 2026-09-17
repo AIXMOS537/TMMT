@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { checkConsent, consentMode } from '@/lib/consent'
 
@@ -103,8 +105,8 @@ describe('off mode', () => {
 })
 
 describe('the staged migration does not manufacture consent', () => {
-  const sql = require('node:fs').readFileSync(
-    require('node:path').join(process.cwd(),
+  const sql = readFileSync(
+    join(process.cwd(),
       'supabase/migrations/_staged/20260911234500_lead_consent_record_STAGED.sql'), 'utf8')
 
   it('adds the columns', () => {
