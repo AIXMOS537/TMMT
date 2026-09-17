@@ -98,7 +98,18 @@ insert into public.vehicles (
   label, make, model, year, vin, plate,
   weekly_rate, daily_rate, tier, active, fleet_vehicle_id, org_id, metadata
 )
-select
+-- APPLIED-STATE FIX 2026-09-17. The original select guarded only on fleet_vehicle_id and
+-- failed on first run against production:
+--   23505 duplicate key value violates unique constraint "vehicles_plate_key"
+--   DETAIL: Key (plate)=(6GJ4314) already exists.
+-- Cause: `fleet` itself holds THREE duplicate plates -- the same physical car entered twice
+-- (5CW4654 Corolla: one row Available + one Rented; 6GJ4314 Camry: whitespace variant;
+-- SZF4776 Ford Edge: one Retired + one blank). So the fleet book's 43 rows are 40 cars.
+-- Two fixes, both required:
+--   1. `distinct on (plate)` collapses the duplicates, preferring the Available row
+--   2. a second `not exists` guard on plate, since vehicles.plate carries its own unique key
+-- Dry-run after the fix: 25 rows (was 26 -- the already-bridged Camry correctly dropped).
+select distinct on (coalesce(nullif(btrim(f.license_plate),''), f.id::text))
   coalesce(f.year::text || ' ', '') || btrim(f.vehicle_make) || ' ' || btrim(coalesce(f.vehicle_model,'')),
   btrim(f.vehicle_make),
   btrim(coalesce(f.vehicle_model,'')),
@@ -131,7 +142,14 @@ where f.vehicle_make is not null
   and coalesce(f.vehicle_status,'') is distinct from 'Retired'
   and not exists (
     select 1 from public.vehicles v where v.fleet_vehicle_id = f.id
-  );
+  )
+  and not exists (
+    select 1 from public.vehicles v
+     where v.plate is not null and btrim(v.plate) = btrim(f.license_plate)
+  )
+order by coalesce(nullif(btrim(f.license_plate),''), f.id::text),
+         (case when coalesce(f.vehicle_status,'') = 'Available' then 0 else 1 end),
+         f.id;
 
 commit;
 
