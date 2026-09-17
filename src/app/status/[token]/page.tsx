@@ -17,6 +17,7 @@ import { assessFinancingReadiness } from "@/lib/drive-to-own/financing-readiness
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import JourneyLadder from "@/components/drive-to-own/JourneyLadder";
 import FinancingReadinessPanel from "@/components/drive-to-own/FinancingReadinessPanel";
+import OwnershipOptIn from "@/components/drive-to-own/OwnershipOptIn";
 import { Card } from "@/components/ui";
 import { CheckCircle, Clock, FileText, XCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
@@ -145,9 +146,17 @@ export default async function ClientStatusPage({
         )}
       </Card>
 
-      {ladder && <JourneyLadder position={ladder} standing={standing} />}
+      {/* Opted in -> show the journey. Not opted in -> offer it, and show nothing else.
+          A renter who never asked for this should not arrive at a page grading their credit. */}
+      {journey && !journey.ownership_opt_in_at && <OwnershipOptIn token={token} />}
 
-      {readiness && <FinancingReadinessPanel readiness={readiness} />}
+      {journey?.ownership_opt_in_at && ladder && (
+        <JourneyLadder position={ladder} standing={standing} />
+      )}
+
+      {journey?.ownership_opt_in_at && readiness && (
+        <FinancingReadinessPanel readiness={readiness} />
+      )}
 
       <Card>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
