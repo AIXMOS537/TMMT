@@ -100,13 +100,13 @@ export default function CreditDisputeCommandPage() {
     <div className="space-y-6">
       <PageHeader
         title="Credit dispute command"
-        description="AIXMOS in-house — Dispute Fox + MyFreeScoreNow → client_journey → funding handoff"
+        description="AIXMOS in-house — Dispute Fox + MyFreeScoreNow import, staff-operated"
       />
 
       <Card className="p-4 border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 text-sm">
         <p className="text-gray-700 dark:text-slate-300">
           <strong>Same spine as TMMT:</strong> GHL tags ({CREDIT_GHL_TAGS.guidanceActive} → {CREDIT_GHL_TAGS.fundingPrep}),
-          credit_billing_plans, client_journey, shared Supabase. Not a separate product — ops layer on what you already built.
+          credit_billing_plans, shared Supabase. Not a separate product — ops layer on what you already built. NOTE: this engine is not yet wired to client_journey; the rental journey and the credit engine are still separate.
         </p>
       </Card>
 

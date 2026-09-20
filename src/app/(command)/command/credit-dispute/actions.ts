@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { isOwnerUser } from "@/lib/auth-roles";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
+import { requireGate } from "../../../../../shared/compliance-gates/gate";
 import type { DisputeLetterBatch } from "@/lib/credit-dispute/engine/protocol";
 
 /**
@@ -94,6 +95,24 @@ export async function upsertDisputeClient(
   return { ok: true, data: client };
 }
 
+/**
+ * Persists generated dispute letters against a client.
+ *
+ * Gated twice on purpose. generateLetter() already refuses to PRODUCE a letter
+ * while croa_contracts_attorney_approved is false; this refuses to STORE one, so a
+ * batch built anywhere else — an import, a fixture, a future caller — cannot land
+ * letters in the client record by going round the generator.
+ *
+ * Returns the refusal as a normal result rather than throwing, because this is a
+ * server action reached from the UI: the operator should see the reason the gate is
+ * shut, not a stack trace.
+ *
+ * ORDER MATTERS, and it is authorize-then-gate. getDisputeClient() runs requireOwner()
+ * first, so an anonymous caller is still redirected to /login and a signed-in non-owner
+ * still gets "Not authorized." with no query issued. Checking the gate ahead of that
+ * would answer a stranger's request by describing TMMT's internal compliance state —
+ * and it would swallow the login redirect. Who you are is settled before what we may do.
+ */
 export async function addDisputeRoundsForClient(
   profileId: string,
   batches: DisputeLetterBatch[]
@@ -101,6 +120,15 @@ export async function addDisputeRoundsForClient(
   const existing = await getDisputeClient(profileId);
   if (!existing.ok) return existing;
   if (!existing.data) return { ok: false, error: "Client not found." };
+
+  try {
+    requireGate("croa_contracts_attorney_approved");
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Credit dispute features are gated.",
+    };
+  }
 
   const stamp = Date.now();
   const newRounds: StoredDisputeRound[] = batches.map((b, i) => ({
