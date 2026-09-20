@@ -13,6 +13,7 @@ import { isQuietHours } from './compliance/quiet-hours'
 import { applyDisclaimers, hasBlockingPhrase } from './compliance/disclaimers'
 import { findBannedPhrases } from './compliance/banned-phrases'
 import { emitAudit } from './audit'
+import { redactPii } from './redact-pii'
 import { createServiceRoleClient } from '@/lib/supabase-service'
 import { recordMoneyEventSafe } from '@/lib/money-meter'
 
@@ -70,6 +71,15 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
 
   // 2. LLM with banned-phrase regen
+  //
+  // Data minimisation before the external model call. buildSystemPrompt
+  // already runs redactPii over the earlier conversation turns, but the
+  // NEWEST message (the SMS body, or the GHL voice transcript_snippet) was
+  // sent to Anthropic raw. It now gets the same treatment. redactPii covers
+  // dashed SSNs and Luhn-valid 13-19 digit card numbers only; see
+  // redact-pii.ts. The raw text is still used for opt-out detection above
+  // and is still what gets stored in agent_messages by the callers.
+  const modelInbound = redactPii(args.inboundBody)
   const overlay = (args.org.agentPersonaOverlay ?? {}) as { forbidden_phrases?: string[] }
   const banList: string[] = overlay.forbidden_phrases ?? []
   const systemPrompt = buildSystemPrompt(args.org, {
@@ -92,7 +102,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     try {
       llmResult = await callAgent({
         systemPrompt,
-        userMessage: args.inboundBody,
+        userMessage: modelInbound,
         model: pickModel('qualify'),
       })
       llmCostAccruedUsd += llmResult.costUsd
@@ -197,7 +207,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
         assessment: llmResult.parsed.assessment,
         next_action: llmResult.parsed.next_action,
         model: llmResult.model,
-        inbound_preview: args.inboundBody.slice(0, 200),
+        inbound_preview: modelInbound.slice(0, 200),
       }
     })
   }
