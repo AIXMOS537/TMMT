@@ -146,7 +146,7 @@ export default function DashboardPage() {
               <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-700 last:border-0">
                 <div>
                   <p className="font-medium text-sm text-gray-900 dark:text-white">
-                    #{ticket.ticket_id as number} — {(ticket.requested_by_customer as string) || "Unassigned"}
+                    #{ticket.ticket_id as number} — {(ticket.violation_type as string) || "Ticket"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-slate-400">
                     {(ticket.violation_type as string) || "General"} · {formatDate(ticket.date_created as string)}

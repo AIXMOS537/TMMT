@@ -39,7 +39,10 @@ import { createClient } from "@supabase/supabase-js";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const TMMT_ORG = "8e651b25-e7c8-4356-af64-1716a82053b0";
+// Defaults to the real TMMT RENTALS org so a production run is unchanged. Overridable so
+// the same invariant can be proven against a throwaway pair of orgs, which is the only way
+// to run this at all until two scoped users exist in production.
+const TMMT_ORG = process.env.E2E_TMMT_ORG_ID ?? "8e651b25-e7c8-4356-af64-1716a82053b0";
 const PILOT_ORG = process.env.E2E_PILOT_ORG_ID ?? "";
 
 const SCOPED_TABLES = [
