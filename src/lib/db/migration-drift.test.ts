@@ -52,7 +52,24 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 49;
+const KNOWN_UNAPPLIED = 51;
+
+/*
+ * 49 -> 51 on 2026-09-19, deliberately: the two security migrations from the audit.
+ *   20260919221500_partner_tables_least_privilege_for_anon.sql
+ *   20260919215500_close_orphaned_garage_public_read.sql
+ *
+ * Both ARE applied to production and verified there. They count as drift for the same
+ * reason the 09-17 batch does: apply_migration assigns its OWN version, so the ledger
+ * holds 20260919221554 / 20260920014756 while the repo files carry their own names.
+ * LEDGER-SNAPSHOT.txt records the mapping. Both are REVOKE / DROP POLICY only, so a
+ * re-run is harmless -- but a re-run is still a re-run, so they are counted, not hidden.
+ *
+ * NOTE for whoever merges fix/e2e-stops-writing-to-production: that branch also raises
+ * this constant (49 -> 50, for the training-progress migration). The merge will conflict
+ * here, and it should -- the resolved value is 52, not whichever side wins. Add the
+ * numbers, do not pick one.
+ */
 
 /*
  * 38 -> 49 on 2026-09-17, deliberately, in two parts:
