@@ -12,9 +12,11 @@ const h = vi.hoisted(() => {
   }))
   const outboundGate = vi.fn(async () => ({ allowed: true, reason: 'ok', flags: ['gate_allow', 'dnc_clear'] }))
   const state = {
-    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false },
+    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false },
+    audits: [] as Array<{ action: string; payload?: Record<string, unknown> }>,
     updates: [] as Record<string, unknown>[],
     inserted: [] as Record<string, unknown>[],
+    upserts: [] as Record<string, unknown>[],
     sidLookups: [] as Record<string, unknown>[],
   }
   const makeDb = () => ({
@@ -45,7 +47,20 @@ const h = vi.hoisted(() => {
         },
         update: (row: Record<string, unknown>) => {
           state.updates.push({ table, ...row })
-          return { eq: async () => ({ error: null }) }
+          const error = table === 'incoming_leads' && state.scenario.leadUpdateError
+            ? { message: 'simulated write failure' } : null
+          return { eq: async () => ({ error }) }
+        },
+        // recordGlobalOptOut() upserts into do_not_contact_numbers. Recorded rather
+        // than ignored so a test can assert that a keyword STOP reaches the GLOBAL
+        // list and not just this org's lead row — the difference between "stop" and
+        // "stop from this record".
+        upsert: async (row: Record<string, unknown>) => {
+          state.upserts.push({ table, ...row })
+          return {
+            error: table === 'do_not_contact_numbers' && state.scenario.dncWriteError
+              ? { message: 'simulated dnc write failure' } : null,
+          }
         },
       })
       return api
@@ -67,10 +82,23 @@ vi.mock('@/lib/agent/guard', () => ({
   LicenseDisabledError: class extends Error {},
   OperationalKillError: class extends Error {},
   LlmCapExceededError: class extends Error {},
+  isOperationalKillEngaged: () => process.env.B3_KILL_SWITCH === '1',
+}))
+vi.mock('@/lib/agent/audit', () => ({
+  emitAudit: vi.fn(async (e: { action: string; payload?: Record<string, unknown> }) => {
+    h.state.audits.push({ action: e.action, payload: e.payload })
+  }),
 }))
 vi.mock('@/lib/outbound-gate', () => ({
   assertOutboundAllowed: h.outboundGate,
   orgSmsVertical: (org: { partnerAppSlug?: string | null }) => org.partnerAppSlug ?? '',
+  // recordGlobalOptOut() normalises the number through this before writing to
+  // do_not_contact_numbers. Real implementation, not a stub: a mock that returned
+  // a constant would let a phone-parsing regression pass unnoticed.
+  phone10: (raw: string | null | undefined) => {
+    const digits = (raw ?? '').replace(/\D/g, '')
+    return digits.length >= 10 ? digits.slice(-10) : null
+  },
 }))
 
 const processInbound = h.processInbound
@@ -101,7 +129,16 @@ const base = { From: '+15551112222', To: '+15550000000', Body: 'hello', MessageS
 
 beforeEach(() => {
   process.env.TWILIO_AUTH_TOKEN = TOKEN
-  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false }
+  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }
+  h.state.audits = []
+  delete process.env.B3_KILL_SWITCH
+  processInbound.mockReset()
+  processInbound.mockImplementation(async () => ({
+    newState: 'ENGAGED',
+    outboundBody: 'agent reply',
+    complianceFlags: [] as string[],
+    llmAssessment: null,
+  }))
   h.state.updates = []
   h.state.inserted = []
   h.state.sidLookups = []
@@ -278,5 +315,168 @@ describe('inbound SMS — the TwiML reply goes through the outbound gate (F-02 /
     h.state.scenario.optedOut = true
     await POST(signedRequest(base))
     expect(h.outboundGate).not.toHaveBeenCalled()
+  })
+})
+
+// ── communication control runs before every AI guard (C-21 containment A) ──
+// processInbound holds the licence / kill-switch / spend-cap guards and the
+// LLM call. "processInbound not called" therefore means: no guard could
+// block the suppression and Anthropic was never called.
+const EXPLICIT = ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'stop please', 'opt out']
+const STOP_LIKE = ['STOP ALL', 'STOP!', 'please stop', 'stop texting me', "don't message me anymore", 'take me off your list']
+
+const suppression = () => h.state.updates.filter((u) => u.table === 'incoming_leads' && u.opted_out === true)
+const outRows = () => h.state.inserted.filter((r) => r.table === 'agent_messages' && r.direction === 'out')
+
+describe('inbound SMS — explicit opt-out keyword', () => {
+  it.each(EXPLICIT)('%j records suppression, never reaches the agent, and sends only the fixed acknowledgement', async (Body) => {
+    const res = await POST(signedRequest({ ...base, Body }))
+    expect(processInbound).not.toHaveBeenCalled()
+    expect(suppression()).toEqual([
+      expect.objectContaining({ opted_out: true, agent_status: 'LOST', opted_out_at: expect.any(String) }),
+    ])
+    expect(h.state.audits.map((a) => a.action)).toEqual(['compliance.opt_out_received'])
+    const text = await res.text()
+    expect(text).toContain('opted out')
+    expect(text).not.toContain('agent reply')
+    expect(outRows()).toEqual([expect.objectContaining({ compliance_flags: ['opt_out', 'gate_allow', 'dnc_clear'] })])
+  })
+
+  it.each([
+    ['spend cap', 'LlmCapExceededError'],
+    ['licence', 'LicenseDisabledError'],
+    ['kill switch', 'OperationalKillError'],
+  ])('a failing %s guard cannot prevent the suppression', async (_label, name) => {
+    const err = new Error(name)
+    err.name = name
+    processInbound.mockRejectedValue(err)
+    await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(suppression()).toHaveLength(1)
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+
+  it('kill switch engaged: suppression is still recorded, the acknowledgement is withheld', async () => {
+    process.env.B3_KILL_SWITCH = '1'
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(suppression()).toHaveLength(1)
+    expect(await res.text()).toBe('<Response/>')
+    expect(outRows()).toEqual([expect.objectContaining({ body: '', compliance_flags: ['opt_out', 'ack_withheld_kill_switch'] })])
+    expect(h.outboundGate).not.toHaveBeenCalled()
+  })
+
+  it('do-not-contact number: suppression recorded, no acknowledgement sent', async () => {
+    h.outboundGate.mockResolvedValue({ allowed: false, reason: 'dnc', flags: ['gate_allow', 'dnc'] })
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(suppression()).toHaveLength(1)
+    expect(await res.text()).toBe('<Response/>')
+  })
+
+  it('outbound gate throwing only withholds the acknowledgement', async () => {
+    h.outboundGate.mockRejectedValue(new Error('gate down'))
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(suppression()).toHaveLength(1)
+    expect(await res.text()).toBe('<Response/>')
+  })
+
+  it('a failed suppression write is audited loudly and nothing is sent', async () => {
+    h.state.scenario.leadUpdateError = true
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(await res.text()).toBe('<Response/>')
+    expect(h.state.audits.map((a) => a.action)).toEqual(['compliance.opt_out_record_failed'])
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+
+  it('an already opted-out lead sending STOP gets nothing and is not rewritten', async () => {
+    h.state.scenario.optedOut = true
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(await res.text()).toBe('<Response/>')
+    expect(h.state.updates).toEqual([])
+  })
+})
+
+describe('inbound SMS — stop-like message is held for a human', () => {
+  it.each(STOP_LIKE)('%j gets no reply, no AI, no gate call, and is flagged for review', async (Body) => {
+    const res = await POST(signedRequest({ ...base, Body }))
+    expect(await res.text()).toBe('<Response/>')
+    expect(processInbound).not.toHaveBeenCalled()
+    expect(h.outboundGate).not.toHaveBeenCalled()
+    expect(suppression()).toEqual([])
+    expect(outRows()).toEqual([
+      expect.objectContaining({ body: '', compliance_flags: expect.arrayContaining(['stop_like_hold']) }),
+    ])
+    expect(h.state.audits).toEqual([expect.objectContaining({ action: 'compliance.stop_like_held' })])
+  })
+
+  it('an ordinary message still reaches the agent', async () => {
+    await POST(signedRequest({ ...base, Body: 'Is the Camry still available?' }))
+    expect(processInbound).toHaveBeenCalledTimes(1)
+    expect(suppression()).toEqual([])
+  })
+})
+
+describe('inbound SMS — START acknowledgement is contained, behaviour not widened', () => {
+  it('clears only the per-lead flag and audits it', async () => {
+    h.state.scenario.optedOut = true
+    await POST(signedRequest({ ...base, Body: 'START' }))
+    expect(h.state.updates).toEqual([{ table: 'incoming_leads', opted_out: false, opted_out_at: null }])
+    expect(h.state.audits).toEqual([expect.objectContaining({ action: 'compliance.opt_in_received' })])
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+
+  it('kill switch engaged: flag cleared, no confirmation sent (it used to be sent)', async () => {
+    h.state.scenario.optedOut = true
+    process.env.B3_KILL_SWITCH = '1'
+    const res = await POST(signedRequest({ ...base, Body: 'START' }))
+    expect(await res.text()).toBe('<Response/>')
+  })
+
+  it('do-not-contact number: no confirmation sent (it used to be sent)', async () => {
+    h.outboundGate.mockResolvedValue({ allowed: false, reason: 'dnc', flags: ['gate_allow', 'dnc'] })
+    const res = await POST(signedRequest({ ...base, Body: 'START' }))
+    expect(await res.text()).toBe('<Response/>')
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+})
+
+describe('a keyword STOP reaches the GLOBAL do-not-contact list', () => {
+  /**
+   * Caught while resolving the C-21a merge, and the reason this block exists.
+   *
+   * C-21a moves opt-out detection ahead of every AI guard and RETURNS from that
+   * branch, so the flow never falls through to the global `recordGlobalOptOut()`
+   * call further down the route. Merging the two without adding the global write
+   * to the early path silently dropped it for EVERY keyword STOP — the lead row
+   * would be flagged, `do_not_contact_numbers` would not, and another org (or a
+   * re-imported lead row with `opted_out` defaulting to false) could text the
+   * person again.
+   *
+   * The whole point of the global list is that stop means stop, not "stop from
+   * this record".
+   */
+  it('writes the number to do_not_contact_numbers, not just the lead row', async () => {
+    h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }
+    h.state.updates = []
+    h.state.upserts = []
+    const res = await POST(signedRequest({ ...base, Body: 'STOP', From: '[phone removed]' }))
+    expect(res.status).toBe(200)
+
+    // The per-lead flag still lands...
+    expect(h.state.updates.some(u => u.table === 'incoming_leads' && u.opted_out === true)).toBe(true)
+    // ...and so does the global one.
+    expect(
+      h.state.upserts.some(u => u.table === 'do_not_contact_numbers'),
+      'keyword STOP must reach do_not_contact_numbers, not only the lead row',
+    ).toBe(true)
+  })
+
+  it('a failed global write is flagged on the message, never silent', async () => {
+    h.state.scenario = { ...{ optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }, dncWriteError: true }
+    h.state.inserted = []
+    const res = await POST(signedRequest({ ...base, Body: 'STOP', From: '[phone removed]', MessageSid: 'SM_dnc_fail' }))
+    expect(res.status).toBe(200)
+    const out = h.state.inserted.find(
+      i => i.table === 'agent_messages' && i.direction === 'out',
+    ) as { compliance_flags?: string[] } | undefined
+    expect(out?.compliance_flags).toContain('dnc_write_failed')
   })
 })

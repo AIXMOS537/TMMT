@@ -108,7 +108,33 @@ describe('the inbound route actually calls it', () => {
     const idx = src.indexOf('recordGlobalOptOut(db')
     expect(idx, 'the inbound route no longer calls recordGlobalOptOut').toBeGreaterThan(-1)
 
-    // And it must run on the opt_out branch, not somewhere incidental.
-    expect(src.slice(Math.max(0, idx - 600), idx)).toContain("complianceFlags.includes('opt_out')")
+    // And EVERY call site must sit on an opt-out branch, not somewhere incidental.
+    //
+    // There are two legitimate ones since C-21a, and they use different idioms:
+    //   1. the deterministic keyword path   -> `control.kind === 'opt_out'`
+    //   2. the post-processInbound fallback -> `complianceFlags.includes('opt_out')`
+    // An earlier version of this test only checked the FIRST occurrence against the
+    // second idiom, so adding the deterministic path ahead of it turned this red even
+    // though the wiring was correct. Checking every occurrence against either idiom is
+    // both accurate and stricter: a call added on some unrelated branch still fails.
+    const sites: number[] = []
+    for (let i = src.indexOf('recordGlobalOptOut(db'); i !== -1; i = src.indexOf('recordGlobalOptOut(db', i + 1)) {
+      sites.push(i)
+    }
+    // Exactly two, pinned: the deterministic keyword path and the fallback. A third
+    // would mean someone added a global suppression write somewhere new, which is worth
+    // failing on and looking at rather than waving through.
+    expect(sites.length, 'expected exactly two call sites (deterministic + fallback)').toBe(2)
+
+    // The window is generous because the deterministic site sits below a long comment
+    // explaining why it exists. Breadth here is fine: the count above is what stops a
+    // stray call slipping in, and this proves each one is under an opt-out condition.
+    for (const at of sites) {
+      const before = src.slice(Math.max(0, at - 2200), at)
+      expect(
+        /control\.kind === 'opt_out'|complianceFlags\.includes\('opt_out'\)/.test(before),
+        `recordGlobalOptOut at index ${at} is not on an opt-out branch`,
+      ).toBe(true)
+    }
   })
 })
