@@ -10,14 +10,21 @@
  *
  * Two layers:
  *   soft — this lookup, run BEFORE any side effect (lead update, audit row);
- *   hard — the STAGED unique partial indexes in
- *          `supabase/migrations/_staged/20260908000200_audit_events_webhook_replay_indexes_STAGED.sql`
- *          make the second audit INSERT fail with 23505 when two deliveries
- *          race past the lookup. Applying them is OWNER-GATED (D-18).
+ *   hard — the unique partial indexes in
+ *          `supabase/migrations/20260909204306_audit_events_webhook_replay_indexes.sql`
+ *          (APPLIED 2026-09-09) make the second audit INSERT fail with 23505
+ *          when two deliveries race past the lookup. They only stop the audit
+ *          row; the lead update before it has already run.
  *
- * Fails OPEN on a lookup error: dropping a legitimate event on a DB blip would
- * lose it for good (both providers treat 200 as final), whereas processing a
- * duplicate is idempotent by effect. The warning makes the blip diagnosable.
+ * Fails OPEN on a lookup error: the event is processed as if unseen. Whether
+ * that is right for each webhook class (payments vs bookings), or whether it
+ * should retry, quarantine or fail closed, is an OPEN design decision tracked
+ * in docs/REMEDIATION_PLAN.md (C-20). This file does not decide it.
+ *
+ * C-20: the lookup used to select `created_at`, which `audit_events` does not
+ * have (the timestamp column is `ts`, see ./audit-events-columns.ts). Every
+ * lookup errored with 42703 and was treated as "not seen", so the soft layer
+ * never worked; only the unique index stood behind it.
  *
  * `seenSyncEvent` (T-02c) is the same pre-check against `sync_events`, the
  * row the Airtable verified-lead webhook already writes. That route's key
@@ -41,7 +48,7 @@ export interface WebhookReplayKey {
 export async function seenWebhookEvent(db: SupabaseClient, k: WebhookReplayKey): Promise<boolean> {
   const { data, error } = await db
     .from('audit_events')
-    .select('created_at')
+    .select('ts')
     .eq('organization_id', k.organizationId)
     .eq('action', k.action)
     .eq(`payload->>${k.keyField}`, k.key)

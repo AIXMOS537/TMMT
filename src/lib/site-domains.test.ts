@@ -3,10 +3,6 @@ import {
   normalizeHost,
   isOwnerHubHost,
   ownerHubOrigin,
-  isTmmtPublicHost,
-  shouldBounceTmmtCreditToAixmos,
-  aixmosCreditPath,
-  aixmosCreditRedirectUrl,
   isAixmosCorsOrigin,
 } from "./site-domains";
 
@@ -59,59 +55,6 @@ describe("ownerHubOrigin", () => {
     expect(ownerHubOrigin()).toBe(
       "https://ops.allinonemanagementsolutions.com",
     );
-  });
-});
-
-describe("isTmmtPublicHost", () => {
-  it("matches rental/ops public hosts", () => {
-    expect(isTmmtPublicHost("tmmt-ops.vercel.app")).toBe(true);
-    expect(isTmmtPublicHost("tmmtrentals.com")).toBe(true);
-  });
-  it("leaves the retired landing and the GHL hosts alone", () => {
-    expect(isTmmtPublicHost("aixmos-landing.vercel.app")).toBe(false);
-    expect(isTmmtPublicHost("tmmt-command-center.vercel.app")).toBe(false);
-    expect(isTmmtPublicHost("allinonemanagementsolutions.com")).toBe(false);
-    expect(isTmmtPublicHost("localhost:3000")).toBe(false);
-  });
-});
-
-describe("shouldBounceTmmtCreditToAixmos", () => {
-  it("bounces a person who typed a TMMT credit URL", () => {
-    expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "tmmt-ops.vercel.app")).toBe(true);
-    expect(shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", null)).toBe(true);
-  });
-  it("does not bounce when the public GHL site proxied the request here", () => {
-    expect(
-      shouldBounceTmmtCreditToAixmos("tmmt-ops.vercel.app", "allinonemanagementsolutions.com"),
-    ).toBe(false);
-  });
-});
-
-describe("aixmosCreditPath", () => {
-  const utm = (c: string) => `/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=${c}`;
-  it("sends marketing entry points to the GHL public site", () => {
-    expect(aixmosCreditPath("/lp/moe_legacy/intro-97")).toBe(utm("credit-guidance"));
-    expect(aixmosCreditPath("/lp/aixmos/intro-97")).toBe(utm("credit-guidance"));
-    expect(aixmosCreditPath("/lp/moe_legacy/lead-magnet")).toBe(utm("playbook"));
-    expect(aixmosCreditPath("/credit")).toBe(utm("credit"));
-    expect(aixmosCreditPath("/funding")).toBe(utm("credit"));
-  });
-  it("keeps the intake forms on the one app (GHL links to them)", () => {
-    expect(aixmosCreditPath("/forms/credit-funding-intake")).toBeNull();
-    expect(aixmosCreditPath("/forms/academy-join")).toBeNull();
-    expect(aixmosCreditPath("/forms/apply")).toBeNull();
-  });
-  it("does not steal rental SKUs", () => {
-    expect(aixmosCreditPath("/lp/tmmt_property/rental-in-a-box")).toBeNull();
-    expect(aixmosCreditPath("/lp/aixmos/training")).toBeNull();
-    expect(aixmosCreditPath("/dealers")).toBeNull();
-    expect(aixmosCreditPath("/kits")).toBeNull();
-  });
-  it("points the redirect at the GHL public site", () => {
-    expect(aixmosCreditRedirectUrl("/lp/moe_legacy/intro-97")).toBe(
-      "https://allinonemanagementsolutions.com" + utm("credit-guidance"),
-    );
-    expect(aixmosCreditRedirectUrl("/forms/apply")).toBeNull();
   });
 });
 

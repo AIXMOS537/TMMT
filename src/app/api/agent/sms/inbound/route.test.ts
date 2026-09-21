@@ -12,10 +12,11 @@ const h = vi.hoisted(() => {
   }))
   const outboundGate = vi.fn(async () => ({ allowed: true, reason: 'ok', flags: ['gate_allow', 'dnc_clear'] }))
   const state = {
-    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false },
+    scenario: { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false },
     audits: [] as Array<{ action: string; payload?: Record<string, unknown> }>,
     updates: [] as Record<string, unknown>[],
     inserted: [] as Record<string, unknown>[],
+    upserts: [] as Record<string, unknown>[],
     sidLookups: [] as Record<string, unknown>[],
   }
   const makeDb = () => ({
@@ -50,6 +51,17 @@ const h = vi.hoisted(() => {
             ? { message: 'simulated write failure' } : null
           return { eq: async () => ({ error }) }
         },
+        // recordGlobalOptOut() upserts into do_not_contact_numbers. Recorded rather
+        // than ignored so a test can assert that a keyword STOP reaches the GLOBAL
+        // list and not just this org's lead row — the difference between "stop" and
+        // "stop from this record".
+        upsert: async (row: Record<string, unknown>) => {
+          state.upserts.push({ table, ...row })
+          return {
+            error: table === 'do_not_contact_numbers' && state.scenario.dncWriteError
+              ? { message: 'simulated dnc write failure' } : null,
+          }
+        },
       })
       return api
     },
@@ -80,6 +92,13 @@ vi.mock('@/lib/agent/audit', () => ({
 vi.mock('@/lib/outbound-gate', () => ({
   assertOutboundAllowed: h.outboundGate,
   orgSmsVertical: (org: { partnerAppSlug?: string | null }) => org.partnerAppSlug ?? '',
+  // recordGlobalOptOut() normalises the number through this before writing to
+  // do_not_contact_numbers. Real implementation, not a stub: a mock that returned
+  // a constant would let a phone-parsing regression pass unnoticed.
+  phone10: (raw: string | null | undefined) => {
+    const digits = (raw ?? '').replace(/\D/g, '')
+    return digits.length >= 10 ? digits.slice(-10) : null
+  },
 }))
 
 const processInbound = h.processInbound
@@ -111,7 +130,7 @@ const base = { From: '+15551112222', To: '+15550000000', Body: 'hello', MessageS
 
 beforeEach(() => {
   process.env.TWILIO_AUTH_TOKEN = TOKEN
-  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false }
+  h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }
   h.state.audits = []
   delete process.env.B3_KILL_SWITCH
   processInbound.mockReset()
@@ -510,5 +529,48 @@ describe('inbound SMS — AI reply is held for owner approval by default', () =>
     h.outboundGate.mockResolvedValue({ allowed: false, reason: 'dnc', flags: ['gate_allow', 'dnc'] })
     expect(await (await POST(signedRequest(base))).text()).toBe('<Response/>')
     expect(processInbound).not.toHaveBeenCalled()
+  })
+})
+
+describe('a keyword STOP reaches the GLOBAL do-not-contact list', () => {
+  /**
+   * Caught while resolving the C-21a merge, and the reason this block exists.
+   *
+   * C-21a moves opt-out detection ahead of every AI guard and RETURNS from that
+   * branch, so the flow never falls through to the global `recordGlobalOptOut()`
+   * call further down the route. Merging the two without adding the global write
+   * to the early path silently dropped it for EVERY keyword STOP — the lead row
+   * would be flagged, `do_not_contact_numbers` would not, and another org (or a
+   * re-imported lead row with `opted_out` defaulting to false) could text the
+   * person again.
+   *
+   * The whole point of the global list is that stop means stop, not "stop from
+   * this record".
+   */
+  it('writes the number to do_not_contact_numbers, not just the lead row', async () => {
+    h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }
+    h.state.updates = []
+    h.state.upserts = []
+    const res = await POST(signedRequest({ ...base, Body: 'STOP', From: '+15715550101' }))
+    expect(res.status).toBe(200)
+
+    // The per-lead flag still lands...
+    expect(h.state.updates.some(u => u.table === 'incoming_leads' && u.opted_out === true)).toBe(true)
+    // ...and so does the global one.
+    expect(
+      h.state.upserts.some(u => u.table === 'do_not_contact_numbers'),
+      'keyword STOP must reach do_not_contact_numbers, not only the lead row',
+    ).toBe(true)
+  })
+
+  it('a failed global write is flagged on the message, never silent', async () => {
+    h.state.scenario = { ...{ optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }, dncWriteError: true }
+    h.state.inserted = []
+    const res = await POST(signedRequest({ ...base, Body: 'STOP', From: '+15715550102', MessageSid: 'SM_dnc_fail' }))
+    expect(res.status).toBe(200)
+    const out = h.state.inserted.find(
+      i => i.table === 'agent_messages' && i.direction === 'out',
+    ) as { compliance_flags?: string[] } | undefined
+    expect(out?.compliance_flags).toContain('dnc_write_failed')
   })
 })
