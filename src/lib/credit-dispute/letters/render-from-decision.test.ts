@@ -8,6 +8,23 @@ import {
   renderPacket,
   BANNED_PHRASES,
 } from "./render-from-decision";
+import {
+  ComplianceGateError,
+  isGateOpen,
+} from "../../../../shared/compliance-gates/gate";
+
+/**
+ * Rendering a letter runs generateLetter(), which is behind the CROA gate
+ * (15 U.S.C. 1679a). While that gate is closed these blocks CANNOT run --
+ * not because they are broken, but because producing an addressed dispute
+ * letter is the regulated act itself. See generator.gate.test.ts.
+ *
+ * They are skipped, never deleted, and never made to pass by relaxing the
+ * gate. `refusesWhileGateClosed` below watches the refusal so a skip can
+ * never be mistaken for a pass -- exactly one of these two runs, always.
+ */
+const CROA_OPEN = isGateOpen("croa_contracts_attorney_approved");
+const whenGateOpen = describe.skipIf(!CROA_OPEN);
 
 function monthsAgo(n: number): string {
   const d = new Date();
@@ -62,7 +79,7 @@ describe("the renderer refuses when the policy says no", () => {
   });
 });
 
-describe("the renderer produces a letter when there is a real ground", () => {
+whenGateOpen("the renderer produces a letter when there is a real ground (CROA gate open)", () => {
   const assessment: ItemAssessment = { accuracy: "inaccurate", basis: "never_late" };
 
   it("renders", () => {
@@ -122,7 +139,7 @@ describe("the renderer produces a letter when there is a real ground", () => {
   });
 });
 
-describe("the safety net", () => {
+whenGateOpen("the safety net (CROA gate open)", () => {
   it("throws on quarantined language", () => {
     expect(() =>
       assertNoBannedLanguage({
@@ -177,7 +194,7 @@ describe("the safety net", () => {
   });
 });
 
-describe("the desk packet", () => {
+whenGateOpen("the desk packet (CROA gate open)", () => {
   it("splits a profile into letters and reasons not to write one", () => {
     const items = [
       item({ id: "a" }),
@@ -209,5 +226,22 @@ describe("the desk packet", () => {
     );
     expect(describePacket(packet)).toMatch(/1 letter/);
     expect(describePacket(packet)).toMatch(/1 to coach/);
+  });
+});
+
+describe.skipIf(CROA_OPEN)("while the CROA gate is closed", () => {
+  // A ground that WOULD produce a letter if the act were permitted -- the same
+  // shape the skipped blocks above use, so this proves the gate stops it and
+  // not a malformed input.
+  const realGround: ItemAssessment = { accuracy: "inaccurate", basis: "wrong_balance" };
+
+  it("refuses to render a letter instead of quietly producing one", () => {
+    expect(() => renderFromDecision(profile, item(), realGround)).toThrow(ComplianceGateError);
+  });
+
+  it("refuses the whole desk packet, not just one letter", () => {
+    expect(() => renderPacket(profile, [item({ id: "a" })], { a: realGround })).toThrow(
+      ComplianceGateError,
+    );
   });
 });

@@ -529,3 +529,44 @@ describe('inbound SMS — AI reply is held for owner approval by default', () =>
     expect(processInbound).not.toHaveBeenCalled()
   })
 })
+
+// ── THE GLOBAL LIST IS PINNED AT THE ROUTE, NOT JUST IN THE FUNCTION ────────
+// record-opt-out.test.ts proves recordGlobalOptOut() writes the table. It does
+// NOT prove this route still CALLS it. Both call sites were deleted by hand on
+// 2026-09-21 and the whole suite stayed green — so a plain merge that drops
+// either one would ship a silent regression: STOP would flag the lead row and
+// never reach do_not_contact_numbers, and another org could text that person
+// again. These two tests are the thing that bites.
+describe('STOP reaches the global do-not-contact list', () => {
+  const dncUpserts = () => h.state.upserts.filter((u) => u.table === 'do_not_contact_numbers')
+
+  // The shared beforeEach resets scenario/audits/updates but NOT upserts, so
+  // they accumulate across the file. Clear them here or these counts measure
+  // every earlier test as well.
+  beforeEach(() => {
+    h.state.upserts = []
+  })
+
+  it('writes the global list on the explicit-STOP branch (before processInbound)', async () => {
+    await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(
+      dncUpserts(),
+      'explicit STOP did not reach do_not_contact_numbers — the route call site is gone',
+    ).toHaveLength(1)
+  })
+
+  it('writes the global list when processInbound returns opt_out (the guard path)', async () => {
+    processInbound.mockImplementation(async () => ({
+      newState: 'CLOSED',
+      outboundBody: '',
+      draftBody: '',
+      complianceFlags: ['opt_out'],
+      llmAssessment: null,
+    }))
+    await POST(signedRequest({ ...base, Body: 'i am done with this' }))
+    expect(
+      dncUpserts(),
+      'an opt_out from processInbound did not reach do_not_contact_numbers — that call site is gone',
+    ).toHaveLength(1)
+  })
+})
