@@ -20,7 +20,7 @@ const prevDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 let errorSpy: ReturnType<typeof vi.spyOn>;
 
 function loggedPayloads(): Array<Record<string, unknown>> {
-  return errorSpy.mock.calls.map(([line]) => {
+  return errorSpy.mock.calls.map(([line]: unknown[]) => {
     expect(String(line).startsWith("[degraded] ")).toBe(true);
     return JSON.parse(String(line).slice("[degraded] ".length)) as Record<string, unknown>;
   });

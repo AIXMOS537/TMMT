@@ -75,7 +75,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       {
         href: "/command/credit-dispute",
         label: "Credit dispute command",
-        description: "Dispute Fox + MyFreeScoreNow → deep audit → FCRA letters → funding",
+        description: "Dispute Fox + MyFreeScoreNow import → deep audit → letters (legal-gated)",
         icon: Scale,
         badge: "AIXMOS",
       },

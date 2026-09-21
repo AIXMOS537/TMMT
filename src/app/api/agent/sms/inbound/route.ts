@@ -26,7 +26,8 @@ import {
 import { handoffToHuman } from '@/lib/agent/handoff'
 import { emitAudit } from '@/lib/agent/audit'
 import { isAutoReplyAuthorized } from '@/lib/agent/auto-reply-policy'
-import { optOutAutoReply } from '@/lib/agent/compliance/opt-out'
+import { isOptInMessage, optOutAutoReply } from '@/lib/agent/compliance/opt-out'
+import { recordGlobalOptOut } from '@/lib/agent/compliance/record-opt-out'
 import { classifyCommunicationControl } from '@/lib/agent/compliance/communication-control'
 import { assertOutboundAllowed, orgSmsVertical } from '@/lib/outbound-gate'
 
@@ -232,17 +233,50 @@ export async function POST(req: Request): Promise<NextResponse> {
         })
         return xmlResp(twiml(''))
       }
+      // ── STOP REACHES THE GLOBAL LIST ─────────────────────────────────────
+      // The update above is scoped to ONE lead row in ONE org.
+      // do_not_contact_numbers is what assertOutboundAllowed() checks for every
+      // org on every outbound message, so without this a re-imported lead row
+      // (opted_out defaulting to false) or a different org could text this
+      // person again. A person who says stop means stop, not "stop from this
+      // record".
+      //
+      // This path returns early — deliberately, so an opt-out never reaches the
+      // LLM — which means it does NOT fall through to the global write further
+      // down this file. Merging C-21a with that write in place without adding
+      // this call here would have silently dropped it for every keyword STOP.
+      //
+      // Failure is recorded, not thrown: the suppression above already landed,
+      // and losing the customer's reply on top of a compliance-write failure
+      // helps nobody. It must not be invisible either.
+      const dncFlags: string[] = []
+      const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+      if (!dnc.ok) {
+        dncFlags.push('dnc_write_failed')
+        console.error('[agent/sms/inbound] GLOBAL DNC WRITE FAILED', dnc.error)
+        await emitAudit({
+          organizationId: org.id,
+          action: 'compliance.dnc_write_failed',
+          payload: { lead_id: lead.id, conversation_id: conv.id, phone_last4: from.slice(-4) },
+        })
+      }
+
       await emitAudit({
         organizationId: org.id,
         action: 'compliance.opt_out_received',
-        payload: { lead_id: lead.id, conversation_id: conv.id, ack_sent: ack.allowed },
+        payload: {
+          lead_id: lead.id,
+          conversation_id: conv.id,
+          ack_sent: ack.allowed,
+          global_dnc: dnc.ok,
+        },
       })
       const ackBody = ack.allowed ? optOutAutoReply() : ''
       await db.from('agent_messages').insert({
         conversation_id: conv.id,
         direction: 'out',
         body: ackBody,
-        compliance_flags: ['opt_out', ...ack.flags],
+        compliance_flags: ['opt_out', ...ack.flags, ...dncFlags],
       })
       return xmlResp(twiml(ackBody))
     }
@@ -342,16 +376,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
 
-    // ── OWNER-APPROVAL HOLD ────────────────────────────────────────────────
-    // "Owner approval required for all customer-facing actions". An AI reply
-    // is held as a draft unless the owner has put this org on
-    // B3_AUTO_REPLY_ORGS (empty by default). Every guard above has already
-    // run; the allowlist authorises auto-reply, it bypasses nothing.
-    // See src/lib/agent/auto-reply-policy.ts.
-    const autoReply = isAutoReplyAuthorized(org.id)
-    const sentBody = autoReply ? result.outboundBody : null
+      // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
+      // do_not_contact_numbers is what assertOutboundAllowed() checks for every
+      // org, so a per-lead flag alone lets a re-imported row be texted again.
+      // A person who says stop means stop, not "stop from this record".
+      if (result.complianceFlags.includes('opt_out')) {
+        const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+        if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
+      }
 
-    if (sentBody) {
+      // ── OWNER-APPROVAL HOLD ────────────────────────────────────────────────
+      // An AI reply is held as a draft unless the owner has put this org on
+      // B3_AUTO_REPLY_ORGS (empty by default). Runs AFTER the opt-out write:
+      // holding a reply must never suppress a compliance record.
+      const autoReply = isAutoReplyAuthorized(org.id)
+      const sentBody = autoReply ? result.outboundBody : null
+
+      if (sentBody) {
       await db.from('agent_messages').insert({
         conversation_id: conv.id,
         direction: 'out',

@@ -10,8 +10,8 @@ set -uo pipefail
 
 G=$'\033[32m'; Y=$'\033[33m'; R=$'\033[31m'; C=$'\033[36m'; B=$'\033[1m'; X=$'\033[0m'
 ok(){ printf "  ${G}✓${X} %s\n" "$*"; }
-warn(){ printf "  ${Y}!${X} %s\n" "$*"; }
-bad(){ printf "  ${R}✗${X} %s\n" "$*"; }
+warn(){ WARNS=$((${WARNS:-0}+1)); printf "  ${Y}!${X} %s\n" "$*"; }
+bad(){ BADS=$((${BADS:-0}+1)); printf "  ${R}✗${X} %s\n" "$*"; }
 hdr(){ printf "\n${C}${B}  ── %s ──${X}\n" "$*"; }
 
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -106,8 +106,8 @@ install_rick_model() {
   else
     BASE="$(ollama list 2>/dev/null | awk 'NR==2{print $1}')"
   BASE="${BASE:-qwen2.5:14b}"
-    printf 'FROM %s\nSYSTEM """%s"""\n' "$BASE" "$SYS" | ollama create rick -f - 2>/dev/null \
-      && ok "created rick:latest from $BASE" \
+    printf 'FROM %s\nSYSTEM """%s"""\n' "$BASE" "$SYS" | ollama create rick-bootstrap -f - 2>/dev/null \
+      && ok "created rick-bootstrap from $BASE (canon rick untouched)" \
       || warn "rick model create skipped"
   fi
 }
@@ -138,12 +138,15 @@ status() {
     && ok "Agent army :7777" || warn "Agents down — office-up-rick"
   curl -sf --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null \
     && ok "Ollama" || warn "Ollama down"
-  ollama list 2>/dev/null | grep -q '^rick' && ok "rick:latest model" || warn "rick model missing"
+  # capture first: under pipefail, `grep -q` closing the pipe early made this report a present model as missing
+  _models="$(ollama list 2>/dev/null)"; grep -q '^rick' <<<"$_models" && ok "rick:latest model" || warn "rick model missing"
   [[ -f "$HOME/.rick/RICK-PRIME.md" ]] && ok "RICK-PRIME loaded" || warn "RICK-PRIME missing"
   launchctl list 2>/dev/null | grep -q rick-bridge && ok "Rick bridge daemon" || warn "Rick bridge not loaded"
   CTL="$TMMT/scripts/mesh/brainiac-ctl.sh"
   [[ -x "$CTL" ]] && bash "$CTL" status 2>/dev/null | sed 's/^/  /' || true
-  printf "\n  ${G}${B}Rick Sorkin online — ready for X.${X}\n\n"
+  if [ "${BADS:-0}" -gt 0 ]; then printf "\n  ${R}${B}Rick Sorkin DEGRADED — ${BADS} failed, ${WARNS:-0} warnings.${X}\n\n"
+  elif [ "${WARNS:-0}" -gt 0 ]; then printf "\n  ${Y}${B}Rick Sorkin online with ${WARNS} warning(s) — see above.${X}\n\n"
+  else printf "\n  ${G}${B}Rick Sorkin online — ready for X.${X}\n\n"; fi
 }
 
 stamp_state() {
@@ -183,7 +186,7 @@ case "$VERB" in
     cat <<EOF
 rick-sorkin — Rick Sorkin one-shot (M1 Max)
 
-  rick-sorkin up       full install + boot (always-on via office-up-rick) (default)
+  rick-sorkin up       full install + boot (default)
   rick-sorkin update   git pull + refresh identity
   rick-sorkin status   green/red report
   rick-sorkin prime    print RICK-PRIME.md

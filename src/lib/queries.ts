@@ -258,6 +258,55 @@ export async function getBgCheckQueue(status?: string, limit = 300): Promise<BgC
 }
 
 /**
+ * One row of the org-scoped masked payments queue.
+ *
+ * customer_payments had no masked read path at all until 2026-09-16 — answering
+ * "did this renter pay" required being a platform admin, which is global. This is
+ * the counterpart to bg_check_queue and is org-scoped from birth.
+ *
+ * `payment_method_type` is the METHOD TYPE only ("Visa", "CashApp"). The RPC takes
+ * the leading word, so a stored "Visa 4111111111111111" cannot round-trip an
+ * account identifier through this path.
+ */
+export type CustomerPaymentRow = {
+  id: string;
+  customer_name: string | null;
+  phone_last4: string | null;
+  amount: number | null;
+  payment_status: string | null;
+  payment_method_type: string | null;
+  last_payment_date: string | null;
+  next_payment_due_date: string | null;
+  amount_past_due: string | null;
+  payment_plan: string | null;
+  has_receipt: boolean | null;
+  vehicle_name: string | null;
+  created_at: string | null;
+};
+
+/**
+ * Payments for the caller's own organisation(s) only.
+ *
+ * A platform admin still sees every org — that is how the back office works today.
+ * Anyone else sees only orgs they hold a role in. A session with no org membership
+ * gets zero rows, which is the intended answer, not a failure.
+ */
+export async function getCustomerPaymentsQueue(
+  status?: string,
+  limit = 300,
+): Promise<CustomerPaymentRow[]> {
+  const { data, error } = await supabase.rpc("customer_payments_queue", {
+    p_status: status || null,
+    p_limit: limit,
+  });
+  if (error) {
+    console.error("[customer_payments_queue]", error.message);
+    throw new Error(error.message);
+  }
+  return (data ?? []) as CustomerPaymentRow[];
+}
+
+/**
  * Optional inputs for bg_check_decide beyond the verdict itself. Since S3-03
  * (migration 20260907035109) the RPC takes seven arguments; every one after
  * p_notes defaults to null in the database, so a caller that has nothing to say
