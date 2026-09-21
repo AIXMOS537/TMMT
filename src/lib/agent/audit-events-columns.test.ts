@@ -15,18 +15,11 @@ const SRC = join(process.cwd(), 'src')
 const known = new Set<string>(AUDIT_EVENTS_COLUMNS)
 
 /**
- * Known wrong column references not fixed in the C-20 PR. Each entry has to
- * still be in the source, so fixing one fails this test until the entry is
- * removed.
- *
- * guard.ts: `assertLlmCapNotExceeded` filters `.gte('created_at', ...)`. It
- * FAILS CLOSED on the error, so every org with a cap (default 50 USD) gets
- * LlmCapExceededError on every inbound SMS LLM call. Fixing it turns
- * customer-facing LLM replies back on, so it needs its own review.
+ * Known wrong column references still in the source. Each entry has to still
+ * be there, so fixing one fails this test until the entry is removed. Empty
+ * since guard.ts was fixed (`assertLlmCapNotExceeded` filtered `created_at`).
  */
-const KNOWN_WRONG: Array<{ file: string; column: string }> = [
-  { file: 'src/lib/agent/guard.ts', column: 'created_at' },
-]
+const KNOWN_WRONG: Array<{ file: string; column: string }> = []
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

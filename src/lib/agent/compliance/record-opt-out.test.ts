@@ -108,7 +108,24 @@ describe('the inbound route actually calls it', () => {
     const idx = src.indexOf('recordGlobalOptOut(db')
     expect(idx, 'the inbound route no longer calls recordGlobalOptOut').toBeGreaterThan(-1)
 
-    // And it must run on the opt_out branch, not somewhere incidental.
-    expect(src.slice(Math.max(0, idx - 600), idx)).toContain("complianceFlags.includes('opt_out')")
+    // And EVERY call site must sit on an opt-out branch, not somewhere
+    // incidental. There are two legitimate ones since the C-21 containment
+    // merge: the deterministic keyword branch, which returns before
+    // processInbound is ever reached, and the processInbound result branch.
+    // Checking only the first occurrence let a correct route fail and, worse,
+    // would let a second incidental call slip in unchecked.
+    const ANCHORS = ["complianceFlags.includes('opt_out')", "control.kind === 'opt_out'"]
+    const sites: number[] = []
+    for (let at = src.indexOf('recordGlobalOptOut(db'); at !== -1; at = src.indexOf('recordGlobalOptOut(db', at + 1)) {
+      sites.push(at)
+    }
+    expect(sites.length, 'no recordGlobalOptOut call sites found').toBeGreaterThan(0)
+    for (const at of sites) {
+      const before = src.slice(Math.max(0, at - 2500), at)
+      expect(
+        ANCHORS.some((a) => before.includes(a)),
+        `recordGlobalOptOut at index ${at} is not on an opt-out branch`,
+      ).toBe(true)
+    }
   })
 })

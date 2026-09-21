@@ -13,6 +13,7 @@ import { isQuietHours } from './compliance/quiet-hours'
 import { applyDisclaimers, hasBlockingPhrase } from './compliance/disclaimers'
 import { findBannedPhrases } from './compliance/banned-phrases'
 import { emitAudit } from './audit'
+import { redactPii } from './redact-pii'
 import { createServiceRoleClient } from '@/lib/supabase-service'
 import { recordMoneyEventSafe } from '@/lib/money-meter'
 
@@ -30,6 +31,12 @@ export interface ProcessInboundArgs {
 export interface ProcessInboundResult {
   newState: AgentState
   outboundBody: string | null
+  /**
+   * The reply that was generated (or the fixed opt-out text), even when
+   * quiet hours withheld `outboundBody`. The SMS route stores it as a held
+   * draft when the org is not authorised for automatic replies.
+   */
+  draftBody: string | null
   complianceFlags: string[]
   actions: Array<{ kind: string }>
   llmAssessment?: { B: number; A: number; T: number; confidence: number }
@@ -40,10 +47,11 @@ export interface ProcessInboundResult {
 const SAFE_FALLBACK = 'Thanks for reaching out — could you tell me more about what you’re looking for?'
 
 export async function processInbound(args: ProcessInboundArgs): Promise<ProcessInboundResult> {
-  await guardOrganization(args.org.id)
-  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
-
-  // 1. Opt-out short-circuit
+  // 1. Opt-out short-circuit, BEFORE the licence / kill-switch / spend-cap
+  //    guards: an explicit opt-out keyword must never depend on them, and it
+  //    never reaches the LLM. The SMS route already handles this ahead of
+  //    processInbound (communication-control.ts); this keeps any other caller
+  //    (the GHL voice summary) from routing a STOP through the guards.
   if (isOptOutMessage(args.inboundBody)) {
     await emitAudit({
       organizationId: args.org.id,
@@ -53,12 +61,25 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     return {
       newState: 'LOST',
       outboundBody: optOutAutoReply(),
+      draftBody: optOutAutoReply(),
       complianceFlags: ['opt_out'],
       actions: [{ kind: 'send_opt_out_reply' }],
     }
   }
 
+  await guardOrganization(args.org.id)
+  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
+
   // 2. LLM with banned-phrase regen
+  //
+  // Data minimisation before the external model call. buildSystemPrompt
+  // already runs redactPii over the earlier conversation turns, but the
+  // NEWEST message (the SMS body, or the GHL voice transcript_snippet) was
+  // sent to Anthropic raw. It now gets the same treatment. redactPii covers
+  // dashed SSNs and Luhn-valid 13-19 digit card numbers only; see
+  // redact-pii.ts. The raw text is still used for opt-out detection above
+  // and is still what gets stored in agent_messages by the callers.
+  const modelInbound = redactPii(args.inboundBody)
   const overlay = (args.org.agentPersonaOverlay ?? {}) as { forbidden_phrases?: string[] }
   const banList: string[] = overlay.forbidden_phrases ?? []
   const systemPrompt = buildSystemPrompt(args.org, {
@@ -81,7 +102,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
     try {
       llmResult = await callAgent({
         systemPrompt,
-        userMessage: args.inboundBody,
+        userMessage: modelInbound,
         model: pickModel('qualify'),
       })
       llmCostAccruedUsd += llmResult.costUsd
@@ -186,7 +207,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
         assessment: llmResult.parsed.assessment,
         next_action: llmResult.parsed.next_action,
         model: llmResult.model,
-        inbound_preview: args.inboundBody.slice(0, 200),
+        inbound_preview: modelInbound.slice(0, 200),
       }
     })
   }
@@ -197,6 +218,7 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
   return {
     newState: nextState,
     outboundBody: quiet ? null : outBody,
+    draftBody: outBody || null,
     complianceFlags: flags,
     actions,
     llmAssessment: llmResult?.parsed.assessment,
