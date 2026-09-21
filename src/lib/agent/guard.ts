@@ -48,10 +48,15 @@ export function isHouseOrg(organizationId: string): boolean {
   return HOUSE_ORGS.has(organizationId)
 }
 
+/** True when the B3 operational kill switch (B3_KILL_SWITCH=1) is engaged. */
+export function isOperationalKillEngaged(): boolean {
+  return process.env.B3_KILL_SWITCH === '1'
+}
+
 export async function guardOrganization(organizationId: string): Promise<void> {
   // The operational kill switch still applies to everyone, house included. It
   // is the deliberate "stop everything" lever and must not have exceptions.
-  if (process.env.B3_KILL_SWITCH === '1') throw new OperationalKillError()
+  if (isOperationalKillEngaged()) throw new OperationalKillError()
 
   // Licensing gates customers, never ourselves.
   if (isHouseOrg(organizationId)) return

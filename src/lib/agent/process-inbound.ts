@@ -40,10 +40,11 @@ export interface ProcessInboundResult {
 const SAFE_FALLBACK = 'Thanks for reaching out — could you tell me more about what you’re looking for?'
 
 export async function processInbound(args: ProcessInboundArgs): Promise<ProcessInboundResult> {
-  await guardOrganization(args.org.id)
-  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
-
-  // 1. Opt-out short-circuit
+  // 1. Opt-out short-circuit, BEFORE the licence / kill-switch / spend-cap
+  //    guards: an explicit opt-out keyword must never depend on them, and it
+  //    never reaches the LLM. The SMS route already handles this ahead of
+  //    processInbound (communication-control.ts); this keeps any other caller
+  //    (the GHL voice summary) from routing a STOP through the guards.
   if (isOptOutMessage(args.inboundBody)) {
     await emitAudit({
       organizationId: args.org.id,
@@ -57,6 +58,9 @@ export async function processInbound(args: ProcessInboundArgs): Promise<ProcessI
       actions: [{ kind: 'send_opt_out_reply' }],
     }
   }
+
+  await guardOrganization(args.org.id)
+  await assertLlmCapNotExceeded(args.org.id, args.org.llmDailyCapUsd)
 
   // 2. LLM with banned-phrase regen
   const overlay = (args.org.agentPersonaOverlay ?? {}) as { forbidden_phrases?: string[] }
