@@ -223,6 +223,22 @@ inspection to a Fleet vehicle; writes a generated damage summary back to the rec
 
 ---
 
+## 3a. What the native envelope already refuses
+
+`src/lib/automation/` (Workstream B, P0 #3) encodes these findings as refusals, so the legacy
+failure modes cannot recur natively even before the scripts are captured:
+
+| Finding here | Native refusal |
+|---|---|
+| A8 fans out to up to 1000 waitlist records | `exceeds_max_affected` — every definition declares a cap, and the caller can declare a tighter one |
+| A5 has a customer email with no `to:` | `no_recipients` — an unconfigured recipient list is a defect, not an empty send |
+| 15 `customScript` bodies are UNKNOWN | `unported_script` — an action referencing an uncaptured script always refuses |
+| 8 automations were live without a decision | `disabled` — definitions are off until switched on, and `dryRun` defaults to true |
+| DNC has failed open once already | `dnc_check_missing` — customer contact requires a check, and a throwing check suppresses |
+
+**This does not reduce the capture requirement.** The envelope refuses to run unknown logic; it
+cannot tell you what that logic did. Gate condition in §5 stands unchanged.
+
 ## 4. Capture procedure
 
 For each automation A1–A8, in the Airtable UI:

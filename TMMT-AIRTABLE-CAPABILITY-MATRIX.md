@@ -181,7 +181,7 @@ change-log. All must write to Supabase, never Airtable.
 | **custom script actions** | **Yes — 8 automations / 15 bodies, one automation deployed** | ❌ | **Logic opaque; exit-preservation gate — `evidence/automation-logic-capture.md`** | **P1** |
 | AI generation actions | Yes — 2 (undeployed) | 🟡 brain-router | — | P3 |
 | **execution history** | Airtable-internal | 🟡 `audit_events` | **No per-automation run log** | **P1** |
-| enable/disable + dry-run + test mode | Airtable UI | ❌ | **Safety-critical** — §9.1 | **P0** |
+| enable/disable + dry-run + test mode | Airtable UI | ✅ `src/lib/automation/` | Envelope landed: disabled by default, dry-run default, blast-radius cap, DNC fail-closed, approval gate | **P0** |
 
 > **43 undeployed automations encode the collections ladder** that was built and never switched
 > on. Read them before rebuilding Phase 6 — they are the intended design.
@@ -267,7 +267,10 @@ Not a commitment — a proposal for the owner to correct.
 2. Rules/formula engine core, driven by `docs/business-rules/` — **STARTED.** `src/lib/rules/`
    ports partner economics + the onboarding gate with 28 tests; reuses the existing
    `bg-check-decisions` contract. Remaining domains need owner policy, not engineering.
-3. Automation safety envelope (enabled/disabled, dry-run, execution log, DNC fail-closed)
+3. Automation safety envelope — **LANDED.** `src/lib/automation/` (19 tests): disabled by
+   default, dry-run by default, declared blast-radius cap, zero-recipient refusal,
+   un-ported-script refusal, owner approval + DNC fail-closed for customer contact.
+   Reuses `shared/owner-approval-gate` and `src/lib/outbound-gate.ts`.
 
 **Tier 1 — restores daily operations**
 4. Dashboard element primitives: `bigNumber`, `chart`, `list`
