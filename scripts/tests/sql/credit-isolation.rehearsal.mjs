@@ -234,4 +234,48 @@ await check('B: evidence has no public URLs, no delete, and anon gets nothing', 
   assert.ok(!(await as(db, anon, 'select id from public.credit_evidence')).ok)
 })
 
+// ------------------------------------------------------------ C. C2 additions (staged)
+await check('C: a linked customer still cannot read their case row directly (minimised view only, via server)', async () => {
+  const db = await build({ stagedToo: true })
+  await db.exec(`update public.dispute_clients set customer_user_id = '${CUST_A}' where id = 'client-a'`)
+  assert.deepEqual(ids(await as(db, user(CUST_A), 'select id from public.dispute_clients')), [])
+  assert.deepEqual(ids(await as(db, user(OP_A), 'select id from public.dispute_clients')), ['client-a'], 'operator still sees it')
+})
+
+await check('C: one case per customer login', async () => {
+  const db = await build({ stagedToo: true })
+  await db.exec(`update public.dispute_clients set customer_user_id = '${CUST_A}' where id = 'client-a'`)
+  await assert.rejects(db.exec(`update public.dispute_clients set customer_user_id = '${CUST_A}' where id = 'client-b'`))
+})
+
+await check('C: evidence starts pending review; bad review states, non-allowed types and oversize are refused', async () => {
+  const db = await build({ stagedToo: true })
+  const ok = await as(db, user(OP_A), "insert into public.credit_evidence (id, dispute_client_id, kind, description, source, mime, size_bytes) values ('e1','client-a','payment_record','Bank statement','customer','application/pdf',1000)")
+  assert.ok(ok.ok, ok.error?.message)
+  assert.deepEqual((await db.query("select review_state from public.credit_evidence where id='e1'")).rows, [{ review_state: 'pending_review' }])
+  for (const sql of [
+    "update public.credit_evidence set review_state = 'approved_by_ai' where id = 'e1'",
+    "insert into public.credit_evidence (id, dispute_client_id, kind, description, source, mime) values ('e2','client-a','other','Page','customer','text/html')",
+    "insert into public.credit_evidence (id, dispute_client_id, kind, description, source, size_bytes) values ('e3','client-a','other','Big','customer',10485761)",
+  ]) {
+    assert.ok(!(await as(db, user(OP_A), sql)).ok, `must be refused: ${sql}`)
+  }
+  assert.ok((await as(db, user(OP_A), "update public.credit_evidence set review_state = 'accepted' where id = 'e1'")).ok)
+})
+
+await check('C: a stored file cannot be swapped — path, hash, type and size are not updatable by API roles', async () => {
+  const db = await build({ stagedToo: true })
+  await as(db, user(OP_A), "insert into public.credit_evidence (id, dispute_client_id, kind, description, source, storage_path, sha256) values ('e1','client-a','other','Doc','operator','x/client-a/e1.pdf','" + 'a'.repeat(64) + "')")
+  for (const col of ["storage_path = 'x/client-a/other.pdf'", "sha256 = '" + 'b'.repeat(64) + "'", "mime = 'image/png'", 'size_bytes = 5', `org_id = '${ORG_B}'`]) {
+    assert.ok(!(await as(db, user(OP_A), `update public.credit_evidence set ${col} where id = 'e1'`)).ok, `must be refused: ${col}`)
+  }
+})
+
+await check('C: deleting a case that has evidence is refused (no silent loss of the document record)', async () => {
+  const db = await build({ stagedToo: true })
+  await as(db, user(OP_A), "insert into public.credit_evidence (id, dispute_client_id, kind, description, source) values ('e1','client-a','other','Doc','operator')")
+  const del = await as(db, user(ADMIN), "delete from public.dispute_clients where id = 'client-a'")
+  assert.ok(!del.ok, 'RESTRICT must block the delete')
+})
+
 console.log(`\n${n} credit isolation checks passed`)

@@ -58,29 +58,75 @@ function walk(dir: string): string[] {
 
 describe("only the server actions reach the letter engine", () => {
   const root = process.cwd();
-  const ENGINE = /from\s+["'][^"']*credit-dispute\/(letters\/(generator|advanced|render-from-decision)|engine\/(gated-protocol|case-state))["']/;
+  // Anything that can render correspondence.
+  const LETTER_ENGINE = /from\s+["'][^"']*credit-dispute\/(letters\/(generator|advanced|render-from-decision)|engine\/gated-protocol)["']/;
+  // Case state (writes rounds/assertions/evidence) — server actions only.
+  const CASE_ENGINE = /from\s+["'][^"']*credit-dispute\/(engine\/case-state|evidence\/store\.server)["']/;
   const LEGACY = /\b(runDisputeProtocol|generatePendingLetters)\b/;
-  const ALLOWED = new Set(["src/app/(command)/command/credit-dispute/actions.ts"]);
+  const DESK_ACTIONS = "src/app/(command)/command/credit-dispute/actions.ts";
+  // C2: the customer actions may use case state, but can NEVER render a letter.
+  const CUSTOMER_ACTIONS = "src/app/my-credit/actions.ts";
 
   const appFiles = walk(join(root, "src", "app")).map((f) => relative(root, f).replace(/\\/g, "/"));
-
-  it("no app file other than actions.ts imports the letter engine at runtime", () => {
-    const offenders = appFiles.filter((f) => {
-      if (ALLOWED.has(f)) return false;
-      const src = readFileSync(join(root, f), "utf8");
+  const runtimeImports = (f: string, re: RegExp) =>
+    readFileSync(join(root, f), "utf8")
+      .split("\n")
       // Type-only imports are erased at build time and carry no code.
-      const runtime = src.split("\n").filter((l) => ENGINE.test(l) && !/^\s*import\s+type\b/.test(l));
-      return runtime.length > 0;
-    });
-    expect(offenders).toEqual([]);
+      .filter((l) => re.test(l) && !/^\s*import\s+type\b/.test(l));
+
+  it("no app file other than the desk's actions.ts imports the letter engine at runtime", () => {
+    expect(appFiles.filter((f) => f !== DESK_ACTIONS && runtimeImports(f, LETTER_ENGINE).length > 0)).toEqual([]);
+  });
+
+  it("the customer actions cannot reach the letter engine at all", () => {
+    expect(runtimeImports(CUSTOMER_ACTIONS, LETTER_ENGINE)).toEqual([]);
+    expect(readFileSync(join(root, CUSTOMER_ACTIONS), "utf8")).not.toMatch(/generateDisputeRound|reviewDisputeRound|recordRoundSent|recordDisputeResponse|authorizeFollowUp/);
+  });
+
+  it("only the two server-action modules touch case state at runtime", () => {
+    expect(
+      appFiles.filter((f) => f !== DESK_ACTIONS && f !== CUSTOMER_ACTIONS && runtimeImports(f, CASE_ENGINE).length > 0)
+    ).toEqual([]);
   });
 
   it("nothing in src/app calls the legacy protocol", () => {
     expect(appFiles.filter((f) => LEGACY.test(readFileSync(join(root, f), "utf8")))).toEqual([]);
   });
 
-  it("the actions module is a server module", () => {
-    const src = readFileSync(join(root, "src/app/(command)/command/credit-dispute/actions.ts"), "utf8");
-    expect(src.trimStart().startsWith('"use server"')).toBe(true);
+  // C2-21: AIXMOS (or any agent/tool code) may read the counts-only queue later, but
+  // may not approve, mark sent, record responses, authorize follow-ups or invent
+  // assertions. The only callers of those engine functions are the owner-checked
+  // desk actions (approve/sent/response) and, for a customer's OWN draft/confirm,
+  // the customer actions.
+  it("no agent / AIXMOS / tool code imports the credit engine or its actions", () => {
+    const libFiles = walk(join(root, "src", "lib"))
+      .concat(walk(join(root, "src", "app", "api")))
+      .map((f) => relative(root, f).replace(/\\/g, "/"))
+      .filter((f) => !f.startsWith("src/lib/credit-dispute/"));
+    const CREDIT = /from\s+["'][^"']*(credit-dispute\/(engine|letters|policy|evidence)|command\/credit-dispute\/actions|my-credit\/actions)["']/;
+    expect(libFiles.filter((f) => runtimeImports(f, CREDIT).length > 0)).toEqual([]);
+  });
+
+  it("approval / sent / response / follow-up are only reachable through the owner-checked desk actions", () => {
+    const LIFECYCLE = /\b(reviewRound|markSent|recordResponse|authorizeFollowUp|classifyAssertion|reviewEvidence|linkCustomer|closeCase)\s*\(/;
+    const callers = appFiles.filter((f) => LIFECYCLE.test(readFileSync(join(root, f), "utf8")));
+    expect(callers).toEqual([DESK_ACTIONS]);
+  });
+
+  it("both action modules are server modules", () => {
+    for (const f of [DESK_ACTIONS, CUSTOMER_ACTIONS]) {
+      expect(readFileSync(join(root, f), "utf8").trimStart().startsWith('"use server"'), f).toBe(true);
+    }
+  });
+
+  // Caught by the C2 production build, not by tests: a "use server" module may export
+  // only async functions (types are erased). A const export breaks the build.
+  it("the server-action modules export only async functions (and types)", () => {
+    for (const f of [DESK_ACTIONS, CUSTOMER_ACTIONS]) {
+      const bad = readFileSync(join(root, f), "utf8")
+        .split("\n")
+        .filter((l) => /^export\s+(const|let|var|class|function|default)\b/.test(l));
+      expect(bad, f).toEqual([]);
+    }
   });
 });

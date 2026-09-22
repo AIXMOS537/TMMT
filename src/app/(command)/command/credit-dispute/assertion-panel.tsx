@@ -149,7 +149,7 @@ export function AssertionPanel({
           )}
           {current && (
             <p className="text-xs text-gray-600 dark:text-slate-400">
-              On record: <strong>{current.basis.replace(/_/g, " ")}</strong> — “{current.statement}” ({current.source},{" "}
+              On record: <strong>{(current.classification?.basis ?? current.basis ?? current.category ?? "unclassified").replace(/_/g, " ").toLowerCase()}</strong> — “{current.statement}” ({current.source},{" "}
               {current.customerConfirmed ? "confirmed by the customer" : "NOT confirmed by the customer"}, recorded by{" "}
               {current.recordedBy}). Saving a new one replaces it; the old one is kept.
             </p>
