@@ -20,11 +20,14 @@
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 function sourceFiles(): string[] {
   // git ls-files keeps this to tracked source and avoids walking node_modules/.next.
-  return execSync("git ls-files 'src/**/*.ts' 'src/**/*.tsx'", { encoding: "utf8" })
+  // execFileSync, not execSync: through cmd.exe (Windows) the single quotes were
+  // passed to git literally, the pathspecs matched nothing, and the guard found zero
+  // files. Arguments passed directly need no shell quoting on any platform.
+  return execFileSync("git", ["ls-files", "src/**/*.ts", "src/**/*.tsx"], { encoding: "utf8" })
     .split("\n")
     .filter(Boolean)
     .filter(f => !f.endsWith(".test.ts") && !f.endsWith(".test.tsx"));
