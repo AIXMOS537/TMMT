@@ -47,7 +47,8 @@ import {
   type FactualBasis,
   type ItemAssessment,
 } from "../policy/dispute-policy";
-import { REPORT_DERIVED_BASES, type DecisionContext, type MissingFact } from "../policy/assertion";
+import { REPORT_DERIVED_BASES, missing, type DecisionContext, type MissingFact } from "../policy/assertion";
+import { recipientTargetFor, resolveRecipient, type Registry } from "../recipients/registry";
 
 /** Bump when any template or statement text changes, so every stored round says which wording it used. */
 export const LETTER_TEMPLATE_VERSION = "c1-2026-09-22";
@@ -77,7 +78,8 @@ export interface FactTrace {
 // distress claims, no demands for damages. The statute does the work.
 // ---------------------------------------------------------------------------
 
-const BASIS_STATEMENT: Record<FactualBasis, string> = {
+/** Exported (read-only) so template approvals can fingerprint the wording (C3). */
+export const BASIS_STATEMENT: Readonly<Record<FactualBasis, string>> = {
   not_mine:
     "This account does not belong to me. I have never held an account with this creditor.",
   identity_theft:
@@ -171,6 +173,9 @@ export interface RenderedLetter {
   assertionId?: string;
   evidenceIds: string[];
   templateVersion: string;
+  /** C3: which registry recipient (and version) the letter is addressed to. */
+  recipientId?: string;
+  recipientVersion?: number;
 }
 
 export type RenderResult =
@@ -217,6 +222,12 @@ export function renderFromDecision(
     /** Assertion, evidence and round history for this item (C1). */
     context?: DecisionContext;
     furnisherAddress?: { street: string; city: string; state: string; zip: string };
+    /**
+     * C3: the recipient registry. When given (the production path), a letter is
+     * only written to a VERIFIED recipient effective at `at`.
+     */
+    registry?: Registry;
+    at?: string;
   } = {}
 ): RenderResult {
   const cfg = opts.cfg ?? DEFAULT_DISPUTE_POLICY;
@@ -261,6 +272,29 @@ export function renderFromDecision(
 
   const route = routeFor(basis);
   const roundType = sequence[0];
+
+  // C3: the address is a fact too. With a registry, only a verified, effective
+  // recipient may be named; otherwise the gap is reported, never filled.
+  let recipient: { block: NonNullable<Parameters<typeof generateLetter>[4]>["recipient"]; id: string; version: number } | undefined;
+  if (opts.registry) {
+    const target = recipientTargetFor(roundType, item);
+    const res = resolveRecipient(opts.registry, target.recipientId, opts.at);
+    if (!res.ok) {
+      return {
+        kind: "no_letter",
+        decision,
+        clientMessage: "The letter's recipient is not verified yet, so nothing was written.",
+        nextStep: missing(res.code).message,
+        missing: [missing(res.code)],
+      };
+    }
+    const a = res.recipient.address;
+    recipient = {
+      block: { name: res.recipient.name, address: { street: a.line2 ? `${a.line1}\n${a.line2}` : a.line1, city: a.city, state: a.state, zip: a.zip } },
+      id: res.recipient.recipientId,
+      version: res.recipient.version,
+    };
+  }
   // Numbered from the STORED history (C1), falling back to roundsSent for callers
   // that have no history yet.
   const roundNumber = (ctx.history?.length ?? assessment.roundsSent?.length ?? 0) + 1;
@@ -322,6 +356,7 @@ export function renderFromDecision(
     priorAttempts,
     furnisherAddress: opts.furnisherAddress,
     enclosures: evidence.map((e) => e.description),
+    recipient: recipient?.block,
   });
 
   assertNoBannedLanguage(letter);
@@ -341,6 +376,7 @@ export function renderFromDecision(
       assertionId: assertion?.id,
       evidenceIds: evidence.map((e) => e.id),
       templateVersion: LETTER_TEMPLATE_VERSION,
+      ...(recipient ? { recipientId: recipient.id, recipientVersion: recipient.version } : {}),
     },
   };
 }
@@ -368,7 +404,9 @@ export function renderPacket(
   items: NegativeItem[],
   assessments: Record<string, ItemAssessment>,
   cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY,
-  contexts: Record<string, DecisionContext> = {}
+  contexts: Record<string, DecisionContext> = {},
+  registry?: Registry,
+  at?: string
 ): DisputePacket {
   const letters: DisputePacket["letters"] = [];
   const notDisputed: DisputePacket["notDisputed"] = [];
@@ -376,7 +414,7 @@ export function renderPacket(
 
   for (const item of items) {
     const assessment = assessments[item.id] ?? { accuracy: "unknown" as const };
-    const result = renderFromDecision(profile, item, assessment, { cfg, context: contexts[item.id] });
+    const result = renderFromDecision(profile, item, assessment, { cfg, context: contexts[item.id], registry, at });
 
     if (result.kind === "letter") {
       letters.push({ item, rendered: result.rendered });

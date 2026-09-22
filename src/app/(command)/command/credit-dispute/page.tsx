@@ -138,6 +138,8 @@ export default function CreditDisputeCommandPage() {
       setMessage(`${out.plan.summary} — drafts stored for review. Nothing has been sent.`);
     } else if (out.kind === "gated") {
       setMessage(`${out.plan.summary}. Letter generation is closed by the attorney gate.`);
+    } else if (out.kind === "template_unapproved") {
+      setMessage(`Nothing written: a letter template's exact wording has no active counsel approval (${out.detail}).`);
     } else if (out.kind === "facts_missing") {
       setMessage(`Nothing written: ${out.detail}`);
     } else {

@@ -34,6 +34,7 @@ const CUST_A = '00000000-0000-4000-8000-0000000000c1'
 const CUST_B = '00000000-0000-4000-8000-0000000000c2'
 const OP_A = '00000000-0000-4000-8000-0000000000d1'
 const OP_B = '00000000-0000-4000-8000-0000000000d2'
+const TENANT = '00000000-0000-4000-8000-0000000000e1'
 const ORG_A = '00000000-0000-4000-8000-0000000000f1'
 const ORG_B = '00000000-0000-4000-8000-0000000000f2'
 
@@ -91,12 +92,12 @@ const SCHEMA = `
 
 const SEED = `
   insert into public.organizations values ('${ORG_A}'), ('${ORG_B}');
-  insert into auth.users values ('${ADMIN}','admin@x'),('${STAFF}','staff@x'),('${CUST_A}','a@x'),('${CUST_B}','b@x'),('${OP_A}','opa@x'),('${OP_B}','opb@x');
+  insert into auth.users values ('${ADMIN}','admin@x'),('${STAFF}','staff@x'),('${CUST_A}','a@x'),('${CUST_B}','b@x'),('${OP_A}','opa@x'),('${OP_B}','opb@x'),('${TENANT}','tenant@x');
   insert into public.profiles (id, email, role) values
     ('${ADMIN}','admin@x','admin'),('${STAFF}','staff@x','internal_team'),
     ('${CUST_A}','a@x','customer'),('${CUST_B}','b@x','customer'),
-    ('${OP_A}','opa@x','customer'),('${OP_B}','opb@x','customer');
-  insert into public.org_roles values ('${ORG_A}','${OP_A}','credit_operator'), ('${ORG_B}','${OP_B}','credit_operator'), ('${ORG_A}','${STAFF}','member');
+    ('${OP_A}','opa@x','customer'),('${OP_B}','opb@x','customer'),('${TENANT}','tenant@x','customer');
+  insert into public.org_roles values ('${ORG_A}','${OP_A}','viewer'), ('${ORG_B}','${OP_B}','viewer'), ('${ORG_A}','${STAFF}','member'), ('${ORG_A}','${TENANT}','tenant_admin');
   insert into public.dispute_clients (id, client_name, email, source, payload) values
     ('client-a','Client A','a@x','myfreescorenow','{"profile":{"id":"client-a"}}'),
     ('client-b','Client B','b@x','disputefox','{"profile":{"id":"client-b"}}');
@@ -109,6 +110,8 @@ async function build({ stagedToo = false } = {}) {
   await db.exec(profilesFix.replace(/grant update \(full_name, phone, updated_at\) on public\.profiles to authenticated;/, 'grant update (full_name, phone, updated_at) on public.profiles to authenticated;'))
   if (stagedToo) {
     await db.exec(staged)
+    // C3: credit access is its own grant, made by a platform admin (not an org role).
+    await db.exec(`insert into public.credit_operator_grants (org_id, user_id, granted_by) values ('${ORG_A}','${OP_A}','${ADMIN}'), ('${ORG_B}','${OP_B}','${ADMIN}')`)
     await db.exec(`update public.dispute_clients set org_id = '${ORG_A}' where id = 'client-a';
                    update public.dispute_clients set org_id = '${ORG_B}' where id = 'client-b';`)
   }
@@ -204,6 +207,44 @@ await check('B: an org A operator cannot move a client into their org or edit or
 await check('B: staff with a plain org membership are still not credit operators', async () => {
   const db = await build({ stagedToo: true })
   assert.deepEqual(ids(await as(db, user(STAFF), 'select id from public.dispute_clients')), [])
+})
+
+await check("C3: an org's tenant_admin is NOT a credit operator (no implicit access to credit files)", async () => {
+  const db = await build({ stagedToo: true })
+  assert.deepEqual(ids(await as(db, user(TENANT), 'select id from public.dispute_clients')), [])
+})
+
+await check('C3: only a platform admin can grant credit access; nobody can grant themselves; grants are never deleted', async () => {
+  const db = await build({ stagedToo: true })
+  for (const who of [TENANT, OP_A, STAFF, CUST_A]) {
+    const self = await as(db, user(who), `insert into public.credit_operator_grants (org_id, user_id) values ('${ORG_A}','${who}')`)
+    assert.ok(!self.ok || self.affected === 0, `${who} granted themselves credit access`)
+  }
+  assert.ok(!(await as(db, anon, 'select * from public.credit_operator_grants')).ok, 'anon reads grants')
+  assert.deepEqual((await as(db, user(OP_A), 'select * from public.credit_operator_grants')).rows, [], 'operators do not see the grant list')
+  const add = await as(db, user(ADMIN), `insert into public.credit_operator_grants (org_id, user_id, note) values ('${ORG_A}','${TENANT}','approved by owner')`)
+  assert.ok(add.ok, add.error?.message)
+  assert.deepEqual(ids(await as(db, user(TENANT), 'select id from public.dispute_clients')), ['client-a'])
+  const del = await as(db, user(ADMIN), `delete from public.credit_operator_grants where user_id = '${TENANT}'`)
+  assert.ok(!del.ok || del.affected === 0, 'a grant was deleted')
+  const forgedGrantor = await as(db, user(ADMIN), `insert into public.credit_operator_grants (org_id, user_id, granted_by) values ('${ORG_B}','${TENANT}','${OP_B}')`)
+  assert.ok(!forgedGrantor.ok, 'granted_by is set by the server, not the caller')
+})
+
+await check('C3: a revoked grant loses access immediately, and a revocation cannot be undone', async () => {
+  const db = await build({ stagedToo: true })
+  const rv = await as(db, user(ADMIN), `update public.credit_operator_grants set revoked_at = now(), revoked_by = '${ADMIN}' where user_id = '${OP_A}'`)
+  assert.ok(rv.ok && rv.affected === 1, rv.error?.message)
+  assert.deepEqual(ids(await as(db, user(OP_A), 'select id from public.dispute_clients')), [])
+  const undo = await as(db, user(ADMIN), `update public.credit_operator_grants set revoked_at = null, revoked_by = null where user_id = '${OP_A}'`)
+  assert.ok(!undo.ok, 'revocation was undone')
+})
+
+await check('C3: an org operator cannot delete a case', async () => {
+  const db = await build({ stagedToo: true })
+  const del = await as(db, user(OP_A), "delete from public.dispute_clients where id = 'client-a'")
+  assert.ok(!del.ok || del.affected === 0)
+  assert.deepEqual(ids(await as(db, user(ADMIN), 'select id from public.dispute_clients')), ['client-a', 'client-b'])
 })
 
 await check("B: evidence — org A's operator files and reads org A evidence; org B's cannot see it", async () => {
