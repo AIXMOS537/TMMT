@@ -33,6 +33,16 @@ import {
   recordItemAssessment,
   reviewDisputeRound,
   upsertDisputeClient,
+  recordRoundSent,
+  recordDisputeResponse,
+  authorizeFollowUpRound,
+  classifyCustomerAssertion,
+  reviewEvidenceDocument,
+  linkCustomerAccount,
+  closeCreditCase,
+  getCaseTimeline,
+  getEvidenceDownloadUrl,
+  uploadEvidenceFile,
 } from "./actions";
 
 const CLIENT_ID = "c1000000-0000-4000-8000-000000000001";
@@ -84,6 +94,17 @@ const everyAction: Array<[string, () => Promise<unknown>]> = [
   ["generateDisputeRound", () => generateDisputeRound(CLIENT_ID)],
   ["reviewDisputeRound", () => reviewDisputeRound(CLIENT_ID, "round-1", { kind: "approve" })],
   ["getCreditCaseQueue", () => getCreditCaseQueue()],
+  // C2 lifecycle actions — same wall.
+  ["recordRoundSent", () => recordRoundSent(CLIENT_ID, "round-1", { sentAt: "2026-09-22T00:00:00.000Z", method: "mail", recipient: "Experian" })],
+  ["recordDisputeResponse", () => recordDisputeResponse(CLIENT_ID, "round-1", { outcome: "verified", summary: "x", receivedAt: "2026-09-22" })],
+  ["authorizeFollowUpRound", () => authorizeFollowUpRound(CLIENT_ID, "round-1", "The response ignored the documented payment.")],
+  ["classifyCustomerAssertion", () => classifyCustomerAssertion(CLIENT_ID, "a1", "wrong_status")],
+  ["reviewEvidenceDocument", () => reviewEvidenceDocument(CLIENT_ID, "e1", "accepted")],
+  ["linkCustomerAccount", () => linkCustomerAccount(CLIENT_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")],
+  ["closeCreditCase", () => closeCreditCase(CLIENT_ID, "done")],
+  ["getCaseTimeline", () => getCaseTimeline(CLIENT_ID)],
+  ["getEvidenceDownloadUrl", () => getEvidenceDownloadUrl(CLIENT_ID, "e1")],
+  ["uploadEvidenceFile", () => uploadEvidenceFile(new FormData())],
 ];
 
 beforeEach(() => {

@@ -26,10 +26,20 @@
 --   drop table if exists public.credit_evidence;
 --   drop policy if exists dispute_clients_org_credit_operator on public.dispute_clients;
 --   drop function if exists public.is_credit_operator(uuid);
+--   drop index if exists public.dispute_clients_customer_user_id_key;
+--   alter table public.dispute_clients drop column if exists customer_user_id;
 --   alter table public.dispute_clients drop column if exists org_id;
 --   (the original dispute_clients_admin_only policy is left in place throughout)
 
 alter table public.dispute_clients add column if not exists org_id uuid references public.organizations(id);
+create index if not exists dispute_clients_org_id_idx on public.dispute_clients (org_id) where org_id is not null;
+
+-- C2: the customer's own login, set by an owner (mirrors payload.customerUserId).
+-- One case per customer. Deliberately NO customer RLS policy on this table: the row
+-- also holds operator notes, letters and identifiers, so customers only ever get the
+-- minimised view through the server actions (data minimisation, not an oversight).
+alter table public.dispute_clients add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
+create unique index if not exists dispute_clients_customer_user_id_key on public.dispute_clients (customer_user_id) where customer_user_id is not null;
 
 create or replace function public.is_credit_operator(p_org uuid)
 returns boolean
@@ -58,7 +68,9 @@ create policy dispute_clients_org_credit_operator on public.dispute_clients
 
 create table if not exists public.credit_evidence (
   id text primary key,
-  dispute_client_id text not null references public.dispute_clients(id) on delete cascade,
+  -- RESTRICT, not CASCADE: deleting a case must not silently drop the record of its
+  -- documents (the storage objects would be orphaned). Evidence is removed on purpose.
+  dispute_client_id text not null references public.dispute_clients(id) on delete restrict,
   org_id uuid references public.organizations(id),
   negative_item_id text,
   assertion_id text,
@@ -71,9 +83,19 @@ create table if not exists public.credit_evidence (
   storage_path text check (storage_path is null or storage_path !~* '^[a-z]+://'),
   sha256 text check (sha256 is null or sha256 ~ '^[0-9a-f]{64}$'),
   source text not null check (source in ('customer','operator')),
+  -- C2 file metadata: the display name is sanitised text only; the type is what the
+  -- bytes were sniffed as; size is capped like the bucket.
+  file_name text check (file_name is null or length(file_name) <= 80),
+  mime text check (mime is null or mime in ('application/pdf','image/png','image/jpeg','image/webp')),
+  size_bytes integer check (size_bytes is null or (size_bytes > 0 and size_bytes <= 10485760)),
+  review_state text not null default 'pending_review' check (review_state in ('pending_review','accepted','rejected')),
+  reviewed_by uuid,
+  reviewed_at timestamptz,
   uploaded_by uuid not null default auth.uid(),
   uploaded_at timestamptz not null default now()
 );
+create index if not exists credit_evidence_client_idx on public.credit_evidence (dispute_client_id);
+create index if not exists credit_evidence_org_idx on public.credit_evidence (org_id) where org_id is not null;
 
 -- org_id must match the parent client's; a row cannot be filed under another org.
 create or replace function public.credit_evidence_pin_org()
@@ -106,9 +128,10 @@ create policy credit_evidence_org_operator on public.credit_evidence
 revoke all on public.credit_evidence from anon, authenticated;
 grant select on public.credit_evidence to authenticated;
 -- org_id, uploaded_by and uploaded_at are set by the server (trigger / defaults), never by the caller.
-grant insert (id, dispute_client_id, negative_item_id, assertion_id, round_id, kind, description, storage_path, sha256, source)
+grant insert (id, dispute_client_id, negative_item_id, assertion_id, round_id, kind, description, storage_path, sha256, source, file_name, mime, size_bytes)
   on public.credit_evidence to authenticated;
-grant update (description, kind, negative_item_id, assertion_id, round_id) on public.credit_evidence to authenticated;
+-- The file itself (path, hash, type, size) is fixed once stored; only labels and the review may change.
+grant update (description, kind, negative_item_id, assertion_id, round_id, review_state, reviewed_by, reviewed_at) on public.credit_evidence to authenticated;
 
 -- Private bucket for the documents themselves. Run only where the storage schema
 -- exists (production); the rehearsal skips it.

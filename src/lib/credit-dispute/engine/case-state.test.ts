@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { NegativeItem, NegativeItemType } from "../types";
 import type { StoredClient, StoredDisputeRound } from "../data/store";
 import type { CustomerAssertion } from "../policy/assertion";
@@ -8,6 +8,7 @@ import {
   addAssertion,
   addEvidence,
   appendRounds,
+  authorizeFollowUp,
   caseQueueRow,
   contextFor,
   creditCrmStatus,
@@ -17,6 +18,14 @@ import {
   resolveForPlanning,
   reviewRound,
 } from "./case-state";
+
+// The fixtures use fixed September 2026 dates; pin the clock after them so the
+// "not in the future" checks are deterministic whatever day the suite runs.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-01T00:00:00.000Z"));
+});
+afterAll(() => vi.useRealTimers());
 
 /**
  * C1 case-state rules, without a database.
@@ -179,10 +188,13 @@ describe("the review gate", () => {
 });
 
 describe("sent, response and follow-up — no automatic escalation", () => {
-  const withSent = () => markSent(client({ disputeRounds: [round({ status: "approved" })] }), "r1", "owner", NOW);
+  // C2: sent requires a real approval (with its content hash) and a sent record.
+  const SENT = { sentAt: "2026-09-22T10:00:00.000Z", method: "mail" as const, recipient: "Experian" };
+  const approved = () => reviewRound(client({ disputeRounds: [round()] }), "r1", { kind: "approve" }, "owner", NOW);
+  const withSent = () => markSent(approved(), "r1", SENT, "owner", NOW);
 
   it("marks only an approved round as sent", () => {
-    expect(() => markSent(client({ disputeRounds: [round()] }), "r1", "o")).toThrow(/approved/);
+    expect(() => markSent(client({ disputeRounds: [round()] }), "r1", SENT, "o")).toThrow(/approved/);
     expect(withSent().disputeRounds[0].status).toBe("sent");
   });
 
@@ -213,7 +225,8 @@ describe("sent, response and follow-up — no automatic escalation", () => {
   });
 
   it("allows the next round once the reason is recorded, numbered 2", () => {
-    const c = recordResponse(withSent(), "r1", { outcome: "verified", summary: "Verified.", receivedAt: NOW, followUpReason: "Response ignored the $400 difference the customer documented." }, "o");
+    const responded = recordResponse(withSent(), "r1", { outcome: "verified", summary: "Verified.", receivedAt: NOW }, "o");
+    const c = authorizeFollowUp(responded, "r1", "Response ignored the $400 difference the customer documented.", "o");
     const d = decide(c);
     expect(d.action).toBe("dispute");
     expect(d.sequence).not.toContain("initial_611");
