@@ -1,3 +1,15 @@
+/**
+ * Deep audit — SUGGESTIONS for a person to check, never letter text (C1).
+ *
+ * Every finding here comes from the report's own fields or an importer heuristic.
+ * None of it is anything the customer said. It used to be written in the customer's
+ * first person ("I did not authorize…") and fed straight into letters by the legacy
+ * protocol; that path is disabled and the wording is now neutral.
+ *
+ * `removalProbability` is a hard-coded heuristic weight used to sort the table. It is
+ * not a probability of anything and must not be shown as one (see
+ * CREDIT_SCORE_ESTIMATE_AUDIT.md).
+ */
 import type { NegativeItem, NegativeItemType } from "../types";
 
 export type ViolationCode =
@@ -82,7 +94,7 @@ export function deepAuditItem(
         severity: "critical",
         title: "Exceeds 7-Year Reporting Period",
         legalBasis: "FCRA §605(a) — 7 years from date of first delinquency",
-        confrontationalFact: `DOFD ${item.dateOfFirstDelinquency} is ${yrs.toFixed(1)} years ago — this item MUST be deleted immediately under federal law`,
+        confrontationalFact: `On the report's own dates, DOFD ${item.dateOfFirstDelinquency} is ${yrs.toFixed(1)} years ago — past the 7-year reporting period`,
         removalProbability: 92,
       });
     } else if (yrs > 6.5) {
@@ -144,7 +156,7 @@ export function deepAuditItem(
       title: "Missing Account Identifier",
       legalBasis: "FCRA §611(a)(5)(A) — must delete if cannot verify",
       confrontationalFact:
-        "No account number provided — furnisher cannot reasonably verify this account belongs to me",
+        "The report shows no account number for this item. Ask the customer whether they recognise the account.",
       removalProbability: 72,
       });
   }
@@ -154,9 +166,9 @@ export function deepAuditItem(
     findings.push({
       code: "unauthorized_inquiry",
       severity: "high",
-      title: "Unauthorized Hard Inquiry",
+      title: "Hard inquiry — ask the customer",
       legalBasis: "FCRA §604 — permissible purpose required",
-      confrontationalFact: `I did not authorize ${item.furnisherName} to pull my credit — no permissible purpose under §604`,
+      confrontationalFact: `Hard inquiry by ${item.furnisherName}. Ask the customer whether they applied for credit there; only if they did not is a permissible-purpose dispute possible.`,
       removalProbability: 65,
     });
   }
@@ -168,7 +180,7 @@ export function deepAuditItem(
       severity: "high",
       title: "Debt Validation Required",
       legalBasis: "FDCPA §809(b) — collector must validate before reporting",
-      confrontationalFact: `Demand validation of debt, original creditor chain, and license to collect in my state`,
+      confrontationalFact: `Collection account: debt validation can be requested if the customer disputes the debt.`,
       removalProbability: 68,
     });
   }
@@ -181,7 +193,7 @@ export function deepAuditItem(
       title: "Medical Debt — Furnisher Block",
       legalBasis: "No Surprises Act + FCRA §623 — medical furnisher obligations",
       confrontationalFact:
-        "Medical debt under $500 or paid by insurance must not report — verify billing accuracy and insurance adjudication",
+        "Medical collection: check the amount and whether insurance paid it with the customer. Reporting rules for medical debt are COUNSEL REVIEW.",
       removalProbability: 74,
     });
   }
@@ -212,7 +224,7 @@ export function deepAuditItem(
     findings.push({
       code: "account_not_mine",
       severity: "critical",
-      title: "Consumer Disputes Accuracy",
+      title: "Importer flagged a possible inaccuracy (unconfirmed)",
       legalBasis: "FCRA §611(a)(1)(A)",
       confrontationalFact: item.inaccuracyDetails,
       removalProbability: 60,
@@ -225,7 +237,7 @@ export function deepAuditItem(
       severity: "high",
       title: "Unverifiable by Furnisher",
       legalBasis: "FCRA §611(a)(5)(A) — delete if cannot verify",
-      confrontationalFact: "Prior investigation failed to produce verifiable documentation",
+      confrontationalFact: "The importer flagged this as unverifiable. No earlier investigation is recorded here; confirm before relying on it.",
       removalProbability: 78,
     });
   }

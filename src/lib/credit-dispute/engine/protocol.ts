@@ -4,6 +4,7 @@ import type {
   DisputeRoundType,
   DisputeStatus,
   NegativeItem,
+  RoundStatus,
 } from "../types";
 import { AGGRESSIVE_FCRA_PROTOCOL } from "../types";
 import { generateLetter, recommendRoundSequence } from "../letters/generator";
@@ -24,7 +25,7 @@ export interface DisputeLetterBatch {
   roundNumber: number;
   roundType: DisputeRoundType;
   letter: ReturnType<typeof generateLetter>;
-  status: DisputeStatus;
+  status: DisputeStatus | RoundStatus;
 }
 
 export interface AuditResult {
@@ -74,97 +75,59 @@ export function getNextRoundType(
   return sequence[nextIndex];
 }
 
-// ─── Generate all pending dispute letters for a client ────────────────
+// ─── Legacy ungated path — DISABLED in C1 ─────────────────────────────
+//
+// generatePendingLetters() / runDisputeProtocol() walked every item through the
+// aggressive sequence with deep-audit's first-person "facts" ("I did not authorize…")
+// and invented prior attempts, with no accuracy policy in front. The [id] page's
+// "Generate next round" button called it, which is how the policy was bypassed.
+//
+// They now refuse (bodies are in git history at e1b683ff). The only
+// sanctioned path is the generateDisputeRound() server action, which runs the
+// accuracy policy, the grounding rule and the CROA gate on the server.
+export class LegacyProtocolDisabledError extends Error {
+  constructor() {
+    super("The legacy ungated dispute protocol is disabled. Use the generateDisputeRound server action.");
+    this.name = "LegacyProtocolDisabledError";
+  }
+}
+// ─── Generate all pending dispute letters for a client — DISABLED ─────
+//
+// The pre-C1 bodies of these two functions (and their helpers buildPriorAttempts /
+// groupByBureau) are in git history at e1b683ff. They cannot be kept as live code:
+// they are the bypass. Anything that needs letters calls generateDisputeRound().
 
 export function generatePendingLetters(
   profile: CreditProfile,
   items: NegativeItem[],
   protocol: DisputeProtocolConfig = AGGRESSIVE_FCRA_PROTOCOL
 ): DisputeLetterBatch[] {
-  const batches: DisputeLetterBatch[] = [];
-
-  for (const item of items) {
-    const audit = auditNegativeItem(item, items);
-    if (!audit.eligible) continue;
-
-    const roundType = getNextRoundType(item, protocol);
-    if (!roundType) continue;
-
-    const roundNumber = item.currentRound + 1;
-    const letter = generateLetter(roundType, profile, item, roundNumber, {
-      facts: audit.factualIssues,
-      priorAttempts: buildPriorAttempts(item),
-    });
-
-    batches.push({
-      negativeItemId: item.id,
-      furnisherName: item.furnisherName,
-      bureau: item.bureau,
-      roundNumber,
-      roundType,
-      letter,
-      status: "draft",
-    });
-  }
-
-  return batches;
+  void profile;
+  void items;
+  void protocol;
+  throw new LegacyProtocolDisabledError();
 }
-
-function buildPriorAttempts(item: NegativeItem): string[] {
-  const attempts: string[] = [];
-  if (item.currentRound >= 1) attempts.push("Initial FCRA §611 dispute sent");
-  if (item.currentRound >= 2) attempts.push("Method of verification demanded");
-  if (item.currentRound >= 3) attempts.push("Factual confrontation with specific inaccuracies");
-  if (item.currentRound >= 4) attempts.push("Direct furnisher dispute under FCRA §623");
-  return attempts;
-}
-
-// ─── Full protocol run ───────────────────────────────────────────────
 
 export function runDisputeProtocol(
   profile: CreditProfile,
   items: NegativeItem[],
   protocol: DisputeProtocolConfig = AGGRESSIVE_FCRA_PROTOCOL
 ): ProtocolRunResult {
-  const activeItems = items.filter(
-    (i) => i.status !== "removed" && i.status !== "closed"
-  );
-
-  const letters = generatePendingLetters(profile, activeItems, protocol);
-
-  const nextActions: string[] = [];
-
-  if (letters.length === 0) {
-    nextActions.push("No pending disputes — schedule re-pull in 30-45 days");
-  } else {
-    nextActions.push(`Review and send ${letters.length} dispute letter(s)`);
-    nextActions.push("Mail via certified mail with return receipt");
-    nextActions.push("Log tracking numbers in dispute_rounds table");
-    nextActions.push("Set 30-day follow-up reminders");
-  }
-
-  const bureauGroups = groupByBureau(letters);
-  for (const [bureau, count] of Object.entries(bureauGroups)) {
-    nextActions.push(`${bureau}: ${count} letter(s) ready`);
-  }
-
-  return {
-    profileId: profile.id,
-    itemsProcessed: activeItems.length,
-    lettersGenerated: letters,
-    nextActions,
-  };
-}
-
-function groupByBureau(letters: DisputeLetterBatch[]): Record<string, number> {
-  const groups: Record<string, number> = {};
-  for (const l of letters) {
-    groups[l.bureau] = (groups[l.bureau] ?? 0) + 1;
-  }
-  return groups;
+  void profile;
+  void items;
+  void protocol;
+  throw new LegacyProtocolDisabledError();
 }
 
 // ─── Score impact estimator ────────────────────────────────────────────
+//
+// C1 (see CREDIT_SCORE_ESTIMATE_AUDIT.md): a sum of HARD-CODED per-type ranges.
+// Not a model, not a prediction, not based on this customer's file beyond item
+// types. Owner-desk only; must never be shown to a customer. Shown with
+// SCORE_ESTIMATE_DISCLAIMER wherever it appears.
+export const SCORE_ESTIMATE_DISCLAIMER =
+  "Rough internal heuristic from fixed ranges per item type. Not a prediction or a promise; removal is not assumed.";
+
 
 export function estimateScoreImpact(items: NegativeItem[]): {
   estimatedGain: { min: number; max: number };

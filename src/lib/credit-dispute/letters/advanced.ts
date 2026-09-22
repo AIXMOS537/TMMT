@@ -1,5 +1,10 @@
 import type { CreditProfile, DisputeLetter, NegativeItem } from "../types";
 import { BUREAU_ADDRESSES } from "../types";
+import { requireGate } from "../../../../shared/compliance-gates/gate";
+
+// C1: every export here is gated itself. They used to be reachable without the CROA
+// gate (Metro-2 and cease-and-desist had no gate at all). Legal-conclusion wording in
+// these templates is flagged COUNSEL REVIEW in CREDIT_LETTER_FACT_AUDIT.md.
 
 function formatLetterDate(d?: string): string {
   if (!d) return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -36,6 +41,7 @@ export function generateIntentToLitigate(
   roundNumber: number,
   priorAttempts: string[]
 ): DisputeLetter {
+  requireGate("croa_contracts_attorney_approved");
   const bureau = item.bureau;
   const recipient = BUREAU_ADDRESSES[bureau].name;
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
@@ -79,10 +85,7 @@ This letter is sent without prejudice to any and all rights and remedies availab
 
 Sincerely,
 
-${clientBlock(profile)}
-
-CC: Consumer Financial Protection Bureau
-CC: State Attorney General — Consumer Protection Division`;
+${clientBlock(profile)}`;
 
   return {
     subject: `FINAL NOTICE — FCRA Violation — ${item.furnisherName}`,
@@ -104,6 +107,7 @@ export function generateMetro2Dispute(
   roundNumber: number,
   violations: string[]
 ): DisputeLetter {
+  requireGate("croa_contracts_attorney_approved");
   const bureau = item.bureau;
   const recipient = BUREAU_ADDRESSES[bureau].name;
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
@@ -154,6 +158,7 @@ export function generateCeaseAndDesist(
   roundNumber: number,
   collectorAddress?: { street: string; city: string; state: string; zip: string }
 ): DisputeLetter {
+  requireGate("croa_contracts_attorney_approved");
   const addr = collectorAddress ?? {
     street: "[COLLECTOR ADDRESS]",
     city: "",
@@ -186,9 +191,7 @@ This notice is effective immediately upon receipt.
 
 Sincerely,
 
-${clientBlock(profile)}
-
-SENT VIA CERTIFIED MAIL — RETURN RECEIPT REQUESTED`;
+${clientBlock(profile)}`;
 
   return {
     subject: `CEASE AND DESIST — ${item.furnisherName}`,

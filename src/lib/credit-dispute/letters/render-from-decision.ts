@@ -47,6 +47,26 @@ import {
   type FactualBasis,
   type ItemAssessment,
 } from "../policy/dispute-policy";
+import { REPORT_DERIVED_BASES, type DecisionContext, type MissingFact } from "../policy/assertion";
+
+/** Bump when any template or statement text changes, so every stored round says which wording it used. */
+export const LETTER_TEMPLATE_VERSION = "c1-2026-09-22";
+
+/**
+ * Where one fact in a letter came from. Every sentence that asserts something in
+ * the customer's name has one of these, so a reviewer can check it against its
+ * source before anything is sent.
+ */
+export interface FactTrace {
+  text: string;
+  source:
+    | "report_field" // dates, balance, account reference from the imported report
+    | "customer_assertion" // the customer's own words, confirmed by them
+    | "basis_statement" // the fixed sentence for a ground, allowed only with a confirmed assertion
+    | "evidence" // a document on file
+    | "round_history"; // our own stored rounds and recorded responses
+  ref: string;
+}
 
 // ---------------------------------------------------------------------------
 // How each ground is stated in the letter
@@ -144,6 +164,12 @@ export interface RenderedLetter {
   roundType: DisputeRoundType;
   /** Rounds still to come if this one does not resolve it. */
   remainingSequence: DisputeRoundType[];
+  /** Source of every fact the letter states. */
+  trace: FactTrace[];
+  /** Assertion and evidence relied on, for the stored round. */
+  assertionId?: string;
+  evidenceIds: string[];
+  templateVersion: string;
 }
 
 export type RenderResult =
@@ -155,7 +181,19 @@ export type RenderResult =
       clientMessage: string;
       /** What the desk should do next. */
       nextStep?: string;
+      /** Present when the gap is a missing fact. */
+      missing?: MissingFact[];
     };
+
+/** The stored history as the lines a CFPB / escalation letter may state. */
+function historyLines(ctx: DecisionContext): string[] {
+  return (ctx.history ?? []).map((h) => {
+    const resp = h.response
+      ? ` — response received ${h.response.receivedAt.slice(0, 10)}: ${h.response.outcome}${h.response.summary ? ` (${h.response.summary})` : ""}`
+      : " — no response recorded";
+    return `Round ${h.roundNumber}: ${h.roundType.replace(/_/g, " ")}${resp}`;
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Render
@@ -175,15 +213,25 @@ export function renderFromDecision(
   opts: {
     decision?: DisputeDecision;
     cfg?: DisputePolicyConfig;
-    /** Extra supporting facts to state alongside the basis. */
-    supportingFacts?: string[];
-    /** Summary of what the bureau said last time, for MOV rounds. */
-    priorResponseSummary?: string;
+    /** Assertion, evidence and round history for this item (C1). */
+    context?: DecisionContext;
     furnisherAddress?: { street: string; city: string; state: string; zip: string };
   } = {}
 ): RenderResult {
   const cfg = opts.cfg ?? DEFAULT_DISPUTE_POLICY;
-  const decision = opts.decision ?? decideForItem(item, assessment, cfg);
+  const ctx = opts.context ?? {};
+  // Always decide here with the full context. A decision handed in from outside is
+  // re-checked, so no caller can pass "dispute" past the policy.
+  const decision = decideForItem(item, assessment, cfg, ctx);
+  if (opts.decision && opts.decision.action !== decision.action) {
+    return {
+      kind: "no_letter",
+      decision,
+      clientMessage: "The decision passed in does not match the policy's own decision, so nothing was written.",
+      nextStep: decision.nextStep,
+      missing: decision.missing,
+    };
+  }
 
   if (decision.action !== "dispute") {
     return {
@@ -191,6 +239,7 @@ export function renderFromDecision(
       decision,
       clientMessage: decision.rationale,
       nextStep: decision.nextStep,
+      missing: decision.missing,
     };
   }
 
@@ -211,14 +260,39 @@ export function renderFromDecision(
 
   const route = routeFor(basis);
   const roundType = sequence[0];
-  const roundNumber = (assessment.roundsSent?.length ?? 0) + 1;
+  // Numbered from the STORED history (C1), falling back to roundsSent for callers
+  // that have no history yet.
+  const roundNumber = (ctx.history?.length ?? assessment.roundsSent?.length ?? 0) + 1;
 
-  // The specific ground, first — this is what replaces the generator's hedge.
-  const facts = [
-    BASIS_STATEMENT[basis],
-    ...(assessment.basisNote ? [assessment.basisNote] : []),
-    ...(opts.supportingFacts ?? []),
-  ];
+  // The facts a letter may state, each with its source. The fixed statement for a
+  // ground is only used because the policy has already confirmed the customer
+  // asserted exactly this ground (or, for obsolete, that the report's dates show it).
+  // The operator's `basisNote` is an internal note and is NOT put in the letter.
+  const trace: FactTrace[] = [];
+  const assertion = ctx.assertion;
+  if (REPORT_DERIVED_BASES.has(basis)) {
+    trace.push({
+      text: BASIS_STATEMENT[basis],
+      source: "report_field",
+      ref: item.dateOfFirstDelinquency ? "dateOfFirstDelinquency" : "dateReported",
+    });
+  } else {
+    trace.push({ text: BASIS_STATEMENT[basis], source: "basis_statement", ref: `assertion:${assertion?.id ?? "?"}` });
+    if (assertion?.statement?.trim()) {
+      trace.push({ text: assertion.statement.trim(), source: "customer_assertion", ref: `assertion:${assertion.id}` });
+    }
+  }
+  const evidence = (ctx.evidence ?? []).filter(
+    (e) => e.negativeItemId === item.id || (assertion && (assertion.evidenceIds.includes(e.id) || e.assertionId === assertion.id))
+  );
+  for (const e of evidence) trace.push({ text: e.description, source: "evidence", ref: `evidence:${e.id}` });
+  const priorAttempts = historyLines(ctx);
+  for (const [i, line] of priorAttempts.entries()) {
+    trace.push({ text: line, source: "round_history", ref: `round:${ctx.history?.[i]?.roundId ?? i}` });
+  }
+  const lastResponse = [...(ctx.history ?? [])].reverse().find((h) => h.response)?.response;
+
+  const facts = trace.filter((t) => t.source === "basis_statement" || t.source === "customer_assertion" || t.source === "report_field").map((t) => t.text);
 
   // Not every round in the generator reads `facts` — `initial_611`, for one,
   // falls back to "The reported information does not match my records" unless
@@ -234,8 +308,12 @@ export function renderFromDecision(
 
   const letter = generateLetter(roundType, profile, itemWithGround, roundNumber, {
     facts,
-    priorResponseSummary: opts.priorResponseSummary,
+    priorResponseSummary: lastResponse
+      ? `${lastResponse.outcome}${lastResponse.summary ? ` — ${lastResponse.summary}` : ""}`
+      : undefined,
+    priorAttempts,
     furnisherAddress: opts.furnisherAddress,
+    enclosures: evidence.map((e) => e.description),
   });
 
   assertNoBannedLanguage(letter);
@@ -251,6 +329,10 @@ export function renderFromDecision(
       roundNumber,
       roundType,
       remainingSequence: sequence.slice(1),
+      trace,
+      assertionId: assertion?.id,
+      evidenceIds: evidence.map((e) => e.id),
+      templateVersion: LETTER_TEMPLATE_VERSION,
     },
   };
 }
@@ -262,8 +344,8 @@ export function renderFromDecision(
 export interface DisputePacket {
   letters: Array<{ item: NegativeItem; rendered: RenderedLetter }>;
   /** Items that will not be disputed, and why. Shown to the client as-is. */
-  notDisputed: Array<{ item: NegativeItem; reason: string; nextStep?: string }>;
-  counts: { letters: number; coach: number; hold: number; refuse: number };
+  notDisputed: Array<{ item: NegativeItem; reason: string; nextStep?: string; missing?: MissingFact[]; action: string }>;
+  counts: { letters: number; coach: number; hold: number; needs_information: number; refuse: number };
 }
 
 /**
@@ -277,15 +359,16 @@ export function renderPacket(
   profile: CreditProfile,
   items: NegativeItem[],
   assessments: Record<string, ItemAssessment>,
-  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY
+  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY,
+  contexts: Record<string, DecisionContext> = {}
 ): DisputePacket {
   const letters: DisputePacket["letters"] = [];
   const notDisputed: DisputePacket["notDisputed"] = [];
-  const counts = { letters: 0, coach: 0, hold: 0, refuse: 0 };
+  const counts = { letters: 0, coach: 0, hold: 0, needs_information: 0, refuse: 0 };
 
   for (const item of items) {
     const assessment = assessments[item.id] ?? { accuracy: "unknown" as const };
-    const result = renderFromDecision(profile, item, assessment, { cfg });
+    const result = renderFromDecision(profile, item, assessment, { cfg, context: contexts[item.id] });
 
     if (result.kind === "letter") {
       letters.push({ item, rendered: result.rendered });
@@ -295,9 +378,11 @@ export function renderPacket(
         item,
         reason: result.clientMessage,
         nextStep: result.nextStep,
+        missing: result.missing,
+        action: result.decision.action,
       });
       const a = result.decision.action;
-      if (a === "coach" || a === "hold" || a === "refuse") counts[a] += 1;
+      if (a === "coach" || a === "hold" || a === "refuse" || a === "needs_information") counts[a] += 1;
     }
   }
 
@@ -306,10 +391,11 @@ export function renderPacket(
 
 /** One-line summary for the desk header. */
 export function describePacket(packet: DisputePacket): string {
-  const { letters, coach, hold, refuse } = packet.counts;
+  const { letters, coach, hold, needs_information, refuse } = packet.counts;
   const bits = [`${letters} letter${letters === 1 ? "" : "s"}`];
   if (coach) bits.push(`${coach} to coach`);
-  if (hold) bits.push(`${hold} awaiting a fact`);
+  if (needs_information) bits.push(`${needs_information} awaiting a fact`);
+  if (hold) bits.push(`${hold} on hold`);
   if (refuse) bits.push(`${refuse} declined`);
   return bits.join(" · ");
 }

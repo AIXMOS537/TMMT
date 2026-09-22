@@ -11,7 +11,27 @@ import {
   routeFor,
   STATUTORY_ROUTES,
   type ItemAssessment,
+  type FactualBasis,
 } from "./dispute-policy";
+import type { DecisionContext } from "./assertion";
+
+/** A customer assertion the customer has confirmed, in their own words (C1). */
+function confirmed(basis: FactualBasis, negativeItemId = "item-1"): DecisionContext {
+  return {
+    assertion: {
+      id: `a-${negativeItemId}`,
+      negativeItemId,
+      basis,
+      statement: "The customer's own explanation of what is wrong.",
+      source: "customer",
+      customerConfirmed: true,
+      evidenceIds: [],
+      recordedBy: "owner@example.test",
+      recordedAt: "2026-09-22T00:00:00.000Z",
+      status: "active",
+    },
+  };
+}
 
 function monthsAgo(n: number): string {
   const d = new Date();
@@ -60,21 +80,32 @@ describe("the hard rule — accurate items are coached, never disputed", () => {
   });
 });
 
+// C1: a missing fact is now `needs_information` (with the list of what is missing),
+// not `hold`. `hold` is kept for "waiting on the process" (round in flight, ceiling).
 describe("no letter without a recorded factual basis", () => {
-  it("holds when the item is inaccurate but nobody said why", () => {
+  it("asks for the fact when the item is inaccurate but nobody said why", () => {
     const d = decideForItem(item(), { accuracy: "inaccurate" });
-    expect(d.action).toBe("hold");
+    expect(d.action).toBe("needs_information");
     expect(d.ruleId).toBe("basis-missing");
+    expect(d.missing?.map((m) => m.code)).toEqual(["factual_basis"]);
   });
 
-  it("holds when accuracy was never assessed at all", () => {
+  it("asks for the accuracy call when accuracy was never assessed at all", () => {
     const d = decideForItem(item(), { accuracy: "unknown" });
-    expect(d.action).toBe("hold");
+    expect(d.action).toBe("needs_information");
     expect(d.ruleId).toBe("accuracy-unknown");
   });
 
-  it("proceeds once a basis is recorded", () => {
+  // C1: a basis picked by an operator is a judgement, not the customer's claim.
+  it("does NOT proceed on a recorded basis alone — the customer's confirmed statement is required", () => {
     const d = decideForItem(item(), { accuracy: "inaccurate", basis: "never_late" });
+    expect(d.action).toBe("needs_information");
+    expect(d.ruleId).toBe("grounding-missing");
+    expect(d.missing?.map((m) => m.code)).toContain("customer_assertion");
+  });
+
+  it("proceeds once the basis AND the customer's confirmed statement are recorded", () => {
+    const d = decideForItem(item(), { accuracy: "inaccurate", basis: "never_late" }, DEFAULT_DISPUTE_POLICY, confirmed("never_late"));
     expect(d.action).toBe("dispute");
     expect(d.basis).toBe("never_late");
     expect(d.sequence?.length).toBeGreaterThan(0);
@@ -144,7 +175,7 @@ describe("escalation has a ceiling", () => {
       accuracy: "inaccurate",
       basis: "wrong_balance",
       roundsSent: ["initial_611", "method_of_verification", "furnisher_623", "cfpb_escalation"],
-    });
+    }, DEFAULT_DISPUTE_POLICY, confirmed("wrong_balance"));
     expect(d.action).toBe("hold");
     expect(d.ruleId).toBe("max-rounds-reached");
   });
@@ -154,26 +185,34 @@ describe("escalation has a ceiling", () => {
       accuracy: "inaccurate",
       basis: "wrong_balance",
       roundsSent: ["initial_611"],
-    });
+    }, DEFAULT_DISPUTE_POLICY, confirmed("wrong_balance"));
     expect(d.action).toBe("dispute");
     expect(d.sequence).not.toContain("initial_611");
   });
 });
 
+// C1: the importer flags are HEURISTICS, not anyone's statement. They used to come
+// back as an "inaccurate" assessment with a basis, which let a guess unlock a
+// letter. They are now suggestions a person can accept — never an assessment.
 describe("reading the flags the app already collects", () => {
-  it("maps isOutdated to an obsolete basis", () => {
-    expect(inferAssessment(item({ isOutdated: true })).basis).toBe("obsolete");
-  });
-
-  it("maps isUnverifiable to an unverifiable basis", () => {
-    expect(inferAssessment(item({ isUnverifiable: true })).basis).toBe("unverifiable");
-  });
-
-  it("treats isInaccurate without detail as inaccurate-but-no-basis, so the gate holds", () => {
-    const a = inferAssessment(item({ isInaccurate: true }));
-    expect(a.accuracy).toBe("inaccurate");
+  it("offers isOutdated as a SUGGESTED obsolete basis, not an assessment", () => {
+    const a = inferAssessment(item({ isOutdated: true }));
+    expect(a.accuracy).toBe("unknown");
     expect(a.basis).toBeUndefined();
-    expect(decideForItem(item({ isInaccurate: true }), a).action).toBe("hold");
+    expect(a.suggestion).toMatchObject({ basis: "obsolete", source: "importer_heuristic" });
+  });
+
+  it("offers isUnverifiable as a SUGGESTED basis, and it unlocks nothing", () => {
+    const a = inferAssessment(item({ isUnverifiable: true }));
+    expect(a.suggestion?.basis).toBe("unverifiable");
+    expect(decideForItem(item({ isUnverifiable: true }), a).action).toBe("needs_information");
+  });
+
+  it("treats isInaccurate as a hint for review, so the gate asks for the accuracy call", () => {
+    const a = inferAssessment(item({ isInaccurate: true }));
+    expect(a.accuracy).toBe("unknown");
+    expect(a.basis).toBeUndefined();
+    expect(decideForItem(item({ isInaccurate: true }), a).action).toBe("needs_information");
   });
 
   it("treats an unticked box as UNKNOWN, not as accurate", () => {
@@ -185,26 +224,31 @@ describe("reading the flags the app already collects", () => {
 });
 
 describe("whole-profile view", () => {
-  it("sorts a mixed profile into dispute / coach / hold", () => {
+  // C1: item "a" used to be disputed as obsolete because the importer set
+  // isOutdated — although its own date of first delinquency is 12 months ago.
+  // Obsolescence now comes from the report's dates (item "d"), never the flag.
+  it("sorts a mixed profile into dispute / coach / needs_information", () => {
     const items = [
       item({ id: "a", isOutdated: true }),
       item({ id: "b" }),
       item({ id: "c" }),
+      item({ id: "d", dateOfFirstDelinquency: monthsAgo(100) }),
     ];
     const assessments: Record<string, ItemAssessment> = {
       b: { accuracy: "accurate" },
       c: { accuracy: "inaccurate", basis: "not_mine" },
     };
-    const results = decideForProfile(items, assessments);
+    const results = decideForProfile(items, assessments, DEFAULT_DISPUTE_POLICY, { c: confirmed("not_mine", "c") });
     const counts = summarise(results);
-    expect(counts.dispute).toBe(2); // the obsolete one and the not-mine one
+    expect(counts.dispute).toBe(2); // the date-obsolete one and the customer-confirmed not-mine one
     expect(counts.coach).toBe(1);
+    expect(counts.needs_information).toBe(1); // the flagged-but-recent one
     expect(counts.hold).toBe(0);
   });
 
-  it("holds every item when nothing has been assessed", () => {
+  it("asks for information on every item when nothing has been assessed", () => {
     const results = decideForProfile([item({ id: "x" }), item({ id: "y" })], {});
-    expect(summarise(results).hold).toBe(2);
+    expect(summarise(results).needs_information).toBe(2);
     expect(summarise(results).dispute).toBe(0);
   });
 });
