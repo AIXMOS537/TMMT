@@ -10,19 +10,18 @@ import {
 } from "@/lib/credit-dispute/data/store";
 import {
   listDisputeClients,
-  addDisputeRoundsForClient,
+  generateDisputeRound,
   importClientsFromBrowser,
   recordItemAssessment,
 } from "./actions";
-import type { DisputeRoundType } from "@/lib/credit-dispute/types";
-import { runGatedDisputeProtocol, type GatedRunResult } from "@/lib/credit-dispute/engine/gated-protocol";
+import type { NotDisputed } from "@/lib/credit-dispute/engine/gated-protocol";
 import type { FactualBasis } from "@/lib/credit-dispute/policy/dispute-policy";
 import {
   deepAuditAll,
   assessFundingReadiness,
-  estimateScoreImpact,
   type DeepAuditResult,
 } from "@/lib/credit-dispute/engine/protocol";
+import { AssertionPanel } from "./assertion-panel";
 import { tierLabel, tierColor } from "@/lib/credit-dispute/engine/funding-readiness";
 import { CREDIT_GHL_TAGS } from "@/lib/credit-dispute/ghl-tags";
 import { pathLabel } from "@/lib/client-journey/credit-paths";
@@ -56,7 +55,7 @@ export default function CreditDisputeCommandPage() {
   const [clients, setClients] = useState<StoredClient[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-  const [run, setRun] = useState<GatedRunResult | null>(null);
+  const [run, setRun] = useState<{ summary: string; notDisputed: NotDisputed[]; nextActions: string[] } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [stranded, setStranded] = useState(0);
@@ -109,7 +108,6 @@ export default function CreditDisputeCommandPage() {
   const selected = clients.find((c) => c.profile.id === selectedId);
   const funding = selected ? assessFundingReadiness(selected.profile, selected.negativeItems) : null;
   const audits = selected ? deepAuditAll(selected.negativeItems) : [];
-  const impact = selected ? estimateScoreImpact(selected.negativeItems) : null;
   // The accuracy calls ride inside the client record itself, which
   // listDisputeClients() loads from dispute_clients.payload. Recording one
   // writes through a server action and refresh() brings it back, so this
@@ -120,47 +118,31 @@ export default function CreditDisputeCommandPage() {
     if (!selected) return;
     setError("");
 
-    // Runs through the accuracy gate. On a fresh import this will usually produce
-    // ZERO letters and a list of items awaiting an accuracy call — that is correct,
-    // not a fault. Nobody has looked at them yet, and a dispute with no recorded
-    // factual basis is the kind that comes back verified.
-    const active = selected.negativeItems.filter(
-      (i) => i.status !== "removed" && i.status !== "closed"
-    );
-
-    // Both inputs come off the record the server just handed us. Rounds already
-    // sent are derived from the stored history rather than tracked separately,
-    // so the two can never disagree about what has actually gone out.
-    const stored = selected.assessments ?? {};
-    const sent: Record<string, DisputeRoundType[]> = {};
-    for (const r of selected.disputeRounds) {
-      (sent[r.negativeItemId] ??= []).push(r.roundType);
-    }
-
-    const assessments = Object.fromEntries(
-      active.map((i) => [
-        i.id,
-        { ...(stored[i.id] ?? { accuracy: "unknown" as const }), roundsSent: sent[i.id] ?? [] },
-      ])
-    );
-
-    const result = runGatedDisputeProtocol(selected.profile, active, assessments);
-    setRun(result);
-
-    if (result.lettersGenerated.length === 0) {
-      setMessage(`${result.summary} — nothing to send yet.`);
+    // C1: decided AND rendered on the server, from the stored record. The browser
+    // no longer builds letters. On a fresh import this will usually produce ZERO
+    // letters and a list of items waiting on a fact — that is correct: nobody has
+    // recorded what the customer says is wrong yet.
+    const res = await generateDisputeRound(selected.profile.id);
+    if (!res.ok) {
+      setError(res.error);
       return;
     }
-
-    const saved = await addDisputeRoundsForClient(selected.profile.id, result.lettersGenerated);
-    if (!saved.ok) {
-      setError(saved.error);
-      return;
+    const out = res.data;
+    const nextActions =
+      out.kind === "stored"
+        ? [`Review ${out.roundIds.length} draft letter(s) on the Letters page: check every fact against its source, then approve, return or cancel`]
+        : [];
+    setRun({ summary: out.plan.summary, notDisputed: out.plan.notDisputed, nextActions });
+    if (out.kind === "stored") {
+      await refresh();
+      setMessage(`${out.plan.summary} — drafts stored for review. Nothing has been sent.`);
+    } else if (out.kind === "gated") {
+      setMessage(`${out.plan.summary}. Letter generation is closed by the attorney gate.`);
+    } else if (out.kind === "facts_missing") {
+      setMessage(`Nothing written: ${out.detail}`);
+    } else {
+      setMessage(`${out.plan.summary} — nothing is ready for a letter yet.`);
     }
-    await refresh();
-    setMessage(
-      `${result.summary} — log in Dispute Fox + GHL tag ${CREDIT_GHL_TAGS.disputefoxActive}`
-    );
   }
 
   return (
@@ -225,6 +207,13 @@ export default function CreditDisputeCommandPage() {
                   {n.furnisherName}
                 </span>
                 <p className="text-gray-700 dark:text-slate-300">{n.reason}</p>
+                {n.missing && n.missing.length > 0 && (
+                  <ul className="ml-4 list-disc text-xs text-amber-800 dark:text-amber-300">
+                    {n.missing.map((m) => (
+                      <li key={m.code}>{m.message}</li>
+                    ))}
+                  </ul>
+                )}
                 {n.nextStep && (
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
                     Next: {n.nextStep}
@@ -340,11 +329,6 @@ export default function CreditDisputeCommandPage() {
                 </div>
                 <p className="text-sm text-gray-600 dark:text-slate-400">
                   GHL tag: <code className="text-violet-600">{funding.ghlTag}</code>
-                  {impact && (
-                    <span className="ml-3">
-                      Est. gain if cleared: +{impact.estimatedGain.min}–{impact.estimatedGain.max} pts
-                    </span>
-                  )}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Billing paths: monthly_97 · payment_plan_500 · mentorship_dfy_1000 ({pathLabel("mentorship_dfy_1000")})
@@ -361,7 +345,6 @@ export default function CreditDisputeCommandPage() {
                         <th className="py-2 pr-3">Bureau</th>
                         <th className="py-2 pr-3">Type</th>
                         <th className="py-2 pr-3">Furnisher</th>
-                        <th className="py-2 pr-3">Conf.</th>
                         <th className="py-2 pr-3">Accuracy call</th>
                         <th className="py-2">Finding</th>
                       </tr>
@@ -373,7 +356,6 @@ export default function CreditDisputeCommandPage() {
                           <td className="py-2 pr-3 uppercase text-xs">{a.item.bureau}</td>
                           <td className="py-2 pr-3">{a.item.itemType}</td>
                           <td className="py-2 pr-3 font-medium">{a.item.furnisherName}</td>
-                          <td className="py-2 pr-3">{a.overallConfidence}%</td>
                           <td className="py-2 pr-3">
                             <select
                               aria-label={`Accuracy call for ${a.item.furnisherName}`}
@@ -426,6 +408,15 @@ export default function CreditDisputeCommandPage() {
                   </table>
                 </div>
               </div>
+
+              <AssertionPanel
+                client={selected}
+                onSaved={async () => {
+                  setRun(null);
+                  await refresh();
+                }}
+                onError={setError}
+              />
             </div>
           ) : (
             <p className="text-gray-500">Select a client or import a MyFreeScoreNow / Dispute Fox report.</p>

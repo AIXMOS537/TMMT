@@ -48,3 +48,9 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+      # Credit Center (C1): who can read credit records and evidence, today and under
+      # the staged case foundation. Embedded Postgres 17 (PGlite), no secrets.
+      - name: SQL rehearsal (credit data isolation)
+        run: |
+          npm ci --prefix scripts/tests/sql --no-audit --no-fund
+          node scripts/tests/sql/credit-isolation.rehearsal.mjs

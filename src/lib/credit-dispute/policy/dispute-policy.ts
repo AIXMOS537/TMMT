@@ -35,6 +35,13 @@ import type {
   NegativeItem,
   NegativeItemType,
 } from "../types";
+import {
+  checkAssertionRequirements,
+  missing,
+  roundProgress,
+  type DecisionContext,
+  type MissingFact,
+} from "./assertion";
 
 // ---------------------------------------------------------------------------
 // What we know about an item, factually
@@ -79,6 +86,11 @@ export interface ItemAssessment {
   roundsSent?: DisputeRoundType[];
   /** Did a previous round come back "verified"? */
   previouslyVerified?: boolean;
+  /**
+   * What the importer's heuristics PROPOSE. A suggestion for a person to check,
+   * never an assessment: nothing here can unlock a letter.
+   */
+  suggestion?: { basis?: FactualBasis; note?: string; source: "importer_heuristic" };
 }
 
 // ---------------------------------------------------------------------------
@@ -90,13 +102,17 @@ export type DisputeAction =
   | "dispute"
   /** Item is accurate — coach the client on behaviour and time instead. */
   | "coach"
-  /** We do not know enough yet. Get the missing fact first. */
+  /** Waiting on the process: a round is in flight, or a person must review. */
   | "hold"
+  /** A required fact is missing. Nothing is written until someone records it. */
+  | "needs_information"
   /** Do not dispute this, now or later, for the stated reason. */
   | "refuse";
 
 export interface DisputeDecision {
   action: DisputeAction;
+  /** Present when action === "needs_information": exactly what to go and get. */
+  missing?: MissingFact[];
   /** Plain-English reason, safe to show a client or an auditor. */
   rationale: string;
   /** Only present when action === "dispute". */
@@ -184,7 +200,12 @@ export function isObsolete(
   item: NegativeItem,
   cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY
 ): boolean {
-  const months = monthsSince(item.dateOfFirstDelinquency ?? item.dateReported);
+  // C1: the reporting period for delinquent accounts runs from the date of first
+  // delinquency. Falling back to `dateReported` (the last-reported date) could call
+  // a current item obsolete, or an obsolete one current, and then state it in a
+  // letter. Inquiries and bankruptcies are dated by their own reported date.
+  const datedByReport = item.itemType === "hard_inquiry" || item.itemType === "bankruptcy";
+  const months = monthsSince(datedByReport ? item.dateReported ?? item.dateOfFirstDelinquency : item.dateOfFirstDelinquency);
   if (months === null) return false;
   return months > reportingPeriodFor(item.itemType, cfg) * 12;
 }
@@ -405,16 +426,62 @@ export function routeFor(basis: FactualBasis): StatutoryRoute | undefined {
 export function decideForItem(
   item: NegativeItem,
   assessment: ItemAssessment,
-  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY
+  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY,
+  ctx: DecisionContext = {}
 ): DisputeDecision {
+  // 0. Round progression. Nothing new is written while a round is in flight, and a
+  //    follow-up needs a recorded response plus a documented reason — never just
+  //    "the first letter did not get the result we wanted".
+  const progress = roundProgress(ctx.history);
+  if (progress.kind === "in_progress") {
+    return {
+      action: "hold",
+      basis: assessment.basis,
+      rationale: `Round ${progress.roundNumber} for this item is ${progress.status.replace("_", " ")}. Nothing further is written until it is resolved.`,
+      nextStep: "Finish the current round: review it, send it, and record the response when it arrives.",
+      ruleId: "round-in-progress",
+    };
+  }
+  if (progress.kind === "resolved") {
+    return {
+      action: "hold",
+      basis: assessment.basis,
+      rationale: `The last response recorded for this item was "${progress.outcome}". No further round is needed.`,
+      nextStep: "Confirm the change on the next report pull and close the item.",
+      ruleId: "resolved-by-response",
+    };
+  }
+  if (progress.kind === "needs_information") {
+    return {
+      action: "needs_information",
+      basis: assessment.basis,
+      missing: progress.missing,
+      rationale: "A follow-up round needs a recorded response and a documented reason first.",
+      nextStep: progress.missing.map((m) => m.message).join(" "),
+      ruleId: "follow-up-basis-missing",
+    };
+  }
+
   // 1. Obsolete items are disputable regardless of accuracy — an accurate item
   //    reported beyond its lawful period is still a violation. Checked first so
-  //    that a truthful old debt is not sent to coaching.
+  //    that a truthful old debt is not sent to coaching. The claim is derived from
+  //    the report's own dates, so it needs no customer assertion.
   if (isObsolete(item, cfg)) {
+    const already = (ctx.history ?? []).map((h) => h.roundType);
+    const seq = sequenceFor("obsolete", item.itemType, cfg).filter((r) => !already.includes(r));
+    if (seq.length === 0) {
+      return {
+        action: "hold",
+        basis: "obsolete",
+        rationale: "Every round in the sequence for an obsolete item has already been sent.",
+        nextStep: "Review the outcome with a person before going further.",
+        ruleId: "sequence-exhausted",
+      };
+    }
     return {
       action: "dispute",
       basis: "obsolete",
-      sequence: sequenceFor("obsolete", item.itemType, cfg),
+      sequence: seq,
       rationale:
         "This item is past the reporting period allowed by FCRA §605, so it should no longer appear regardless of whether it is accurate.",
       ruleId: "obsolete-item",
@@ -424,7 +491,8 @@ export function decideForItem(
   // 2. No accuracy assessment yet. We are not guessing.
   if (assessment.accuracy === "unknown") {
     return {
-      action: "hold",
+      action: "needs_information",
+      missing: [missing("accuracy_call")],
       rationale:
         "Nobody has yet confirmed whether this item is accurate, so there is no basis for a dispute.",
       nextStep:
@@ -453,7 +521,8 @@ export function decideForItem(
   // 4. Inaccurate, but nobody wrote down what is wrong with it.
   if (cfg.requireFactualBasis && !assessment.basis) {
     return {
-      action: "hold",
+      action: "needs_information",
+      missing: [missing("factual_basis")],
       rationale:
         "This item is marked inaccurate, but no specific factual reason has been recorded. A dispute without a stated reason is the kind that comes back verified.",
       nextStep:
@@ -462,8 +531,31 @@ export function decideForItem(
     };
   }
 
+  // 4b. THE GROUNDING RULE. Letters speak in the customer's first person. Every
+  //     factual claim must trace to something the customer actually said (and
+  //     confirmed), a document on file, or our own recorded round history. A basis
+  //     picked by an operator is a judgement, not the customer's claim.
+  const gaps = checkAssertionRequirements(assessment.basis as FactualBasis, ctx);
+  if (gaps.length > 0) {
+    return {
+      action: "needs_information",
+      basis: assessment.basis,
+      missing: gaps,
+      rationale:
+        "The ground is recorded, but the facts a letter would state in the customer's name are not all on file yet.",
+      nextStep: gaps.map((g) => g.message).join(" "),
+      ruleId: "grounding-missing",
+    };
+  }
+
   // 5. Escalation ceiling — hand to a human rather than grinding on.
-  const sent = assessment.roundsSent?.length ?? 0;
+  //    Rounds come from the STORED history when we have it (C1): the old
+  //    `assessment.roundsSent` was never updated after a round was stored, which is
+  //    why the engine kept producing round 1.
+  const sentTypes: DisputeRoundType[] = ctx.history
+    ? ctx.history.map((h) => h.roundType)
+    : assessment.roundsSent ?? [];
+  const sent = sentTypes.length;
   if (sent >= cfg.maxRoundsBeforeReview) {
     return {
       action: "hold",
@@ -477,7 +569,7 @@ export function decideForItem(
 
   // 6. Cleared to dispute. Skip any round already sent.
   const full = sequenceFor(assessment.basis as FactualBasis, item.itemType, cfg);
-  const remaining = full.filter((r) => !(assessment.roundsSent ?? []).includes(r));
+  const remaining = full.filter((r) => !sentTypes.includes(r));
 
   if (remaining.length === 0) {
     return {
@@ -506,11 +598,12 @@ export function decideForItem(
 export function decideForProfile(
   items: NegativeItem[],
   assessments: Record<string, ItemAssessment>,
-  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY
+  cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY,
+  contexts: Record<string, DecisionContext> = {}
 ): Array<{ item: NegativeItem; decision: DisputeDecision }> {
   return items.map((item) => ({
     item,
-    decision: decideForItem(item, assessments[item.id] ?? inferAssessment(item), cfg),
+    decision: decideForItem(item, assessments[item.id] ?? inferAssessment(item), cfg, contexts[item.id]),
   }));
 }
 
@@ -525,20 +618,26 @@ export function decideForProfile(
  * Note what this deliberately does NOT do: `isInaccurate === false` is treated as
  * "unknown", not "accurate". An unticked box is not a human saying the item is
  * correct, and the coaching path should only be reached by an actual judgement.
+ *
+ * C1 CHANGE: the flags are importer HEURISTICS (e.g. "closed with a balance"), not
+ * anyone's statement. They used to come back as `accuracy: "inaccurate"` with a
+ * basis, which let a heuristic unlock a letter nobody asked for. They now come back
+ * as `unknown` with a `suggestion` a person can accept or reject. An item past its
+ * reporting period is still caught — by `isObsolete()` on the report's own dates,
+ * not by this flag.
  */
 export function inferAssessment(item: NegativeItem): ItemAssessment {
   const roundsSent: DisputeRoundType[] = [];
+  const note = item.inaccuracyDetails;
 
   if (item.isUnverifiable) {
-    return { accuracy: "inaccurate", basis: "unverifiable", basisNote: item.inaccuracyDetails, roundsSent };
+    return { accuracy: "unknown", roundsSent, suggestion: { basis: "unverifiable", note, source: "importer_heuristic" } };
   }
   if (item.isOutdated) {
-    return { accuracy: "inaccurate", basis: "obsolete", basisNote: item.inaccuracyDetails, roundsSent };
+    return { accuracy: "unknown", roundsSent, suggestion: { basis: "obsolete", note, source: "importer_heuristic" } };
   }
   if (item.isInaccurate) {
-    // Marked wrong, but the specific ground is not encoded on the record. The
-    // gate will hold for a basis rather than guess one.
-    return { accuracy: "inaccurate", basisNote: item.inaccuracyDetails, roundsSent };
+    return { accuracy: "unknown", roundsSent, suggestion: { note, source: "importer_heuristic" } };
   }
   return { accuracy: "unknown", roundsSent };
 }
@@ -547,7 +646,7 @@ export function inferAssessment(item: NegativeItem): ItemAssessment {
 export function summarise(
   results: Array<{ decision: DisputeDecision }>
 ): Record<DisputeAction, number> {
-  const out: Record<DisputeAction, number> = { dispute: 0, coach: 0, hold: 0, refuse: 0 };
+  const out: Record<DisputeAction, number> = { dispute: 0, coach: 0, hold: 0, needs_information: 0, refuse: 0 };
   for (const r of results) out[r.decision.action] += 1;
   return out;
 }
