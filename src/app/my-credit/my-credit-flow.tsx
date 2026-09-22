@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, Button, PageHeader } from "@/components/ui";
 import type { CustomerCaseView } from "@/lib/credit-dispute/engine/case-state";
 import type { IssueCategory } from "@/lib/credit-dispute/policy/assertion";
-import { confirmMyStatement, draftMyStatement, getMyCreditCase, uploadMyDocument } from "./actions";
+import { confirmMyStatement, draftMyStatement, getMyCreditCase, getMyDocumentLink, uploadMyDocument } from "./actions";
 
 /**
  * REPORT → ITEM → WHAT DO YOU BELIEVE IS WRONG? → YOUR OWN WORDS → (DOCUMENT) → REVIEW → CONFIRM
@@ -38,9 +38,22 @@ export function MyCreditFlow({ uploadsEnabled }: { uploadsEnabled: boolean }) {
   const [statement, setStatement] = useState("");
   const [draftId, setDraftId] = useState("");
   const [busy, setBusy] = useState(false);
+  /** C3-020: the version this page shows. Sent with every change; a change from a stale tab is refused. */
+  const [version, setVersion] = useState<string | null>(null);
+
+  async function reload() {
+    const r = await getMyCreditCase();
+    if (!r.ok) return setError(r.error);
+    setView(r.data);
+    setVersion(r.data.version);
+  }
 
   useEffect(() => {
-    getMyCreditCase().then((r) => (r.ok ? setView(r.data) : setError(r.error)));
+    getMyCreditCase().then((r) => {
+      if (!r.ok) return setError(r.error);
+      setView(r.data);
+      setVersion(r.data.version);
+    });
   }, []);
 
   const item = view?.items.find((i) => i.id === itemId);
@@ -51,19 +64,20 @@ export function MyCreditFlow({ uploadsEnabled }: { uploadsEnabled: boolean }) {
     setBusy(true);
     setError("");
     const before = new Set(view?.statements.map((s) => s.id));
-    const r = await draftMyStatement({ negativeItemId: itemId, category, statement });
+    const r = await draftMyStatement({ negativeItemId: itemId, category, statement, seenVersion: version });
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setView(r.data);
     const created = r.data.statements.find((s) => !before.has(s.id));
     if (created) setDraftId(created.id);
     setStep("review");
+    await reload();
   }
 
   async function confirm() {
     if (!draftId) return;
     setBusy(true);
-    const r = await confirmMyStatement(draftId);
+    const r = await confirmMyStatement(draftId, version);
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setView(r.data);
@@ -72,18 +86,21 @@ export function MyCreditFlow({ uploadsEnabled }: { uploadsEnabled: boolean }) {
     setCategory("");
     setStatement("");
     setDraftId("");
+    await reload();
   }
 
   async function upload(form: HTMLFormElement) {
     const fd = new FormData(form);
     fd.set("negativeItemId", itemId);
     if (draftId) fd.set("assertionId", draftId);
+    if (version) fd.set("seenVersion", version);
     setBusy(true);
     const r = await uploadMyDocument(fd);
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setView(r.data);
     form.reset();
+    await reload();
   }
 
   if (!view) {
@@ -174,6 +191,22 @@ export function MyCreditFlow({ uploadsEnabled }: { uploadsEnabled: boolean }) {
             <Button variant="secondary" onClick={() => setStep("words")}>Back</Button>
             <Button disabled={busy} onClick={confirm}>Confirm</Button>
           </div>
+        </Card>
+      )}
+
+      {view.documents.length > 0 && (
+        <Card className="p-4 text-sm space-y-2">
+          <h2 className="font-semibold">Documents you have sent us</h2>
+          {view.documents.map((d) => (
+            <div key={d.id} className="border-t pt-2 flex items-center gap-2">
+              <span>{d.description}{d.fileName ? ` (${d.fileName})` : ""}</span>
+              {uploadsEnabled && (
+                <Button variant="secondary" onClick={async () => { const r = await getMyDocumentLink(d.id); if (r.ok) window.open(r.data, "_blank", "noopener"); else setError(r.error); }}>
+                  View (2-minute link)
+                </Button>
+              )}
+            </div>
+          ))}
         </Card>
       )}
 

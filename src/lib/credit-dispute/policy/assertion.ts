@@ -264,7 +264,10 @@ export type MissingFactCode =
   | "prior_response"
   | "follow_up_reason"
   | "report_dates"
-  | "operator_classification";
+  | "operator_classification"
+  | "recipient_missing"
+  | "recipient_unverified"
+  | "recipient_rejected";
 
 export interface MissingFact {
   code: MissingFactCode;
@@ -287,6 +290,9 @@ const MESSAGES: Record<MissingFactCode, string> = {
   follow_up_reason: "Record why a follow-up round is justified. A result the customer did not like is not a reason.",
   report_dates: "The report has no dates for this item, so its reporting period cannot be checked.",
   operator_classification: "The customer's category is broad. An operator has to decide which specific ground it is before anything is written.",
+  recipient_missing: "There is no recipient on file for this letter. Add the recipient's address from a source you can check.",
+  recipient_unverified: "The recipient's address has not been verified by a person yet.",
+  recipient_rejected: "The recipient's address on file was rejected. Add a corrected one.",
 };
 
 export function missing(code: MissingFactCode): MissingFact {

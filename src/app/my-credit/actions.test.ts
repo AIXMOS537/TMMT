@@ -36,7 +36,7 @@ vi.mock("@/lib/supabase-server", () => ({
 vi.mock("@/lib/supabase-service", () => ({ createServiceRoleClient: () => state.service }));
 vi.mock("@/lib/rate-limit-durable", () => ({ isRateLimitedDurable: async () => state.limited }));
 
-import { confirmMyStatement, draftMyStatement, getMyCreditCase, uploadMyDocument } from "./actions";
+import { confirmMyStatement, draftMyStatement, getMyCreditCase, getMyDocumentLink, uploadMyDocument } from "./actions";
 
 const neg = (id: string, furnisherName: string): NegativeItem =>
   ({ id, bureau: "experian", itemType: "charge_off", furnisherName, currentRound: 0, status: "draft" }) as NegativeItem;
@@ -67,7 +67,7 @@ function service(): FakeSupabase {
       if (call.op === "update") return { data: Array.from({ length: updateRows }, () => ({ id: "x" })) };
       return { error: null };
     },
-    { storageRespond: () => ({ data: { path: "p" }, error: null }) }
+    { storageRespond: (c) => (c.op === "createSignedUrl" ? { data: { signedUrl: `https://signed.example/${String(c.args[0])}` }, error: null } : { data: { path: "p" }, error: null }) }
   );
   return state.service as FakeSupabase;
 }
@@ -244,11 +244,69 @@ describe("documents", () => {
     expect(e.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it("C3-020: a write from a tab that loaded an older version is refused before anything is stored", async () => {
+    process.env.CREDIT_EVIDENCE_UPLOADS = "1";
+    const db = service();
+    expect(await uploadMyDocument(form({ seenVersion: "v0" }))).toEqual({ ok: false, error: "Your case changed. Reload and try again." });
+    expect(await draftMyStatement({ negativeItemId: "item-aaaa", category: "NOT_MINE", statement: "Never had this account.", seenVersion: "v0" })).toEqual({ ok: false, error: "Your case changed. Reload and try again." });
+    expect(await confirmMyStatement("anything", "v0")).toEqual({ ok: false, error: "Your case changed. Reload and try again." });
+    expect(db.storageCalls).toHaveLength(0);
+    expect(writes(db)).toHaveLength(0);
+    // The current version passes the check.
+    expect((await draftMyStatement({ negativeItemId: "item-aaaa", category: "NOT_MINE", statement: "Never had this account.", seenVersion: "v1" })).ok).toBe(true);
+  });
+
   it("removes the stored object if the case save fails", async () => {
     process.env.CREDIT_EVIDENCE_UPLOADS = "1";
     updateRows = 0;
     const db = service();
     expect((await uploadMyDocument(form())).ok).toBe(false);
     expect(db.storageCalls.map((c) => c.op)).toEqual(["upload", "remove"]);
+  });
+});
+
+describe("C3-010: a customer reads back only their own documents", () => {
+  const mine = { id: "ev-mine", kind: "other" as const, description: "March statement", negativeItemId: "item-aaaa", storagePath: "no-org/client-aaaa/evid-1.pdf", source: "customer" as const, uploadedBy: `customer:${USER_A}`, uploadedAt: "t" };
+
+  beforeEach(() => {
+    process.env.CREDIT_EVIDENCE_UPLOADS = "1";
+    rows[0].payload.evidence = [
+      mine,
+      // on my case, but uploaded by an operator
+      { ...mine, id: "ev-operator", source: "operator" as const, uploadedBy: "owner@example.test" },
+      // on my case, claims to be mine, but points into ANOTHER case's folder
+      { ...mine, id: "ev-crosspath", storagePath: "no-org/client-bbbb/evid-9.pdf" },
+      // a reference with no stored file
+      { ...mine, id: "ev-nofile", storagePath: undefined },
+    ];
+    rows[1].payload.evidence = [{ ...mine, id: "ev-theirs", uploadedBy: `customer:${USER_B}`, storagePath: "no-org/client-bbbb/evid-2.pdf" }];
+  });
+
+  it("returns a short-lived download link for your own upload", async () => {
+    const db = service();
+    const r = await getMyDocumentLink("ev-mine");
+    expect(r).toEqual({ ok: true, data: "https://signed.example/no-org/client-aaaa/evid-1.pdf" });
+    const call = db.storageCalls.find((c) => c.op === "createSignedUrl")!;
+    expect(call.bucket).toBe("credit-evidence");
+    expect(call.args[1]).toBe(120);
+    expect(call.args[2]).toEqual({ download: true });
+  });
+
+  it("refuses another customer's document, operator documents, cross-folder paths and missing files — same answer, no link", async () => {
+    const db = service();
+    for (const id of ["ev-theirs", "ev-operator", "ev-crosspath", "ev-nofile", "does-not-exist", ""]) {
+      expect(await getMyDocumentLink(id)).toEqual({ ok: false, error: "Document not found." });
+    }
+    expect(db.storageCalls).toHaveLength(0);
+  });
+
+  it("gives no link while uploads are off, and nothing at all while the Credit Center is off", async () => {
+    delete process.env.CREDIT_EVIDENCE_UPLOADS;
+    service();
+    expect(await getMyDocumentLink("ev-mine")).toEqual({ ok: false, error: "Document not available." });
+    delete process.env.CREDIT_CENTER_CUSTOMER;
+    const db = service();
+    expect(await getMyDocumentLink("ev-mine")).toEqual({ ok: false, error: "Not available." });
+    expect(db.calls).toHaveLength(0);
   });
 });

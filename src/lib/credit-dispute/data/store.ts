@@ -44,6 +44,11 @@ export interface StoredDisputeRound {
   trace?: FactTrace[];
   templateVersion?: string;
   generatedBy?: string;
+  /** C3: the registry recipient (and version) this letter is addressed to. */
+  recipientId?: string;
+  recipientVersion?: number;
+  /** C3: fingerprint of the exact template wording used (see approvals). */
+  templateFingerprint?: string;
   edits?: RoundEdit[];
   /** The CURRENT decision. Superseded decisions move to reviewHistory, never deleted (C2). */
   review?: RoundReview;

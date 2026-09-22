@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { Card, PageHeader, Button } from "@/components/ui";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
 import type { NotDisputed } from "@/lib/credit-dispute/engine/gated-protocol";
-import { getDisputeClient, generateDisputeRound, reviewDisputeRound } from "../actions";
+import { getDisputeClientVersioned, generateDisputeRound, reviewDisputeRound } from "../actions";
 import { CaseConsole, RoundLifecycle } from "./case-console";
 
 /**
@@ -50,14 +50,31 @@ export default function CreditDisputeClientPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  /** C3-020: the version this page is showing. Sent with every change; a stale page is refused. */
+  const [version, setVersion] = useState<string | undefined>(undefined);
+
+  /** Reload the case AND its version together, so the page never holds a version whose contents it has not shown. */
+  async function reload() {
+    const res = await getDisputeClientVersioned(id);
+    if (!res.ok) return setError(res.error);
+    setClient(res.data?.client ?? null);
+    setVersion(res.data?.version ?? undefined);
+  }
+  const changed = () => {
+    setError("");
+    void reload();
+  };
 
   useEffect(() => {
     let cancelled = false;
-    getDisputeClient(id)
+    getDisputeClientVersioned(id)
       .then((res) => {
         if (cancelled) return;
         if (!res.ok) setError(res.error);
-        else setClient(res.data);
+        else {
+          setClient(res.data?.client ?? null);
+          setVersion(res.data?.version ?? undefined);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -79,10 +96,12 @@ export default function CreditDisputeClientPage() {
     const out = res.data;
     setNotDisputed(out.plan.notDisputed);
     if (out.kind === "stored") {
-      setClient(out.client);
+      await reload();
       setMessage(`${out.roundIds.length} draft letter(s) stored for review. Nothing has been sent.`);
     } else if (out.kind === "gated") {
       setMessage(`${out.plan.summary}. Letter generation is closed by the attorney gate: ${out.gate}`);
+    } else if (out.kind === "template_unapproved") {
+      setMessage(`Nothing written: the exact wording of a letter template has no active counsel approval (${out.detail}).`);
     } else if (out.kind === "facts_missing") {
       setMessage(`Nothing written: ${out.detail}`);
     } else {
@@ -100,24 +119,25 @@ export default function CreditDisputeClientPage() {
     const res = await reviewDisputeRound(
       client.profile.id,
       round.id,
-      kind === "return_for_information" ? { kind, note: note ?? "" } : { kind, note }
+      kind === "return_for_information" ? { kind, note: note ?? "" } : { kind, note },
+      version
     );
     if (!res.ok) {
       setError(res.error);
       return;
     }
-    setClient(res.data);
+    changed();
   }
 
   async function saveEdit() {
     if (!client || !editing) return;
-    const res = await reviewDisputeRound(client.profile.id, editing.roundId, { kind: "edit", body: editing.body });
+    const res = await reviewDisputeRound(client.profile.id, editing.roundId, { kind: "edit", body: editing.body }, version);
     if (!res.ok) {
       setError(res.error);
       return;
     }
     setEditing(null);
-    setClient(res.data);
+    changed();
   }
 
   if (loading) {
@@ -232,7 +252,10 @@ export default function CreditDisputeClientPage() {
                           Earlier decisions: {round.reviewHistory.map((h) => `${h.decision.replace(/_/g, " ")} by ${h.reviewedBy}`).join("; ")}
                         </p>
                       )}
-                      <RoundLifecycle round={round} client={client} onChange={setClient} onError={setError} />
+                      {round.recipientId && (
+                        <p className="text-xs text-gray-500">Addressed to registry recipient {round.recipientId} (version {round.recipientVersion})</p>
+                      )}
+                      <RoundLifecycle round={round} client={client} seenVersion={version} onChange={changed} onError={setError} />
                       {awaiting && editing?.roundId !== round.id && (
                         <div className="flex flex-wrap gap-2">
                           <Button onClick={() => review(round, "approve")}>Approve</Button>
@@ -250,7 +273,7 @@ export default function CreditDisputeClientPage() {
         )}
       </section>
 
-      <CaseConsole client={client} onChange={setClient} onError={setError} />
+      <CaseConsole client={client} seenVersion={version} onChange={changed} onError={setError} />
     </div>
   );
 }

@@ -135,6 +135,7 @@ export function roundsFromRun(
     trace: rendered.trace,
     templateVersion: rendered.templateVersion,
     generatedBy: actor,
+    ...(rendered.recipientId ? { recipientId: rendered.recipientId, recipientVersion: rendered.recipientVersion } : {}),
   }));
 }
 
