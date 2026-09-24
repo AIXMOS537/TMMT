@@ -137,7 +137,7 @@ describe("/api/cron/* machine auth (Bearer CRON_SECRET)", () => {
     consoleWarn.mockRestore();
   });
 
-  const CRON_PATHS = ["/api/cron/marketing-kpi-ghl", "/api/cron/journey-recompute"];
+  const CRON_PATHS = ["/api/cron/marketing-kpi-ghl", "/api/cron/journey-recompute", "/api/mission/generate"];
 
   it.each(CRON_PATHS)("%s without any header still redirects to /login", async (path) => {
     const res = await middleware(req(path));
@@ -173,6 +173,12 @@ describe("/api/cron/* machine auth (Bearer CRON_SECRET)", () => {
     expect(line).not.toContain(SECRET.slice(0, 12));
   });
 
+  it("/api/mission/generate with x-cron-secret (the old workflow header) is refused at the edge, and says why", async () => {
+    const res = await middleware(req("/api/mission/generate", { headers: { "x-cron-secret": SECRET } }));
+    expect(redirectTarget(res)).toBe("/login");
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("x_cron_secret_not_accepted_at_edge");
+  });
+
   it("does not accept x-cron-secret at the edge (Bearer only), and says why", async () => {
     const res = await middleware(req("/api/cron/marketing-kpi-ghl", { headers: { "x-cron-secret": SECRET } }));
     expect(redirectTarget(res)).toBe("/login");
@@ -188,8 +194,18 @@ describe("/api/cron/* machine auth (Bearer CRON_SECRET)", () => {
     expect(String(consoleWarn.mock.calls[0][0])).toContain("cron_secret_unset");
   });
 
-  it.each(["/api/ops/command", "/api/license/heartbeat", "/api/mission/generate", "/command", "/api/cronx", "/api/cron"])(
-    "the cron secret opens nothing outside /api/cron/: %s still redirects",
+  it.each([
+    "/api/ops/command",
+    "/api/license/heartbeat",
+    "/api/mission",
+    "/api/mission/generatex",
+    "/api/mission/generate/",
+    "/api/mission/generate/extra",
+    "/command",
+    "/api/cronx",
+    "/api/cron",
+  ])(
+    "the cron secret opens nothing outside /api/cron/ and the exact machine paths: %s still redirects",
     async (path) => {
       const res = await middleware(req(path, { headers: { authorization: `Bearer ${SECRET}` } }));
       expect(redirectTarget(res)).toBe("/login");

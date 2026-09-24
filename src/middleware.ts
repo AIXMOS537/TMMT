@@ -175,8 +175,18 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
  */
 const CRON_PREFIX = "/api/cron/";
 
+/**
+ * Scheduled-job routes that live outside /api/cron/, matched EXACTLY (never
+ * as a prefix). /api/mission/generate is called once a day by the
+ * mission-daily GitHub Actions workflow; it was answered 307 -> /login just
+ * like the cron routes, and curl without -L exits 0 on a 3xx, so the workflow
+ * went green while nothing ran. Same rule as /api/cron/*: exact Bearer
+ * CRON_SECRET only, and the handler re-checks the secret.
+ */
+const MACHINE_EXACT_PATHS = new Set(["/api/mission/generate"]);
+
 function cronMachineCall(request: NextRequest, pathname: string): boolean {
-  if (!pathname.startsWith(CRON_PREFIX)) return false;
+  if (!pathname.startsWith(CRON_PREFIX) && !MACHINE_EXACT_PATHS.has(pathname)) return false;
   const auth = request.headers.get("authorization");
   const legacy = request.headers.get("x-cron-secret");
   const secret = process.env.CRON_SECRET;
