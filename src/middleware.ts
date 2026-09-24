@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
+import { bearerMatchesEdge } from "@/lib/secure-compare-edge";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
-import {
-  isOwnerHubHost,
-  shouldBounceTmmtCreditToAixmos,
-  aixmosCreditRedirectUrl,
-} from "@/lib/site-domains";
+import { isOwnerHubHost } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
 import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
 
@@ -20,6 +17,14 @@ function isFunnelPublicPath(pathname: string) {
     pathname === "/dealers" ||
     pathname === "/credit" ||
     pathname === "/funding" ||
+    // The opt-in referral page. Public on purpose: it is where someone
+    // chooses to be introduced to the partner, and it must be reachable
+    // without an account. It is also the only page allowed to link out.
+    pathname === "/partners/all-in-one" ||
+    pathname.startsWith("/partners/all-in-one/") ||
+    // The rental front door. "/" is rewritten here for signed-out visitors, and
+    // it must also render if someone reaches the path directly.
+    pathname === "/welcome" ||
     pathname.startsWith("/lp/") ||
     pathname.startsWith("/api/leads/") ||
     pathname === "/api/health" ||
@@ -49,13 +54,12 @@ function isPublicPath(pathname: string) {
     pathname === "/manifest.webmanifest" ||
     pathname === "/kits" ||
     pathname === "/build" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
+    // The trust page is a selling point; it must be readable signed-out.
+    pathname === "/trust" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
-    // Public request intake, one form per business line. Public for everyone,
-    // signed in or out: a staff member raising a request on a customer's
-    // behalf uses the same form. "/" is deliberately NOT here - see below.
-    pathname.startsWith("/intake") ||
     pathname.startsWith("/legal") ||
     pathname.startsWith("/login/") ||
     pathname.startsWith("/api/auth/") ||
@@ -66,19 +70,6 @@ function isPublicPath(pathname: string) {
   );
 }
 
-/**
- * The public front door, for signed-out visitors only.
- *
- * Kept out of isPublicPath on purpose. pathAllowedForTier() returns true for
- * anything isPublicPath() matches, so putting "/" there would also stop
- * signed-in staff being routed to their own home page - an operator hitting
- * "/" would get the marketing front door instead of /operator. Signed out:
- * render the front door. Signed in: unchanged, the tier rules below decide.
- */
-function isSignedOutFrontDoor(pathname: string) {
-  return pathname === "/";
-}
-
 /** Pitch + webhook routes — never run Supabase auth (avoids 307→/login on demos). */
 function isPitchPublicPath(pathname: string) {
   return (
@@ -86,7 +77,10 @@ function isPitchPublicPath(pathname: string) {
     pathname === "/kits" ||
     pathname === "/build" ||
     pathname === "/dealers" ||
+    pathname === "/configurator" ||
     pathname === "/explainer" ||
+    // The trust page is a selling point; it must be readable signed-out.
+    pathname === "/trust" ||
     pathname.startsWith("/build/") ||
     pathname.startsWith("/forms") ||
     pathname.startsWith("/legal") ||
@@ -164,6 +158,51 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   }
 }
 
+/**
+ * Machine access to the scheduled-job routes (/api/cron/*).
+ *
+ * Vercel Cron calls these with no browser session, sending
+ * `Authorization: Bearer $CRON_SECRET` when CRON_SECRET is set. Since the
+ * middleware started running (3c27dc9, 2026-08-19) every such call was
+ * answered 307 -> /login; Vercel does not follow redirects and does not log
+ * redirected cron runs, so both jobs stopped without a trace.
+ *
+ * Only the exact Bearer CRON_SECRET, compared in constant time, passes the
+ * edge. Anything else falls through to the normal session rules (signed-out
+ * -> /login). CRON_SECRET unset means no machine access at all. Each handler
+ * still checks the secret itself (defence in depth). The header value is
+ * never logged.
+ */
+const CRON_PREFIX = "/api/cron/";
+
+function cronMachineCall(request: NextRequest, pathname: string): boolean {
+  if (!pathname.startsWith(CRON_PREFIX)) return false;
+  const auth = request.headers.get("authorization");
+  const legacy = request.headers.get("x-cron-secret");
+  const secret = process.env.CRON_SECRET;
+  if (bearerMatchesEdge(auth, secret)) return true;
+  if (auth !== null || legacy !== null) {
+    const reason = !secret
+      ? "cron_secret_unset"
+      : auth === null
+        ? "x_cron_secret_not_accepted_at_edge"
+        : "bearer_mismatch";
+    try {
+      console.warn(
+        `[middleware] rejected machine call ${JSON.stringify({
+          path: pathname,
+          reason,
+          ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
+          ua: request.headers.get("user-agent") ?? null,
+        })}`
+      );
+    } catch {
+      // logging must never take the request down
+    }
+  }
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
@@ -204,14 +243,19 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // Marketing entry points (/credit, /funding, credit SKU landings) belong on the
-  // public GHL site. Skip when the public site proxied here (x-forwarded-host).
-  if (shouldBounceTmmtCreditToAixmos(host, request.headers.get("x-forwarded-host"))) {
-    const dest = aixmosCreditRedirectUrl(pathname);
-    if (dest) {
-      return withRobotsHeader(NextResponse.redirect(dest, 301));
-    }
-  }
+  // No automatic hand-off to the partner site.
+  //
+  // What used to sit here: on tmmt-ops.vercel.app / tmmtrentals.com, the paths
+  // /credit, /funding, /lp/*/intro-97 and /lp/*/lead-magnet were answered with
+  // a 301 to allinonemanagementsolutions.com. A 301 is permanent — browsers
+  // cache it and stop asking the server — which is why the app "kept"
+  // redirecting there even after a fix: the hop was in the visitor's browser,
+  // not in the deploy. The /lp/* pages it threw away are real TMMT landing
+  // pages whose form POSTs to our own /api/leads/webhook, so every one of
+  // those visitors was a TMMT lead handed to the partner's homepage.
+  //
+  // Referring someone to the partner is now opt-in only and lives behind a
+  // form on /partners/all-in-one. See src/lib/partner-handoff.ts.
 
   if (pathname.startsWith("/forms") && request.method === "POST") {
     const ip =
@@ -224,6 +268,10 @@ export async function middleware(request: NextRequest) {
         )
       );
     }
+  }
+
+  if (cronMachineCall(request, pathname)) {
+    return withRobotsHeader(nextWithTenant());
   }
 
   if (isPitchPublicPath(pathname)) {
@@ -248,10 +296,25 @@ export async function middleware(request: NextRequest) {
     console.error("middleware: Supabase auth check failed; treating as signed-out", err);
   }
 
-  if (!user && !isPublicPath(pathname) && !isSignedOutFrontDoor(pathname)) {
-    // Every signed-out visitor goes to /login - except "/", which now renders
-    // the public front door (src/app/page.tsx). The comment below records why
-    // "/" used to redirect: there was no front door to send anyone to.
+  // The front door. A signed-out visitor on "/" gets the rental page, REWRITTEN
+  // rather than redirected so the URL stays on the brand's own address.
+  //
+  // It cannot simply be src/app/page.tsx: (admin)/page.tsx already resolves to
+  // "/" — it is the staff rentals desk — and a second file on the same path
+  // breaks the build with a duplicate-route manifest error. Worse, if the public
+  // page won that race, homePathForTier() sends operators and staff to "/" and
+  // every one of them would land on marketing instead of their desk. The rewrite
+  // keeps one owner per route: signed out sees the door, signed in sees the desk.
+  if (!user && pathname === "/") {
+    return withRobotsHeader(
+      NextResponse.rewrite(new URL("/welcome", request.url), {
+        request: { headers: requestHeaders },
+      }),
+    );
+  }
+
+  if (!user && !isPublicPath(pathname)) {
+    // Every signed-out visitor goes to /login, "/" included.
     //
     // "/" used to bounce to the public GHL site, on the assumption that staff
     // "use /login directly". That left the app with no reachable front door:
@@ -261,9 +324,8 @@ export async function middleware(request: NextRequest) {
     // address and being shown someone else's home page is not a front door.
     //
     // The public funnel is untouched: /credit, /funding and the /lp/* SKUs
-    // still bounce to the GHL site above (shouldBounceTmmtCreditToAixmos),
-    // and the public reaches marketing on its own domain, which is how they
-    // arrive in the first place.
+    // are public paths that render TMMT's own pages and capture the lead
+    // here. The partner site keeps its own domain and its own traffic.
     return withRobotsHeader(NextResponse.redirect(new URL("/login", request.url)));
   }
 
@@ -299,16 +361,6 @@ export async function middleware(request: NextRequest) {
 
   if (ownerHub && user && pathname === "/") {
     return withRobotsHeader(NextResponse.redirect(new URL("/command", request.url)));
-  }
-
-  // "/" is the public front door now, so a signed-in visitor does not want it -
-  // they want their own home. Before this change "/" WAS the operator/staff home
-  // (the (admin) group's root page), so this keeps them landing on the same
-  // screen, now at its own path, /desk.
-  if (user && pathname === "/") {
-    return withRobotsHeader(
-      NextResponse.redirect(new URL(homePathForTier(getTierForUser(user)), request.url))
-    );
   }
 
   if (user && !pathAllowedForTier(pathname, getTierForUser(user))) {

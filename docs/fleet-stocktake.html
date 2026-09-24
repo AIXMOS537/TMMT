@@ -1,0 +1,550 @@
+<title>Fleet Stocktake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ground:      #F2F5F6;
+    --card:        #FFFFFF;
+    --card-sunk:   #E9EEF0;
+    --ink:         #16202A;
+    --ink-2:       #4A5C6A;
+    --ink-3:       #7B8B97;
+    --rule:        #D3DBE0;
+    --rule-strong: #B4C0C8;
+    --accent:      #1B4D7A;
+    --accent-soft: #E2ECF4;
+
+    --here:        #2C6E4C;
+    --here-bg:     #DFEFE5;
+    --gone:        #9E3826;
+    --gone-bg:     #F7E2DD;
+    --unsure:      #8A6212;
+    --unsure-bg:   #F7EBD2;
+
+    --shadow: 0 1px 2px rgba(22,32,42,.06), 0 4px 14px rgba(22,32,42,.05);
+    --radius: 8px;
+    --tap: 46px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0F161B;
+      --card:        #18222A;
+      --card-sunk:   #131C23;
+      --ink:         #E4ECF1;
+      --ink-2:       #A3B3BF;
+      --ink-3:       #74868F;
+      --rule:        #2A3841;
+      --rule-strong: #3C4E59;
+      --accent:      #7FB2DC;
+      --accent-soft: #1C2E3D;
+
+      --here:        #7FCFA1;
+      --here-bg:     #17311F;
+      --gone:        #E9907C;
+      --gone-bg:     #35191A;
+      --unsure:      #E0B860;
+      --unsure-bg:   #33280F;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0F161B;
+    --card:        #18222A;
+    --card-sunk:   #131C23;
+    --ink:         #E4ECF1;
+    --ink-2:       #A3B3BF;
+    --ink-3:       #74868F;
+    --rule:        #2A3841;
+    --rule-strong: #3C4E59;
+    --accent:      #7FB2DC;
+    --accent-soft: #1C2E3D;
+
+    --here:        #7FCFA1;
+    --here-bg:     #17311F;
+    --gone:        #E9907C;
+    --gone-bg:     #35191A;
+    --unsure:      #E0B860;
+    --unsure-bg:   #33280F;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 14px 96px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead { padding: 28px 0 18px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 10px;
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(28px, 6.5vw, 40px);
+    font-weight: 700;
+    letter-spacing: -.022em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0; max-width: 60ch;
+    color: var(--ink-2); font-size: 15.5px;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .stale {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin: 18px 0 0; padding: 12px 14px;
+    background: var(--unsure-bg);
+    border-left: 3px solid var(--unsure);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14px; color: var(--ink);
+  }
+  .stale b { font-weight: 600; }
+
+  /* ---------- sticky tally ---------- */
+  .tally {
+    position: sticky; top: 0; z-index: 20;
+    margin: 22px 0 8px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .tally-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+  }
+  .tally-cell {
+    padding: 10px 6px; text-align: center;
+    border-right: 1px solid var(--rule);
+  }
+  .tally-cell:last-child { border-right: 0; }
+  .tally-n {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 24px; font-weight: 600; line-height: 1.1;
+    display: block;
+  }
+  .tally-l {
+    font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 500;
+  }
+  .t-here .tally-n { color: var(--here); }
+  .t-gone .tally-n { color: var(--gone); }
+  .t-unsure .tally-n { color: var(--unsure); }
+  .t-todo .tally-n { color: var(--ink-3); }
+
+  .bar { height: 5px; display: flex; background: var(--card-sunk); }
+  .bar span { transition: width .18s ease; }
+  .bar .b-here { background: var(--here); }
+  .bar .b-gone { background: var(--gone); }
+  .bar .b-unsure { background: var(--unsure); }
+
+  /* ---------- owner group ---------- */
+  .group { margin-top: 22px; }
+  .group-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 0 2px 8px;
+    border-bottom: 2px solid var(--rule-strong);
+    flex-wrap: wrap;
+  }
+  .group-name {
+    font-size: 17px; font-weight: 700; letter-spacing: -.01em;
+    margin: 0;
+  }
+  .group-meta {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .group-all {
+    margin-left: auto;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 12px; font-weight: 500;
+    color: var(--gone);
+    background: none; border: 1px solid var(--rule-strong);
+    border-radius: 20px; padding: 5px 12px;
+    cursor: pointer; min-height: 32px;
+  }
+  .group-all:hover { background: var(--gone-bg); border-color: var(--gone); }
+  .group-all:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- car row ---------- */
+  .car {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-top: 0;
+    padding: 12px 14px;
+    display: flex; flex-wrap: wrap; gap: 10px 12px;
+    align-items: center;
+  }
+  .group .car:first-of-type { border-top: 0; }
+  .group .car:last-of-type { border-radius: 0 0 var(--radius) var(--radius); }
+
+  .car[data-mark="here"]   { background: var(--here-bg); }
+  .car[data-mark="gone"]   { background: var(--gone-bg); }
+  .car[data-mark="unsure"] { background: var(--unsure-bg); }
+
+  .car-id { flex: 1 1 190px; min-width: 0; }
+
+  .plate {
+    display: inline-block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 14px; font-weight: 600; letter-spacing: .06em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    padding: 2px 7px;
+    text-transform: uppercase;
+  }
+  .plate.none {
+    color: var(--ink-3); background: var(--card-sunk);
+    font-style: normal; letter-spacing: .04em; text-transform: none;
+  }
+  .car-desc {
+    margin: 5px 0 0; font-size: 14.5px; font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .car-sub {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; color: var(--ink-3); margin-top: 2px;
+  }
+
+  .flag {
+    display: inline-block; margin-top: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: .03em;
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--unsure-bg); color: var(--unsure);
+    border: 1px solid currentColor;
+  }
+  .flag.dup { background: var(--gone-bg); color: var(--gone); }
+
+  .marks { display: flex; gap: 6px; flex: 0 0 auto; }
+  .mark {
+    min-width: 62px; min-height: var(--tap);
+    border: 1px solid var(--rule-strong);
+    background: var(--card);
+    color: var(--ink-2);
+    border-radius: 6px;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .12s, color .12s, border-color .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mark[aria-pressed="true"][data-v="here"]   { background: var(--here);   color: #fff; border-color: var(--here); }
+  .mark[aria-pressed="true"][data-v="gone"]   { background: var(--gone);   color: #fff; border-color: var(--gone); }
+  .mark[aria-pressed="true"][data-v="unsure"] { background: var(--unsure); color: #fff; border-color: var(--unsure); }
+  :root[data-theme="dark"] .mark[aria-pressed="true"],
+  :root:not([data-theme="light"]) .mark[aria-pressed="true"] { color: #0F161B; }
+
+  /* ---------- footer / result ---------- */
+  .result { margin-top: 34px; }
+  .result h2 {
+    font-size: 19px; font-weight: 700; margin: 0 0 6px; letter-spacing: -.01em;
+  }
+  .result p { margin: 0 0 12px; color: var(--ink-2); font-size: 14.5px; max-width: 62ch; }
+  textarea {
+    width: 100%; min-height: 190px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px; line-height: 1.55;
+    padding: 12px;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--rule); border-radius: var(--radius);
+    resize: vertical;
+  }
+  textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .btn {
+    min-height: var(--tap); padding: 0 18px;
+    border-radius: 6px; cursor: pointer;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 14px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule-strong);
+    background: var(--card); color: var(--ink);
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .btn.primary,
+  :root:not([data-theme="light"]) .btn.primary { color: #0F161B; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  footer.note {
+    margin-top: 30px; padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px; color: var(--ink-3); max-width: 64ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+  @media (max-width: 430px) {
+    .marks { width: 100%; }
+    .mark { flex: 1; min-width: 0; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">TMMT Auto Services · 1 September 2026</p>
+    <h1>What&rsquo;s actually in the lot?</h1>
+    <p class="standfirst">
+      The database lists <strong>43 vehicles</strong>. Walk the lot and tap each one
+      <strong>Here</strong>, <strong>Gone</strong>, or <strong>?</strong>. When you&rsquo;re done, copy the
+      summary at the bottom and send it back.
+    </p>
+    <div class="stale">
+      <div>
+        <b>Why this exists:</b> every fleet row in the database was last written on
+        <b>17 June 2026</b> &mdash; one single day, 76 days ago. Nothing has updated it since.
+        Statuses like &ldquo;Rented&rdquo; below are what was true in June, not today. Trust your eyes,
+        not the label.
+      </div>
+    </div>
+  </header>
+
+  <div class="tally" role="status" aria-live="polite">
+    <div class="tally-grid">
+      <div class="tally-cell t-here"><span class="tally-n" id="n-here">0</span><span class="tally-l">Here</span></div>
+      <div class="tally-cell t-gone"><span class="tally-n" id="n-gone">0</span><span class="tally-l">Gone</span></div>
+      <div class="tally-cell t-unsure"><span class="tally-n" id="n-unsure">0</span><span class="tally-l">Not sure</span></div>
+      <div class="tally-cell t-todo"><span class="tally-n" id="n-todo">43</span><span class="tally-l">Left to do</span></div>
+    </div>
+    <div class="bar">
+      <span class="b-here" id="bar-here" style="width:0%"></span>
+      <span class="b-gone" id="bar-gone" style="width:0%"></span>
+      <span class="b-unsure" id="bar-unsure" style="width:0%"></span>
+    </div>
+  </div>
+
+  <main id="list"></main>
+
+  <section class="result">
+    <h2>Send this back</h2>
+    <p>Tap <b>Build summary</b>, then copy the text and paste it into the chat. Your taps are saved on this device as you go.</p>
+    <textarea id="out" readonly aria-label="Stocktake summary to copy"></textarea>
+    <div class="actions">
+      <button class="btn primary" id="build">Build summary</button>
+      <button class="btn" id="copy">Copy</button>
+      <button class="btn" id="reset">Start over</button>
+    </div>
+  </section>
+
+  <footer class="note">
+    Vehicles marked Gone are never deleted &mdash; they get an end-dated status so their rental and
+    payout history stays answerable. Rows flagged <b>duplicate</b> are the same physical car entered
+    twice; you only need to find it once.
+  </footer>
+
+</div>
+
+<script>
+const CARS = [
+ {o:"Asad",y:2009,m:"Toyota Corolla",c:"Silver",p:"TBX7504",s:"Rented",pct:"70%"},
+ {o:"Asad",y:2010,m:"Toyota Camry",c:"Blue",p:"TBX7503",s:"Rented",pct:"70%"},
+ {o:"Ayyan",y:2015,m:"Honda Accord",c:"Black",p:"SYL-6945",s:"Coming Soon"},
+ {o:"Chidi",y:2015,m:"Toyota Prius",c:"Red",p:"9GD4259",s:"Retired"},
+ {o:"Chidi",y:2016,m:"Toyota Corolla",c:"Tan",p:"2FR2928",s:"Rented"},
+ {o:"Chidi",y:2017,m:"Toyota Camry",c:"Brown",p:"2FR2977",s:"Rented"},
+ {o:"Chidi",y:2017,m:"Toyota Camry",c:"Black",p:"6GJ4314",s:"Available",f:"dup",fx:"Same plate as an unowned row below — one car, entered twice"},
+ {o:"Duval / Jimmy",y:2019,m:"Nissan Versa",c:"Silver",p:null,s:"Rented"},
+ {o:"Duval / Jimmy",y:2019,m:"Dodge Caravan",c:"White",p:null,s:"Rented",fx:"Filed under the spelling “Jimmy/ Duval”"},
+ {o:"Esmat / Ismatullah",y:2017,m:"Toyota Sienna",c:"Black",p:"31853A",s:"Coming Soon",fx:"Filed under “Esmat” — you confirmed same person"},
+ {o:"Esmat / Ismatullah",y:2017,m:"Toyota Corolla",c:"Red",p:"31861A",s:"Rented"},
+ {o:"Esmat / Ismatullah",y:2020,m:"Toyota Corolla",c:"Red",p:"31874A",s:"Rented"},
+ {o:"John Lopez",y:2021,m:"Toyota Corolla",c:"Silver",p:"TGA3926",s:"Rented",pct:"70%"},
+ {o:"Kenny",y:2014,m:"Ford Focus",c:"Gray",p:null,s:"Rented"},
+ {o:"Lewis",y:2023,m:"Mitsubishi Outlander",c:"Silver",p:"TLE5644",s:"Coming Soon"},
+ {o:"Marc",y:2013,m:"Toyota Corolla",c:"Black",p:"5CW4654",s:"Rented",f:"dup",fx:"Same car as an unowned row below — same VIN, two rows"},
+ {o:"Robin",y:2014,m:"Toyota Prius",c:"Green",p:"SZU9496",s:"Retired"},
+ {o:"Robin",y:2020,m:"Tesla Model Y",c:"Blue",p:null,s:"Under Maintenance",pct:"60%"},
+ {o:"Robin",y:2024,m:"Honda CR-V",c:"Black",p:null,s:"Rented"},
+ {o:"S & A Consulting",y:2012,m:"Toyota Camry",c:"Black",p:"SZA6907",s:"Rented",pct:"65%"},
+ {o:"Shaker",y:2013,m:"Toyota Prius C",c:"Red",p:null,s:"Retired"},
+ {o:"Shaker",y:2017,m:"Hyundai Accent",c:"Gray",p:"SZH3734",s:"Rented"},
+ {o:"Shaker",y:2019,m:"Kia Rio",c:"Blue",p:null,s:"Retired"},
+ {o:"TAHA",y:2020,m:"Toyota Corolla",c:"Grey",p:"SZX8992",s:"Rented",pct:"65%",fx:"You said this one is gone — confirm on the walk"},
+ {o:"TMMT (company)",y:2013,m:"Lexus RX450h",c:"Beige",p:"SXM3874",s:"Available"},
+ {o:"TMMT (company)",y:2015,m:"Chevy Equinox",c:"Blue",p:"SZD9567",s:"Rented"},
+ {o:"TMMT (company)",y:2017,m:"Ford Fusion",c:"Red",p:"TCH7494",s:"Retired"},
+ {o:"TMMT (company)",y:2018,m:"Toyota Corolla",c:"White",p:"TGZ1189",s:"Rented"},
+ {o:"TMMT (company)",y:2018,m:"Volkswagen Atlas",c:"Metallic Blue",p:null,s:"Under Maintenance"},
+ {o:"TMMT (company)",y:2019,m:"Tesla Model 3",c:"White",p:null,s:"Rented"},
+ {o:"TMMT (company)",y:2020,m:"BMW X3",c:"White",p:"TBU1914",s:"Rented"},
+ {o:"TMMT (company)",y:2022,m:"Ford Escape",c:"Gray",p:"SYL7558",s:"Under Maintenance"},
+ {o:"TMMT (company)",y:2022,m:"Toyota RAV4",c:"Silver",p:"TBB4289",s:"Under Maintenance"},
+ {o:"TMMT (company)",y:2024,m:"Toyota Camry",c:"Silver",p:"TBB4290",s:"Under Maintenance"},
+ {o:"Umar",y:2015,m:"Lexus CT200h",c:"Blue",p:"SZB8847",s:"Rented",pct:"70%"},
+ {o:"Wayne",y:2025,m:"Toyota Camry",c:"Blue",p:"TNS9711",s:"Rented"},
+ {o:"No owner recorded",y:2013,m:"Toyota Corolla",c:"Black",p:"5CW4654",s:"Available",f:"dup",fx:"Duplicate of Marc’s Corolla — same VIN"},
+ {o:"No owner recorded",y:2017,m:"Ford Edge",c:"Black",p:"SZF4776",s:"Retired",f:"dup",fx:"Duplicate — same plate and VIN as the row below"},
+ {o:"No owner recorded",y:2017,m:"Ford Edge",c:"Black",p:"SZF4776",s:"no status",f:"dup",fx:"Duplicate — same plate and VIN as the row above"},
+ {o:"No owner recorded",y:2017,m:"Toyota Camry",c:"Black",p:"6GJ4314",s:"Available",f:"dup",fx:"Duplicate of Chidi’s Camry — same plate"},
+ {o:"No owner recorded",y:2018,m:"Nissan Sentra",c:"Blue",p:"SZF477",s:"no status",fx:"Plate may be a typo of SZF4776"},
+ {o:"No owner recorded",y:null,m:"Blank record — no year, make, model or plate",c:null,p:null,s:"no status",f:"blank",fx:"Nothing identifies this row. Likely safe to delete"},
+ {o:"No owner recorded",y:null,m:"Blank record — no year, make, model or plate",c:null,p:null,s:"no status",f:"blank",fx:"Nothing identifies this row. Likely safe to delete"}
+];
+
+const KEY = "tmmt-stocktake-v1";
+let marks = {};
+try { marks = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { marks = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(marks)); } catch (e) {} }
+
+const listEl = document.getElementById("list");
+const groups = [];
+CARS.forEach((car, i) => {
+  car._i = i;
+  const last = groups[groups.length - 1];
+  if (last && last.name === car.o) last.cars.push(car);
+  else groups.push({ name: car.o, cars: [car] });
+});
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+listEl.innerHTML = groups.map(g => {
+  const idxs = g.cars.map(c => c._i).join(",");
+  const rows = g.cars.map(c => {
+    const plate = c.p
+      ? '<span class="plate">' + esc(c.p) + '</span>'
+      : '<span class="plate none">no plate on file</span>';
+    const desc = c.y ? esc(c.y + " " + c.m) : esc(c.m);
+    const sub = [c.c, c.s ? "was: " + c.s : null, c.pct ? "owner share " + c.pct : null]
+      .filter(Boolean).map(esc).join("  ·  ");
+    const flag = c.fx
+      ? '<span class="flag' + (c.f === "dup" ? " dup" : "") + '">' + esc(c.fx) + '</span>'
+      : "";
+    return '<div class="car" id="car-' + c._i + '" data-mark="' + esc(marks[c._i] || "") + '">' +
+      '<div class="car-id">' + plate +
+        '<div class="car-desc">' + desc + '</div>' +
+        (sub ? '<div class="car-sub">' + sub + '</div>' : '') +
+        flag +
+      '</div>' +
+      '<div class="marks" role="group" aria-label="' + esc(desc) + '">' +
+        ['here', 'gone', 'unsure'].map(v =>
+          '<button class="mark" data-i="' + c._i + '" data-v="' + v + '" ' +
+          'aria-pressed="' + (marks[c._i] === v ? "true" : "false") + '">' +
+          (v === "here" ? "Here" : v === "gone" ? "Gone" : "?") + '</button>'
+        ).join("") +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  return '<section class="group">' +
+    '<div class="group-head">' +
+      '<h2 class="group-name">' + esc(g.name) + '</h2>' +
+      '<span class="group-meta">' + g.cars.length + (g.cars.length === 1 ? " car" : " cars") + '</span>' +
+      '<button class="group-all" data-all="' + idxs + '">Mark all gone</button>' +
+    '</div>' + rows +
+  '</section>';
+}).join("");
+
+function paint(i) {
+  const row = document.getElementById("car-" + i);
+  if (!row) return;
+  row.dataset.mark = marks[i] || "";
+  row.querySelectorAll(".mark").forEach(b => {
+    b.setAttribute("aria-pressed", marks[i] === b.dataset.v ? "true" : "false");
+  });
+}
+
+function tally() {
+  const t = { here: 0, gone: 0, unsure: 0 };
+  Object.values(marks).forEach(v => { if (t[v] !== undefined) t[v]++; });
+  const total = CARS.length;
+  document.getElementById("n-here").textContent = t.here;
+  document.getElementById("n-gone").textContent = t.gone;
+  document.getElementById("n-unsure").textContent = t.unsure;
+  document.getElementById("n-todo").textContent = total - t.here - t.gone - t.unsure;
+  document.getElementById("bar-here").style.width = (t.here / total * 100) + "%";
+  document.getElementById("bar-gone").style.width = (t.gone / total * 100) + "%";
+  document.getElementById("bar-unsure").style.width = (t.unsure / total * 100) + "%";
+  return t;
+}
+
+listEl.addEventListener("click", e => {
+  const all = e.target.closest(".group-all");
+  if (all) {
+    all.dataset.all.split(",").forEach(i => { marks[i] = "gone"; paint(i); });
+    save(); tally(); return;
+  }
+  const b = e.target.closest(".mark");
+  if (!b) return;
+  const i = b.dataset.i;
+  marks[i] = (marks[i] === b.dataset.v) ? undefined : b.dataset.v;
+  if (!marks[i]) delete marks[i];
+  paint(i); save(); tally();
+});
+
+function label(c) {
+  const bits = [c.y ? c.y + " " + c.m : c.m];
+  if (c.c) bits.push("(" + c.c + ")");
+  bits.push(c.p ? "plate " + c.p : "no plate");
+  return bits.join(" ");
+}
+
+document.getElementById("build").addEventListener("click", () => {
+  const t = tally();
+  const todo = CARS.length - t.here - t.gone - t.unsure;
+  const lines = ["FLEET STOCKTAKE — " + new Date().toISOString().slice(0, 10),
+    "Here: " + t.here + "   Gone: " + t.gone + "   Not sure: " + t.unsure + "   Not checked: " + todo,
+    ""];
+  [["here", "STILL HERE"], ["gone", "GONE"], ["unsure", "NOT SURE"], [null, "NOT CHECKED"]]
+    .forEach(([v, head]) => {
+      const rows = CARS.filter(c => (marks[c._i] || null) === v);
+      if (!rows.length) return;
+      lines.push(head + " (" + rows.length + ")");
+      rows.forEach(c => lines.push("  - " + c.o + " — " + label(c)));
+      lines.push("");
+    });
+  document.getElementById("out").value = lines.join("\n").trim();
+});
+
+document.getElementById("copy").addEventListener("click", async () => {
+  const ta = document.getElementById("out");
+  if (!ta.value) document.getElementById("build").click();
+  const btn = document.getElementById("copy");
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    btn.textContent = "Copied";
+  } catch (e) {
+    ta.removeAttribute("readonly"); ta.select(); ta.setAttribute("readonly", "");
+    btn.textContent = "Select all, then copy";
+  }
+  setTimeout(() => { btn.textContent = "Copy"; }, 2200);
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  marks = {}; save();
+  CARS.forEach(c => paint(c._i));
+  tally();
+  document.getElementById("out").value = "";
+});
+
+CARS.forEach(c => paint(c._i));
+tally();
+</script>

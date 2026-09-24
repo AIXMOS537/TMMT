@@ -28,6 +28,8 @@ const TASK = {
   category: "payment_followup",
   subject_name: "Test Customer",
   subject_phone: "+15551112222",
+  status: "pending",
+  handled_at: null,
   context: { past_due: "250.00" },
 };
 

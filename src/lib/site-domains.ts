@@ -1,11 +1,11 @@
 /**
- * ONE app (tmmt-ops on Vercel) serves staff, owner command center, training
- * and the intake forms. Everything PUBLIC — marketing, checkout, funnels —
- * lives on the GHL site at allinonemanagementsolutions.com (twin .net).
- * tmmt-command-center / tmmt-training-site / aixmos-offer are retired and
- * PAUSED on Vercel (503). aixmos-landing is the exception: it is NOT retired
- * and is still serving at aixmos-landing.vercel.app — owner decision
- * 2026-09-09, left up as-is. Nothing in this file routes to it.
+ * ONE app (tmmt-ops on Vercel) serves staff, owner command center, training,
+ * the public landing pages and the intake forms. TMMT OS keeps its own
+ * visitors: nothing here routes anyone to the partner site at
+ * allinonemanagementsolutions.com (twin .net) — that is an opt-in referral
+ * and it lives in @/lib/partner-handoff.
+ * The old aixmos-landing / tmmt-command-center / tmmt-training-site /
+ * aixmos-offer Vercel projects are retired (2026-09-03).
  *
  * Do NOT default to the apex .com/.net — those already resolve to GHL
  * (Cloudflare → sites.ludicrous.cloud). Do NOT use app.* — that CNAME is
@@ -40,15 +40,20 @@ export function ownerHubOrigin(): string {
   return `https://${OWNER_HUB_HOST}`;
 }
 
-/** Public All In One Management site (GHL). Every public visitor is routed here. */
+/**
+ * The partner's public site. Kept only so the CORS allow-list below can name
+ * it and so /partners/all-in-one can link to it after someone opts in.
+ *
+ * It is NOT a routing destination. `publicSiteRedirectUrl`,
+ * `isTmmtPublicHost`, `shouldBounceTmmtCreditToAixmos`, `aixmosCreditPath`
+ * and `aixmosCreditRedirectUrl` used to live here and were the machinery that
+ * bounced TMMT visitors to the partner homepage. They are gone — the only
+ * sanctioned hand-off is `partnerHandoffUrl` in @/lib/partner-handoff, and it
+ * refuses to build a URL without recorded consent.
+ */
 export const AIXMOS_PUBLIC_ORIGIN = (
   process.env.NEXT_PUBLIC_AIXMOS_SITE_URL ?? "https://allinonemanagementsolutions.com"
 ).replace(/\/$/, "");
-
-/** Where an anonymous visitor lands when they hit the app's front door. */
-export function publicSiteRedirectUrl(campaign: string): string {
-  return `${AIXMOS_PUBLIC_ORIGIN}/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=${campaign}`;
-}
 
 const TMMT_PUBLIC_HOSTS = new Set([
   "tmmt-ops.vercel.app",
@@ -56,23 +61,16 @@ const TMMT_PUBLIC_HOSTS = new Set([
   "www.tmmtrentals.com",
 ]);
 
-/** Hosts of the one app. Marketing entry points on these bounce to the GHL site. */
-export function isTmmtPublicHost(host: string | null): boolean {
-  const h = normalizeHost(host);
-  return TMMT_PUBLIC_HOSTS.has(h);
-}
-
 /**
- * Direct hits on marketing entry points bounce to the GHL site. Requests
- * proxied from the public site (x-forwarded-host) are never bounced.
+ * Hosts of the one app. Used to pick which brand a form renders under —
+ * host classification, nothing more.
+ *
+ * This used to be the trigger for the partner bounce as well, which is how a
+ * branding helper ended up deciding who got sent off the site. It no longer
+ * feeds any redirect.
  */
-export function shouldBounceTmmtCreditToAixmos(
-  host: string | null,
-  forwardedHost: string | null,
-): boolean {
-  if (!isTmmtPublicHost(host)) return false;
-  const original = (forwardedHost ?? host)?.split(",")[0]?.trim() ?? host;
-  return isTmmtPublicHost(original);
+export function isTmmtPublicHost(host: string | null): boolean {
+  return TMMT_PUBLIC_HOSTS.has(normalizeHost(host));
 }
 
 const AIXMOS_CORS_ORIGINS = new Set([
@@ -89,26 +87,4 @@ export function isAixmosCorsOrigin(origin: string | null): boolean {
   if (!origin) return false;
   const o = origin.replace(/\/$/, "");
   return o === AIXMOS_PUBLIC_ORIGIN || AIXMOS_CORS_ORIGINS.has(o);
-}
-
-/**
- * Maps a marketing entry point typed on the app onto the GHL public site.
- * The intake forms themselves (/forms/*) stay on the app — the GHL site links
- * to them. Rental SKUs (training, rental-in-a-box, flagship) stay on TMMT.
- */
-export function aixmosCreditPath(pathname: string): string | null {
-  const utm = (campaign: string) =>
-    `/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=${campaign}`;
-  if (pathname === "/credit" || pathname === "/funding") return utm("credit");
-  const m = /^\/lp\/(moe_legacy|moe-legacy|aixmos)\/([^/]+)\/?$/.exec(pathname);
-  if (!m) return null;
-  const sku = m[2];
-  if (sku === "intro-97") return utm("credit-guidance");
-  if (sku === "lead-magnet") return utm("playbook");
-  return null;
-}
-
-export function aixmosCreditRedirectUrl(pathname: string): string | null {
-  const path = aixmosCreditPath(pathname);
-  return path ? `${AIXMOS_PUBLIC_ORIGIN}${path}` : null;
 }

@@ -181,6 +181,12 @@ export default function DealersPage() {
           >
             Full kit comparison
           </Link>
+          <Link
+            href="/configurator"
+            className="rounded-lg border border-[#1440C4] px-6 py-3 text-sm font-semibold text-[#1440C4] hover:bg-blue-50"
+          >
+            See what is running today
+          </Link>
         </div>
       </section>
 
@@ -189,6 +195,10 @@ export default function DealersPage() {
         <p className="mt-2">
           <Link href="/legal/rental" className="text-[#1440C4] hover:underline">
             Legal & disclaimers
+          </Link>
+          {" · "}
+          <Link href="/trust" className="text-[#1440C4] hover:underline">
+            How we handle your data
           </Link>
           {" · "}
           <Link href="/login" className="text-[#1440C4] hover:underline">

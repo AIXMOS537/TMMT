@@ -49,21 +49,24 @@ const nextConfig: NextConfig = {
       { source: "/payments", destination: "/interfaces/payments", permanent: false },
       { source: "/fleet", destination: "/interfaces/vehicles", permanent: false },
 
-      // Phase 9 short aliases for marketing surfaces (email, SMS, bio links).
-      // Permanent (308) so browsers cache; UTM defaults can be overridden by callers passing their own.
-      // Public marketing lives on the GHL site (allinonemanagementsolutions.com).
-      // Temporary (307) on purpose so the destination can change without
-      // browsers caching a dead hop (the old 308 pointed at the retired landing).
+      // /credit and /funding are TMMT's own front doors, not the partner's.
+      //
+      // These two used to 307 straight to allinonemanagementsolutions.com, on
+      // every host, before middleware even ran — so anyone who typed a TMMT
+      // address, clicked a TMMT ad, or scanned a TMMT QR code landed on the
+      // partner's homepage and the lead was gone. Sending a visitor to the
+      // partner is a referral we give away; it is opt-in only now and lives on
+      // /partners/all-in-one behind a form (see src/lib/partner-handoff.ts).
+      // These land on our own credit + funding intake instead, which captures
+      // the lead into TMMT and carries the opt-in box.
       {
         source: "/funding",
-        destination:
-          "https://allinonemanagementsolutions.com/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=credit",
+        destination: "/forms/credit-funding-intake?entry=funding",
         permanent: false,
       },
       {
         source: "/credit",
-        destination:
-          "https://allinonemanagementsolutions.com/?utm_source=tmmt-ops&utm_medium=redirect&utm_campaign=credit",
+        destination: "/forms/credit-funding-intake?entry=credit",
         permanent: false,
       },
     ];

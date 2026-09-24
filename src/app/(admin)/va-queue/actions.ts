@@ -25,6 +25,7 @@ import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { isOwnerUser, isStaffUser } from "@/lib/auth-roles";
+import { onlyOpenVaTasks } from "@/lib/ops/va-task-lifecycle";
 
 export type VaTriage = "needs_approval" | "auto" | "ignore" | "untriaged";
 export type VaDecision = "approve" | "handled" | "dismiss";
@@ -112,11 +113,7 @@ export async function listVaQueue(opts: {
 
   const limit = Math.min(Math.max(Math.trunc(opts.limit ?? 200), 1), MAX_LIMIT);
   const db = createServiceRoleClient();
-  let query = db
-    .from("exec_va_tasks")
-    .select(ROW_COLUMNS)
-    .eq("status", "pending")
-    .is("handled_at", null);
+  let query = onlyOpenVaTasks(db.from("exec_va_tasks").select(ROW_COLUMNS));
   query = applyTriage(query, opts.triage);
   if (opts.category) query = query.eq("category", opts.category);
 
@@ -138,11 +135,7 @@ export async function getVaQueueSummary(): Promise<ActionResult<VaQueueSummary>>
 
   const db = createServiceRoleClient();
   const base = () =>
-    db
-      .from("exec_va_tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending")
-      .is("handled_at", null);
+    onlyOpenVaTasks(db.from("exec_va_tasks").select("id", { count: "exact", head: true }));
 
   const [needs, approved, auto, ignore, untriaged] = await Promise.all([
     base().eq("triage", "needs_approval"),

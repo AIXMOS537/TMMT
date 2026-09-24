@@ -7,6 +7,7 @@ import { processUnifiedIntake } from "@/lib/intake/unified";
 import type { RequestType } from "@/lib/workflow/statuses";
 import { linkFormToPerson } from "@/lib/people/upsert";
 import { PROGRAM_FORM_SKUS } from "@/lib/pricing/catalog";
+import { crossSellNameForSlug } from "@/lib/business-lines/cross-sell";
 
 // ─── Shared helpers ──────────────────────────────
 
@@ -21,13 +22,42 @@ type PersonStamp = {
   phone?: string | null;
 };
 
+/**
+ * Postgres error for insufficient privilege — RLS refusing the row, or refusing
+ * to hand it back. Both arrive here as 42501.
+ */
+const INSUFFICIENT_PRIVILEGE = "42501";
+
 async function insertRow(
   table: string,
   record: Record<string, unknown>,
   person?: PersonStamp,
 ): Promise<FormResult> {
   const supabase = await createSSRClient();
-  const { data, error } = await supabase.from(table).insert(record).select("id").maybeSingle();
+
+  // `.select("id")` makes this an INSERT ... RETURNING, and RETURNING is checked
+  // against the SELECT policy, not the INSERT one. A public visitor is `anon`,
+  // which is allowed to INSERT into these tables and — correctly — not allowed to
+  // read them, since the waitlist and the lead book are full of other people's
+  // details. So the write was refused for wanting the row back, not for writing
+  // it, and every public submission failed while the visitor saw a success screen.
+  //
+  // Postgres rolls the whole statement back when RETURNING is refused, so the
+  // retry below cannot double-insert. Verified against production before it was
+  // written: the RETURNING attempt left no row behind.
+  //
+  // Staff keep the id (they have a SELECT policy); anon submissions simply lose
+  // the destination id on the form_submissions link, which is a reporting nicety,
+  // not the submission.
+  const first = await supabase.from(table).insert(record).select("id").maybeSingle();
+  let data = first.data;
+  let error = first.error;
+  if (error?.code === INSUFFICIENT_PRIVILEGE) {
+    const retry = await supabase.from(table).insert(record);
+    data = null;
+    error = retry.error;
+  }
+
   if (error) {
     console.error(`[${table}] insert failed:`, error.message);
     return { success: false, error: "Submission failed. Please try again." };
@@ -171,6 +201,76 @@ export async function submitDealerApply(formData: FormData): Promise<FormResult>
   return result;
 }
 
+// ─── 1b-2. Partner apply — the SUPPLY side (people who HAVE a car) ───
+
+/**
+ * Incoming Leads is people who want to rent a car. This is the mirror: people who
+ * own one and want it earning. Deliberately short — the gates (commercial-use
+ * insurance, title, the split) are decided by a human afterwards, never by the
+ * applicant, and the RLS WITH CHECK enforces that they arrive ungraded.
+ */
+const partnerApplySchema = z.object({
+  owner_name: z.string().min(1).max(200),
+  phone: z.string().min(7).max(20),
+  email: z.string().email().max(254).or(z.literal("")),
+  vehicle_year: z.string().max(4).optional(),
+  vehicle_make: z.string().max(60).optional(),
+  vehicle_model: z.string().max(60).optional(),
+  mileage: z.string().max(9).optional(),
+  finance_status: z.enum(["Owned outright", "Financed", "Leased", ""]).optional(),
+  monthly_note_payment: z.string().max(12).optional(),
+  insurance_carrier: z.string().max(120).optional(),
+  notes: z.string().max(2000).optional(),
+}).merge(attributionSchema);
+
+export async function submitPartnerApply(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = partnerApplySchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+  const year = d.vehicle_year ? Number(d.vehicle_year) : null;
+  const miles = d.mileage ? Number(d.mileage.replace(/\D/g, "")) : null;
+  const note = d.monthly_note_payment
+    ? Number(d.monthly_note_payment.replace(/[^0-9.]/g, ""))
+    : null;
+
+  const result = await insertRow("partner_acquisition", {
+    owner_name: d.owner_name.trim(),
+    phone: d.phone.replace(/\D/g, "") || null,
+    email: d.email.trim() || null,
+    // The RLS policy requires exactly these three — a submission cannot grade itself.
+    stage: "new",
+    commercial_use_cleared: "unknown",
+    proposed_partner_pct: null,
+    vehicle_year: Number.isFinite(year as number) ? year : null,
+    vehicle_make: d.vehicle_make?.trim() || null,
+    vehicle_model: d.vehicle_model?.trim() || null,
+    mileage: Number.isFinite(miles as number) ? miles : null,
+    finance_status: d.finance_status || null,
+    monthly_note_payment: Number.isFinite(note as number) ? note : null,
+    insurance_carrier: d.insurance_carrier?.trim() || null,
+    notes: d.notes?.trim() || null,
+    source: d.source || "partner-apply",
+  }, {
+    formSlug: "partner-apply",
+    name: d.owner_name.trim(),
+    email: d.email.trim() || null,
+    phone: d.phone,
+  });
+
+  if (result.success) {
+    const car = [d.vehicle_year, d.vehicle_make, d.vehicle_model].filter(Boolean).join(" ") || "car not specified";
+    fanOut(
+      `Car owner wants to partner\n${d.owner_name.trim()} · ${d.phone}\n${car}\n` +
+        `Finance: ${d.finance_status || "not said"}${note ? ` ($${note}/mo note)` : ""}\n` +
+        `NEXT: clear commercial-use insurance before anything else.`
+    ).catch((err) => console.warn("[partner-apply] fanOut error:", err));
+  }
+
+  return result;
+}
+
 // ─── 1c. Business line intake (dealers, wholesale, verticals) ───
 
 const businessLineIntakeSchema = z.object({
@@ -301,13 +401,53 @@ const waitlistSchema = z.object({
   desired_specs_notes: z.string().max(2000).optional(),
 });
 
+/**
+ * Records the services a waitlisted person asked to hear about.
+ *
+ * Only ticked boxes arrive in FormData, and anything whose slug is not a real
+ * public TMMT line is dropped rather than stored — a service row is a consent
+ * record, so it may only ever say what the person actually chose. No ticks
+ * means no rows and no follow-up: the default is silence.
+ *
+ * Best-effort by design. The waitlist entry is the thing the person came for;
+ * if the opt-in write fails they are still on the list, and a failure here must
+ * never turn their submission into an error.
+ */
+async function recordServiceOptIns(
+  supabase: Awaited<ReturnType<typeof createSSRClient>>,
+  person: { name: string; phone: string; email: string | null },
+  slugs: string[],
+): Promise<void> {
+  const rows = slugs
+    .map((slug) => ({ slug, name: crossSellNameForSlug(slug) }))
+    .filter((s): s is { slug: string; name: string } => s.name !== null)
+    .map((s) => ({
+      customer_name: person.name,
+      contact_phone: person.phone,
+      contact_email: person.email,
+      service_slug: s.slug,
+      service_name: s.name,
+      status: "requested",
+      channel: "waitlist-form",
+      opted_in_at: new Date().toISOString(),
+      metadata: { source: "forms/waitlist" },
+    }));
+  if (rows.length === 0) return;
+  const { error } = await supabase.from("customer_services").insert(rows);
+  if (error) console.error("[waitlist] service opt-in insert failed:", error.message);
+}
+
 export async function submitWaitlist(formData: FormData): Promise<FormResult> {
   const raw = Object.fromEntries(formData);
   const parsed = waitlistSchema.safeParse(raw);
   if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
 
+  // getAll, not Object.fromEntries: a multi-checkbox field collapses to its
+  // LAST value there, so nine ticked services would have been recorded as one.
+  const serviceSlugs = formData.getAll("services").map(String).filter(Boolean);
+
   const d = parsed.data;
-  return insertRow("waitlist", {
+  const result = await insertRow("waitlist", {
     customer_name: d.customer_name.trim(),
     customer_phone: d.customer_phone,
     customer_email: d.customer_email || null,
@@ -325,6 +465,22 @@ export async function submitWaitlist(formData: FormData): Promise<FormResult> {
     email: d.customer_email || null,
     phone: d.customer_phone,
   });
+
+  // Only after the waitlist row exists. An opt-in belonging to nobody is worse
+  // than no opt-in: it would be followed up on with no request behind it.
+  if (result.success && serviceSlugs.length > 0) {
+    const supabase = await createSSRClient();
+    await recordServiceOptIns(
+      supabase,
+      {
+        name: d.customer_name.trim(),
+        phone: d.customer_phone,
+        email: d.customer_email || null,
+      },
+      serviceSlugs,
+    );
+  }
+  return result;
 }
 
 // ─── 5. Ticket ───────────────────────────────────

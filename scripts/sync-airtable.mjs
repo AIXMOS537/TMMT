@@ -6,6 +6,43 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const DRY_RUN = process.argv.includes('--dry-run')
 
+// ---------------------------------------------------------------------------
+// SAFETY LOCK — added 2026-09-01 by owner instruction.
+//
+// This script was written to a 2026-03-26 spec that treated AIRTABLE as the
+// source of truth: it TRUNCATES the listed Supabase tables and re-inserts from
+// Airtable, with "Airtable always wins; no merge logic".
+//
+// That is no longer the system of record. Per docs/SYSTEM_OF_RECORD.md (owner
+// decision, 2026-09-01), SUPABASE is the system of record and Airtable is being
+// decommissioned. Running this against production would destroy every
+// GHL-sourced and app-authored row -- ~1,642 contacts, 875 leads, all
+// verification results, contracts, payments and background checks.
+//
+// It is kept (not deleted) only because it documents the Airtable table/field
+// mapping needed for the migration. Do not remove that mapping.
+//
+// To run it anyway you must pass --i-understand-this-truncates-prod.
+// --dry-run is exempt: it reads only and writes nothing.
+// ---------------------------------------------------------------------------
+const TRUNCATE_ACK = '--i-understand-this-truncates-prod'
+if (!DRY_RUN && !process.argv.includes(TRUNCATE_ACK)) {
+  console.error(`
+REFUSING TO RUN.
+
+  This script TRUNCATES ${'these Supabase tables'} and refills them from Airtable:
+  fleet, incoming_leads, background_checks, active_customers, payments,
+  contracts, tickets, expenses, insurance, and 28 others.
+
+  Supabase -- not Airtable -- is the system of record as of 2026-09-01.
+  See docs/SYSTEM_OF_RECORD.md.
+
+  If you are sure, re-run with:  ${TRUNCATE_ACK}
+  To inspect safely instead, re-run with:  --dry-run
+`)
+  process.exit(1)
+}
+
 if (!AIRTABLE_PAT || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required env vars: AIRTABLE_PAT, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
