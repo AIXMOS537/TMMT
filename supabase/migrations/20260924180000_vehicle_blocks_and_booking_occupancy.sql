@@ -51,9 +51,17 @@
 --   'cancelled' and stamps metadata.cancel_reason = 'hold_expired'. The status vocabulary has no
 --   'expired', and this file does not change the live CHECK. The occupancy trigger then drops the
 --   ledger row, and the bookings_no_overlap partial index stops covering it.
---   pg_cron runs it every 5 minutes. The TTL default MUST equal HOLD_TTL_MINUTES in
---   src/lib/rental-pricing/availability.ts; the schema-contract test pins the two together.
+--   The TTL default MUST equal HOLD_TTL_MINUTES in src/lib/rental-pricing/availability.ts;
+--   the schema-contract test pins the two together.
 --   BUSINESS POLICY REQUIRED: 30 minutes is a placeholder until the owner sets the real TTL.
+--   SHIPS DISABLED (E6e, QA B2). No code path writes 'confirmed' yet: the confirm step belongs
+--   behind the owner-approval gate and is not built. With the job live, every Rental Board hold
+--   would be auto-cancelled ~30-35 min after it was placed, including real pickups. So this
+--   migration creates the function but does NOT schedule it, and deactivates any existing job
+--   of that name. To enable it once confirmation exists (owner decision), run this one line:
+--     select cron.schedule('expire-stale-booking-holds', '*/5 * * * *', 'select public.expire_stale_booking_holds()');
+--
+-- ROLLBACK: supabase/rollbacks/20260924180000_down.sql (tested up -> down -> up; see that file).
 --
 -- Half-open '[)' ranges throughout: a slot ending at 10:00 and one starting at 10:00 do not collide.
 -- Idempotent: every object is guarded. Safe to re-run.
@@ -273,6 +281,18 @@ create trigger bookings_sync_occupancy
   after insert or update or delete on public.bookings
   for each row execute function public.vehicle_occupancy_sync();
 
+-- QA B9: the org pin only checks new writes. Report (do not fail on) existing rows that break it.
+do $$
+declare n bigint;
+begin
+  select count(*) into n
+    from public.bookings b join public.vehicles v on v.id = b.vehicle_id
+   where v.org_id is not null and b.org_id is distinct from v.org_id;
+  if n > 0 then
+    raise warning 'vehicle_org_mismatch: % existing booking(s) have an org_id that differs from their vehicle''s org; review before relying on the pin', n;
+  end if;
+end $$;
+
 -- Backfill: any booking that already occupies a car gets its ledger row (prod: 0 rows today).
 insert into public.vehicle_occupancy (source_type, source_id, org_id, vehicle_id, period)
 select 'booking', b.id, b.org_id, b.vehicle_id, tstzrange(b.starts_at, b.ends_at, '[)')
@@ -311,12 +331,17 @@ $fn$;
 revoke all on function public.expire_stale_booking_holds(interval) from public, anon, authenticated;
 grant execute on function public.expire_stale_booking_holds(interval) to service_role;
 
--- cron.schedule upserts by job name, so this is idempotent.
+-- NOT scheduled (QA B2; see header). If an earlier draft of this migration ever scheduled the job,
+-- deactivate it, so that after this migration there is never an ACTIVE expiry schedule.
+-- Enable (owner decision, once a confirm path exists):
+--   select cron.schedule('expire-stale-booking-holds', '*/5 * * * *', 'select public.expire_stale_booking_holds()');
 do $$
+declare v_job bigint;
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.schedule('expire-stale-booking-holds', '*/5 * * * *',
-                          'select public.expire_stale_booking_holds()');
+    for v_job in select jobid from cron.job where jobname = 'expire-stale-booking-holds' and active loop
+      perform cron.alter_job(v_job, active := false);
+    end loop;
   end if;
 end $$;
 
@@ -345,5 +370,12 @@ create policy org_member_read on public.vehicle_occupancy for select to authenti
 revoke all on public.vehicle_blocks, public.vehicle_occupancy from anon, authenticated;
 grant select, insert, update, delete on public.vehicle_blocks to authenticated;
 grant select on public.vehicle_occupancy to authenticated;
+
+-- QA B4: service_role too. TRUNCATE skips row triggers: truncating bookings leaves phantom ledger
+-- rows, and truncating the ledger lets a block overlap a live booking. Nothing in the repo
+-- truncates these tables, and service_role never writes the ledger directly (the definer
+-- trigger does), so these revokes take away nothing that is used.
+revoke truncate on public.bookings, public.vehicle_blocks, public.vehicle_occupancy from service_role;
+revoke insert, update, delete, truncate on public.vehicle_occupancy from service_role;
 
 commit;

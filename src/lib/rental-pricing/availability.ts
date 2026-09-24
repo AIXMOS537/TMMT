@@ -46,8 +46,12 @@ export const BLOCKING_STATUSES: readonly BookingStatus[] = ["hold", "confirmed",
  * BUSINESS POLICY REQUIRED: 30 is a placeholder until the owner sets the real TTL.
  * The database enforces this, not the app: public.expire_stale_booking_holds()
  * (migration 20260924180000_vehicle_blocks_and_booking_occupancy.sql) moves holds
- * older than this to 'cancelled' every 5 minutes via pg_cron. Its default
- * interval MUST equal this number; the schema-contract test pins the two together.
+ * older than this to 'cancelled'. Its default interval MUST equal this number;
+ * the schema-contract test pins the two together.
+ *
+ * The pg_cron schedule SHIPS DISABLED (QA B2): nothing writes 'confirmed' yet, so
+ * a live sweep would cancel every Rental Board hold, real pickups included. The
+ * one-line enable is in the migration header; turning it on is an owner decision.
  */
 export const HOLD_TTL_MINUTES = 30;
 
