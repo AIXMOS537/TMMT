@@ -272,7 +272,18 @@ type AirtableAttachment = {
   type: string;
 };
 
-async function airtableJson(path: string, token: string, attempt = 0): Promise<any> {
+/** Shapes of the two Airtable responses this script reads. */
+type AirtableAttachmentRecord = {
+  id: string;
+  fields?: Record<string, AirtableAttachment[]>;
+};
+type AirtableAttachmentListResponse = {
+  records?: AirtableAttachmentRecord[];
+  offset?: string;
+};
+
+/** The caller declares the response shape it expects; nothing here is `any`. */
+async function airtableJson<T>(path: string, token: string, attempt = 0): Promise<T> {
   await throttle();
   const res = await fetch(`https://api.airtable.com${path}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -280,7 +291,7 @@ async function airtableJson(path: string, token: string, attempt = 0): Promise<a
 
   if (res.status === 429 && attempt < 5) {
     await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
-    return airtableJson(path, token, attempt + 1);
+    return airtableJson<T>(path, token, attempt + 1);
   }
   if (!res.ok) throw new Error(`Airtable ${res.status} on ${path.split('?')[0]}`);
   return res.json();
@@ -298,7 +309,7 @@ async function* walkRecords(
     for (const f of src.fields) params.append('fields[]', f.fieldId);
     if (offset) params.set('offset', offset);
 
-    const json = await airtableJson(`/v0/${BASE_ID}/${src.airtableTableId}?${params}`, token);
+    const json = await airtableJson<AirtableAttachmentListResponse>(`/v0/${BASE_ID}/${src.airtableTableId}?${params}`, token);
     for (const rec of json.records ?? []) {
       yield { recordId: rec.id, fields: rec.fields ?? {} };
     }
@@ -313,7 +324,7 @@ async function refetchRecord(
   token: string,
 ): Promise<Record<string, AirtableAttachment[]>> {
   const params = new URLSearchParams({ returnFieldsByFieldId: 'true' });
-  const json = await airtableJson(`/v0/${BASE_ID}/${src.airtableTableId}/${recordId}?${params}`, token);
+  const json = await airtableJson<AirtableAttachmentRecord>(`/v0/${BASE_ID}/${src.airtableTableId}/${recordId}?${params}`, token);
   return json.fields ?? {};
 }
 
