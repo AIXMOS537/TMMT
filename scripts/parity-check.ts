@@ -119,7 +119,16 @@ const OUT_PATH = argValue('--out');
 
 let lastAirtableCall = 0;
 
-async function airtable(path: string, token: string): Promise<any> {
+/**
+ * Shape of the Airtable REST responses this script reads. Field VALUES are `unknown`
+ * deliberately: the field-diff below inspects them with typeof/Array.isArray, and the
+ * four traps it reports exist precisely because a value's runtime type is not assumed.
+ */
+type AirtableRecord = { id: string; fields?: Record<string, unknown> };
+type AirtableListResponse = { records?: AirtableRecord[]; offset?: string };
+
+/** The caller declares the response shape it expects; nothing here is `any`. */
+async function airtable<T>(path: string, token: string): Promise<T> {
   const wait = AIRTABLE_MIN_INTERVAL_MS - (Date.now() - lastAirtableCall);
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastAirtableCall = Date.now();
@@ -131,7 +140,7 @@ async function airtable(path: string, token: string): Promise<any> {
   if (res.status === 429) {
     // Back off and retry once. A 429 mid-run corrupts progress accounting (§4.3).
     await new Promise((r) => setTimeout(r, 2000));
-    return airtable(path, token);
+    return airtable<T>(path, token);
   }
   if (!res.ok) {
     // Never echo the response body blindly — it can quote request headers.
@@ -153,7 +162,7 @@ async function countAirtable(m: Mapping, token: string): Promise<number> {
     if (m.countFieldId) params.append('fields[]', m.countFieldId);
     if (offset) params.set('offset', offset);
 
-    const json = await airtable(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
+    const json = await airtable<AirtableListResponse>(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
     total += json.records?.length ?? 0;
     offset = json.offset;
   } while (offset);
@@ -171,7 +180,7 @@ async function listAirtableRecordIds(m: Mapping, token: string): Promise<string[
     if (m.countFieldId) params.append('fields[]', m.countFieldId);
     if (offset) params.set('offset', offset);
 
-    const json = await airtable(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
+    const json = await airtable<AirtableListResponse>(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
     for (const r of json.records ?? []) ids.push(r.id);
     offset = json.offset;
   } while (offset);
@@ -351,7 +360,7 @@ async function fieldDiff(token: string, sbUrl: string, sbKey: string): Promise<v
 
   const n = SAMPLE_N > 0 ? SAMPLE_N : 5;
   const params = new URLSearchParams({ pageSize: String(Math.min(n, 100)) });
-  const json = await airtable(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
+  const json = await airtable<AirtableListResponse>(`/v0/${BASE_ID}/${m.airtableTableId}?${params}`, token);
   const sample = (json.records ?? []).slice(0, n);
 
   console.log(`\n# Field-level sample diff — ${m.entity} (n=${sample.length})\n`);
