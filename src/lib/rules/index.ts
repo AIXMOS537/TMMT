@@ -26,6 +26,19 @@
  *
  * Five of seven domains cannot be ported until the owner supplies policy. That is the finding,
  * not a gap in this module.
+ *
+ * Beyond the ported formulas, two P1 capabilities from the matrix (§4.1) are covered here.
+ * Both are mechanism rather than business policy, which is why they could be built without an
+ * owner decision:
+ *
+ * | Capability              | Module            | Acceptance test (matrix §4.1)          |
+ * |-------------------------|-------------------|----------------------------------------|
+ * | Rollups / counts        | `rollups.ts`      | Rollup recomputes, never stale         |
+ * | Validation / required   | `field-types.ts`  | Invalid write rejected (app boundary)  |
+ *
+ * They share one invariant, enforced at two layers: a derived value is COMPUTED, never stored.
+ * `field-types.ts` rejects a write to a rollup/formula/lookup field; `rollups.ts` recomputes
+ * from the linked records and can prove a stored value has drifted.
  */
 
 export {
@@ -86,3 +99,26 @@ export {
   isBgCheckPending,
   type BgCheckDecision,
 } from "@/lib/bg-check-decisions";
+
+export {
+  computeRollup,
+  detectRollupDrift,
+  rollup,
+  type RollupDrift,
+  type RollupFunction,
+  type RollupResult,
+  type RollupSpec,
+  type RollupValue,
+} from "./rollups";
+
+export {
+  DERIVED_FIELD_TYPES,
+  isDerivedField,
+  validateField,
+  validateRecord,
+  type FieldIssue,
+  type FieldSpec,
+  type FieldType,
+  type IssueCode,
+  type ValidationResult,
+} from "./field-types";

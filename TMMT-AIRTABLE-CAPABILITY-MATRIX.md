@@ -102,12 +102,12 @@ Do not re-raise it.
 | Tables / records | Yes — 31 / 1,874 | ✅ 168 tables | — | — | — | Parity report |
 | Field types | Yes — 23 types | 🟡 | Typed columns exist; no *declarative field registry* | P2 | — | Each of the 23 types round-trips |
 | Primary/display field | Yes | 🟡 | No convention for record display name | P3 | — | Every entity renders a label |
-| Validation / required / defaults | Partial | 🟡 | Enforced ad-hoc in forms, not in schema | **P1** | — | Invalid write rejected at DB, not just UI |
+| Validation / required / defaults | Partial | 🟡 **registry landed** `src/lib/rules/field-types.ts` | All 23 types validated at the WRITE path (28 tests), no longer only in forms. DB-level constraints still absent — that half is a schema change and needs a CR | **P1** | — | Invalid write rejected at DB, not just UI |
 | Unique constraints | Weak in Airtable | 🟡 | Airtable cannot enforce; Postgres can | P2 | — | Duplicate insert rejected |
-| Linked records | **Heavy** | 🟡 | FKs exist on some tables; several lack them | **P1** | — | FK integrity test per relationship |
+| Linked records | **Heavy** | 🟡 **audited** `evidence/linked-record-integrity.md` | VERIFIED zero orphaned `org_id` across 7 tables (1,531 rows). FKs still absent on genuine internal refs; other refs UNCOUNTED. Adding constraints = schema change, needs a CR | **P1** | — | FK integrity test per relationship |
 | Reciprocal relationships | Yes | ❌ | No reverse-relation convention | P2 | — | Reverse panel renders |
 | Lookups | Yes (`multipleLookupValues`) | 🟡 | Hand-written joins in `queries.ts` | P2 | — | Lookup matches source |
-| Rollups / counts | Yes (Tickets balance) | 🟡 | `getVehicleStats` only; no general rollup | **P1** | — | Rollup recomputes, never stale |
+| Rollups / counts | Yes (Tickets balance) | ✅ **engine landed** `src/lib/rules/rollups.ts` | 14 Airtable rollup fns + `detectRollupDrift` (23 tests). Derives from source records only; a stored rollup cannot be an input | **P1** | — | Rollup recomputes, never stale |
 | Formula fields | **Yes — business-critical** | 🟡 **engine landed** `src/lib/rules/` | Partner economics ported + tested; 5 of 7 rule domains blocked on owner policy. See §5 | **P0** | **Yes** | Each documented rule reproduced |
 | Attachments | Yes — 706 records | ❌ | `documents`/`vehicle_media` = **0 rows**, no provenance columns | **P0** | **Yes** | CR-003 + Gate 2 |
 | `aiText` fields | Yes — 4 tables | 🟡 | AI summary fields; FCRA-sensitive on Background Checks | P3 | **Yes** | Counsel review before reuse |
@@ -274,8 +274,11 @@ Not a commitment — a proposal for the owner to correct.
 
 **Tier 1 — restores daily operations**
 4. Dashboard element primitives: `bigNumber`, `chart`, `list`
-5. Linked-record integrity + rollups
-6. Schema-level validation
+5. Linked-record integrity + rollups — **ROLLUPS LANDED** (`src/lib/rules/rollups.ts`, 23 tests).
+   Integrity **AUDITED** (`evidence/linked-record-integrity.md`): zero orphaned `org_id`;
+   adding FK constraints is a schema change and needs an owner-authorised CR.
+6. Schema-level validation — **APP-BOUNDARY HALF LANDED** (`src/lib/rules/field-types.ts`,
+   28 tests, all 23 field types). The DB half is a schema change and needs a CR.
 7. Mobile operational workflows
 8. The 3 missing forms (payments, expenses, change log)
 
@@ -457,6 +460,21 @@ The two `aiGenerate` prompts **were** recoverable via the API and are preserved 
 them instructs the model to categorise expenses *"based on predefined rules"* that the prompt
 never supplies — so that categorisation was the model's own judgement, and is flagged
 **BUSINESS POLICY REQUIRED** rather than an encoded rule.
+
+### 9.1b `cases` holds 4 rows with NO tenant on any of them — VERIFIED 2026-09-24
+
+`cases`: 4 rows, `org_id` NULL on every one. Not an empty table — the distinction CLAUDE.md
+insists on (*UNKNOWN means uncounted, never empty*). `bookings` and `payments` genuinely are
+empty; `cases` is not. A NULL tenant column cannot enforce isolation: a tenant-filtered query
+misses all 4 rows, and an unfiltered one returns all 4.
+
+**INFERRED risk, not a confirmed breach** — they may predate tenancy or belong to the owner org.
+Same rule as §9.2: establish intended behaviour before backfilling. Nothing was changed.
+Full audit: `evidence/linked-record-integrity.md`.
+
+Also VERIFIED there: `incoming_leads` is **893** today vs **871** in the parity report
+(2026-09-16). Counts are dated snapshots — re-run `scripts/parity-check.ts` before any
+count-dependent gate decision.
 
 ### 9.2 Seven tables have RLS enabled with ZERO policies — VERIFIED
 
