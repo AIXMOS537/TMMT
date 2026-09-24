@@ -12,11 +12,17 @@
 --
 -- WHAT THIS DOES
 -- 1. dispute_clients.org_id (nullable; existing rows stay platform-admin only).
--- 2. is_credit_operator(org) — SECURITY DEFINER, reads org_roles directly, so it is
---    not caught by the org_roles tenant_admin_write policy recursion (42P17) found
---    on prod 2026-09-21. Deliberately NOT OR'ed with is_staff(): staff are not
---    credit operators by default (memory: is_staff() is broad on ~186 policies).
--- 3. dispute_clients policy: platform admin, or a credit operator of the row's org.
+-- 2. credit_operator_grants + is_credit_operator(org) — SECURITY DEFINER.
+--    C3 correction (rehearsed against the production catalog shape): the C1 draft
+--    read org_roles for role 'credit_operator', but prod's org_roles_role_check only
+--    allows tenant_admin / dispatcher / responder / viewer, so that role could never
+--    be granted — and every tenant_admin would silently have become a credit
+--    operator, able (once the org_roles recursion is repaired) to hand credit files
+--    to anyone in their org. Credit access is now its own grant, written ONLY by a
+--    platform admin, revocable, never deleted. Not OR'ed with is_staff() or any org
+--    role: staff and tenant admins are not credit operators by default.
+-- 3. dispute_clients policies: platform admin (existing, unchanged), or a credit
+--    operator of the row's org — select / insert / update only. No DELETE.
 -- 4. credit_evidence: document metadata per client / item / assertion / round, with
 --    the same org rule, org_id pinned to the parent client's, no public URLs, no
 --    DELETE for API roles, anon revoked.
@@ -24,8 +30,14 @@
 --
 -- ROLLBACK
 --   drop table if exists public.credit_evidence;
+--   drop function if exists public.credit_evidence_pin_org();
 --   drop policy if exists dispute_clients_org_credit_operator on public.dispute_clients;
+--   drop policy if exists dispute_clients_org_credit_operator_read on public.dispute_clients;
+--   drop policy if exists dispute_clients_org_credit_operator_insert on public.dispute_clients;
+--   drop policy if exists dispute_clients_org_credit_operator_update on public.dispute_clients;
 --   drop function if exists public.is_credit_operator(uuid);
+--   drop table if exists public.credit_operator_grants;
+--   drop function if exists public.credit_operator_grants_guard();
 --   drop index if exists public.dispute_clients_customer_user_id_key;
 --   alter table public.dispute_clients drop column if exists customer_user_id;
 --   alter table public.dispute_clients drop column if exists org_id;
@@ -41,6 +53,49 @@ create index if not exists dispute_clients_org_id_idx on public.dispute_clients 
 alter table public.dispute_clients add column if not exists customer_user_id uuid references auth.users(id) on delete set null;
 create unique index if not exists dispute_clients_customer_user_id_key on public.dispute_clients (customer_user_id) where customer_user_id is not null;
 
+-- Who may work an org's credit cases. Platform admin writes; nobody deletes; a
+-- grant ends by revocation (kept for the audit trail).
+create table if not exists public.credit_operator_grants (
+  org_id uuid not null references public.organizations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  granted_by uuid not null default auth.uid(),
+  granted_at timestamptz not null default now(),
+  note text check (note is null or length(note) <= 500),
+  revoked_at timestamptz,
+  revoked_by uuid,
+  primary key (org_id, user_id)
+);
+
+-- The only change after insert: revoke (once). Grantor, org and user are fixed.
+create or replace function public.credit_operator_grants_guard()
+returns trigger language plpgsql set search_path = pg_catalog, public as $$
+begin
+  if old.revoked_at is not null
+     or new.revoked_at is null
+     or (new.org_id, new.user_id, new.granted_by, new.granted_at) is distinct from (old.org_id, old.user_id, old.granted_by, old.granted_at) then
+    raise exception 'credit_operator_grants: the only change is a one-time revocation' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+revoke all on function public.credit_operator_grants_guard() from public, anon, authenticated;
+drop trigger if exists credit_operator_grants_guard on public.credit_operator_grants;
+create trigger credit_operator_grants_guard before update on public.credit_operator_grants
+  for each row execute function public.credit_operator_grants_guard();
+
+alter table public.credit_operator_grants enable row level security;
+drop policy if exists credit_operator_grants_admin_read on public.credit_operator_grants;
+create policy credit_operator_grants_admin_read on public.credit_operator_grants for select to authenticated using (public.is_platform_admin());
+drop policy if exists credit_operator_grants_admin_insert on public.credit_operator_grants;
+create policy credit_operator_grants_admin_insert on public.credit_operator_grants for insert to authenticated
+  with check (public.is_platform_admin() and granted_by = auth.uid() and revoked_at is null);
+drop policy if exists credit_operator_grants_admin_revoke on public.credit_operator_grants;
+create policy credit_operator_grants_admin_revoke on public.credit_operator_grants for update to authenticated
+  using (public.is_platform_admin()) with check (public.is_platform_admin() and revoked_by = auth.uid());
+revoke all on public.credit_operator_grants from anon, authenticated;
+grant select on public.credit_operator_grants to authenticated;
+grant insert (org_id, user_id, note) on public.credit_operator_grants to authenticated;
+grant update (revoked_at, revoked_by) on public.credit_operator_grants to authenticated;
+
 create or replace function public.is_credit_operator(p_org uuid)
 returns boolean
 language sql
@@ -48,21 +103,31 @@ stable
 security definer
 set search_path to 'public', 'pg_temp'
 as $$
-  select p_org is not null and exists (
-    select 1 from public.org_roles r
-    where r.org_id = p_org
-      and r.user_id = auth.uid()
-      and r.role in ('tenant_admin', 'credit_operator')
+  select p_org is not null and auth.uid() is not null and exists (
+    select 1 from public.credit_operator_grants g
+    where g.org_id = p_org
+      and g.user_id = auth.uid()
+      and g.revoked_at is null
   )
 $$;
 revoke all on function public.is_credit_operator(uuid) from public, anon;
 grant execute on function public.is_credit_operator(uuid) to authenticated;
 
--- Additive: the existing admin-only policy stays; this lets an org's credit
--- operators reach that org's rows (and only rows that HAVE an org).
+-- Additive: the existing admin-only policy stays; these let an org's credit
+-- operators reach that org's rows (and only rows that HAVE an org). No DELETE:
+-- removing a case is a platform-admin act.
 drop policy if exists dispute_clients_org_credit_operator on public.dispute_clients;
-create policy dispute_clients_org_credit_operator on public.dispute_clients
-  for all to authenticated
+drop policy if exists dispute_clients_org_credit_operator_read on public.dispute_clients;
+create policy dispute_clients_org_credit_operator_read on public.dispute_clients
+  for select to authenticated
+  using (org_id is not null and public.is_credit_operator(org_id));
+drop policy if exists dispute_clients_org_credit_operator_insert on public.dispute_clients;
+create policy dispute_clients_org_credit_operator_insert on public.dispute_clients
+  for insert to authenticated
+  with check (org_id is not null and public.is_credit_operator(org_id));
+drop policy if exists dispute_clients_org_credit_operator_update on public.dispute_clients;
+create policy dispute_clients_org_credit_operator_update on public.dispute_clients
+  for update to authenticated
   using (org_id is not null and public.is_credit_operator(org_id))
   with check (org_id is not null and public.is_credit_operator(org_id));
 
@@ -115,6 +180,8 @@ create trigger credit_evidence_pin_org before insert or update on public.credit_
 
 alter table public.credit_evidence enable row level security;
 
+drop policy if exists credit_evidence_admin on public.credit_evidence;
+drop policy if exists credit_evidence_org_operator on public.credit_evidence;
 create policy credit_evidence_admin on public.credit_evidence
   for all to authenticated
   using (public.is_platform_admin())

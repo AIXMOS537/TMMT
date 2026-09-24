@@ -36,7 +36,8 @@ const METHODS: Array<{ v: SendMethod; l: string }> = [
 ];
 const OUTCOMES: ResponseOutcome[] = ["deleted", "corrected", "updated", "verified", "no_change", "no_response", "frivolous", "unknown"];
 
-type Props = { client: StoredClient; onChange: (c: StoredClient) => void; onError: (m: string) => void };
+/** seenVersion (C3-020): the version the page loaded; a change from a stale page is refused. */
+type Props = { client: StoredClient; seenVersion?: string; onChange: (c: StoredClient) => void; onError: (m: string) => void };
 
 async function apply(p: Props, run: () => Promise<{ ok: true; data: StoredClient | null } | { ok: false; error: string }>) {
   const r = await run();
@@ -68,10 +69,10 @@ export function RoundLifecycle({ round, ...p }: Props & { round: StoredDisputeRo
         <input aria-label="Recipient" placeholder="Sent to" value={recipient} onChange={(e) => setRecipient(e.target.value)} className="border rounded px-1 ml-2" />
         <input aria-label="Tracking" placeholder="Tracking / reference (only if you have one)" value={tracking} onChange={(e) => setTracking(e.target.value)} className="border rounded px-1 ml-2 w-64" />
         <div className="flex gap-2">
-          <Button disabled={!sentAt || !method || !recipient} onClick={() => apply(p, () => recordRoundSent(id, round.id, { sentAt: new Date(sentAt).toISOString(), method: method as SendMethod, recipient, trackingRef: tracking || undefined }))}>
+          <Button disabled={!sentAt || !method || !recipient} onClick={() => apply(p, () => recordRoundSent(id, round.id, { sentAt: new Date(sentAt).toISOString(), method: method as SendMethod, recipient, trackingRef: tracking || undefined }, p.seenVersion))}>
             Record as sent
           </Button>
-          <Button variant="secondary" onClick={() => { const note = window.prompt("Why reopen this approved letter?"); if (note) apply(p, () => reviewDisputeRound(id, round.id, { kind: "reopen", note })); }}>
+          <Button variant="secondary" onClick={() => { const note = window.prompt("Why reopen this approved letter?"); if (note) apply(p, () => reviewDisputeRound(id, round.id, { kind: "reopen", note }, p.seenVersion)); }}>
             Reopen for review
           </Button>
         </div>
@@ -91,7 +92,7 @@ export function RoundLifecycle({ round, ...p }: Props & { round: StoredDisputeRo
         <input type="date" aria-label="Received on" value={receivedAt} onChange={(e) => setReceivedAt(e.target.value)} className="border rounded px-1 ml-2" />
         <input aria-label="Responding party" placeholder="Who responded" value={party} onChange={(e) => setParty(e.target.value)} className="border rounded px-1 ml-2" />
         <textarea aria-label="Response summary" placeholder="What the response said" value={summary} onChange={(e) => setSummary(e.target.value)} className="block w-full border rounded p-1 h-16" />
-        <Button disabled={!outcome || !receivedAt || !summary.trim()} onClick={() => apply(p, () => recordDisputeResponse(id, round.id, { outcome: outcome as ResponseOutcome, summary, receivedAt: new Date(receivedAt).toISOString(), respondingParty: party || undefined }))}>
+        <Button disabled={!outcome || !receivedAt || !summary.trim()} onClick={() => apply(p, () => recordDisputeResponse(id, round.id, { outcome: outcome as ResponseOutcome, summary, receivedAt: new Date(receivedAt).toISOString(), respondingParty: party || undefined }, p.seenVersion))}>
           Record response
         </Button>
       </div>
@@ -113,7 +114,7 @@ export function RoundLifecycle({ round, ...p }: Props & { round: StoredDisputeRo
           <>
             <p className="font-medium">Authorize a follow-up — what did the response get wrong or leave unanswered?</p>
             <textarea aria-label="Follow-up reason" value={reason} onChange={(e) => setReason(e.target.value)} className="block w-full border rounded p-1 h-16" />
-            <Button disabled={reason.trim().length < 20} onClick={() => apply(p, () => authorizeFollowUpRound(id, round.id, reason))}>Authorize follow-up</Button>
+            <Button disabled={reason.trim().length < 20} onClick={() => apply(p, () => authorizeFollowUpRound(id, round.id, reason, p.seenVersion))}>Authorize follow-up</Button>
           </>
         )}
       </div>
@@ -155,7 +156,7 @@ export function CaseConsole(p: Props) {
                 aria-label="Classify ground"
                 className="text-xs border rounded px-1 mt-1"
                 value=""
-                onChange={(e) => e.target.value && apply(p, () => classifyCustomerAssertion(c.profile.id, a.id, e.target.value as FactualBasis))}
+                onChange={(e) => e.target.value && apply(p, () => classifyCustomerAssertion(c.profile.id, a.id, e.target.value as FactualBasis, undefined, p.seenVersion))}
               >
                 <option value="">— classify the specific ground (does not change their words) —</option>
                 {GROUNDS.map((g) => <option key={g} value={g}>{g.replace(/_/g, " ")}</option>)}
@@ -176,8 +177,8 @@ export function CaseConsole(p: Props) {
                 Open (2-minute link)
               </Button>
             )}
-            {e.reviewState !== "accepted" && <Button variant="secondary" onClick={() => apply(p, () => reviewEvidenceDocument(c.profile.id, e.id, "accepted"))}>Accept</Button>}
-            {e.reviewState !== "rejected" && <Button variant="secondary" onClick={() => apply(p, () => reviewEvidenceDocument(c.profile.id, e.id, "rejected"))}>Reject</Button>}
+            {e.reviewState !== "accepted" && <Button variant="secondary" onClick={() => apply(p, () => reviewEvidenceDocument(c.profile.id, e.id, "accepted", p.seenVersion))}>Accept</Button>}
+            {e.reviewState !== "rejected" && <Button variant="secondary" onClick={() => apply(p, () => reviewEvidenceDocument(c.profile.id, e.id, "rejected", p.seenVersion))}>Reject</Button>}
           </div>
         ))}
       </Card>

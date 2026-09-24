@@ -37,6 +37,27 @@ import type { ResponseOutcome, SendMethod } from "@/lib/credit-dispute/policy/as
 import { discardEvidenceFile, signedEvidenceUrl, storeEvidenceFile } from "@/lib/credit-dispute/evidence/store.server";
 import { LetterFactsMissingError } from "@/lib/credit-dispute/letters/generator";
 import { CONFLICT_ERROR } from "@/lib/credit-dispute/data/errors";
+import { missing } from "@/lib/credit-dispute/policy/assertion";
+import { recipientTargetFor, resolveRecipient, type RecipientVersion } from "@/lib/credit-dispute/recipients/registry";
+import { checkTemplateApproval, templateFingerprint, type TemplateApproval } from "@/lib/credit-dispute/approvals/template-approvals";
+
+/**
+ * C3: the recipient registry and template approvals live in STAGED tables
+ * (credit_recipients, credit_template_approvals). Where they do not exist (prod
+ * today) or cannot be read, the loaders return nothing — so no letter can be
+ * addressed or approved. Fail closed.
+ */
+async function loadRecipientRegistry(supabase: Supa): Promise<RecipientVersion[]> {
+  const { data, error } = await supabase.from("credit_recipients").select("record");
+  if (error || !Array.isArray(data)) return [];
+  return data.map((r) => (r as { record: RecipientVersion }).record).filter((r) => r && typeof r.recipientId === "string");
+}
+
+async function loadTemplateApprovals(supabase: Supa): Promise<TemplateApproval[]> {
+  const { data, error } = await supabase.from("credit_template_approvals").select("record");
+  if (error || !Array.isArray(data)) return [];
+  return data.map((r) => (r as { record: TemplateApproval }).record).filter((r) => r && typeof r.templateId === "string");
+}
 
 /**
  * The credit dispute desk, moved out of the browser.
@@ -151,16 +172,25 @@ async function writeClient(
   return { ok: true, data: client };
 }
 
-/** Load, change, save — owner-checked first, so a non-owner triggers no query. */
+/**
+ * Load, change, save — owner-checked first, so a non-owner triggers no query.
+ *
+ * C3-020: `seenVersion` is the `updated_at` the operator's PAGE loaded. If the case
+ * has changed since (another operator, the customer, another tab), the action is
+ * refused instead of being applied to state the operator never saw — e.g. approving
+ * a letter someone else edited a minute ago.
+ */
 async function mutateClient(
   profileId: string,
-  change: (client: StoredClient, actor: string) => StoredClient
+  change: (client: StoredClient, actor: string) => StoredClient,
+  seenVersion?: string | null
 ): Promise<DisputeResult<StoredClient | null>> {
   const who = await requireOwnerWithUser();
   if (!who) return { ok: false, error: "Not authorized." };
   const existing = await readVersioned(who.supabase, profileId);
   if (!existing.ok) return existing;
   if (!existing.data) return { ok: false, error: "Client not found." };
+  if (seenVersion && existing.data.version !== seenVersion) return { ok: false, error: CONFLICT_ERROR };
   let updated: StoredClient;
   try {
     updated = change(existing.data.client, who.actor);
@@ -191,6 +221,18 @@ export async function getDisputeClient(
   const supabase = await requireOwner();
   if (!supabase) return { ok: false, error: "Not authorized." };
   return readClient(supabase, id);
+}
+
+/**
+ * The case plus the version the page is looking at (C3-020). Pass the version back
+ * with any change so a stale page cannot act on state it never saw.
+ */
+export async function getDisputeClientVersioned(
+  id: string
+): Promise<DisputeResult<{ client: StoredClient; version: string | null } | null>> {
+  const supabase = await requireOwner();
+  if (!supabase) return { ok: false, error: "Not authorized." };
+  return readVersioned(supabase, id);
 }
 
 /**
@@ -393,7 +435,9 @@ export type GenerateOutcome =
   | { kind: "stored"; plan: PlanResult; roundIds: string[]; client: StoredClient }
   | { kind: "nothing_ready"; plan: PlanResult }
   | { kind: "gated"; plan: PlanResult; gate: string }
-  | { kind: "facts_missing"; plan: PlanResult; detail: string };
+  | { kind: "facts_missing"; plan: PlanResult; detail: string }
+  /** C3: the gate is open but a template's exact wording has no active approval. */
+  | { kind: "template_unapproved"; plan: PlanResult; detail: string };
 
 /**
  * THE ONLY WAY A DISPUTE LETTER IS PRODUCED (C1).
@@ -413,6 +457,29 @@ export async function generateDisputeRound(profileId: string): Promise<DisputeRe
 
   const { items, assessments, contexts } = resolveForPlanning(client);
   const plan = planDisputeRound(items, assessments, contexts);
+
+  // C3-011: an address is a fact. A ready item whose next letter has no VERIFIED
+  // recipient is not ready — it is missing information.
+  const at = new Date().toISOString();
+  const registry = await loadRecipientRegistry(who.supabase);
+  const nextRound = new Map(plan.decisions.filter((d) => d.decision.action === "dispute").map((d) => [d.item.id, d.decision.sequence?.[0]]));
+  for (const { item } of plan.decisions.filter((d) => plan.readyForLetter.includes(d.item.id))) {
+    const rt = nextRound.get(item.id);
+    const res = rt ? resolveRecipient(registry, recipientTargetFor(rt, item).recipientId, at) : null;
+    if (res && !res.ok) {
+      plan.readyForLetter = plan.readyForLetter.filter((id) => id !== item.id);
+      plan.counts.letters -= 1;
+      plan.counts.needs_information += 1;
+      plan.notDisputed.push({
+        negativeItemId: item.id,
+        furnisherName: item.furnisherName,
+        action: "needs_information",
+        reason: "The letter's recipient is not verified yet, so nothing can be written.",
+        nextStep: missing(res.code).message,
+        missing: [missing(res.code)],
+      });
+    }
+  }
   if (plan.readyForLetter.length === 0) return { ok: true, data: { kind: "nothing_ready", plan } };
 
   try {
@@ -421,10 +488,27 @@ export async function generateDisputeRound(profileId: string): Promise<DisputeRe
     return { ok: true, data: { kind: "gated", plan, gate: e instanceof Error ? e.message : "croa_contracts_attorney_approved" } };
   }
 
+  // C3-013/014: even with the gate open, every template used must have an ACTIVE
+  // approval for its EXACT current wording. Approval of version A never covers B.
+  const approvals = await loadTemplateApprovals(who.supabase);
+  const fingerprints = new Map<string, string>();
+  const unapproved: string[] = [];
+  for (const id of plan.readyForLetter) {
+    const rt = nextRound.get(id);
+    if (!rt) continue;
+    const fp = fingerprints.get(rt) ?? templateFingerprint(rt);
+    fingerprints.set(rt, fp);
+    const check = checkTemplateApproval(approvals, rt, fp, { now: at });
+    if (!check.ok) unapproved.push(`${rt}: ${check.reason.replace(/_/g, " ")}`);
+  }
+  if (unapproved.length > 0) {
+    return { ok: true, data: { kind: "template_unapproved", plan, detail: [...new Set(unapproved)].join("; ") } };
+  }
+
   let run;
   try {
     const ready = items.filter((i) => plan.readyForLetter.includes(i.id));
-    run = runGatedDisputeProtocol(client.profile, ready, assessments, undefined, contexts);
+    run = runGatedDisputeProtocol(client.profile, ready, assessments, undefined, contexts, registry, at);
   } catch (e) {
     if (e instanceof LetterFactsMissingError) {
       return { ok: true, data: { kind: "facts_missing", plan, detail: e.message } };
@@ -434,7 +518,7 @@ export async function generateDisputeRound(profileId: string): Promise<DisputeRe
 
   let updated: StoredClient;
   try {
-    const rounds = roundsFromRun(run, who.actor);
+    const rounds = roundsFromRun(run, who.actor).map((r) => ({ ...r, templateFingerprint: fingerprints.get(r.roundType) }));
     updated = appendRounds(client, rounds);
     for (const r of rounds) {
       updated = audit(updated, { actor: who.actor, action: "round_generated", roundId: r.id, negativeItemId: r.negativeItemId, assertionId: r.assertionId, detail: `${r.roundType}; ${r.templateVersion}` });
@@ -451,7 +535,8 @@ export async function generateDisputeRound(profileId: string): Promise<DisputeRe
 export async function reviewDisputeRound(
   profileId: string,
   roundId: string,
-  action: ReviewAction
+  action: ReviewAction,
+  seenVersion?: string
 ): Promise<DisputeResult<StoredClient | null>> {
   const kind = action?.kind;
   if (kind !== "edit" && kind !== "approve" && kind !== "return_for_information" && kind !== "cancel" && kind !== "reopen") {
@@ -459,7 +544,7 @@ export async function reviewDisputeRound(
     if (!who) return { ok: false, error: "Not authorized." };
     return { ok: false, error: "Unknown review action." };
   }
-  return mutateClient(profileId, (client, actor) => reviewRound(client, roundId, action, actor));
+  return mutateClient(profileId, (client, actor) => reviewRound(client, roundId, action, actor), seenVersion);
 }
 
 // ---------------------------------------------------------------------------
@@ -476,8 +561,8 @@ export interface SentInput {
 }
 
 /** Record that an approved letter was sent by a person. The text must be exactly what was approved. */
-export async function recordRoundSent(profileId: string, roundId: string, input: SentInput): Promise<DisputeResult<StoredClient | null>> {
-  return mutateClient(profileId, (client, actor) => markSent(client, roundId, input, actor));
+export async function recordRoundSent(profileId: string, roundId: string, input: SentInput, seenVersion?: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => markSent(client, roundId, input, actor), seenVersion);
 }
 
 export interface ResponseInput {
@@ -489,7 +574,7 @@ export interface ResponseInput {
 }
 
 /** Record what a bureau / furnisher actually answered, as a person read it from the response. */
-export async function recordDisputeResponse(profileId: string, roundId: string, input: ResponseInput): Promise<DisputeResult<StoredClient | null>> {
+export async function recordDisputeResponse(profileId: string, roundId: string, input: ResponseInput, seenVersion?: string): Promise<DisputeResult<StoredClient | null>> {
   return mutateClient(profileId, (client, actor) =>
     recordResponse(
       client,
@@ -502,13 +587,14 @@ export async function recordDisputeResponse(profileId: string, roundId: string, 
         documentEvidenceId: input?.documentEvidenceId,
       },
       actor
-    )
+    ),
+    seenVersion
   );
 }
 
 /** Authorize a follow-up round with a specific, documented reason. */
-export async function authorizeFollowUpRound(profileId: string, roundId: string, reason: string): Promise<DisputeResult<StoredClient | null>> {
-  return mutateClient(profileId, (client, actor) => authorizeFollowUp(client, roundId, String(reason ?? ""), actor));
+export async function authorizeFollowUpRound(profileId: string, roundId: string, reason: string, seenVersion?: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => authorizeFollowUp(client, roundId, String(reason ?? ""), actor), seenVersion);
 }
 
 /** Map a customer's broad category onto a specific ground. Their words are not changed. */
@@ -516,22 +602,24 @@ export async function classifyCustomerAssertion(
   profileId: string,
   assertionId: string,
   basis: FactualBasis,
-  note?: string
+  note?: string,
+  seenVersion?: string
 ): Promise<DisputeResult<StoredClient | null>> {
-  return mutateClient(profileId, (client, actor) => classifyAssertion(client, assertionId, basis, actor, note));
+  return mutateClient(profileId, (client, actor) => classifyAssertion(client, assertionId, basis, actor, note), seenVersion);
 }
 
 export async function reviewEvidenceDocument(
   profileId: string,
   evidenceId: string,
-  state: "accepted" | "rejected"
+  state: "accepted" | "rejected",
+  seenVersion?: string
 ): Promise<DisputeResult<StoredClient | null>> {
   if (state !== "accepted" && state !== "rejected") {
     const who = await requireOwnerWithUser();
     if (!who) return { ok: false, error: "Not authorized." };
     return { ok: false, error: "Unknown review state." };
   }
-  return mutateClient(profileId, (client, actor) => reviewEvidence(client, evidenceId, state, actor));
+  return mutateClient(profileId, (client, actor) => reviewEvidence(client, evidenceId, state, actor), seenVersion);
 }
 
 /** Link the customer's own login to their case, so they (and only they) can see it. */
@@ -539,8 +627,8 @@ export async function linkCustomerAccount(profileId: string, customerUserId: str
   return mutateClient(profileId, (client, actor) => linkCustomer(client, String(customerUserId ?? ""), actor));
 }
 
-export async function closeCreditCase(profileId: string, note: string): Promise<DisputeResult<StoredClient | null>> {
-  return mutateClient(profileId, (client, actor) => closeCase(client, actor, String(note ?? "")));
+export async function closeCreditCase(profileId: string, note: string, seenVersion?: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => closeCase(client, actor, String(note ?? "")), seenVersion);
 }
 
 /** One ordered history of the case, from the single audit log. */

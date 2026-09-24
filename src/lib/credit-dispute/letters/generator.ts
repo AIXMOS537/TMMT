@@ -28,6 +28,32 @@ export class LetterFactsMissingError extends Error {
   }
 }
 
+/** A verified recipient from the registry (C3). */
+export interface RecipientBlock {
+  name: string;
+  address: { street: string; city: string; state: string; zip: string };
+}
+
+/**
+ * Address the letter to a registry recipient (C3-011). Replaces the header block the
+ * template built from its legacy constants, and the letter's recipient fields, so
+ * the address a letter states is the verified one — not a hard-coded guess.
+ */
+function withRecipient(letter: DisputeLetter, to: RecipientBlock): DisputeLetter {
+  const oldBlock = `${letter.recipient}\n${formatAddress(letter.recipientAddress)}`;
+  const newBlock = `${to.name}\n${formatAddress(to.address)}`;
+  // Test for the block, not for a changed body: a verified address that matches the
+  // legacy constant leaves the text identical and is still correctly addressed.
+  if (!letter.body.includes(oldBlock)) {
+    if (letter.roundType !== "cfpb_escalation") {
+      throw new Error(`Could not address ${letter.roundType} to the registry recipient.`);
+    }
+    return { ...letter, recipient: to.name, recipientAddress: to.address };
+  }
+  const body = letter.body.replace(oldBlock, newBlock);
+  return { ...letter, body, recipient: to.name, recipientAddress: to.address };
+}
+
 function enclosuresLine(enclosures?: string[]): string {
   return enclosures && enclosures.length > 0 ? `\n\nEnclosures: ${enclosures.join("; ")}` : "";
 }
@@ -461,10 +487,55 @@ export function generateLetter(
     furnisherAddress?: { street: string; city: string; state: string; zip: string };
     /** Documents actually on file for this round. No default: nothing is claimed as enclosed. */
     enclosures?: string[];
+    /** C3: the verified registry recipient. When given, it replaces the legacy constants. */
+    recipient?: RecipientBlock;
   }
 ): DisputeLetter {
   requireGate("croa_contracts_attorney_approved");
+  const letter = composeLetter(roundType, profile, item, roundNumber, options);
+  return options?.recipient ? withRecipient(letter, options.recipient) : letter;
+}
 
+/**
+ * A fixed SPECIMEN of one template, for fingerprinting its wording (C3-013/014).
+ * Uses only the synthetic fixture below — it cannot address a real person — and
+ * exists so an approval can be bound to the exact text it approved.
+ */
+export function templateSpecimen(roundType: DisputeRoundType): string {
+  const profile: CreditProfile = {
+    id: "specimen",
+    fullName: "SPECIMEN CONSUMER",
+    currentAddress: { street: "1 SPECIMEN ST", city: "SPECIMEN", state: "ZZ", zip: "00000" },
+  };
+  const item: NegativeItem = {
+    id: "specimen-item",
+    bureau: "experian",
+    itemType: roundType === "fdcpa_validation" ? "collection" : "charge_off",
+    furnisherName: "SPECIMEN FURNISHER",
+    accountNumberMasked: "****0000",
+    reportedBalanceCents: 100,
+    dateReported: "2000-01-01",
+    dateOfFirstDelinquency: "2000-01-01",
+    inaccuracyDetails: "SPECIMEN FACT",
+    currentRound: 0,
+    status: "draft",
+  };
+  const l = composeLetter(roundType, profile, item, 2, {
+    facts: ["SPECIMEN FACT"],
+    priorResponseSummary: "SPECIMEN RESPONSE",
+    priorAttempts: ["SPECIMEN ROUND"],
+    enclosures: ["SPECIMEN ENCLOSURE"],
+  });
+  return `${l.subject}\n${l.body}`;
+}
+
+function composeLetter(
+  roundType: DisputeRoundType,
+  profile: CreditProfile,
+  item: NegativeItem,
+  roundNumber: number,
+  options?: Parameters<typeof generateLetter>[4]
+): DisputeLetter {
   switch (roundType) {
     case "initial_611":
       return generateInitial611(profile, item, roundNumber, options?.enclosures);

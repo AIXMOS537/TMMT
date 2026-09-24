@@ -32,6 +32,7 @@ import {
 } from "../policy/dispute-policy";
 import type { DecisionContext, MissingFact } from "../policy/assertion";
 import { renderPacket, type RenderedLetter } from "../letters/render-from-decision";
+import type { Registry } from "../recipients/registry";
 import type { DisputeLetterBatch, ProtocolRunResult } from "./protocol";
 
 export type RunCounts = { letters: number; coach: number; hold: number; needs_information: number; refuse: number };
@@ -125,11 +126,13 @@ export function runGatedDisputeProtocol(
   items: NegativeItem[],
   assessments: Record<string, ItemAssessment> = {},
   cfg: DisputePolicyConfig = DEFAULT_DISPUTE_POLICY,
-  contexts: Record<string, DecisionContext> = {}
+  contexts: Record<string, DecisionContext> = {},
+  registry?: Registry,
+  at?: string
 ): GatedRunResult {
   const active = activeItems(items);
   const resolved = resolveAssessments(active, assessments);
-  const packet = renderPacket(profile, active, resolved, cfg, contexts);
+  const packet = renderPacket(profile, active, resolved, cfg, contexts, registry, at);
 
   const lettersGenerated: DisputeLetterBatch[] = packet.letters.map(({ item, rendered }) => ({
     negativeItemId: item.id,
