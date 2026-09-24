@@ -52,6 +52,31 @@ Airtable cannot be cancelled until Gates 2 and 4 both pass. Both are blocked on 
 
 Everything else is engineering work and is either done or unblocked.
 
+## Findings added 2026-09-22
+
+- **The three eligibility screening signals were NEVER recorded.** VERIFIED on both sides:
+  `Background Check Status`, `Insurance Check Status` and `Earnings Verification Status` are
+  populated on **0** records in Airtable (of 304) and **0** in Supabase (of 299). Both sides
+  agree at zero, so this is **not** a migration failure — the three-signal model was designed
+  and never used. 233 decisions were made outside the system with only the verdict recorded.
+  **No truth table can be derived from this data even in principle**; the owner must design the
+  policy rather than recall it.
+- **CORRECTION — `ou` is not a migration blocker.** VERIFIED: **zero** records carry it
+  (`out of radius` has 49, matching Supabase exactly). The 2026-09-16 claim that rows needed
+  reclassifying before migration was wrong. The option remains selectable, so it stays a
+  forward-looking entry hazard only.
+- **Partner splits are 19 decisions, not 36.** Of the 36 vehicles with no `partner_percentage`:
+  **10 are company-owned** (three spellings of TMMT — one batch answer), **7 have no partner
+  name** (4 look like duplicate rows), and **19 belong to 12 partners**. Also: two stored
+  partner names are the same pair of people recorded in opposite order — likely one
+  partnership entered twice. Partners are referenced by letter in the decision pack, not by
+  name (CLAUDE.md: no third-party data in git).
+- **CR-001 is written and staged** at
+  `supabase/migrations/_staged/20260922000000_attachment_provenance_STAGED.sql`, with seven
+  postcondition queries and rollback SQL. `db push` ignores `_staged/`, so it cannot
+  self-apply. Awaiting owner authorization.
+- **All open owner decisions are now in `docs/decisions/OWNER-DECISION-PACK.md`.**
+
 ## Findings added 2026-09-16
 
 - **Concurrent production activity.** `g01_dnc_normalize_20260916` remediated **71

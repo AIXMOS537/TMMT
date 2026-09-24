@@ -5,6 +5,32 @@ All option lists below read live from the base schema on 2026-09-15 — VERIFIED
 
 ---
 
+## 1.0 DECISIVE FINDING (2026-09-22) — the three signals were never recorded
+
+VERIFIED on both sides. Populated-value counts:
+
+| Signal | Airtable | Supabase |
+|---|---:|---:|
+| `Background Check Status` | **0** | **0** |
+| `Insurance Check Status` | **0** | **0** |
+| `Earnings Verification Status` | **0** | **0** |
+| `Eligibility Status` (the verdict) | 233 of 304 | 232 of 299 |
+
+**Not once, in either system.** Both sides agree at zero, so this is *not* a migration failure —
+the three-signal model was designed and never used.
+
+**This supersedes the framing in §1.1.** It is not that the signal→verdict mapping lived only
+in an operator's head; it is that there were no signals. All 233 decisions were made entirely
+outside the system, with only the verdict written down. No truth table can be derived from this
+data even in principle, and the owner is not being asked to recall one — they are being asked
+to design the policy. Decision worksheet: `docs/decisions/OWNER-DECISION-PACK.md` §1.
+
+Recorded decisions (299 Supabase rows): Eligible 81 · **Need Manager's Review 69 (23%)** ·
+blank 67 · **out of radius 49 (16%)** · Not Eligible 24 · Not found 9.
+
+Nearly a quarter escalated, and the geographic filter outweighs the "Not Eligible" verdict —
+which argues for service area being an explicit early gate rather than an eligibility outcome.
+
 ## 1.1 The four-signal model
 
 Screening ran on four independent fields. Three share an identical vocabulary; the fourth is
@@ -56,7 +82,12 @@ permanent option because Airtable creates a new choice on free typing. Anyone fi
 decision was reached; `Eligible` / `Not Eligible` describe *what* it was. A client-facing
 system needs `status` and `reason_code` as separate fields.
 
-> **CONFIRMED WHILE PORTING (2026-09-16) — `ou` cannot be migrated as-is.**
+> **CORRECTED 2026-09-22 — `ou` has ZERO records; it is not a migration blocker.**
+> VERIFIED: `ou` = **0 records** in Airtable; `out of radius` = 49, matching Supabase exactly.
+> The option exists and is selectable, so it stays a forward-looking data-entry hazard, but
+> there is no backlog to reclassify. The 2026-09-16 note below overstated it.
+>
+> **CONFIRMED WHILE PORTING (2026-09-16) — the vocabulary contract still holds.**
 > TMMT already has the canonical vocabulary in `src/lib/bg-check-decisions.ts`, and the live
 > `bg_check_decide` RPC validates against exactly five values: `Eligible`, `Not Eligible`,
 > `Need Manager's Review`, `out of radius`, `Not found`. **`ou` is not among them and the RPC

@@ -38,6 +38,9 @@ Standing rules while this program is open:
   must be captured from the live UI first: `evidence/automation-logic-capture.md`. Never infer a
   script body from its neighbouring nodes — UNKNOWN until captured. **No cancellation gate may
   pass while unrecoverable automation logic remains uncaptured.**
+- **Open owner decisions live in `docs/decisions/OWNER-DECISION-PACK.md`** — every blocker
+  turned into a question with the real counts attached. Check there before asking the owner
+  anything, and before assuming a rule is unknowable.
 - Live status: `evidence/README.md`.
 
 ## WHO / WHAT

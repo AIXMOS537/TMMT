@@ -10,14 +10,19 @@
  * interpretation of legacy Airtable values, and an explicit refusal where no rule exists.
  *
  * THE CENTRAL FACT ABOUT THIS MODULE
- * There is no decision logic to port. VERIFIED two ways:
- *  1. Airtable's `Eligibility Status` is a plain `singleSelect` — no formula, no automation, no
- *     rollup connecting it to the three screening signals.
- *  2. `bg_check_decide` RECORDS a staff decision (it is staff/admin-gated, validates the string
- *     and writes a decision event). It does not COMPUTE a verdict from the signals either.
+ * There is no decision logic to port, and (VERIFIED 2026-09-22) there is no data to derive one
+ * from either. The three screening signals are populated on **ZERO records in both systems**:
+ * Background Check Status 0/304 Airtable and 0/299 Supabase, same for Insurance Check and
+ * Earnings Verification. Both sides agree at zero, so this is not a migration failure — the
+ * three-signal model was designed and never used.
  *
- * So the mapping from three signals to one verdict exists nowhere in the system. 304 historical
- * rows are a record of past decisions, not a policy. `decideEligibility()` refuses.
+ * Corroborating: Airtable's `Eligibility Status` is a plain `singleSelect` with no formula, and
+ * `bg_check_decide` RECORDS a staff decision rather than computing one.
+ *
+ * So 233 decisions were made entirely outside the system with only the verdict written down.
+ * No truth table can be derived from this data even in principle. `decideEligibility()` refuses,
+ * and the owner is being asked to DESIGN the policy, not recall it —
+ * `docs/decisions/OWNER-DECISION-PACK.md` §1.
  */
 
 import {
@@ -47,9 +52,12 @@ export type EligibilityVerdict = "eligible" | "not_eligible" | "manager_review";
  * free typing.
  *
  * ⚠️ It is NOT one of the five canonical `BG_CHECK_DECISIONS`, and `bg_check_decide` rejects it
- * outright — VERIFIED against the live function definition. Any Airtable row still holding
- * `ou` therefore **cannot** be written through the decision contract and must be reclassified
- * before migration.
+ * outright — VERIFIED against the live function definition.
+ *
+ * CORRECTION (2026-09-22): an earlier note here called this a migration blocker. It is not.
+ * VERIFIED: **zero records** carry `ou` in Airtable (`out of radius` has 49, matching Supabase
+ * exactly). The option exists and is selectable, so it remains a forward-looking data-entry
+ * hazard, but there is nothing to reclassify.
  */
 export const LEGACY_ELIGIBILITY_ARTEFACT = "ou";
 
@@ -94,9 +102,9 @@ export function normalizeEligibilityStatus(
         reasonCode: "out_of_radius",
         dataQualityFlag:
           `Source value was "${LEGACY_ELIGIBILITY_ARTEFACT}", a truncated "${BG_DECISION.outOfRadius}" ` +
-          `that became a permanent select option. Any filter on the full spelling silently missed ` +
-          `these records, and bg_check_decide REJECTS this value — it is not one of the five ` +
-          `canonical decisions. Reclassify before migration; see ${DOC} §1.2.`,
+          `that became a permanent select option, and bg_check_decide REJECTS it — it is not one ` +
+          `of the five canonical decisions. VERIFIED 2026-09-22: zero records currently carry it, ` +
+          `so this is a forward-looking entry hazard, not a backlog to reclassify. See ${DOC} §1.2.`,
       };
 
     case BG_DECISION.notFound:
@@ -160,9 +168,9 @@ export function decideEligibility(_signals: ScreeningSignals): BgCheckDecision {
     DOC,
     "Eligibility was set by a human and no rule connects the three screening signals " +
       "(Background Check / Insurance Check / Earnings Verification) to a decision. " +
-      "bg_check_decide records a staff decision; it does not compute one. " +
-      "The 304 historical rows record past decisions, not a policy, and must not be used to " +
-      "infer one.",
+      "Those three signals are populated on ZERO records in both Airtable and Supabase, so no " +
+      "rule can be derived from the history even in principle. bg_check_decide records a staff " +
+      "decision; it does not compute one. See docs/decisions/OWNER-DECISION-PACK.md section 1.",
   );
 }
 
