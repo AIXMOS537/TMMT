@@ -34,6 +34,24 @@ export type DisputeStatus =
   | "escalated"
   | "closed";
 
+/**
+ * Where a dispute ROUND is in its life (C1). Distinct from DisputeStatus, which is
+ * the ITEM's status. A round is born `needs_review`; only a person moves it on.
+ *   needs_review -> approved | returned_for_information | cancelled
+ *   approved     -> sent (recorded by a person, after mailing; not in C1 UI)
+ *   sent         -> response_received -> closed
+ * `draft` is the pre-C1 value and is read as needs_review.
+ */
+export type RoundStatus =
+  | "draft"
+  | "needs_review"
+  | "returned_for_information"
+  | "approved"
+  | "cancelled"
+  | "sent"
+  | "response_received"
+  | "closed";
+
 export interface ClientAddress {
   street: string;
   city: string;

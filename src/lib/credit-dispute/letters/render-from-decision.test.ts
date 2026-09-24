@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CreditProfile, NegativeItem, NegativeItemType } from "../types";
-import type { ItemAssessment } from "../policy/dispute-policy";
+import type { FactualBasis, ItemAssessment } from "../policy/dispute-policy";
+import type { DecisionContext } from "../policy/assertion";
 import {
   assertNoBannedLanguage,
   describePacket,
@@ -37,6 +38,25 @@ const profile: CreditProfile = {
   fullName: "Jordan Ellis",
   currentAddress: { street: "12 Example Way", city: "Springfield", state: "VA", zip: "22150" },
 };
+
+/** C1: letters need the customer's confirmed statement for the ground. */
+function confirmed(basis: FactualBasis, negativeItemId = "i1"): DecisionContext {
+  return {
+    assertion: {
+      id: `a-${negativeItemId}`,
+      negativeItemId,
+      basis,
+      statement: "In my own words: this is what is wrong with the account.",
+      source: "customer",
+      customerConfirmed: true,
+      evidenceIds: [],
+      recordedBy: "owner@example.test",
+      recordedAt: "2026-09-22T00:00:00.000Z",
+      status: "active",
+    },
+  };
+}
+const ctx = (basis: FactualBasis) => ({ context: confirmed(basis) });
 
 function item(over: Partial<NegativeItem> = {}): NegativeItem {
   return {
@@ -83,30 +103,34 @@ whenGateOpen("the renderer produces a letter when there is a real ground (CROA g
   const assessment: ItemAssessment = { accuracy: "inaccurate", basis: "never_late" };
 
   it("renders", () => {
-    const r = renderFromDecision(profile, item(), assessment);
+    const r = renderFromDecision(profile, item(), assessment, ctx("never_late"));
     expect(r.kind).toBe("letter");
   });
 
   it("carries the citation and the target", () => {
-    const r = renderFromDecision(profile, item(), assessment);
+    const r = renderFromDecision(profile, item(), assessment, ctx("never_late"));
     if (r.kind !== "letter") throw new Error("expected letter");
     expect(r.rendered.citation).toMatch(/1666b/i);
     expect(r.rendered.target).toBe("furnisher");
   });
 
   it("states the actual ground instead of the generator's hedge", () => {
-    const r = renderFromDecision(profile, item(), assessment);
+    const r = renderFromDecision(profile, item(), assessment, ctx("never_late"));
     if (r.kind !== "letter") throw new Error("expected letter");
     expect(r.rendered.letter.body).toMatch(/made on time/i);
   });
 
-  it("includes the supporting note when one was recorded", () => {
+  // C1: the operator's basisNote is an internal note, not the customer's claim.
+  // The customer's own words go in instead, with a trace entry.
+  it("states the customer's own words and keeps the operator's note out of the letter", () => {
     const r = renderFromDecision(profile, item(), {
       ...assessment,
-      basisNote: "Bank statements for March and April show cleared payments.",
-    });
+      basisNote: "Operator note: bank statements for March and April show cleared payments.",
+    }, ctx("never_late"));
     if (r.kind !== "letter") throw new Error("expected letter");
-    expect(r.rendered.letter.body).toMatch(/bank statements for march/i);
+    expect(r.rendered.letter.body).toMatch(/in my own words/i);
+    expect(r.rendered.letter.body).not.toMatch(/operator note/i);
+    expect(r.rendered.trace.some((t) => t.source === "customer_assertion")).toBe(true);
   });
 
   it("numbers the round from what has already been sent", () => {
@@ -114,14 +138,14 @@ whenGateOpen("the renderer produces a letter when there is a real ground (CROA g
       accuracy: "inaccurate",
       basis: "wrong_balance",
       roundsSent: ["initial_611"],
-    });
+    }, ctx("wrong_balance"));
     if (r.kind !== "letter") throw new Error("expected letter");
     expect(r.rendered.roundNumber).toBe(2);
     expect(r.rendered.roundType).not.toBe("initial_611");
   });
 
   it("reports what is still to come", () => {
-    const r = renderFromDecision(profile, item(), { accuracy: "inaccurate", basis: "wrong_balance" });
+    const r = renderFromDecision(profile, item(), { accuracy: "inaccurate", basis: "wrong_balance" }, ctx("wrong_balance"));
     if (r.kind !== "letter") throw new Error("expected letter");
     expect(r.rendered.remainingSequence.length).toBeGreaterThan(0);
     expect(r.rendered.remainingSequence).not.toContain(r.rendered.roundType);
@@ -171,7 +195,7 @@ whenGateOpen("the safety net (CROA gate open)", () => {
   });
 
   it("passes a clean letter through", () => {
-    const r = renderFromDecision(profile, item(), { accuracy: "inaccurate", basis: "not_mine" });
+    const r = renderFromDecision(profile, item(), { accuracy: "inaccurate", basis: "not_mine" }, ctx("not_mine"));
     if (r.kind !== "letter") throw new Error("expected letter");
     expect(() => assertNoBannedLanguage(r.rendered.letter)).not.toThrow();
   });
@@ -183,7 +207,7 @@ whenGateOpen("the safety net (CROA gate open)", () => {
     ] as const;
     for (const basis of grounds) {
       for (const t of ["collection", "charge_off", "late_payment", "hard_inquiry"] as NegativeItemType[]) {
-        const r = renderFromDecision(profile, item({ itemType: t }), { accuracy: "inaccurate", basis });
+        const r = renderFromDecision(profile, item({ itemType: t }), { accuracy: "inaccurate", basis }, ctx(basis));
         if (r.kind !== "letter") continue;
         const hay = r.rendered.letter.body;
         for (const { pattern } of BANNED_PHRASES) {
@@ -205,7 +229,7 @@ whenGateOpen("the desk packet (CROA gate open)", () => {
       a: { accuracy: "inaccurate", basis: "not_mine" },
       b: { accuracy: "accurate" },
     };
-    const packet = renderPacket(profile, items, assessments);
+    const packet = renderPacket(profile, items, assessments, undefined, { a: confirmed("not_mine", "a") });
     expect(packet.counts.letters).toBe(2); // not_mine + the obsolete one
     expect(packet.counts.coach).toBe(1);
     expect(packet.notDisputed).toHaveLength(1);
@@ -215,14 +239,16 @@ whenGateOpen("the desk packet (CROA gate open)", () => {
   it("writes nothing at all when nothing has been assessed", () => {
     const packet = renderPacket(profile, [item({ id: "x" }), item({ id: "y" })], {});
     expect(packet.counts.letters).toBe(0);
-    expect(packet.counts.hold).toBe(2);
+    expect(packet.counts.needs_information).toBe(2);
   });
 
   it("summarises for the desk header", () => {
     const packet = renderPacket(
       profile,
       [item({ id: "a" }), item({ id: "b" })],
-      { a: { accuracy: "inaccurate", basis: "duplicate" }, b: { accuracy: "accurate" } }
+      { a: { accuracy: "inaccurate", basis: "duplicate" }, b: { accuracy: "accurate" } },
+      undefined,
+      { a: confirmed("duplicate", "a") }
     );
     expect(describePacket(packet)).toMatch(/1 letter/);
     expect(describePacket(packet)).toMatch(/1 to coach/);
@@ -235,13 +261,15 @@ describe.skipIf(CROA_OPEN)("while the CROA gate is closed", () => {
   // not a malformed input.
   const realGround: ItemAssessment = { accuracy: "inaccurate", basis: "wrong_balance" };
 
+  // C1: the ground must be fully grounded (customer's confirmed statement) for the
+  // policy to clear it, so that it is the GATE, not a missing fact, that refuses.
   it("refuses to render a letter instead of quietly producing one", () => {
-    expect(() => renderFromDecision(profile, item(), realGround)).toThrow(ComplianceGateError);
+    expect(() => renderFromDecision(profile, item(), realGround, ctx("wrong_balance"))).toThrow(ComplianceGateError);
   });
 
   it("refuses the whole desk packet, not just one letter", () => {
-    expect(() => renderPacket(profile, [item({ id: "a" })], { a: realGround })).toThrow(
-      ComplianceGateError,
-    );
+    expect(() =>
+      renderPacket(profile, [item({ id: "a" })], { a: realGround }, undefined, { a: confirmed("wrong_balance", "a") })
+    ).toThrow(ComplianceGateError);
   });
 });

@@ -22,9 +22,16 @@ vi.mock("next/navigation", () => ({
 
 import {
   addDisputeRoundsForClient,
+  generateDisputeRound,
+  getCreditCaseQueue,
   getDisputeClient,
   importClientsFromBrowser,
   listDisputeClients,
+  planDisputeRoundForClient,
+  recordCustomerAssertion,
+  recordEvidenceReference,
+  recordItemAssessment,
+  reviewDisputeRound,
   upsertDisputeClient,
 } from "./actions";
 
@@ -69,6 +76,14 @@ const everyAction: Array<[string, () => Promise<unknown>]> = [
   ["upsertDisputeClient", () => upsertDisputeClient(client(CLIENT_ID))],
   ["addDisputeRoundsForClient", () => addDisputeRoundsForClient(CLIENT_ID, [batch])],
   ["importClientsFromBrowser", () => importClientsFromBrowser([client(CLIENT_ID)])],
+  // C1 actions — same wall, same order: who you are before anything is read.
+  ["recordItemAssessment", () => recordItemAssessment(CLIENT_ID, "ni-1", { accuracy: "accurate" })],
+  ["recordCustomerAssertion", () => recordCustomerAssertion(CLIENT_ID, "ni-1", { basis: "not_mine", statement: "Not my account.", source: "customer", customerConfirmed: true })],
+  ["recordEvidenceReference", () => recordEvidenceReference(CLIENT_ID, { kind: "other", description: "A document", source: "operator" })],
+  ["planDisputeRoundForClient", () => planDisputeRoundForClient(CLIENT_ID)],
+  ["generateDisputeRound", () => generateDisputeRound(CLIENT_ID)],
+  ["reviewDisputeRound", () => reviewDisputeRound(CLIENT_ID, "round-1", { kind: "approve" })],
+  ["getCreditCaseQueue", () => getCreditCaseQueue()],
 ];
 
 beforeEach(() => {
@@ -103,9 +118,14 @@ describe("credit dispute desk: owner", () => {
     expect(db.calls.every((c) => c.table === "dispute_clients")).toBe(true);
   });
 
+  // C1: the saved report also carries a "client_imported" audit entry.
   it("upserts with the searchable columns copied from the payload", async () => {
     const db = signIn(OWNER);
-    expect(await upsertDisputeClient(client(CLIENT_ID))).toEqual({ ok: true, data: client(CLIENT_ID) });
+    const res = await upsertDisputeClient(client(CLIENT_ID));
+    expect(res.ok).toBe(true);
+    if (!res.ok) throw new Error("upsert failed");
+    expect(res.data).toMatchObject(client(CLIENT_ID));
+    expect(res.data.auditLog?.map((e) => e.action)).toEqual(["client_imported"]);
     const up = writes(db);
     expect(up).toHaveLength(1);
     expect(up[0]).toMatchObject({ table: "dispute_clients", op: "upsert" });

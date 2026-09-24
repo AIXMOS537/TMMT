@@ -1,8 +1,26 @@
-import type { CreditProfile, DisputeRoundType, NegativeItem } from "../types";
-import type { ItemAssessment } from "../policy/dispute-policy";
-import type { DisputeLetterBatch } from "../engine/protocol";
+import type { CreditProfile, DisputeRoundType, NegativeItem, RoundStatus } from "../types";
+import type { FactualBasis, ItemAssessment } from "../policy/dispute-policy";
+import type { CustomerAssertion, EvidenceRef, RoundResponse } from "../policy/assertion";
+import type { FactTrace } from "../letters/render-from-decision";
 
 export type ReportSource = "disputefox" | "myfreescorenow" | "smartcredit";
+
+/** One edit a reviewer made to a draft letter. The text itself is kept on the round. */
+export interface RoundEdit {
+  editedBy: string;
+  editedAt: string;
+  /** sha256 of the body before and after, so the audit shows a change without copying PII around. */
+  beforeHash: string;
+  afterHash: string;
+  note?: string;
+}
+
+export interface RoundReview {
+  decision: "approved" | "returned_for_information" | "cancelled";
+  reviewedBy: string;
+  reviewedAt: string;
+  note?: string;
+}
 
 export interface StoredDisputeRound {
   id: string;
@@ -10,11 +28,51 @@ export interface StoredDisputeRound {
   roundNumber: number;
   roundType: DisputeRoundType;
   bureau: string;
-  status: string;
+  /** RoundStatus since C1; older rows may carry "draft" (read as needs_review). */
+  status: RoundStatus | string;
   letterSubject: string;
   letterBody: string;
   furnisherName: string;
   createdAt: string;
+  // --- C1 provenance (absent on pre-C1 rows) ---
+  basis?: FactualBasis;
+  assertionId?: string;
+  evidenceIds?: string[];
+  /** Source of every fact the letter states. */
+  trace?: FactTrace[];
+  templateVersion?: string;
+  generatedBy?: string;
+  edits?: RoundEdit[];
+  review?: RoundReview;
+  response?: RoundResponse;
+}
+
+/**
+ * An append-only record of who did what on this client (C1). Describes the action
+ * and the ids involved — never copies report contents, letter text or identifiers.
+ */
+export interface CreditAuditEvent {
+  at: string;
+  actor: string;
+  action:
+    | "client_imported"
+    | "assessment_recorded"
+    | "assertion_recorded"
+    | "assertion_withdrawn"
+    | "evidence_recorded"
+    | "round_planned"
+    | "round_generated"
+    | "round_edited"
+    | "round_approved"
+    | "round_returned"
+    | "round_cancelled"
+    | "round_marked_sent"
+    | "response_recorded";
+  negativeItemId?: string;
+  roundId?: string;
+  assertionId?: string;
+  evidenceId?: string;
+  detail?: string;
 }
 
 export interface StoredClient {
@@ -33,6 +91,12 @@ export interface StoredClient {
    * to survive a page reload.
    */
   assessments?: Record<string, ItemAssessment>;
+  /** C1: what the customer says is wrong, per item (latest active one wins). */
+  assertions?: CustomerAssertion[];
+  /** C1: supporting-document references. */
+  evidence?: EvidenceRef[];
+  /** C1: append-only activity log. */
+  auditLog?: CreditAuditEvent[];
 }
 
 /**
