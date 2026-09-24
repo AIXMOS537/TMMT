@@ -64,7 +64,8 @@ export interface FactTrace {
     | "customer_assertion" // the customer's own words, confirmed by them
     | "basis_statement" // the fixed sentence for a ground, allowed only with a confirmed assertion
     | "evidence" // a document on file
-    | "round_history"; // our own stored rounds and recorded responses
+    | "round_history" // a round we actually sent (our own record)
+    | "recorded_response"; // what a bureau/furnisher answered, as recorded by a person
   ref: string;
 }
 
@@ -287,8 +288,15 @@ export function renderFromDecision(
   );
   for (const e of evidence) trace.push({ text: e.description, source: "evidence", ref: `evidence:${e.id}` });
   const priorAttempts = historyLines(ctx);
-  for (const [i, line] of priorAttempts.entries()) {
-    trace.push({ text: line, source: "round_history", ref: `round:${ctx.history?.[i]?.roundId ?? i}` });
+  for (const h of ctx.history ?? []) {
+    trace.push({ text: `Round ${h.roundNumber}: ${h.roundType.replace(/_/g, " ")}`, source: "round_history", ref: `round:${h.roundId}` });
+    if (h.response) {
+      trace.push({
+        text: `Response ${h.response.receivedAt.slice(0, 10)}: ${h.response.outcome}${h.response.summary ? ` (${h.response.summary})` : ""}`,
+        source: "recorded_response",
+        ref: `response:${h.roundId}`,
+      });
+    }
   }
   const lastResponse = [...(ctx.history ?? [])].reverse().find((h) => h.response)?.response;
 
