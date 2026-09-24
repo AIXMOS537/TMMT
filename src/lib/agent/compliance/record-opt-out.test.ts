@@ -95,10 +95,13 @@ describe('recordGlobalOptOut', () => {
 
 describe('the inbound route actually calls it', () => {
   it('wires recordGlobalOptOut into the opt-out branch', () => {
+    // Normalised to LF: the 2200-character window below is measured in characters,
+    // and a CRLF checkout (Windows, core.autocrlf) adds one per line, pushing the
+    // opt-out condition out of the window and failing a correct wiring.
     const src = readFileSync(
       join(process.cwd(), 'src/app/api/agent/sms/inbound/route.ts'),
       'utf8',
-    )
+    ).replace(/\r\n/g, '\n')
     expect(src).toContain('recordGlobalOptOut')
 
     // The call must EXIST. Asserting only on a slice around indexOf() is a
