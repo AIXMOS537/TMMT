@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDegradedComponents } from "@/lib/degraded";
 import { bearerMatches, secretMatches } from "@/lib/secure-compare";
 import { createServiceRoleClient } from "@/lib/supabase-service";
+import { checkIntegrationFreshness, problemsOnly } from "@/lib/integration-freshness";
 
 export const dynamic = "force-dynamic";
 
@@ -24,15 +25,31 @@ const DB_PROBE_TIMEOUT_MS = 5_000;
  * CRON_SECRET / OPS_COMMAND_SECRET (Bearer or x-cron-secret, same as the cron
  * routes) so the public cannot drive database load through it, and it never
  * returns the error text — that goes to the function log only.
+ *
+ * `?integrations=1` answers a different question that nothing else asked: has
+ * an inbound rail gone QUIET? The GHL webhook rail has received zero events
+ * since it was built and crm_sync_records stopped in June — neither was
+ * noticed for months, because every other check asks "did a call fail?" and
+ * none asks "has anything arrived lately?". It distinguishes `never` (nobody
+ * wired it up — a console task, not a bug) from `stale` (it worked and
+ * stopped). It reads the database, so it sits behind the same secret as the
+ * deep probe: the plain probe must never touch the database, and the public
+ * must not be able to drive database load through this route. Like
+ * `degraded`, it never changes `ok` or the status code — a quiet integration
+ * is not a dead service — and a failure to read it is reported, not hidden.
  */
 export async function GET(req: Request) {
-  const deep = new URL(req.url).searchParams.get("deep");
-  if (deep === "1" || deep === "true") {
-    if (!deepAuthorized(req)) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-    return deepProbe();
+  const params = new URL(req.url).searchParams;
+  const deep = params.get("deep");
+  const integrations = params.get("integrations");
+  const wantsDeep = deep === "1" || deep === "true";
+  const wantsIntegrations = integrations === "1" || integrations === "true";
+
+  if ((wantsDeep || wantsIntegrations) && !deepAuthorized(req)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+  if (wantsDeep) return deepProbe();
+  if (wantsIntegrations) return integrationsProbe();
 
   return NextResponse.json({
     ok: true,
@@ -79,4 +96,24 @@ async function deepProbe(): Promise<NextResponse> {
     },
     { status: failure ? 503 : 200 }
   );
+}
+
+async function integrationsProbe(): Promise<NextResponse> {
+  let integrations: unknown[] = [];
+  let integrationsError: string | null = null;
+  try {
+    integrations = problemsOnly(await checkIntegrationFreshness(createServiceRoleClient()));
+  } catch (e) {
+    // Never let the freshness probe take down the liveness probe.
+    integrationsError = e instanceof Error ? e.message : "integration freshness check failed";
+  }
+
+  return NextResponse.json({
+    ok: true,
+    service: "tmmt-ops",
+    ts: new Date().toISOString(),
+    degraded: getDegradedComponents(),
+    integrations,
+    ...(integrationsError ? { integrationsError } : {}),
+  });
 }

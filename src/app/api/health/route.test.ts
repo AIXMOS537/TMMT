@@ -17,6 +17,7 @@ vi.mock("@/lib/supabase-service", () => ({
         probe.calls.push(table);
         const chain = {
           select: () => chain,
+          order: () => chain,
           limit: () => chain,
           abortSignal: () => Promise.resolve(probe.result),
         };
@@ -144,5 +145,32 @@ describe("GET /api/health?deep=1 (S-1: prove the database answers)", () => {
     const body = await res.json();
     expect(body).toMatchObject({ ok: false, db: "fail" });
     expect(JSON.stringify(body)).not.toContain("SERVICE_ROLE");
+  });
+
+  it("?integrations=1 refuses without the secret and does not query", async () => {
+    const res = await GET(deepReq({}, "integrations=1"));
+    expect(res.status).toBe(401);
+    expect(probe.calls).toEqual([]);
+  });
+
+  it("?integrations=1 lists quiet rails without changing ok or the status code", async () => {
+    const res = await GET(deepReq({ authorization: `Bearer ${SECRET}` }, "integrations=1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: true, service: "tmmt-ops", degraded: [] });
+    // The double returns no rows, so every rail reads as never having written.
+    expect(body.integrations.map((i: { state: string }) => i.state)).toEqual(["never", "never", "never"]);
+    expect(probe.calls).toEqual(["ghl_webhook_events", "ghl_contacts", "crm_sync_records"]);
+    expect(body.integrationsError).toBeUndefined();
+  });
+
+  it("?integrations=1 reports a probe that cannot even be built, still ok", async () => {
+    probe.throwOnCreate = true;
+    const res = await GET(deepReq({ authorization: `Bearer ${SECRET}` }, "integrations=1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.integrations).toEqual([]);
+    expect(typeof body.integrationsError).toBe("string");
   });
 });
