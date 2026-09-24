@@ -121,6 +121,105 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
+// 0. Machine auth for scheduled jobs (/api/cron/*)
+// ---------------------------------------------------------------------------
+
+describe("/api/cron/* machine auth (Bearer CRON_SECRET)", () => {
+  const SECRET = "test-cron-secret-value";
+  let consoleWarn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    consoleWarn.mockRestore();
+  });
+
+  const CRON_PATHS = ["/api/cron/marketing-kpi-ghl", "/api/cron/journey-recompute", "/api/mission/generate"];
+
+  it.each(CRON_PATHS)("%s without any header still redirects to /login", async (path) => {
+    const res = await middleware(req(path));
+    expect(res.status).toBe(307);
+    expect(redirectTarget(res)).toBe("/login");
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it.each(CRON_PATHS)("%s with the correct Bearer passes through without touching Supabase", async (path) => {
+    h.createMiddlewareClient.mockImplementation(() => {
+      throw new Error("a machine call must not need a session");
+    });
+    const res = await middleware(req(path, { headers: { authorization: `Bearer ${SECRET}` } }));
+    expect(isPassThrough(res)).toBe(true);
+    expect(h.createMiddlewareClient).not.toHaveBeenCalled();
+    expect(res.headers.get("X-Robots-Tag")).toContain("noindex");
+  });
+
+  it.each([
+    ["wrong secret", `Bearer ${SECRET}x`],
+    ["prefix of the secret", `Bearer ${SECRET.slice(0, -1)}`],
+    ["empty bearer", "Bearer "],
+    ["no Bearer scheme", SECRET],
+    ["lowercase scheme", `bearer ${SECRET}`],
+  ])("rejects %s: 307 /login, logged without the header value", async (_label, header) => {
+    const res = await middleware(req("/api/cron/journey-recompute", { headers: { authorization: header } }));
+    expect(res.status).toBe(307);
+    expect(redirectTarget(res)).toBe("/login");
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    const line = String(consoleWarn.mock.calls[0][0]);
+    expect(line).toContain("[middleware] rejected machine call");
+    expect(line).toContain('"reason":"bearer_mismatch"');
+    expect(line).not.toContain(SECRET.slice(0, 12));
+  });
+
+  it("/api/mission/generate with x-cron-secret (the old workflow header) is refused at the edge, and says why", async () => {
+    const res = await middleware(req("/api/mission/generate", { headers: { "x-cron-secret": SECRET } }));
+    expect(redirectTarget(res)).toBe("/login");
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("x_cron_secret_not_accepted_at_edge");
+  });
+
+  it("does not accept x-cron-secret at the edge (Bearer only), and says why", async () => {
+    const res = await middleware(req("/api/cron/marketing-kpi-ghl", { headers: { "x-cron-secret": SECRET } }));
+    expect(redirectTarget(res)).toBe("/login");
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("x_cron_secret_not_accepted_at_edge");
+  });
+
+  it("denies every machine call when CRON_SECRET is unset", async () => {
+    vi.stubEnv("CRON_SECRET", "");
+    for (const header of ["Bearer ", "Bearer undefined", `Bearer ${SECRET}`]) {
+      const res = await middleware(req("/api/cron/journey-recompute", { headers: { authorization: header } }));
+      expect(redirectTarget(res), header).toBe("/login");
+    }
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("cron_secret_unset");
+  });
+
+  it.each([
+    "/api/ops/command",
+    "/api/license/heartbeat",
+    "/api/mission",
+    "/api/mission/generatex",
+    "/api/mission/generate/",
+    "/api/mission/generate/extra",
+    "/command",
+    "/api/cronx",
+    "/api/cron",
+  ])(
+    "the cron secret opens nothing outside /api/cron/ and the exact machine paths: %s still redirects",
+    async (path) => {
+      const res = await middleware(req(path, { headers: { authorization: `Bearer ${SECRET}` } }));
+      expect(redirectTarget(res)).toBe("/login");
+    }
+  );
+
+  it("a signed-in owner still reaches /api/cron/* with no header (tier rules unchanged)", async () => {
+    signedIn("admin"); // "admin" is the JWT role token for the owner tier
+    const res = await middleware(req("/api/cron/journey-recompute"));
+    expect(isPassThrough(res)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 1. Public paths
 // ---------------------------------------------------------------------------
 

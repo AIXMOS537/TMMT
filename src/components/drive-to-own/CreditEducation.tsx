@@ -16,12 +16,10 @@ export default function CreditEducation({
   token,
   sections,
   requiredTotal,
-  requiredAcknowledged,
 }: {
   token: string;
   sections: EducationSection[];
   requiredTotal: number;
-  requiredAcknowledged: number;
 }) {
   const [pending, start] = useTransition();
   const [done, setDone] = useState<Set<string>>(

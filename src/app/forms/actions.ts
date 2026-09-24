@@ -201,6 +201,76 @@ export async function submitDealerApply(formData: FormData): Promise<FormResult>
   return result;
 }
 
+// ─── 1b-2. Partner apply — the SUPPLY side (people who HAVE a car) ───
+
+/**
+ * Incoming Leads is people who want to rent a car. This is the mirror: people who
+ * own one and want it earning. Deliberately short — the gates (commercial-use
+ * insurance, title, the split) are decided by a human afterwards, never by the
+ * applicant, and the RLS WITH CHECK enforces that they arrive ungraded.
+ */
+const partnerApplySchema = z.object({
+  owner_name: z.string().min(1).max(200),
+  phone: z.string().min(7).max(20),
+  email: z.string().email().max(254).or(z.literal("")),
+  vehicle_year: z.string().max(4).optional(),
+  vehicle_make: z.string().max(60).optional(),
+  vehicle_model: z.string().max(60).optional(),
+  mileage: z.string().max(9).optional(),
+  finance_status: z.enum(["Owned outright", "Financed", "Leased", ""]).optional(),
+  monthly_note_payment: z.string().max(12).optional(),
+  insurance_carrier: z.string().max(120).optional(),
+  notes: z.string().max(2000).optional(),
+}).merge(attributionSchema);
+
+export async function submitPartnerApply(formData: FormData): Promise<FormResult> {
+  const raw = Object.fromEntries(formData);
+  const parsed = partnerApplySchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: "Please check your entries and try again." };
+
+  const d = parsed.data;
+  const year = d.vehicle_year ? Number(d.vehicle_year) : null;
+  const miles = d.mileage ? Number(d.mileage.replace(/\D/g, "")) : null;
+  const note = d.monthly_note_payment
+    ? Number(d.monthly_note_payment.replace(/[^0-9.]/g, ""))
+    : null;
+
+  const result = await insertRow("partner_acquisition", {
+    owner_name: d.owner_name.trim(),
+    phone: d.phone.replace(/\D/g, "") || null,
+    email: d.email.trim() || null,
+    // The RLS policy requires exactly these three — a submission cannot grade itself.
+    stage: "new",
+    commercial_use_cleared: "unknown",
+    proposed_partner_pct: null,
+    vehicle_year: Number.isFinite(year as number) ? year : null,
+    vehicle_make: d.vehicle_make?.trim() || null,
+    vehicle_model: d.vehicle_model?.trim() || null,
+    mileage: Number.isFinite(miles as number) ? miles : null,
+    finance_status: d.finance_status || null,
+    monthly_note_payment: Number.isFinite(note as number) ? note : null,
+    insurance_carrier: d.insurance_carrier?.trim() || null,
+    notes: d.notes?.trim() || null,
+    source: d.source || "partner-apply",
+  }, {
+    formSlug: "partner-apply",
+    name: d.owner_name.trim(),
+    email: d.email.trim() || null,
+    phone: d.phone,
+  });
+
+  if (result.success) {
+    const car = [d.vehicle_year, d.vehicle_make, d.vehicle_model].filter(Boolean).join(" ") || "car not specified";
+    fanOut(
+      `Car owner wants to partner\n${d.owner_name.trim()} · ${d.phone}\n${car}\n` +
+        `Finance: ${d.finance_status || "not said"}${note ? ` ($${note}/mo note)` : ""}\n` +
+        `NEXT: clear commercial-use insurance before anything else.`
+    ).catch((err) => console.warn("[partner-apply] fanOut error:", err));
+  }
+
+  return result;
+}
+
 // ─── 1c. Business line intake (dealers, wholesale, verticals) ───
 
 const businessLineIntakeSchema = z.object({
