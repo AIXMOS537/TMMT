@@ -166,3 +166,60 @@ export function caseStatusForVendorJob(s: VendorJobStatus): CaseStatus | null {
       return null;
   }
 }
+
+// =============================================================================
+// Client engagement phases — what the CLIENT sees on their build tracker.
+//
+// Deliberately NOT a second case pipeline. CASE_STATUSES above is the internal
+// operational vocabulary (15 states, vendor hand-offs, quality checks); a client
+// should never see "vendor_needed". These four are the outward-facing summary of
+// the same work, and `ENGAGEMENT_PHASE_FOR_CASE` is the one-way projection from
+// the internal state to the client-visible one. Add states to CASE_STATUSES, not
+// here — this list is meant to stay four items long.
+// =============================================================================
+
+export const ENGAGEMENT_PHASES = ["intake", "agreement", "build", "live"] as const;
+export type EngagementPhase = (typeof ENGAGEMENT_PHASES)[number];
+
+export const ENGAGEMENT_PHASE_LABEL: Record<EngagementPhase, string> = {
+  intake: "Intake",
+  agreement: "Agreement",
+  build: "Build",
+  live: "Live",
+};
+
+/** What the client is told is happening, in their words, not ours. */
+export const ENGAGEMENT_PHASE_BLURB: Record<EngagementPhase, string> = {
+  intake: "We're learning how your business runs today.",
+  agreement: "Scope and terms are being agreed.",
+  build: "Your system is being built.",
+  live: "Your system is running.",
+};
+
+/** Phases are forward-only and strictly ordered — index doubles as rank. */
+export function engagementPhaseRank(phase: EngagementPhase): number {
+  return ENGAGEMENT_PHASES.indexOf(phase);
+}
+
+/**
+ * Projection from the internal case pipeline to the client-visible phase.
+ * Every CaseStatus must map, so a new internal state can never leave the
+ * tracker blank — the test in statuses.test.ts enforces exhaustiveness.
+ */
+export const ENGAGEMENT_PHASE_FOR_CASE: Record<CaseStatus, EngagementPhase> = {
+  intake_submitted: "intake",
+  initial_contact_needed: "intake",
+  initial_contact_complete: "intake",
+  internal_review: "agreement",
+  awaiting_approval: "agreement",
+  task_assignment: "build",
+  vendor_needed: "build",
+  vendor_assigned: "build",
+  vendor_in_progress: "build",
+  vendor_completed: "build",
+  internal_quality_check: "build",
+  customer_follow_up: "build",
+  blocked: "build",
+  completed: "live",
+  closed: "live",
+};

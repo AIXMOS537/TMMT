@@ -121,6 +121,89 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
+// 0. Machine auth for scheduled jobs (/api/cron/*)
+// ---------------------------------------------------------------------------
+
+describe("/api/cron/* machine auth (Bearer CRON_SECRET)", () => {
+  const SECRET = "test-cron-secret-value";
+  let consoleWarn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    consoleWarn.mockRestore();
+  });
+
+  const CRON_PATHS = ["/api/cron/marketing-kpi-ghl", "/api/cron/journey-recompute"];
+
+  it.each(CRON_PATHS)("%s without any header still redirects to /login", async (path) => {
+    const res = await middleware(req(path));
+    expect(res.status).toBe(307);
+    expect(redirectTarget(res)).toBe("/login");
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  it.each(CRON_PATHS)("%s with the correct Bearer passes through without touching Supabase", async (path) => {
+    h.createMiddlewareClient.mockImplementation(() => {
+      throw new Error("a machine call must not need a session");
+    });
+    const res = await middleware(req(path, { headers: { authorization: `Bearer ${SECRET}` } }));
+    expect(isPassThrough(res)).toBe(true);
+    expect(h.createMiddlewareClient).not.toHaveBeenCalled();
+    expect(res.headers.get("X-Robots-Tag")).toContain("noindex");
+  });
+
+  it.each([
+    ["wrong secret", `Bearer ${SECRET}x`],
+    ["prefix of the secret", `Bearer ${SECRET.slice(0, -1)}`],
+    ["empty bearer", "Bearer "],
+    ["no Bearer scheme", SECRET],
+    ["lowercase scheme", `bearer ${SECRET}`],
+  ])("rejects %s: 307 /login, logged without the header value", async (_label, header) => {
+    const res = await middleware(req("/api/cron/journey-recompute", { headers: { authorization: header } }));
+    expect(res.status).toBe(307);
+    expect(redirectTarget(res)).toBe("/login");
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    const line = String(consoleWarn.mock.calls[0][0]);
+    expect(line).toContain("[middleware] rejected machine call");
+    expect(line).toContain('"reason":"bearer_mismatch"');
+    expect(line).not.toContain(SECRET.slice(0, 12));
+  });
+
+  it("does not accept x-cron-secret at the edge (Bearer only), and says why", async () => {
+    const res = await middleware(req("/api/cron/marketing-kpi-ghl", { headers: { "x-cron-secret": SECRET } }));
+    expect(redirectTarget(res)).toBe("/login");
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("x_cron_secret_not_accepted_at_edge");
+  });
+
+  it("denies every machine call when CRON_SECRET is unset", async () => {
+    vi.stubEnv("CRON_SECRET", "");
+    for (const header of ["Bearer ", "Bearer undefined", `Bearer ${SECRET}`]) {
+      const res = await middleware(req("/api/cron/journey-recompute", { headers: { authorization: header } }));
+      expect(redirectTarget(res), header).toBe("/login");
+    }
+    expect(String(consoleWarn.mock.calls[0][0])).toContain("cron_secret_unset");
+  });
+
+  it.each(["/api/ops/command", "/api/license/heartbeat", "/api/mission/generate", "/command", "/api/cronx", "/api/cron"])(
+    "the cron secret opens nothing outside /api/cron/: %s still redirects",
+    async (path) => {
+      const res = await middleware(req(path, { headers: { authorization: `Bearer ${SECRET}` } }));
+      expect(redirectTarget(res)).toBe("/login");
+    }
+  );
+
+  it("a signed-in owner still reaches /api/cron/* with no header (tier rules unchanged)", async () => {
+    signedIn("admin"); // "admin" is the JWT role token for the owner tier
+    const res = await middleware(req("/api/cron/journey-recompute"));
+    expect(isPassThrough(res)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 1. Public paths
 // ---------------------------------------------------------------------------
 
@@ -249,59 +332,44 @@ describe("unauthenticated requests to protected routes", () => {
     expect(loc.search).toBe("");
   });
 
-  it("the front door (/) renders for anonymous visitors - no redirect at all", async () => {
-    // History, in two steps. "/" used to redirect to the GHL marketing site,
-    // which left the app with no reachable front door: the owner typed the
-    // app's address and got marketing. That was changed to redirect to /login
-    // instead, which was correct only because there was no front door to show.
-    // There is one now (src/app/page.tsx), so "/" renders it.
+  it("the front door (/) serves the rental page, rewritten so the URL stays put", async () => {
+    // "/" has been three things. It redirected to the partner marketing site,
+    // which gave the visitor away. Then it redirected to /login, which showed a
+    // staff sign-in screen to someone who wanted to rent a car. Now it renders
+    // the rental front door.
+    //
+    // A REWRITE, not a redirect: the visitor keeps the brand's own address in
+    // the bar, and "/" keeps a single route owner — (admin)/page.tsx still
+    // serves signed-in staff, so no duplicate-route build break.
     const res = await middleware(req("/"));
-    expect(res.headers.get("location")).toBe(null);
     expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+    expect(res.headers.get("x-middleware-rewrite") ?? "").toContain("/welcome");
   });
 
-  it("a signed-in visitor on / is sent to their own home, not the front door", async () => {
-    // "/" used to BE the operator/staff home - the (admin) group's root page.
-    // Now it is the public front door, so signed-in users are routed onward.
-    // Two page.tsx resolving to "/" is also what Vercel refused to deploy.
-    for (const [role, home] of [
-      ["internal_team", "/desk"],
-      ["admin", "/command"],
-      ["vendor", "/vendor"],
-    ] as const) {
-      signedIn(role);
-      const res = await middleware(req("/"));
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe(home);
-    }
-    signedOut();
-  });
-
-  it("the intake forms are public - anonymous visitors are not sent to /login", async () => {
-    for (const path of ["/intake", "/intake/rentals", "/intake/thanks"]) {
-      const res = await middleware(req(path));
-      expect(res.headers.get("location")).toBe(null);
-      expect(res.status).toBe(200);
+  it("the front door never sends the visitor to the partner site", async () => {
+    for (const host of [undefined, "tmmt-ops.vercel.app", "tmmtrentals.com"]) {
+      const res = await middleware(req("/", host ? { host } : {}));
+      const loc = res.headers.get("location") ?? "";
+      expect(loc).not.toContain("allinonemanagementsolutions");
+      expect(loc.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(false);
     }
   });
 
-  it("the public front door does not leak the rest of the app", async () => {
-    // "/" is public, "/customers" is not - isSignedOutFrontDoor matches the
-    // root exactly, so nothing under it inherits the exemption.
-    for (const path of ["/customers", "/command", "/money"]) {
-      const res = await middleware(req(path));
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
-    }
+  it("/welcome renders directly for a signed-out visitor", async () => {
+    const res = await middleware(req("/welcome"));
+    expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get("location")).toBeNull();
   });
 
-  it("the public funnel paths still bounce to the GHL site", async () => {
+  it("the public funnel paths stay on TMMT and never bounce to the partner", async () => {
+    // These used to 301 to the partner site on a TMMT public host. A 301 is
+    // permanent, so the hop lived on in every visitor's browser cache — the
+    // reason the app "kept" redirecting there long after anyone looked at it.
     for (const path of ["/credit", "/funding"]) {
-      // The bounce is host-gated (shouldBounceTmmtCreditToAixmos), so it only
-      // fires on a real TMMT public host, not the neutral test host.
       const res = await middleware(req(path, { host: "tmmt-ops.vercel.app" }));
-      expect(res.status).toBe(301);
-      expect(res.headers.get("location")!.startsWith(AIXMOS_PUBLIC_ORIGIN)).toBe(true);
+      expect(isPassThrough(res)).toBe(true);
+      expect(res.headers.get("location")).toBeNull();
     }
   });
 });
@@ -335,6 +403,15 @@ type RoleToken = keyof typeof ROLES;
 const ROLE_TOKENS = Object.keys(ROLES) as RoleToken[];
 const roleArg = (r: RoleToken) => (r === "(no role)" ? undefined : r);
 
+// Deliberately literal rather than derived from homePathForTier(): this is an
+// independent statement of where each tier belongs, so an unintended change to
+// that function fails here instead of agreeing with itself.
+//
+// operator/staff moved "/" -> "/desk" (2026-09-17 merge). The rentals desk used
+// to be the (admin) group's root page, which collided with the public front door
+// at "/": two page.tsx resolving to the same route. Next tolerated it locally and
+// Vercel refused the deployment outright (ENOENT on
+// app/(admin)/page_client-reference-manifest.js). Same screen, explicit path.
 const HOME: Record<(typeof ROLES)[RoleToken], string> = {
   owner: "/command",
   executive: "/executive",
@@ -836,28 +913,44 @@ describe("/forms POST rate limit", () => {
   });
 });
 
-describe("marketing entry points on a TMMT public host bounce to the public site", () => {
+describe("no marketing entry point is handed to the partner site", () => {
+  /**
+   * The leak this replaces: on a TMMT public host, /credit, /funding and the
+   * /lp/* landing pages answered 301 to allinonemanagementsolutions.com. The
+   * /lp/* pages are real TMMT landing pages whose form POSTs to our own
+   * /api/leads/webhook, so every one of those visitors was a TMMT lead given
+   * to the partner's homepage — and the 301 cached in the browser, so the
+   * visitor never came back to be counted.
+   *
+   * Referral is opt-in only now and lives on /partners/all-in-one.
+   */
   it.each(["/credit", "/funding", "/lp/aixmos/intro-97", "/lp/moe-legacy/lead-magnet"])(
-    "%s -> 301 to the AIXMOS public site",
+    "%s is served by TMMT, with no redirect off the site",
     async (path) => {
       const res = await middleware(req(path, { host: TMMT_HOST }));
-      expect(res.status).toBe(301);
-      expect(res.headers.get("location")!.startsWith(`${AIXMOS_PUBLIC_ORIGIN}/`)).toBe(true);
+      expect(isPassThrough(res)).toBe(true);
+      const loc = res.headers.get("location");
+      expect(loc).toBeNull();
       expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
       expect(h.createMiddlewareClient).not.toHaveBeenCalled();
     },
   );
 
-  it("is skipped when the public site proxied the request (x-forwarded-host)", async () => {
-    const res = await middleware(
-      req("/credit", { host: TMMT_HOST, headers: { "x-forwarded-host": "allinonemanagementsolutions.com" } }),
-    );
-    expect(isPassThrough(res)).toBe(true);
-  });
+  it.each(["/credit", "/funding", "/lp/aixmos/intro-97"])(
+    "%s emits no location header pointing at the partner, on any host",
+    async (path) => {
+      for (const host of [TMMT_HOST, "tmmtrentals.com", "www.tmmtrentals.com", undefined]) {
+        const res = await middleware(req(path, host ? { host } : {}));
+        const loc = res.headers.get("location") ?? "";
+        expect(loc).not.toContain("allinonemanagementsolutions");
+      }
+    },
+  );
 
-  it("does not bounce on a non-TMMT host", async () => {
-    const res = await middleware(req("/credit"));
+  it("the opt-in referral page is public — it must render without an account", async () => {
+    const res = await middleware(req("/partners/all-in-one", { host: TMMT_HOST }));
     expect(isPassThrough(res)).toBe(true);
+    expect(res.headers.get("location")).toBeNull();
   });
 });
 

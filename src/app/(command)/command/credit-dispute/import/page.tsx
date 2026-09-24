@@ -156,7 +156,7 @@ export default function CreditDisputeImportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Import credit report"
-        description="MyFreeScoreNow (affiliate scores) + Dispute Fox (dispute workflow) → client_journey spine"
+        description="MyFreeScoreNow (affiliate scores) + Dispute Fox (dispute workflow). Not yet linked to client_journey."
       />
 
       <Link href="/command/credit-dispute" className="text-sm text-blue-600">← Back to credit command</Link>

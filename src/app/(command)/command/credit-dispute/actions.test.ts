@@ -118,16 +118,23 @@ describe("credit dispute desk: owner", () => {
     expect(writes(db)).toHaveLength(0);
   });
 
-  it("appends dispute rounds onto the stored client", async () => {
+  // CHANGED 2026-09-19. This asserted that the owner could append dispute rounds and
+  // that the letter body landed in the stored client. That is the CROA-regulated act
+  // (15 U.S.C. §1679a) and croa_contracts_attorney_approved is false, so the action is
+  // now gated and the owner is refused too — being the owner is an access control, not
+  // an entitlement to perform a regulated service. See generator.gate.test.ts.
+  //
+  // When the gate legitimately opens — attorney-approved CROA suite, VDACS registration,
+  // surety bond, all recorded — restore the original assertions rather than deleting
+  // this note, because the write path underneath them is still the behaviour we want.
+  it("refuses to append dispute rounds while the CROA gate is closed, even for the owner", async () => {
     const db = signIn(OWNER, { [CLIENT_ID]: client(CLIENT_ID) });
     const res = await addDisputeRoundsForClient(CLIENT_ID, [batch]);
-    expect(res.ok).toBe(true);
-    if (!res.ok || !res.data) throw new Error("expected data");
-    expect(res.data.disputeRounds).toHaveLength(1);
-    expect(res.data.disputeRounds[0]).toMatchObject({ negativeItemId: "ni-1", bureau: "equifax", letterBody: "Please investigate." });
-    const up = writes(db);
-    expect(up).toHaveLength(1);
-    expect((up[0].payload as { payload: StoredClient }).payload.disputeRounds).toHaveLength(1);
+    expect(res.ok).toBe(false);
+    if (res.ok) throw new Error("the CROA gate let a dispute round through");
+    expect(res.error).toContain("croa_contracts_attorney_approved");
+    // The refusal must happen before anything is persisted.
+    expect(writes(db)).toHaveLength(0);
   });
 
   it("adding rounds to an unknown client writes nothing", async () => {

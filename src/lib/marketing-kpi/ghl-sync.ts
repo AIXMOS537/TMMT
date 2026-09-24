@@ -75,6 +75,22 @@ export async function collectGhlKpiMetrics(weekStart: string): Promise<GhlKpiAut
       .lt("created_at", end),
   ]);
 
+  // Every read must succeed: a failed read used to fall through as `?? []` /
+  // `?? 0` and publish an all-zero week as if it were real (finding F-11).
+  const failed = (
+    [
+      ["ghl_contacts", contactsRes.error],
+      ["ghl_appointments", appointmentsRes.error],
+      ["ghl_form_submissions", formsRes.error],
+      ["credit_billing_plans", creditRes.error],
+    ] as const
+  ).filter(([, err]) => err);
+  if (failed.length > 0) {
+    throw new Error(
+      `marketing KPI read failed: ${failed.map(([t, err]) => `${t} (${err?.code ?? "?"}: ${err?.message})`).join("; ")}`
+    );
+  }
+
   const contacts = contactsRes.data ?? [];
   const appointments = appointmentsRes.data ?? [];
 
@@ -118,11 +134,13 @@ export async function syncMarketingKpiWeekFromGhl(weekStart: string): Promise<{
   const supabase = createServiceRoleClient();
   const auto = await collectGhlKpiMetrics(weekStart);
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("marketing_kpi_weeks")
     .select("*")
     .eq("week_start", weekStart)
     .maybeSingle();
+  // Without the existing row the upsert below would zero the manual social fields.
+  if (existingError) throw existingError;
 
   const merged = {
     week_start: weekStart,

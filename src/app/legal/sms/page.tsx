@@ -30,7 +30,8 @@ export default function SmsLegalPage() {
 
       <h2>Related</h2>
       <p>
-        See also our <a href="/legal/privacy">Privacy</a> disclosure for what we collect and how it is used.
+        See also our <a href="/legal/privacy">Privacy</a> disclosure for what we collect and how it is used,
+        and <a href="/trust">how we handle your data</a> for the same promises in plain English.
       </p>
     </>
   );
