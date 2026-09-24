@@ -52,7 +52,26 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 53;
+const KNOWN_UNAPPLIED = 55;
+
+/*
+ * 54 -> 55 on 2026-09-24, deliberately: 20260917120000_training_progress_by_journey.sql
+ * (feat/inspection-walkaround, #251, which carries fix/e2e-stops-writing-to-production).
+ * Genuinely never run on production. The branch counted it as 49 -> 50 against the
+ * master of its day; per the note below the numbers add, so master's 54 plus this one
+ * file is 55. Applying it is a prod write and needs the owner's baton. Drops back to 54
+ * when it is applied and reconciled.
+ */
+
+/*
+ * 53 -> 54 on 2026-09-24, deliberately: 20260924180000_vehicle_blocks_and_booking_occupancy.sql
+ * (feat/rental-reservation-spine, E6b; it replaces E6's withdrawn reservations file). Genuinely
+ * never run on production -- rehearsed on tmmt-e2e-throwaway (schema rental_proto) only.
+ * Applying it is a prod write and needs the owner's baton. Drops back to 53 when it is
+ * applied and reconciled. Its section 1 re-states bookings_no_overlap / status_check /
+ * interval_sane guarded by IF NOT EXISTS; those are live under ledger version 20260917200051
+ * (see LEDGER-SNAPSHOT.txt), so that part is a no-op on prod.
+ */
 
 /*
  * 51 -> 53 on 2026-09-21, deliberately: landing the 14-branch integration onto
@@ -87,6 +106,14 @@ const KNOWN_UNAPPLIED = 53;
  */
 
 /*
+ * 49 -> 50 on 2026-09-17: `20260917120000_training_progress_by_journey.sql`.
+ * Written and rehearsed on the throwaway (three constraints watched refusing: progress
+ * belonging to nobody, a 250% percentage, and a duplicate row). NOT applied to production —
+ * it is queued behind the same owner approval as the rest, so it is counted here rather
+ * than hidden. Until it lands, gates 30 and 40 of the Drive-to-Own ladder stay
+ * unevidencable in production for every renter, exactly as gate 10 was before
+ * 20260917010000.
+ *
  * 38 -> 49 on 2026-09-17, deliberately, in two parts:
  *
  * +6  Six files WERE applied to production today under the runbook, each

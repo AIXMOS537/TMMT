@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSSRClient } from "@/lib/supabase-server";
+import { safeRelativePath } from "@/lib/safe-redirect";
 
 /**
  * Auth redirect callback for the PKCE flow (password recovery, magic links).
@@ -12,10 +13,9 @@ import { createSSRClient } from "@/lib/supabase-server";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/login/reset";
-
-  // Only allow same-app relative redirects, never an attacker-supplied absolute URL.
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/login/reset";
+  // Only same-app paths, never an attacker-supplied destination — including the
+  // "/\evil.com" and "/<tab>/evil.com" forms the old prefix check let through (C3-003).
+  const safeNext = safeRelativePath(searchParams.get("next"), "/login/reset");
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=invalid_link", origin));
