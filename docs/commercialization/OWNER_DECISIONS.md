@@ -1053,6 +1053,134 @@ invariant exists to make safe.
 
 ---
 
+## D-22 🔴 The credit pathway — part of the TMMT journey, and who performs it
+
+**Decision.** (a) Is the credit-dispute engine active work, and how does it relate
+to rentals? (b) Who delivers the credit service to the customer — TMMT itself, or
+Khan Strategies LLC on referral?
+
+**Why now.** PR #224 (credit compliance rails, letter engine, brain ingestion) has
+sat unmerged partly because the credit side was assumed parked. Part (b) decides
+which legal structure the engine is being finished for.
+
+**Evidence** (repository, 2026-09-16):
+
+- The repo already designs a credit hand-off: "every lead that cannot be served —
+  declined renters, credit-blocked applicants — routes to Khan Strategies with
+  consent captured" (`COMMERCIAL_MASTER.md` §8). `referToPartner` →
+  `request_handoff('tmmt','khan_strategies',…)` with a mandatory consent channel;
+  `partner_referrals` has 0 rows (D-3).
+- `CLAIMS_AUDIT.md`: credit legal gates are **CLOSED** — no attorney-approved CROA
+  suite, no VDACS registration, no surety bond. Approved wording is "software and
+  education, hands-on credit work referred to Khan Strategies LLC".
+- ⚠️ **Naming collision.** In these documents **"Customer #2" means the Khan
+  Strategies tenant** (D-21, `CUSTOMER_2_*.md`), not "the credit side of TMMT".
+  A 2026-09-16 session used "Customer #2" loosely for the credit engine; the
+  owner answer below uses the term in that looser sense. Read it as **the credit
+  pathway**.
+
+**Owner Answer — SETTLED 2026-09-16 (part a): CREDIT PATHWAY ACTIVE.**
+
+- **Status:** ACTIVE — continue audit and development. Not parked.
+- **Purpose:** an appropriate secondary pathway for TMMT leads/customers who
+  cannot currently access a suitable rental/vehicle path and may need
+  credit-related help while working toward financing their **own** vehicle.
+- **Relationship to rentals:** one connected customer journey, not a side
+  project. A person moving from rental interest to the credit path should remain
+  one person, not a second disconnected record; the two paths must stay
+  measurable together (requested → could not be served → why → offered → chose →
+  paid → completed → reported financing outcome).
+- **No outcome promises.** Software, copy and AI must never represent that credit
+  will improve, items will be removed, a score will be reached, financing will be
+  approved, a vehicle will be obtained, or a timeline will hold. Track process and
+  status; keep customer **goals** separate from **outcomes**.
+- **No automatic enrolment.** The customer chooses. Prior rental-marketing consent
+  is **not** assumed to cover credit-service marketing. **No messaging of the
+  historical lead database about the credit service** until consent, suppression,
+  channel rules and applicable requirements are verified (see D-15).
+- **PR #224:** REVIEW REQUIRED — **do not auto-merge.** Code labelled
+  "compliance" is not evidence of legal compliance; review separates software
+  control / legal requirement / owner policy.
+- **AI:** may not fabricate account data, dates, payment history, identity,
+  report facts, legal claims, customer statements, creditor actions or bureau
+  responses. Every consequential generated document must trace to stored source
+  information and pass human/customer review.
+- **Commercial status:** NOT assumed ready. Engineering readiness and
+  commercial/legal readiness are separate gates.
+- **Next engineering action:** audit #224 and reconstruct the existing credit
+  engine end to end before building further features; place its requirements
+  into `REMEDIATION_PLAN.md` by dependency.
+
+**Part (b) — who performs the service — OPEN.**
+
+**Option A — TMMT refers; Khan Strategies performs** (the design already in the
+repo). *Consequence:* TMMT's side is intake, consent and referral; the credit
+contract, disclosures and fees sit with Khan Strategies, who operate the engine as
+a tenant (A-4 applies). D-3's rate becomes the TMMT revenue line.
+
+**Option B — TMMT performs the service itself.** *Consequence:* TMMT likely takes
+on the credit-services obligations the closed gates describe (contract,
+disclosures, cancellation, fee timing, state registration/bond) — **legal review
+required before any customer**.
+
+**NO RECOMMENDATION — this is a legal-structure and relationship choice.**
+
+**Owner Answer (b) — SETTLED 2026-09-16: NEITHER A NOR B AS FRAMED.** The A/B
+framing was incomplete. The product is a **software-led credit report analysis and
+guided customer journey inside TMMT OS**, with a human consultant only when
+warranted:
+
+`credit path offered → customer explicitly chooses → owner's MyFreeScoreNow
+affiliate link → customer obtains their own report → customer voluntarily uploads
+it → secure storage → parse to structured data with provenance → analysis →
+customer dashboard → customer answers verification questions → guided next-step
+plan → consultant needed? (no: self-service guidance / yes: book consultation) →
+consultant receives a prepared case packet → app keeps tracking next steps`
+
+Binding rules from this answer:
+
+- **Not a referral page, not an autonomous dispute-letter machine.** The dispute
+  engine is a **downstream** capability: report → analysis → customer
+  verification → issue identification → consultant/appropriate review → approved
+  action → dispute workflow only if warranted. Negative ≠ disputable.
+- **MyFreeScoreNow Phase 1 = affiliate link + customer download + voluntary
+  upload.** Never collect MFSN credentials, never scrape, never build unsupported
+  automated access. Direct integration only if MFSN officially supports it.
+  Preserve affiliate attribution without exposing it in the customer flow.
+- **Raw report ≠ operational database.** Raw file in secure storage; normalized
+  data with provenance (report, bureau, section, item, source text, import time);
+  never invent missing values; explicit extraction confidence.
+- **Keep four kinds of truth separate:** what the report says / what the software
+  infers / what the customer confirms / what a consultant concludes.
+- **"Full access"** means the customer knowingly provides the report needed for the
+  requested analysis — not future pulls, unrelated accounts, cross-tenant sharing,
+  sale, unrelated marketing, or indefinite retention.
+- **Credit reports are a high-sensitivity data class**; do not send raw reports to
+  external AI providers; deterministic parsing first, local AI where appropriate,
+  minimal data to any model.
+- **Consultant/provider is modeled as a service-provider organization, not
+  hard-coded.** Khan Strategies may be the first provider, operating in its own
+  tenant; TMMT Rentals gains no automatic access to the provider's service records.
+- One person with separate relationships (rental, credit workflow, referrals,
+  permissions, documents, appointments) — without exposing tenant data across
+  businesses.
+- No outcome promises (score, deletion, financing). #224 stays HOLD.
+- Uploading one's own report does **not** by itself place downstream activity
+  outside credit-repair or consumer-reporting requirements — legal review gate
+  before monetized/live operation.
+
+**Still open (D-22c):** who is the human consultant / service provider after the
+analysis — Khan Strategies, TMMT staff, or another provider — and who contracts,
+bills, supports and owns the service record.
+
+**Next engineering action (authorized):** gap analysis only — no new screens —
+then the smallest dependency-aware sequence to move **one test customer** through
+affiliate entry → report upload → analysis → customer review → consultant booking,
+with no dispute sent, no money charged, and no real customer's report. **Stop for
+owner approval there.**
+
+---
+
 ## SUMMARY — what blocks what
 
 | Decision | Priority | Blocks |
@@ -1072,6 +1200,7 @@ invariant exists to make safe.
 | D-13 founder terms | 🟠 | fence compliance |
 | D-20 vehicle-inclusive offer | 🔴 | **any quote naming a car — HOLD until answered** |
 | D-21 Customer #2 tenant safety | 🔴 | **a safe second tenant; part (a) needs no engineering** |
+| D-22c who is the consultant / service provider | 🔴 | contracting, billing, provider tenant; D-22a and D-22b SETTLED |
 | D-19 S3-05 reason codes | 🟠 | S3-04 routing, S3-06 reason picker; free text until supplied |
 | D-16 preservation | 🟡 | irreversible loss |
 | D-8 Dispatch · D-9 Rentals | 🟡 | new revenue lines |

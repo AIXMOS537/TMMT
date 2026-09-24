@@ -5,19 +5,30 @@
  *
  * Order of guards, and why each sits where it does:
  *   signature → parse → org → lead/conversation → REPLAY GATE → record inbound
- *   → OPT-IN → OPT-OUT → OUTBOUND GATE (A2P + do-not-contact) → agent → reply.
- * Everything expensive or customer-visible (the LLM call, the state transition,
- * the human handoff, the TwiML reply) sits after every guard.
+ *   → COMMUNICATION CONTROL (STOP keyword → suppress; START; stop-like → hold)
+ *   → OPTED-OUT GUARD → OUTBOUND GATE (A2P + do-not-contact) → agent
+ *   → OWNER-APPROVAL HOLD (AI draft stored, nothing sent, unless the org is on
+ *     B3_AUTO_REPLY_ORGS) → reply.
+ * Communication control sits before every AI guard and the LLM: honouring a
+ * stop never depends on the licence, the kill switch, the spend cap or the
+ * model. Everything expensive or customer-visible (the LLM call, the state
+ * transition, the human handoff, the AI reply) sits after every guard.
  */
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { resolveOrgByTwilioNumber, OrgNotFoundError } from '@/lib/agent/tenant'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { resolveOrgByTwilioNumber, OrgNotFoundError, type OrgContext } from '@/lib/agent/tenant'
 import { processInbound } from '@/lib/agent/process-inbound'
 import { createServiceRoleClient } from '@/lib/supabase-service'
-import { LicenseDisabledError, OperationalKillError, LlmCapExceededError } from '@/lib/agent/guard'
+import {
+  LicenseDisabledError, OperationalKillError, LlmCapExceededError, isOperationalKillEngaged,
+} from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
-import { isOptInMessage } from '@/lib/agent/compliance/opt-out'
+import { emitAudit } from '@/lib/agent/audit'
+import { isAutoReplyAuthorized } from '@/lib/agent/auto-reply-policy'
+import { isOptInMessage, optOutAutoReply } from '@/lib/agent/compliance/opt-out'
 import { recordGlobalOptOut } from '@/lib/agent/compliance/record-opt-out'
+import { classifyCommunicationControl } from '@/lib/agent/compliance/communication-control'
 import { assertOutboundAllowed, orgSmsVertical } from '@/lib/outbound-gate'
 
 function twiml(body: string): string {
@@ -28,6 +39,29 @@ function twiml(body: string): string {
 
 function xmlResp(body: string, status = 200): NextResponse {
   return new NextResponse(body, { status, headers: { 'content-type': 'text/xml' } })
+}
+
+/**
+ * May a FIXED compliance acknowledgement (never AI text) go out? The kill
+ * switch and the outbound gate (do-not-contact, opt-out) still apply to the
+ * acknowledgement. A refusal or a gate error withholds only the
+ * acknowledgement; the caller records the opt-out / opt-in regardless.
+ */
+async function complianceAckDecision(
+  db: SupabaseClient,
+  phone: string,
+  org: OrgContext,
+): Promise<{ allowed: boolean; flags: string[] }> {
+  if (isOperationalKillEngaged()) return { allowed: false, flags: ['ack_withheld_kill_switch'] }
+  try {
+    const d = await assertOutboundAllowed({
+      db, phone, organizationId: org.id, vertical: orgSmsVertical(org), type: 'transactional',
+    })
+    return { allowed: d.allowed, flags: d.allowed ? d.flags : [...d.flags, 'ack_withheld'] }
+  } catch (e) {
+    console.warn('[agent/sms/inbound] acknowledgement gate errored; withholding the acknowledgement only', e)
+    return { allowed: false, flags: ['ack_withheld_gate_error'] }
+  }
 }
 
 /**
@@ -168,29 +202,133 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw inboundInsert.error
     }
 
+    // ── COMMUNICATION CONTROL ──────────────────────────────────────────────
+    // Deterministic, and ahead of every AI guard (kill switch, licence, LLM
+    // spend cap) and the LLM. Before this, keyword STOP was only detected
+    // inside processInbound AFTER those guards, so a guard failure meant the
+    // opt-out was never recorded, and "stop texting me" went to the LLM and got
+    // an ordinary reply. See compliance/communication-control.ts.
+    const control = classifyCommunicationControl(body)
+
+    // Explicit opt-out keyword: record suppression, never call the LLM.
+    if (control.kind === 'opt_out') {
+      if (lead.opted_out) {
+        console.warn('[agent/sms/inbound] opt-out keyword from an already opted-out lead, no reply sent')
+        return xmlResp(twiml(''))
+      }
+      // Ask about the acknowledgement BEFORE writing the flag: the gate reads
+      // opted_out and would refuse it afterwards. A refusal or gate error only
+      // withholds the acknowledgement; it never skips the suppression below.
+      const ack = await complianceAckDecision(db, from, org)
+      const now = new Date().toISOString()
+      const suppressed = await db.from('incoming_leads')
+        .update({ opted_out: true, opted_out_at: now, agent_status: 'LOST', lost_at: now })
+        .eq('id', lead.id)
+      if (suppressed.error) {
+        console.error('[agent/sms/inbound] OPT-OUT NOT RECORDED', suppressed.error.message)
+        await emitAudit({
+          organizationId: org.id,
+          action: 'compliance.opt_out_record_failed',
+          payload: { lead_id: lead.id, conversation_id: conv.id, message: suppressed.error.message },
+        })
+        return xmlResp(twiml(''))
+      }
+      // ── STOP REACHES THE GLOBAL LIST ─────────────────────────────────────
+      // The update above is scoped to ONE lead row in ONE org.
+      // do_not_contact_numbers is what assertOutboundAllowed() checks for every
+      // org on every outbound message, so without this a re-imported lead row
+      // (opted_out defaulting to false) or a different org could text this
+      // person again. A person who says stop means stop, not "stop from this
+      // record".
+      //
+      // This path returns early — deliberately, so an opt-out never reaches the
+      // LLM — which means it does NOT fall through to the global write further
+      // down this file. Merging C-21a with that write in place without adding
+      // this call here would have silently dropped it for every keyword STOP.
+      //
+      // Failure is recorded, not thrown: the suppression above already landed,
+      // and losing the customer's reply on top of a compliance-write failure
+      // helps nobody. It must not be invisible either.
+      const dncFlags: string[] = []
+      const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+      if (!dnc.ok) {
+        dncFlags.push('dnc_write_failed')
+        console.error('[agent/sms/inbound] GLOBAL DNC WRITE FAILED', dnc.error)
+        await emitAudit({
+          organizationId: org.id,
+          action: 'compliance.dnc_write_failed',
+          payload: { lead_id: lead.id, conversation_id: conv.id, phone_last4: from.slice(-4) },
+        })
+      }
+
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.opt_out_received',
+        payload: {
+          lead_id: lead.id,
+          conversation_id: conv.id,
+          ack_sent: ack.allowed,
+          global_dnc: dnc.ok,
+        },
+      })
+      const ackBody = ack.allowed ? optOutAutoReply() : ''
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: ackBody,
+        compliance_flags: ['opt_out', ...ack.flags, ...dncFlags],
+      })
+      return xmlResp(twiml(ackBody))
+    }
+
     // ── OPT-IN ─────────────────────────────────────────────────────────────
     // The opt-out auto-reply promises "Reply START anytime to opt back in".
-    // isOptInMessage() existed and was never called, and opted_out was never
-    // cleared. Without this, the guard below would silence someone permanently
-    // with no way back.
-    if (isOptInMessage(body)) {
+    // START clears only this org's per-lead flag. It does not touch
+    // do_not_contact_numbers, and Twilio's own opt-out state is separate.
+    // The fixed confirmation goes through the same acknowledgement check as
+    // STOP, so it is not sent to a do-not-contact number or while the kill
+    // switch is engaged (it used to be sent in both cases).
+    if (control.kind === 'opt_in') {
       if (lead.opted_out) {
         await db.from('incoming_leads')
           .update({ opted_out: false, opted_out_at: null })
           .eq('id', lead.id)
       }
-      return xmlResp(twiml("You're opted back in. Reply STOP at any time to opt out."))
+      const ack = await complianceAckDecision(db, from, org)
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.opt_in_received',
+        payload: { lead_id: lead.id, conversation_id: conv.id, was_opted_out: Boolean(lead.opted_out), ack_sent: ack.allowed },
+      })
+      return xmlResp(twiml(ack.allowed ? "You're opted back in. Reply STOP at any time to opt out." : ''))
     }
 
     // ── OPT-OUT GUARD ──────────────────────────────────────────────────────
     // opted_out was written but never read, so an opted-out person still got a
-    // full LLM reply on their next message. Carrier-level STOP is blocked by
-    // Twilio upstream; isOptOutMessage() also catches app-level phrasing
-    // ("stop texting me", "remove me") that carriers do NOT filter, and those
-    // are the people this protects. The inbound message is recorded above, so
-    // the audit trail stays complete — only the reply is withheld.
+    // full LLM reply on their next message. The inbound message is recorded
+    // above, so the audit trail stays complete — only the reply is withheld.
     if (lead.opted_out) {
       console.warn('[agent/sms/inbound] inbound from opted-out lead, no reply sent')
+      return xmlResp(twiml(''))
+    }
+
+    // ── STOP-LIKE HOLD ─────────────────────────────────────────────────────
+    // A stop signal that is not an explicit keyword ("stop texting me",
+    // "take me off your list", "STOP ALL"). Not treated as a formal opt-out and
+    // not interpreted by an LLM: held for a human, no reply of any kind.
+    if (control.kind === 'stop_like') {
+      console.warn(`[agent/sms/inbound] stop-like message held for human review (${control.signal})`)
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: '',
+        compliance_flags: ['stop_like_hold', `stop_signal:${control.signal}`],
+      })
+      await emitAudit({
+        organizationId: org.id,
+        action: 'compliance.stop_like_held',
+        payload: { lead_id: lead.id, conversation_id: conv.id, signal: control.signal },
+      })
       return xmlResp(twiml(''))
     }
 
@@ -238,40 +376,61 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
 
-    // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
-    // The patch above is scoped to ONE lead row in ONE org. do_not_contact_numbers
-    // is what assertOutboundAllowed() checks on every outbound message for every
-    // org, and nothing in this codebase wrote to it — so a re-imported lead row
-    // (opted_out defaulting to false) or a different org could text this person
-    // again. A person who says stop means stop, not "stop from this record".
-    // Failure is recorded on the message instead of thrown: the customer's reply
-    // must not be lost because a compliance write failed, but it must not be
-    // invisible either.
-    if (result.complianceFlags.includes('opt_out')) {
-      const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
-      if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
-    }
+      // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
+      // do_not_contact_numbers is what assertOutboundAllowed() checks for every
+      // org, so a per-lead flag alone lets a re-imported row be texted again.
+      // A person who says stop means stop, not "stop from this record".
+      if (result.complianceFlags.includes('opt_out')) {
+        const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+        if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
+      }
 
-    if (result.outboundBody) {
+      // ── OWNER-APPROVAL HOLD ────────────────────────────────────────────────
+      // An AI reply is held as a draft unless the owner has put this org on
+      // B3_AUTO_REPLY_ORGS (empty by default). Runs AFTER the opt-out write:
+      // holding a reply must never suppress a compliance record.
+      const autoReply = isAutoReplyAuthorized(org.id)
+      const sentBody = autoReply ? result.outboundBody : null
+
+      if (sentBody) {
       await db.from('agent_messages').insert({
         conversation_id: conv.id,
         direction: 'out',
-        body: result.outboundBody,
+        body: sentBody,
         compliance_flags: [...result.complianceFlags, ...outbound.flags],
         llm_assessment: result.llmAssessment ?? null,
+      })
+    } else if (!autoReply && result.draftBody) {
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: result.draftBody,
+        compliance_flags: [
+          ...result.complianceFlags,
+          ...outbound.flags,
+          'held_owner_approval',
+          ...(result.quietHoursDeferred ? ['quiet_hours'] : []),
+        ],
+        llm_assessment: result.llmAssessment ?? null,
+        metadata: { held: 'owner_approval', organization_id: org.id, lead_id: lead.id },
+      })
+      await emitAudit({
+        organizationId: org.id,
+        action: 'agent.reply_held_owner_approval',
+        payload: { lead_id: lead.id, conversation_id: conv.id },
       })
     }
 
     if (result.newState === 'HUMAN_HANDOFF') {
       const allRecent = [...recent, { direction: 'in' as const, body }]
-      if (result.outboundBody) allRecent.push({ direction: 'out' as const, body: result.outboundBody })
+      if (sentBody) allRecent.push({ direction: 'out' as const, body: sentBody })
       handoffToHuman({
         org, leadId: lead.id, phone: from,
         reason: 'llm_escalated', recentMessages: allRecent,
       }).catch(() => undefined)
     }
 
-    return xmlResp(twiml(result.outboundBody ?? ''))
+    return xmlResp(twiml(sentBody ?? ''))
   } catch (e) {
     if (
       e instanceof LicenseDisabledError ||

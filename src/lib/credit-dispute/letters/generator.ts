@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import { BUREAU_ADDRESSES } from "../types";
 import { generateIntentToLitigate } from "./advanced";
+import { requireGate } from "../../../../shared/compliance-gates/gate";
 
 function formatLetterDate(d?: string): string {
   if (!d) return "[DATE NOT PROVIDED]";
@@ -398,6 +399,24 @@ Submitted: ${formatLetterDate(new Date().toISOString())}`;
 
 // ─── Letter router ─────────────────────────────────────────────────────
 
+/**
+ * THE CROA CHOKEPOINT.
+ *
+ * Every dispute letter in this module is reached through here — initial 611,
+ * method-of-verification, factual confrontation, furnisher 623, FDCPA validation,
+ * CFPB escalation and intent-to-litigate all route through the switch below, and
+ * `protocol.ts` is the only external caller. So this is the one place the gate has
+ * to sit for the whole engine to be covered.
+ *
+ * Producing an addressed dispute letter for a consumer IS the regulated act under
+ * CROA 15 U.S.C. §1679a — not a tool around it. Root CLAUDE.md §3: "Do not write a
+ * code path that performs a gated action outside its requireGate() wrapper."
+ *
+ * Until `croa_contracts_attorney_approved` is true, this throws ComplianceGateError
+ * carrying the gate's own `clears_when` text, so the refusal explains itself rather
+ * than looking like a bug. Owner-only access (requireOwner in the server actions) is
+ * an access control; it is NOT this gate and never was.
+ */
 export function generateLetter(
   roundType: DisputeRoundType,
   profile: CreditProfile,
@@ -410,6 +429,8 @@ export function generateLetter(
     furnisherAddress?: { street: string; city: string; state: string; zip: string };
   }
 ): DisputeLetter {
+  requireGate("croa_contracts_attorney_approved");
+
   switch (roundType) {
     case "initial_611":
       return generateInitial611(profile, item, roundNumber);

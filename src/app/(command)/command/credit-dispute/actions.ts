@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { createSSRClient } from "@/lib/supabase-server";
 import { isOwnerUser } from "@/lib/auth-roles";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
+import { requireGate } from "../../../../../shared/compliance-gates/gate";
 import type { DisputeLetterBatch } from "@/lib/credit-dispute/engine/protocol";
+import type { ItemAssessment } from "@/lib/credit-dispute/policy/dispute-policy";
 
 /**
  * The credit dispute desk, moved out of the browser.
@@ -94,6 +96,24 @@ export async function upsertDisputeClient(
   return { ok: true, data: client };
 }
 
+/**
+ * Persists generated dispute letters against a client.
+ *
+ * Gated twice on purpose. generateLetter() already refuses to PRODUCE a letter
+ * while croa_contracts_attorney_approved is false; this refuses to STORE one, so a
+ * batch built anywhere else — an import, a fixture, a future caller — cannot land
+ * letters in the client record by going round the generator.
+ *
+ * Returns the refusal as a normal result rather than throwing, because this is a
+ * server action reached from the UI: the operator should see the reason the gate is
+ * shut, not a stack trace.
+ *
+ * ORDER MATTERS, and it is authorize-then-gate. getDisputeClient() runs requireOwner()
+ * first, so an anonymous caller is still redirected to /login and a signed-in non-owner
+ * still gets "Not authorized." with no query issued. Checking the gate ahead of that
+ * would answer a stranger's request by describing TMMT's internal compliance state —
+ * and it would swallow the login redirect. Who you are is settled before what we may do.
+ */
 export async function addDisputeRoundsForClient(
   profileId: string,
   batches: DisputeLetterBatch[]
@@ -101,6 +121,15 @@ export async function addDisputeRoundsForClient(
   const existing = await getDisputeClient(profileId);
   if (!existing.ok) return existing;
   if (!existing.data) return { ok: false, error: "Client not found." };
+
+  try {
+    requireGate("croa_contracts_attorney_approved");
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Credit dispute features are gated.",
+    };
+  }
 
   const stamp = Date.now();
   const newRounds: StoredDisputeRound[] = batches.map((b, i) => ({
@@ -119,6 +148,57 @@ export async function addDisputeRoundsForClient(
   const updated: StoredClient = {
     ...existing.data,
     disputeRounds: [...existing.data.disputeRounds, ...newRounds],
+  };
+
+  const saved = await upsertDisputeClient(updated);
+  if (!saved.ok) return saved;
+  return { ok: true, data: updated };
+}
+
+/**
+ * Record the accuracy call on one negative item.
+ *
+ * The accuracy gate refuses to write a letter for an item nobody has assessed,
+ * so this is the write that unlocks one. It lived in the browser store, keyed
+ * off the same localStorage record that held the client's date of birth,
+ * social-security last four and home address; the assessment rides inside that
+ * record, so storing it there meant storing all of it there. It goes through
+ * the request-scoped owner-checked client now, like everything else on this
+ * desk.
+ *
+ * `roundsSent` is deliberately not settable here. It is derived from the stored
+ * dispute history, so the two can never disagree about what has actually gone
+ * out, and an existing value is carried forward rather than re-entered.
+ */
+export async function recordItemAssessment(
+  profileId: string,
+  negativeItemId: string,
+  assessment: Omit<ItemAssessment, "assessedAt" | "roundsSent" | "assessedBy">
+): Promise<DisputeResult<StoredClient | null>> {
+  const supabase = await requireOwner();
+  if (!supabase) return { ok: false, error: "Not authorized." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const existing = await getDisputeClient(profileId);
+  if (!existing.ok) return existing;
+  if (!existing.data) return { ok: false, error: "Client not found." };
+
+  const prior = existing.data.assessments?.[negativeItemId];
+  const updated: StoredClient = {
+    ...existing.data,
+    assessments: {
+      ...(existing.data.assessments ?? {}),
+      [negativeItemId]: {
+        ...assessment,
+        roundsSent: prior?.roundsSent ?? [],
+        // Who decided this, and on what day, is the first question anyone
+        // reviewing a dispute asks.
+        assessedBy: user?.email ?? prior?.assessedBy,
+        assessedAt: new Date().toISOString(),
+      },
+    },
   };
 
   const saved = await upsertDisputeClient(updated);

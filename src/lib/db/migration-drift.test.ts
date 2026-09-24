@@ -52,7 +52,58 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 50;
+const KNOWN_UNAPPLIED = 55;
+
+/*
+ * 54 -> 55 on 2026-09-24, deliberately: 20260917120000_training_progress_by_journey.sql
+ * (feat/inspection-walkaround, #251, which carries fix/e2e-stops-writing-to-production).
+ * Genuinely never run on production. The branch counted it as 49 -> 50 against the
+ * master of its day; per the note below the numbers add, so master's 54 plus this one
+ * file is 55. Applying it is a prod write and needs the owner's baton. Drops back to 54
+ * when it is applied and reconciled.
+ */
+
+/*
+ * 53 -> 54 on 2026-09-24, deliberately: 20260924180000_vehicle_blocks_and_booking_occupancy.sql
+ * (feat/rental-reservation-spine, E6b; it replaces E6's withdrawn reservations file). Genuinely
+ * never run on production -- rehearsed on tmmt-e2e-throwaway (schema rental_proto) only.
+ * Applying it is a prod write and needs the owner's baton. Drops back to 53 when it is
+ * applied and reconciled. Its section 1 re-states bookings_no_overlap / status_check /
+ * interval_sane guarded by IF NOT EXISTS; those are live under ledger version 20260917200051
+ * (see LEDGER-SNAPSHOT.txt), so that part is a no-op on prod.
+ */
+
+/*
+ * 51 -> 53 on 2026-09-21, deliberately: landing the 14-branch integration onto
+ * master carried in exactly two files that are NOT applied to production.
+ *   20260901120000_vehicle_owners_and_agreements.sql      (from #224)
+ *   20260917160000_profiles_protect_access_columns.sql    (from #249)
+ *
+ * Unlike the batches below, these are NOT version-string drift -- the SQL has
+ * genuinely never run. Both PRs say so themselves ("NOT applied; owner + baton").
+ * Applying them is a production write and needs the prod-write baton, which is
+ * the owner's call, not a merge's. They are counted here rather than applied,
+ * so the number tells the truth about what is live.
+ *
+ * This is the one direction this constant is allowed to move for a non-drift
+ * reason, and only because the merge would otherwise hide two real gaps.
+ * It drops to 51 the moment the baton runs them.
+ *
+ * 49 -> 51 on 2026-09-19, deliberately: the two security migrations from the audit.
+ *   20260919221500_partner_tables_least_privilege_for_anon.sql
+ *   20260919215500_close_orphaned_garage_public_read.sql
+ *
+ * Both ARE applied to production and verified there. They count as drift for the same
+ * reason the 09-17 batch does: apply_migration assigns its OWN version, so the ledger
+ * holds 20260919221554 / 20260920014756 while the repo files carry their own names.
+ * LEDGER-SNAPSHOT.txt records the mapping. Both are REVOKE / DROP POLICY only, so a
+ * re-run is harmless -- but a re-run is still a re-run, so they are counted, not hidden.
+ *
+ * NOTE for whoever merges fix/e2e-stops-writing-to-production: that branch also raises
+ * this constant (49 -> 50, for the training-progress migration). The merge will conflict
+ * here, and it should -- the resolved value is 52, not whichever side wins. Add the
+ * numbers, do not pick one.
+ */
 
 /*
  * 49 -> 50 on 2026-09-17: `20260917120000_training_progress_by_journey.sql`.
