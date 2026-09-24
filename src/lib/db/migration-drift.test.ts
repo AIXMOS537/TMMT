@@ -52,7 +52,14 @@ function repoVersions(): { version: string; file: string }[] {
  * Files present here but never applied. Pinned deliberately: this list must
  * shrink as they are reconciled, and must never grow without someone saying so.
  */
-const KNOWN_UNAPPLIED = 53;
+const KNOWN_UNAPPLIED = 54;
+
+/*
+ * 53 -> 54 on 2026-09-24, deliberately: 20260924180000_rental_reservation_spine.sql
+ * (feat/rental-reservation-spine). Genuinely never run on production -- rehearsed on
+ * tmmt-e2e-throwaway (schema rental_proto) only. Applying it is a prod write and needs
+ * the owner's baton. Drops back to 53 when it is applied and reconciled.
+ */
 
 /*
  * 51 -> 53 on 2026-09-21, deliberately: landing the 14-branch integration onto
