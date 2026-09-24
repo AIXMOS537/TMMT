@@ -10,6 +10,28 @@ import { BUREAU_ADDRESSES } from "../types";
 import { generateIntentToLitigate } from "./advanced";
 import { requireGate } from "../../../../shared/compliance-gates/gate";
 
+/**
+ * Thrown when a template would have to invent a fact to be written.
+ *
+ * C1: every template used to have a fallback — "I received a response indicating
+ * the item was verified", "Initial FCRA dispute sent", "CFPB complaint filed", "The
+ * reported information does not match my records". Each of those states something
+ * in the customer's name that nobody recorded. A missing fact is now a refusal the
+ * desk can show as NEEDS_INFORMATION, never filler prose.
+ */
+export class LetterFactsMissingError extends Error {
+  readonly missing: string[];
+  constructor(roundType: DisputeRoundType, missing: string[]) {
+    super(`Cannot write ${roundType}: missing ${missing.join(", ")}. Nothing is invented to fill the gap.`);
+    this.name = "LetterFactsMissingError";
+    this.missing = missing;
+  }
+}
+
+function enclosuresLine(enclosures?: string[]): string {
+  return enclosures && enclosures.length > 0 ? `\n\nEnclosures: ${enclosures.join("; ")}` : "";
+}
+
 function formatLetterDate(d?: string): string {
   if (!d) return "[DATE NOT PROVIDED]";
   return new Date(d).toLocaleDateString("en-US", {
@@ -54,8 +76,12 @@ function bureauName(bureau: CreditBureau): string {
 export function generateInitial611(
   profile: CreditProfile,
   item: NegativeItem,
-  roundNumber: number
+  roundNumber: number,
+  enclosures?: string[]
 ): DisputeLetter {
+  if (!item.inaccuracyDetails?.trim()) {
+    throw new LetterFactsMissingError("initial_611", ["the customer's stated problem with this item"]);
+  }
   const bureau = item.bureau;
   const recipient = bureauName(bureau);
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
@@ -82,7 +108,7 @@ I am requesting that you conduct a reasonable reinvestigation of this account as
 3. Delete any information that cannot be verified as accurate and complete;
 4. Provide me with the name, address, and telephone number of each furnisher contacted during your investigation.
 
-I have reason to believe this item may be inaccurate, incomplete, or unverifiable. ${item.inaccuracyDetails ? `Specifically: ${item.inaccuracyDetails}` : "The reported information does not match my records."}
+Specifically: ${item.inaccuracyDetails}
 
 If you cannot verify this information through a reasonable investigation, you are required by law to delete it from my credit file immediately.
 
@@ -90,9 +116,7 @@ Please send written confirmation of your investigation results to the address be
 
 Sincerely,
 
-${clientBlock(profile)}
-
-Enclosures: Copy of government-issued ID, proof of address`;
+${clientBlock(profile)}${enclosuresLine(enclosures)}`;
 
   return {
     subject: `FCRA Dispute — ${item.furnisherName} — Verification Demand`,
@@ -114,6 +138,9 @@ export function generateMethodOfVerification(
   roundNumber: number,
   priorResponseSummary?: string
 ): DisputeLetter {
+  if (!priorResponseSummary?.trim() || roundNumber < 2) {
+    throw new LetterFactsMissingError("method_of_verification", ["a recorded response to an earlier dispute"]);
+  }
   const bureau = item.bureau;
   const recipient = bureauName(bureau);
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
@@ -134,7 +161,7 @@ I previously disputed the following item on my credit report under FCRA §611(a)
 
 ${itemDescription(item)}
 
-${priorResponseSummary ? `Your response indicated: "${priorResponseSummary}"` : "I received a response indicating the item was verified."}
+Your response indicated: "${priorResponseSummary}"
 
 Pursuant to 15 U.S.C. § 1681i(a)(6)(B)(iii), I am formally requesting that you provide me with:
 
@@ -171,13 +198,18 @@ export function generateFactualConfrontation(
   profile: CreditProfile,
   item: NegativeItem,
   roundNumber: number,
-  facts: string[]
+  facts: string[],
+  enclosures?: string[]
 ): DisputeLetter {
+  const real = facts.map((f) => f.trim()).filter(Boolean);
+  if (real.length === 0) {
+    throw new LetterFactsMissingError("factual_confrontation", ["the specific facts the customer says are wrong"]);
+  }
   const bureau = item.bureau;
   const recipient = bureauName(bureau);
   const recipientAddress = BUREAU_ADDRESSES[bureau].address;
 
-  const factList = facts.map((f, i) => `${i + 1}. ${f}`).join("\n");
+  const factList = real.map((f, i) => `${i + 1}. ${f}`).join("\n");
 
   const body = `${formatLetterDate(new Date().toISOString())}
 
@@ -197,17 +229,13 @@ The following facts demonstrate this reporting is INACCURATE:
 
 ${factList}
 
-${item.isOutdated ? "Additionally, this item may exceed the permissible reporting period under FCRA §605(a)." : ""}
-
 Under FCRA §611(a)(5)(A), you are required to delete information that is found to be inaccurate or cannot be verified. The factual discrepancies listed above require immediate correction or deletion.
 
 I demand deletion of this item within 30 days. Failure to conduct a reasonable reinvestigation and correct these inaccuracies may result in further action under FCRA §§616 and 617.
 
 Sincerely,
 
-${clientBlock(profile)}
-
-Enclosures: Supporting documentation`;
+${clientBlock(profile)}${enclosuresLine(enclosures)}`;
 
   return {
     subject: `Factual Dispute — ${item.furnisherName} — Specific Inaccuracies`,
@@ -229,6 +257,9 @@ export function generateFurnisher623(
   roundNumber: number,
   furnisherAddress?: { street: string; city: string; state: string; zip: string }
 ): DisputeLetter {
+  if (!item.inaccuracyDetails?.trim()) {
+    throw new LetterFactsMissingError("furnisher_623", ["the customer's stated problem with this item"]);
+  }
   const addr = furnisherAddress ?? {
     street: "[FURNISHER ADDRESS — LOOKUP REQUIRED]",
     city: "",
@@ -253,7 +284,7 @@ I am also exercising my right under 15 U.S.C. § 1681s-2(b) to dispute the accur
 
 ${itemDescription(item)}
 
-${item.inaccuracyDetails ? `Specific dispute: ${item.inaccuracyDetails}` : "This information is inaccurate, incomplete, or unverifiable."}
+Specific dispute: ${item.inaccuracyDetails}
 
 As a furnisher, you are required to:
 1. Conduct an investigation of the disputed information;
@@ -307,7 +338,7 @@ ${item.accountNumberMasked ? `Reference: ${item.accountNumberMasked}` : ""}
 
 To Whom It May Concern:
 
-This letter is sent in response to a notice I received from your company regarding a debt. Pursuant to the Fair Debt Collection Practices Act, 15 U.S.C. § 1692g(b), I am requesting validation of this debt.
+This letter concerns a debt your company is reporting on my consumer credit file. Pursuant to the Fair Debt Collection Practices Act, 15 U.S.C. § 1692g(b), I am requesting validation of this debt.
 
 I dispute the validity of this debt and demand that you provide:
 
@@ -346,8 +377,12 @@ export function generateCfpbEscalation(
   roundNumber: number,
   priorAttempts: string[]
 ): DisputeLetter {
+  const real = priorAttempts.map((a) => a.trim()).filter(Boolean);
+  if (real.length === 0) {
+    throw new LetterFactsMissingError("cfpb_escalation", ["the recorded history of earlier rounds and their responses"]);
+  }
   const bureau = item.bureau;
-  const attempts = priorAttempts.map((a, i) => `${i + 1}. ${a}`).join("\n");
+  const attempts = real.map((a, i) => `${i + 1}. ${a}`).join("\n");
 
   const body = `CFPB COMPLAINT — CREDIT REPORTING
 
@@ -362,17 +397,14 @@ Issue: Incorrect information on your report
 
 Description of Complaint:
 
-I have disputed the following inaccurate information on my credit report multiple times without resolution:
+I have disputed the following information on my credit report:
 
 ${itemDescription(item)}
 
-Prior dispute attempts:
+Prior dispute attempts and the responses received (from my records):
 ${attempts}
 
-The credit reporting agency has failed to conduct a reasonable investigation as required by FCRA §611. They have either:
-- Failed to delete unverifiable information
-- Provided only generic "verified" responses without method of verification
-- Ignored specific factual inaccuracies I identified
+I do not believe the responses above resolved the specific inaccuracy I identified.
 
 I am requesting that the CFPB investigate this company's compliance with the Fair Credit Reporting Act and order correction or deletion of this inaccurate information.
 
@@ -427,13 +459,15 @@ export function generateLetter(
     priorResponseSummary?: string;
     priorAttempts?: string[];
     furnisherAddress?: { street: string; city: string; state: string; zip: string };
+    /** Documents actually on file for this round. No default: nothing is claimed as enclosed. */
+    enclosures?: string[];
   }
 ): DisputeLetter {
   requireGate("croa_contracts_attorney_approved");
 
   switch (roundType) {
     case "initial_611":
-      return generateInitial611(profile, item, roundNumber);
+      return generateInitial611(profile, item, roundNumber, options?.enclosures);
     case "method_of_verification":
       return generateMethodOfVerification(
         profile,
@@ -446,7 +480,8 @@ export function generateLetter(
         profile,
         item,
         roundNumber,
-        options?.facts ?? [item.inaccuracyDetails ?? "Information does not match my records"]
+        options?.facts ?? (item.inaccuracyDetails ? [item.inaccuracyDetails] : []),
+        options?.enclosures
       );
     case "furnisher_623":
       return generateFurnisher623(profile, item, roundNumber, options?.furnisherAddress);
@@ -457,21 +492,16 @@ export function generateLetter(
         profile,
         item,
         roundNumber,
-        options?.priorAttempts ?? ["Initial FCRA dispute sent", "Method of verification demanded"]
+        // C1: no invented history. The caller passes what the stored rounds say.
+        options?.priorAttempts ?? []
       );
-    case "intent_to_litigate":
-      return generateIntentToLitigate(
-        profile,
-        item,
-        roundNumber,
-        options?.priorAttempts ?? [
-          "Initial FCRA §611 dispute",
-          "Method of verification demanded",
-          "Factual confrontation with evidence",
-          "Direct furnisher §623 dispute",
-          "CFPB complaint filed",
-        ]
-      );
+    case "intent_to_litigate": {
+      const attempts = (options?.priorAttempts ?? []).filter((a) => a.trim());
+      if (attempts.length === 0) {
+        throw new LetterFactsMissingError("intent_to_litigate", ["the recorded history of earlier rounds"]);
+      }
+      return generateIntentToLitigate(profile, item, roundNumber, attempts);
+    }
   }
 
   return generateInitial611(profile, item, roundNumber);
