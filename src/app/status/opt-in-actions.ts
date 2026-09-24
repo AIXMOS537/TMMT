@@ -14,6 +14,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase-service";
 import { getClientJourneyForToken } from "@/lib/client-self-service";
 import { acknowledgeSection } from "@/lib/drive-to-own/education";
+import { markModuleProgress } from "@/lib/drive-to-own/training";
 
 export type OptInResult = { ok: true; alreadyOptedIn: boolean } | { ok: false; error: string };
 
@@ -101,6 +102,44 @@ export async function acknowledgeEducationSection(
     journeyId: journey.id,
     sectionId,
     orgId: null,
+  });
+  if (!r.ok) return { ok: false, error: r.error };
+
+  revalidatePath(`/status/${token}`);
+  return { ok: true };
+}
+
+
+/**
+ * Mark a training module read. Gates 30 and 40.
+ *
+ * Same trust boundary as the education acknowledgement: resolved from the renter's own
+ * link, and only for someone who has actually joined the path.
+ */
+export async function markTrainingModule(
+  token: string,
+  moduleId: string,
+  percent: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(moduleId)) {
+    return { ok: false, error: "That module could not be found." };
+  }
+
+  let journey;
+  try {
+    journey = await getClientJourneyForToken(token);
+  } catch {
+    return { ok: false, error: "We couldn't reach your record just now. Please try again." };
+  }
+  if (!journey) return { ok: false, error: "This link can't be used right now. Give us a shout." };
+  if (!journey.ownership_opt_in_at) {
+    return { ok: false, error: "Join the path first and this will open up." };
+  }
+
+  const r = await markModuleProgress(createServiceRoleClient(), {
+    journeyId: journey.id,
+    moduleId,
+    percent,
   });
   if (!r.ok) return { ok: false, error: r.error };
 
