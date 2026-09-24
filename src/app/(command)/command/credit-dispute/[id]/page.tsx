@@ -7,6 +7,7 @@ import { Card, PageHeader, Button } from "@/components/ui";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
 import type { NotDisputed } from "@/lib/credit-dispute/engine/gated-protocol";
 import { getDisputeClient, generateDisputeRound, reviewDisputeRound } from "../actions";
+import { CaseConsole, RoundLifecycle } from "./case-console";
 
 /**
  * One client's rounds.
@@ -34,7 +35,8 @@ const SOURCE_LABEL: Record<string, string> = {
   customer_assertion: "customer's words",
   basis_statement: "customer's stated problem",
   evidence: "document on file",
-  round_history: "our round history",
+  round_history: "our earlier round",
+  recorded_response: "recorded response",
 };
 
 export default function CreditDisputeClientPage() {
@@ -225,6 +227,12 @@ export default function CreditDisputeClientPage() {
                           {round.review.note ? ` — ${round.review.note}` : ""}
                         </p>
                       )}
+                      {round.reviewHistory && round.reviewHistory.length > 0 && (
+                        <p className="text-xs text-gray-500">
+                          Earlier decisions: {round.reviewHistory.map((h) => `${h.decision.replace(/_/g, " ")} by ${h.reviewedBy}`).join("; ")}
+                        </p>
+                      )}
+                      <RoundLifecycle round={round} client={client} onChange={setClient} onError={setError} />
                       {awaiting && editing?.roundId !== round.id && (
                         <div className="flex flex-wrap gap-2">
                           <Button onClick={() => review(round, "approve")}>Approve</Button>
@@ -241,6 +249,8 @@ export default function CreditDisputeClientPage() {
           </div>
         )}
       </section>
+
+      <CaseConsole client={client} onChange={setClient} onError={setError} />
     </div>
   );
 }

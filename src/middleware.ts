@@ -121,6 +121,12 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   if (pathname.startsWith("/api/pocket/")) return true;
   if (pathname.startsWith("/api/offline/")) return true;
 
+  // Customer Credit Center (C2, development only). Reachable by any signed-in user
+  // because a customer has no staff tier; the page 404s unless
+  // CREDIT_CENTER_CUSTOMER=1, and every action resolves the caller's OWN case from
+  // the session (payload.customerUserId) — never from a request parameter.
+  if (pathname === "/my-credit" || pathname.startsWith("/my-credit/")) return true;
+
   switch (tier) {
     case "owner":
       return true;

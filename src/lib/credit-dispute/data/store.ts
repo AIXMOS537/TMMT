@@ -1,6 +1,6 @@
 import type { CreditProfile, DisputeRoundType, NegativeItem, RoundStatus } from "../types";
 import type { FactualBasis, ItemAssessment } from "../policy/dispute-policy";
-import type { CustomerAssertion, EvidenceRef, RoundResponse } from "../policy/assertion";
+import type { CustomerAssertion, EvidenceRef, RoundResponse, SentRecord } from "../policy/assertion";
 import type { FactTrace } from "../letters/render-from-decision";
 
 export type ReportSource = "disputefox" | "myfreescorenow" | "smartcredit";
@@ -16,10 +16,12 @@ export interface RoundEdit {
 }
 
 export interface RoundReview {
-  decision: "approved" | "returned_for_information" | "cancelled";
+  decision: "approved" | "returned_for_information" | "cancelled" | "reopened";
   reviewedBy: string;
   reviewedAt: string;
   note?: string;
+  /** sha256 of the letter body this decision was made on (C2). An approval covers exactly this text. */
+  contentHash?: string;
 }
 
 export interface StoredDisputeRound {
@@ -43,8 +45,14 @@ export interface StoredDisputeRound {
   templateVersion?: string;
   generatedBy?: string;
   edits?: RoundEdit[];
+  /** The CURRENT decision. Superseded decisions move to reviewHistory, never deleted (C2). */
   review?: RoundReview;
+  reviewHistory?: RoundReview[];
+  /** C2: a person recorded that this exact approved text was sent. */
+  sent?: SentRecord;
   response?: RoundResponse;
+  /** Rescued from a browser's localStorage: untrusted, proves nothing about history. */
+  importedFromBrowser?: boolean;
 }
 
 /**
@@ -66,8 +74,16 @@ export interface CreditAuditEvent {
     | "round_approved"
     | "round_returned"
     | "round_cancelled"
+    | "round_reopened"
     | "round_marked_sent"
-    | "response_recorded";
+    | "response_recorded"
+    | "follow_up_authorized"
+    | "assertion_drafted"
+    | "assertion_confirmed"
+    | "assertion_classified"
+    | "evidence_reviewed"
+    | "customer_linked"
+    | "case_closed";
   negativeItemId?: string;
   roundId?: string;
   assertionId?: string;
@@ -97,6 +113,15 @@ export interface StoredClient {
   evidence?: EvidenceRef[];
   /** C1: append-only activity log. */
   auditLog?: CreditAuditEvent[];
+  /**
+   * C2: the customer's own login, linked by an owner. The customer-facing flow
+   * finds a case ONLY through this id (never by email), and only when enabled.
+   */
+  customerUserId?: string;
+  /** C2: tenant key (mirrors the staged dispute_clients.org_id). */
+  orgId?: string;
+  /** C2: set when an owner closes the case. */
+  closedAt?: string;
 }
 
 /**

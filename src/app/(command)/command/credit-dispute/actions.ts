@@ -14,16 +14,29 @@ import {
   addEvidence,
   appendRounds,
   audit,
+  authorizeFollowUp,
   caseQueueRow,
+  caseTimeline,
+  classifyAssertion,
+  closeCase,
   creditCrmStatus,
+  linkCustomer,
+  markSent,
+  recordResponse,
   resolveForPlanning,
+  reviewEvidence,
   reviewRound,
   roundsFromRun,
+  sanitizeImportedRounds,
   type CaseQueueRow,
   type CreditCrmStatus,
   type ReviewAction,
+  type TimelineEntry,
 } from "@/lib/credit-dispute/engine/case-state";
+import type { ResponseOutcome, SendMethod } from "@/lib/credit-dispute/policy/assertion";
+import { discardEvidenceFile, signedEvidenceUrl, storeEvidenceFile } from "@/lib/credit-dispute/evidence/store.server";
 import { LetterFactsMissingError } from "@/lib/credit-dispute/letters/generator";
+import { CONFLICT_ERROR } from "@/lib/credit-dispute/data/errors";
 
 /**
  * The credit dispute desk, moved out of the browser.
@@ -78,24 +91,59 @@ async function requireOwner() {
   return who?.supabase ?? null;
 }
 
-async function readClient(supabase: Supa, id: string): Promise<DisputeResult<StoredClient | null>> {
-  const { data, error } = await supabase.from("dispute_clients").select("id, payload").eq("id", id).maybeSingle();
+type Versioned = { client: StoredClient; version: string | null };
+
+async function readVersioned(supabase: Supa, id: string): Promise<DisputeResult<Versioned | null>> {
+  const { data, error } = await supabase.from("dispute_clients").select("id, payload, updated_at").eq("id", id).maybeSingle();
   if (error) return { ok: false, error: "Could not load that client." };
-  return { ok: true, data: data ? (data as Row).payload : null };
+  if (!data) return { ok: true, data: null };
+  const row = data as Row & { updated_at?: string | null };
+  return { ok: true, data: { client: row.payload, version: row.updated_at ?? null } };
 }
 
-async function writeClient(supabase: Supa, client: StoredClient): Promise<DisputeResult<StoredClient>> {
+async function readClient(supabase: Supa, id: string): Promise<DisputeResult<StoredClient | null>> {
+  const res = await readVersioned(supabase, id);
+  if (!res.ok) return res;
+  return { ok: true, data: res.data?.client ?? null };
+}
+
+
+/**
+ * Save a client. For an existing row this is a compare-and-swap on `updated_at`
+ * (prod's dispute_clients_set_updated_at trigger moves it on every update), so two
+ * operators working the same case cannot silently overwrite each other (C1 review
+ * concern). A brand-new client is inserted via upsert.
+ */
+async function writeClient(
+  supabase: Supa,
+  client: StoredClient,
+  expectedVersion?: string | null
+): Promise<DisputeResult<StoredClient>> {
   // The searchable columns are a copy of what is already inside payload, so a
   // list view never has to pull every client's full record to show a name.
-  const { error } = await supabase.from("dispute_clients").upsert({
-    id: client.profile.id,
+  const cols = {
     client_name: client.profile.fullName ?? null,
     email: client.profile.email ?? null,
     source: client.source,
     external_id: client.externalId ?? null,
     payload: client,
     imported_at: client.importedAt ?? new Date().toISOString(),
-  });
+  };
+  if (expectedVersion) {
+    const { data, error } = await supabase
+      .from("dispute_clients")
+      .update(cols)
+      .eq("id", client.profile.id)
+      .eq("updated_at", expectedVersion)
+      .select("id");
+    if (error) {
+      console.error("[dispute_clients update]", error.message);
+      return { ok: false, error: "Could not save that client." };
+    }
+    if (!Array.isArray(data) || data.length === 0) return { ok: false, error: CONFLICT_ERROR };
+    return { ok: true, data: client };
+  }
+  const { error } = await supabase.from("dispute_clients").upsert({ id: client.profile.id, ...cols });
   if (error) {
     console.error("[dispute_clients upsert]", error.message);
     return { ok: false, error: "Could not save that client." };
@@ -110,16 +158,16 @@ async function mutateClient(
 ): Promise<DisputeResult<StoredClient | null>> {
   const who = await requireOwnerWithUser();
   if (!who) return { ok: false, error: "Not authorized." };
-  const existing = await readClient(who.supabase, profileId);
+  const existing = await readVersioned(who.supabase, profileId);
   if (!existing.ok) return existing;
   if (!existing.data) return { ok: false, error: "Client not found." };
   let updated: StoredClient;
   try {
-    updated = change(existing.data, who.actor);
+    updated = change(existing.data.client, who.actor);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "That change was refused." };
   }
-  const saved = await writeClient(who.supabase, updated);
+  const saved = await writeClient(who.supabase, updated, existing.data.version);
   if (!saved.ok) return saved;
   return { ok: true, data: updated };
 }
@@ -162,9 +210,9 @@ export async function upsertDisputeClient(
 
   if (!client?.profile?.id) return { ok: false, error: "Client is missing an id." };
 
-  const prior = await readClient(who.supabase, client.profile.id);
+  const prior = await readVersioned(who.supabase, client.profile.id);
   if (!prior.ok) return { ok: false, error: prior.error };
-  const existing = prior.data;
+  const existing = prior.data?.client ?? null;
 
   let safe: StoredClient = {
     profile: client.profile,
@@ -177,10 +225,13 @@ export async function upsertDisputeClient(
     ...(existing?.assertions ? { assertions: existing.assertions } : {}),
     ...(existing?.evidence ? { evidence: existing.evidence } : {}),
     ...(existing?.auditLog ? { auditLog: existing.auditLog } : {}),
+    ...(existing?.customerUserId ? { customerUserId: existing.customerUserId } : {}),
+    ...(existing?.orgId ? { orgId: existing.orgId } : {}),
+    ...(existing?.closedAt ? { closedAt: existing.closedAt } : {}),
   };
   safe = audit(safe, { actor: who.actor, action: "client_imported", detail: `${client.source}; ${safe.negativeItems.length} items` });
 
-  return writeClient(who.supabase, safe);
+  return writeClient(who.supabase, safe, prior.data?.version);
 }
 
 /**
@@ -354,10 +405,11 @@ export type GenerateOutcome =
 export async function generateDisputeRound(profileId: string): Promise<DisputeResult<GenerateOutcome>> {
   const who = await requireOwnerWithUser();
   if (!who) return { ok: false, error: "Not authorized." };
-  const existing = await readClient(who.supabase, profileId);
+  const existing = await readVersioned(who.supabase, profileId);
   if (!existing.ok) return existing;
   if (!existing.data) return { ok: false, error: "Client not found." };
-  const client = existing.data;
+  const client = existing.data.client;
+  if (client.closedAt) return { ok: false, error: "This case is closed." };
 
   const { items, assessments, contexts } = resolveForPlanning(client);
   const plan = planDisputeRound(items, assessments, contexts);
@@ -390,7 +442,7 @@ export async function generateDisputeRound(profileId: string): Promise<DisputeRe
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not store the round." };
   }
-  const saved = await writeClient(who.supabase, updated);
+  const saved = await writeClient(who.supabase, updated, existing.data.version);
   if (!saved.ok) return saved;
   return { ok: true, data: { kind: "stored", plan, roundIds: run.rendered.map((_, i) => updated.disputeRounds[updated.disputeRounds.length - run.rendered.length + i].id), client: updated } };
 }
@@ -402,12 +454,161 @@ export async function reviewDisputeRound(
   action: ReviewAction
 ): Promise<DisputeResult<StoredClient | null>> {
   const kind = action?.kind;
-  if (kind !== "edit" && kind !== "approve" && kind !== "return_for_information" && kind !== "cancel") {
+  if (kind !== "edit" && kind !== "approve" && kind !== "return_for_information" && kind !== "cancel" && kind !== "reopen") {
     const who = await requireOwnerWithUser();
     if (!who) return { ok: false, error: "Not authorized." };
     return { ok: false, error: "Unknown review action." };
   }
   return mutateClient(profileId, (client, actor) => reviewRound(client, roundId, action, actor));
+}
+
+// ---------------------------------------------------------------------------
+// C2 — lifecycle after approval. These RECORD what a person did; none of them
+// sends, mails, submits, or contacts anyone.
+// ---------------------------------------------------------------------------
+
+export interface SentInput {
+  sentAt: string;
+  method: SendMethod;
+  recipient: string;
+  /** Only a reference the operator has in hand (e.g. from a mailing receipt). */
+  trackingRef?: string;
+}
+
+/** Record that an approved letter was sent by a person. The text must be exactly what was approved. */
+export async function recordRoundSent(profileId: string, roundId: string, input: SentInput): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => markSent(client, roundId, input, actor));
+}
+
+export interface ResponseInput {
+  outcome: ResponseOutcome;
+  summary: string;
+  receivedAt: string;
+  respondingParty?: string;
+  documentEvidenceId?: string;
+}
+
+/** Record what a bureau / furnisher actually answered, as a person read it from the response. */
+export async function recordDisputeResponse(profileId: string, roundId: string, input: ResponseInput): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) =>
+    recordResponse(
+      client,
+      roundId,
+      {
+        outcome: input?.outcome,
+        summary: String(input?.summary ?? ""),
+        receivedAt: String(input?.receivedAt ?? ""),
+        respondingParty: input?.respondingParty,
+        documentEvidenceId: input?.documentEvidenceId,
+      },
+      actor
+    )
+  );
+}
+
+/** Authorize a follow-up round with a specific, documented reason. */
+export async function authorizeFollowUpRound(profileId: string, roundId: string, reason: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => authorizeFollowUp(client, roundId, String(reason ?? ""), actor));
+}
+
+/** Map a customer's broad category onto a specific ground. Their words are not changed. */
+export async function classifyCustomerAssertion(
+  profileId: string,
+  assertionId: string,
+  basis: FactualBasis,
+  note?: string
+): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => classifyAssertion(client, assertionId, basis, actor, note));
+}
+
+export async function reviewEvidenceDocument(
+  profileId: string,
+  evidenceId: string,
+  state: "accepted" | "rejected"
+): Promise<DisputeResult<StoredClient | null>> {
+  if (state !== "accepted" && state !== "rejected") {
+    const who = await requireOwnerWithUser();
+    if (!who) return { ok: false, error: "Not authorized." };
+    return { ok: false, error: "Unknown review state." };
+  }
+  return mutateClient(profileId, (client, actor) => reviewEvidence(client, evidenceId, state, actor));
+}
+
+/** Link the customer's own login to their case, so they (and only they) can see it. */
+export async function linkCustomerAccount(profileId: string, customerUserId: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => linkCustomer(client, String(customerUserId ?? ""), actor));
+}
+
+export async function closeCreditCase(profileId: string, note: string): Promise<DisputeResult<StoredClient | null>> {
+  return mutateClient(profileId, (client, actor) => closeCase(client, actor, String(note ?? "")));
+}
+
+/** One ordered history of the case, from the single audit log. */
+export async function getCaseTimeline(profileId: string): Promise<DisputeResult<TimelineEntry[]>> {
+  const existing = await getDisputeClient(profileId);
+  if (!existing.ok) return existing;
+  if (!existing.data) return { ok: false, error: "Client not found." };
+  return { ok: true, data: caseTimeline(existing.data) };
+}
+
+/**
+ * Operator upload of a supporting document (C2). Owner-checked and the case loaded
+ * BEFORE any byte is stored. Content-sniffed, size-capped, stored under a
+ * server-built key in the private bucket. Off unless CREDIT_EVIDENCE_UPLOADS=1.
+ */
+export async function uploadEvidenceFile(formData: FormData): Promise<DisputeResult<StoredClient | null>> {
+  const who = await requireOwnerWithUser();
+  if (!who) return { ok: false, error: "Not authorized." };
+  const profileId = String(formData.get("profileId") ?? "");
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Choose a file first." };
+
+  const existing = await readVersioned(who.supabase, profileId);
+  if (!existing.ok) return existing;
+  if (!existing.data) return { ok: false, error: "Client not found." };
+  const client = existing.data.client;
+
+  const stored = await storeEvidenceFile(file, { orgId: client.orgId, clientId: client.profile.id });
+  if (!stored.ok) return { ok: false, error: stored.error };
+
+  let updated: StoredClient;
+  try {
+    updated = addEvidence(client, {
+      id: stored.file.evidenceId,
+      kind: String(formData.get("kind") ?? "other") as EvidenceKind,
+      description: String(formData.get("description") ?? "").trim().slice(0, 500) || stored.file.fileName,
+      negativeItemId: (formData.get("negativeItemId") as string) || undefined,
+      assertionId: (formData.get("assertionId") as string) || undefined,
+      storagePath: stored.file.storagePath,
+      sha256: stored.file.sha256,
+      mime: stored.file.mime,
+      sizeBytes: stored.file.sizeBytes,
+      fileName: stored.file.fileName,
+      source: "operator",
+      uploadedBy: who.actor,
+      uploadedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    await discardEvidenceFile(stored.file.storagePath);
+    return { ok: false, error: e instanceof Error ? e.message : "Could not attach that document." };
+  }
+  const saved = await writeClient(who.supabase, updated, existing.data.version);
+  if (!saved.ok) {
+    await discardEvidenceFile(stored.file.storagePath);
+    return saved;
+  }
+  return { ok: true, data: updated };
+}
+
+/** A two-minute download link for one document on one case the owner can see. */
+export async function getEvidenceDownloadUrl(profileId: string, evidenceId: string): Promise<DisputeResult<string>> {
+  const existing = await getDisputeClient(profileId);
+  if (!existing.ok) return existing;
+  if (!existing.data) return { ok: false, error: "Client not found." };
+  const ev = (existing.data.evidence ?? []).find((e) => e.id === evidenceId);
+  if (!ev?.storagePath) return { ok: false, error: "No file is stored for that document." };
+  const url = await signedEvidenceUrl(ev.storagePath);
+  return url ? { ok: true, data: url } : { ok: false, error: "The document is not available." };
 }
 
 /**
@@ -467,18 +668,33 @@ export async function importClientsFromBrowser(
 
   const { error } = await supabase.from("dispute_clients").insert(
     fresh.map((c) => {
-      // Strip anything a browser could only have forged.
-      const { assertions: _a, evidence: _e, auditLog: _l, ...rest } = c;
+      // Strip anything a browser could only have forged. C1 review BLOCKER fix:
+      // rounds are no longer inserted verbatim — a browser could claim approved/sent
+      // or a forged "verified" response. sanitizeImportedRounds lands every one as
+      // needs_review (or quarantined as cancelled), with no review/sent/response/trace.
+      const {
+        assertions: _a,
+        evidence: _e,
+        auditLog: _l,
+        customerUserId: _u,
+        orgId: _o,
+        closedAt: _c,
+        disputeRounds,
+        ...rest
+      } = c;
       void _a;
       void _e;
       void _l;
+      void _u;
+      void _o;
+      void _c;
       return {
         id: c.profile.id,
         client_name: c.profile.fullName ?? null,
         email: c.profile.email ?? null,
         source: c.source,
         external_id: c.externalId ?? null,
-        payload: rest,
+        payload: { ...rest, disputeRounds: sanitizeImportedRounds(disputeRounds) },
         imported_at: c.importedAt ?? new Date().toISOString(),
       };
     })
