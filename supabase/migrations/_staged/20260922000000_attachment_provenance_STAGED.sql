@@ -1,4 +1,4 @@
--- CHANGE_REQUEST_001 — provenance columns + private buckets for attachment extraction
+-- CHANGE_REQUEST_003 — provenance columns + private buckets for attachment extraction
 --
 -- STAGED. Not applied. `supabase db push` ignores this directory.
 -- Requires the owner's explicit, named authorization (Prime Directive 8) AND Gate 0's offline
@@ -68,7 +68,7 @@ alter table public.vehicle_media
   alter column customer_email drop not null;
 
 comment on column public.vehicle_media.customer_email is
-  'Nullable since CR-001: company-asset media (fleet photos, registrations) has no customer.';
+  'Nullable since CR-003: company-asset media (fleet photos, registrations) has no customer.';
 
 -- ---------------------------------------------------------------------------------
 -- 3. Idempotency — a re-run can never double-insert

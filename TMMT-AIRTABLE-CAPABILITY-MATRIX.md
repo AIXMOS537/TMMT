@@ -26,7 +26,7 @@ was read, not recalled.
 
 **A migration blocker does not stop product development. A product feature does not authorize
 an unsafe migration.** Where B needs a schema change that A also needs, A's change request
-governs (see `CHANGE_REQUEST_001.md`).
+governs (see `docs/CHANGE_REQUEST_003.md`).
 
 ---
 
@@ -109,7 +109,7 @@ Do not re-raise it.
 | Lookups | Yes (`multipleLookupValues`) | 🟡 | Hand-written joins in `queries.ts` | P2 | — | Lookup matches source |
 | Rollups / counts | Yes (Tickets balance) | 🟡 | `getVehicleStats` only; no general rollup | **P1** | — | Rollup recomputes, never stale |
 | Formula fields | **Yes — business-critical** | 🟡 **engine landed** `src/lib/rules/` | Partner economics ported + tested; 5 of 7 rule domains blocked on owner policy. See §5 | **P0** | **Yes** | Each documented rule reproduced |
-| Attachments | Yes — 706 records | ❌ | `documents`/`vehicle_media` = **0 rows**, no provenance columns | **P0** | **Yes** | CR-001 + Gate 2 |
+| Attachments | Yes — 706 records | ❌ | `documents`/`vehicle_media` = **0 rows**, no provenance columns | **P0** | **Yes** | CR-003 + Gate 2 |
 | `aiText` fields | Yes — 4 tables | 🟡 | AI summary fields; FCRA-sensitive on Background Checks | P3 | **Yes** | Counsel review before reuse |
 
 ### 4.2 Views
@@ -192,7 +192,7 @@ change-log. All must write to Supabase, never Airtable.
 |---|---|---|
 | Upload / download / preview | 🟡 buckets exist (3, all private) | The 6 buckets Gate 2 needs do not exist |
 | Metadata: type, size, filename | ❌ | No columns |
-| **Provenance: source table/record/field, sha256** | ❌ | **CR-001 — blocks Gate 2** |
+| **Provenance: source table/record/field, sha256** | ❌ | **CR-003 — blocks Gate 2** |
 | Record association | 🟡 | `documents.case_id` is a `cases` FK; cannot express real parents |
 | Access control / retention state / disposition | ❌ | Retention rule pending counsel |
 
@@ -263,7 +263,7 @@ owner decides. Do not infer a rule from historical data.
 Not a commitment — a proposal for the owner to correct.
 
 **Tier 0 — unblocks everything else**
-1. Attachment provenance + storage (CR-001) — also unblocks Gate 2
+1. Attachment provenance + storage (CR-003) — also unblocks Gate 2
 2. Rules/formula engine core, driven by `docs/business-rules/` — **STARTED.** `src/lib/rules/`
    ports partner economics + the onboarding gate with 28 tests; reuses the existing
    `bg-check-decisions` contract. Remaining domains need owner policy, not engineering.
@@ -371,7 +371,7 @@ expensive to retrofit.
 | **Why not required now** | Webhook + API integration already covers the live path. |
 | **Architectural implications** | A sync source is a second writer — exactly the split-brain risk this whole programme exists to remove. |
 | **Becomes a requirement when** | A tenant must mirror an external system TMMT does not integrate directly. |
-| **Preserve a future path?** | **Yes, with care.** Keep the provenance columns from CR-001 (`source_system`, `source_record_id`) as a **general pattern**, not attachment-only. Any synced row must be traceable and must never silently become authoritative. |
+| **Preserve a future path?** | **Yes, with care.** Keep the provenance columns from CR-003 (`source_system`, `source_record_id`) as a **general pattern**, not attachment-only. Any synced row must be traceable and must never silently become authoritative. |
 
 ### 7.7 Comments / mentions / activity feeds
 
@@ -507,7 +507,7 @@ force-push over it.
 6. **Do-not-rent governance** (`business-rules/02`) — who may add, what reverses an entry.
    Currently permanent-by-omission.
 7. **Whether `aiText` fields carry forward**, given the FCRA sensitivity on Background Checks.
-8. **CR-001 authorization** — provenance schema; gates both Workstream A and B.
+8. **CR-003 authorization** — provenance schema; gates both Workstream A and B.
 
 Plus the Workstream A decisions already open in `evidence/README.md`.
 

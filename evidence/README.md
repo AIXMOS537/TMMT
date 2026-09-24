@@ -23,7 +23,7 @@ A gate is passed by producing its named artifact here — not by believing the w
 | 5 — Multi-tenant | — | NOT STARTED |
 | 6 — Collections | — | NOT STARTED — attorney review is a precondition |
 
-Open change requests: `../CHANGE_REQUEST_001.md` (provenance schema), `../CHANGE_REQUEST_002.md`
+Open change requests: `../docs/CHANGE_REQUEST_003.md` (provenance schema), `../docs/CHANGE_REQUEST_004.md`
 (purge credential from Supabase). Neither applied.
 
 ## Read these first
@@ -71,7 +71,7 @@ Everything else is engineering work and is either done or unblocked.
   partner names are the same pair of people recorded in opposite order — likely one
   partnership entered twice. Partners are referenced by letter in the decision pack, not by
   name (CLAUDE.md: no third-party data in git).
-- **CR-001 is written and staged** at
+- **CR-003 is written and staged** at
   `supabase/migrations/_staged/20260922000000_attachment_provenance_STAGED.sql`, with seven
   postcondition queries and rollback SQL. `db push` ignores `_staged/`, so it cannot
   self-apply. Awaiting owner authorization.
