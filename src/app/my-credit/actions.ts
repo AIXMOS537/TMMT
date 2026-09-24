@@ -15,7 +15,7 @@ import {
   draftCustomerAssertion,
   type CustomerCaseView,
 } from "@/lib/credit-dispute/engine/case-state";
-import { discardEvidenceFile, storeEvidenceFile } from "@/lib/credit-dispute/evidence/store.server";
+import { discardEvidenceFile, signedEvidenceUrl, storeEvidenceFile } from "@/lib/credit-dispute/evidence/store.server";
 
 /**
  * Customer Credit Center actions (C2) — DEVELOPMENT ONLY.
@@ -43,6 +43,11 @@ function enabled(): boolean {
 }
 
 type Mine = { userId: string; client: StoredClient; version: string | null };
+
+/** C3-020: refuse a change made from a page (tab) that loaded an older version. */
+function stale(mine: Mine, seenVersion?: string | null): boolean {
+  return !!seenVersion && mine.version !== seenVersion;
+}
 
 async function myCase(): Promise<MyResult<Mine>> {
   if (!enabled()) return NOT_AVAILABLE;
@@ -82,11 +87,31 @@ async function save(mine: Mine, updated: StoredClient): Promise<MyResult<Custome
   return { ok: true, data: customerCaseView(updated, caseQueueRow(updated, 0)) };
 }
 
-/** Your own items, statements and documents. Nothing else. */
-export async function getMyCreditCase(): Promise<MyResult<CustomerCaseView>> {
+/** Your own items, statements and documents. Nothing else. `version` guards stale tabs. */
+export async function getMyCreditCase(): Promise<MyResult<CustomerCaseView & { version: string | null }>> {
   const mine = await myCase();
   if (!mine.ok) return mine;
-  return { ok: true, data: customerCaseView(mine.data.client, caseQueueRow(mine.data.client, 0)) };
+  return { ok: true, data: { ...customerCaseView(mine.data.client, caseQueueRow(mine.data.client, 0)), version: mine.data.version } };
+}
+
+/**
+ * A two-minute link to one of YOUR OWN documents (C3-010). Checked in order:
+ * feature flag → signed in → your case (by session link) → the document is on your
+ * case, you uploaded it, and it has a stored file. Operator documents and anyone
+ * else's are refused with the same answer, so nothing is revealed by trying ids.
+ */
+export async function getMyDocumentLink(evidenceId: string): Promise<MyResult<string>> {
+  const mine = await myCase();
+  if (!mine.ok) return mine;
+  const e = (mine.data.client.evidence ?? []).find((x) => x.id === String(evidenceId ?? ""));
+  if (!e || e.source !== "customer" || e.uploadedBy !== `customer:${mine.data.userId}` || !e.storagePath) {
+    return { ok: false, error: "Document not found." };
+  }
+  if (!e.storagePath.startsWith(`${mine.data.client.orgId ?? "no-org"}/${mine.data.client.profile.id}/`)) {
+    return { ok: false, error: "Document not found." };
+  }
+  const url = await signedEvidenceUrl(e.storagePath);
+  return url ? { ok: true, data: url } : { ok: false, error: "Document not available." };
 }
 
 /** Step 1: say what you believe is wrong with one of YOUR items, in your own words. A draft. */
@@ -94,9 +119,11 @@ export async function draftMyStatement(input: {
   negativeItemId: string;
   category: IssueCategory;
   statement: string;
+  seenVersion?: string | null;
 }): Promise<MyResult<CustomerCaseView>> {
   const mine = await myCase();
   if (!mine.ok) return mine;
+  if (stale(mine.data, input?.seenVersion)) return { ok: false, error: "Your case changed. Reload and try again." };
   if (await limited(mine.data.userId)) return { ok: false, error: "Too many changes. Try again later." };
   try {
     const updated = draftCustomerAssertion(
@@ -116,9 +143,10 @@ export async function draftMyStatement(input: {
 }
 
 /** Step 3: confirm your own draft. After this, the words are fixed. */
-export async function confirmMyStatement(assertionId: string): Promise<MyResult<CustomerCaseView>> {
+export async function confirmMyStatement(assertionId: string, seenVersion?: string | null): Promise<MyResult<CustomerCaseView>> {
   const mine = await myCase();
   if (!mine.ok) return mine;
+  if (stale(mine.data, seenVersion)) return { ok: false, error: "Your case changed. Reload and try again." };
   if (await limited(mine.data.userId)) return { ok: false, error: "Too many changes. Try again later." };
   const a = (mine.data.client.assertions ?? []).find((x) => x.id === assertionId);
   // Only a draft THIS customer wrote. An operator's record is not theirs to confirm.
@@ -137,6 +165,7 @@ export async function uploadMyDocument(formData: FormData): Promise<MyResult<Cus
   const mine = await myCase();
   if (!mine.ok) return mine;
   if (await limited(mine.data.userId)) return { ok: false, error: "Too many changes. Try again later." };
+  if (stale(mine.data, (formData.get("seenVersion") as string) || null)) return { ok: false, error: "Your case changed. Reload and try again." };
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "Choose a file first." };
   const client = mine.data.client;

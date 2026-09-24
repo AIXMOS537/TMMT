@@ -3,6 +3,7 @@ import { makeFakeSupabase, writes, type FakeSupabase } from "@/lib/testing/fake-
 import { OWNER, type RoleUser } from "@/lib/testing/role-users";
 import type { StoredClient, StoredDisputeRound } from "@/lib/credit-dispute/data/store";
 import type { NegativeItem } from "@/lib/credit-dispute/types";
+import { approvalRows, recipientRows } from "@/lib/credit-dispute/testing/c3-fixtures";
 
 /**
  * C1 owner flows through the REAL server actions (fake Supabase).
@@ -90,6 +91,9 @@ const grounded = (): StoredClient =>
 
 function signIn(user: RoleUser | null, rows: Record<string, StoredClient> = {}) {
   state.ssr = makeFakeSupabase((call) => {
+    // C3: a person-verified recipient registry and approvals for the current wording.
+    if (call.table === "credit_recipients") return { data: recipientRows() };
+    if (call.table === "credit_template_approvals") return { data: approvalRows() };
     if (call.table !== "dispute_clients") return undefined;
     const eqId = call.filters.find((f) => f[0] === "eq" && f[1] === "id")?.[2] as string | undefined;
     const inIds = call.filters.find((f) => f[0] === "in" && f[1] === "id")?.[2] as string[] | undefined;

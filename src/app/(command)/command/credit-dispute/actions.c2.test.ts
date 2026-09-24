@@ -3,6 +3,7 @@ import { makeFakeSupabase, writes, type FakeSupabase } from "@/lib/testing/fake-
 import { OWNER, type RoleUser } from "@/lib/testing/role-users";
 import type { StoredClient } from "@/lib/credit-dispute/data/store";
 import type { NegativeItem } from "@/lib/credit-dispute/types";
+import { approvalRows, recipientRows } from "@/lib/credit-dispute/testing/c3-fixtures";
 
 /**
  * C2 — the full operator lifecycle through the REAL server actions, on a stateful
@@ -78,6 +79,9 @@ function db(user: RoleUser | null, rows: Record<string, StoredClient>, opts: { s
   let tick = 1;
   for (const [id, payload] of Object.entries(rows)) table[id] = { payload: structuredClone(payload), updated_at: `v${tick++}` };
   const fake = makeFakeSupabase((call) => {
+    // C3: a person-verified recipient registry and approvals for the current wording.
+    if (call.table === "credit_recipients") return { data: recipientRows() };
+    if (call.table === "credit_template_approvals") return { data: approvalRows() };
     if (call.table !== "dispute_clients") return undefined;
     const eq = (col: string) => call.filters.find((f) => f[0] === "eq" && f[1] === col)?.[2] as string | undefined;
     const id = eq("id");
