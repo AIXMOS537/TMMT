@@ -308,3 +308,15 @@
 20260917200339
 20260917200633
 20260917200710
+
+# ── Applied 2026-09-19/20 by the security audit ───────────────────────────────
+# Same apply_migration version-mismatch as the 09-17 batch: the ledger records its
+# OWN timestamp, never the repo filename, so both files below still read as drift.
+#
+#   20260919221554  <- 20260919221500_partner_tables_least_privilege_for_anon.sql
+#   20260920014756  <- 20260919215500_close_orphaned_garage_public_read.sql
+#
+# Both are REVOKE/DROP POLICY only — re-running either is idempotent and harmless,
+# but it would still be a re-run, so they are counted as drift rather than hidden.
+20260919221554
+20260920014756

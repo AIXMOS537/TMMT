@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 import { isRateLimited } from "@/lib/rate-limit";
+import { bearerMatchesEdge } from "@/lib/secure-compare-edge";
 import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
 import { isOwnerHubHost } from "@/lib/site-domains";
 import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
@@ -157,6 +158,51 @@ function pathAllowedForTier(pathname: string, tier: AccessTier): boolean {
   }
 }
 
+/**
+ * Machine access to the scheduled-job routes (/api/cron/*).
+ *
+ * Vercel Cron calls these with no browser session, sending
+ * `Authorization: Bearer $CRON_SECRET` when CRON_SECRET is set. Since the
+ * middleware started running (3c27dc9, 2026-08-19) every such call was
+ * answered 307 -> /login; Vercel does not follow redirects and does not log
+ * redirected cron runs, so both jobs stopped without a trace.
+ *
+ * Only the exact Bearer CRON_SECRET, compared in constant time, passes the
+ * edge. Anything else falls through to the normal session rules (signed-out
+ * -> /login). CRON_SECRET unset means no machine access at all. Each handler
+ * still checks the secret itself (defence in depth). The header value is
+ * never logged.
+ */
+const CRON_PREFIX = "/api/cron/";
+
+function cronMachineCall(request: NextRequest, pathname: string): boolean {
+  if (!pathname.startsWith(CRON_PREFIX)) return false;
+  const auth = request.headers.get("authorization");
+  const legacy = request.headers.get("x-cron-secret");
+  const secret = process.env.CRON_SECRET;
+  if (bearerMatchesEdge(auth, secret)) return true;
+  if (auth !== null || legacy !== null) {
+    const reason = !secret
+      ? "cron_secret_unset"
+      : auth === null
+        ? "x_cron_secret_not_accepted_at_edge"
+        : "bearer_mismatch";
+    try {
+      console.warn(
+        `[middleware] rejected machine call ${JSON.stringify({
+          path: pathname,
+          reason,
+          ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
+          ua: request.headers.get("user-agent") ?? null,
+        })}`
+      );
+    } catch {
+      // logging must never take the request down
+    }
+  }
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
@@ -222,6 +268,10 @@ export async function middleware(request: NextRequest) {
         )
       );
     }
+  }
+
+  if (cronMachineCall(request, pathname)) {
+    return withRobotsHeader(nextWithTenant());
   }
 
   if (isPitchPublicPath(pathname)) {

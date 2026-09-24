@@ -25,7 +25,21 @@ export type CommandHubLink = {
   icon: LucideIcon;
   badge?: string;
   external?: boolean;
+  /**
+   * Restrict this link to specific tenant slugs. Omitted = every operator sees it.
+   * Some entries are TMMT's own business, not the product: the TMMT→AIXMOS upgrade
+   * ladder, cross-entity handoffs between TMMT/AIXMOS/MOE, and TMMT's ClickUp
+   * workspace. A white-labelled operator must never see those — they are not
+   * "TMMT branding on a shared feature", they are features that only exist for TMMT.
+   */
+  tenants?: readonly string[];
 };
+
+/** Slugs in tenant-map.generated.ts that belong to Taha's own entities. */
+const TMMT_OWN = ["tmmt_property", "aixmos", "aixmos_credit"] as const;
+
+/** Replaced per-request by commandHubSectionsFor() with the tenant's own marketing host. */
+const MARKETING_SITE_PLACEHOLDER = "__MARKETING_SITE__";
 
 export const commandHubSections: { title: string; links: CommandHubLink[] }[] = [
   {
@@ -33,7 +47,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
     links: [
       {
         href: "/",
-        label: "TMMT dashboard",
+        label: "Dashboard",
         description: "Fleet, leads, tickets, and live KPIs",
         icon: LayoutDashboard,
       },
@@ -98,7 +112,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
         external: true,
       },
       {
-        href: "https://allinonemanagementsolutions.com/",
+        href: MARKETING_SITE_PLACEHOLDER,
         label: "Public site (GHL)",
         description: "All In One Management — every public visitor lands here",
         icon: ExternalLink,
@@ -106,7 +120,8 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       },
       {
         href: "/upgrade",
-        label: "TMMT → AIXMOS ladder",
+        label: "TMMT \u2192 AIXMOS ladder",
+        tenants: TMMT_OWN,
         description: "Move existing renters into higher GHL tiers",
         icon: TrendingUp,
         badge: "GHL",
@@ -119,7 +134,8 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       {
         href: "/command/handoffs",
         label: "Entity handoffs",
-        description: "Cross-entity client handoffs (TMMT · AIXMOS · MOE) with consent status",
+        description: "Cross-entity client handoffs (TMMT \u00b7 AIXMOS \u00b7 MOE) with consent status",
+        tenants: TMMT_OWN,
         icon: Handshake,
         badge: "Federation",
       },
@@ -168,7 +184,8 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
       {
         href: CLICKUP_WORKSPACE_URL,
         label: "ClickUp workspace",
-        description: "TMMT RENTALS — fleet, ops, admin lists",
+        description: "TMMT RENTALS \u2014 fleet, ops, admin lists",
+        tenants: TMMT_OWN,
         icon: ExternalLink,
         badge: "ClickUp",
         external: true,
@@ -199,3 +216,34 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = 
     ],
   },
 ];
+
+/**
+ * Brand-aware view of the hub. Resolves the tenant's own marketing site and drops
+ * links that belong to TMMT's entities rather than to the product.
+ *
+ * Why this exists: the hub previously hardcoded "TMMT" and
+ * allinonemanagementsolutions.com, so an operator on a white-labelled app opened
+ * their command centre and saw someone else's brand and someone else's public site.
+ * The pricing doctrine is that every customer gets a setup that looks like THEIR
+ * own system, and the tenant config to do it already existed - the hub just ignored it.
+ */
+export function commandHubSectionsFor(brand: {
+  slug: string;
+  domains: { readonly marketing?: string };
+}): { title: string; links: CommandHubLink[] }[] {
+  const site = brand.domains.marketing
+    ? `https://${brand.domains.marketing}/`
+    : null;
+  return commandHubSections
+    .map((section) => ({
+      title: section.title,
+      links: section.links
+        .filter((l) => !l.tenants || l.tenants.includes(brand.slug))
+        // no marketing host configured -> drop the link rather than ship a dead one
+        .filter((l) => l.href !== MARKETING_SITE_PLACEHOLDER || site !== null)
+        .map((l) =>
+          l.href === MARKETING_SITE_PLACEHOLDER && site ? { ...l, href: site } : l,
+        ),
+    }))
+    .filter((section) => section.links.length > 0);
+}
