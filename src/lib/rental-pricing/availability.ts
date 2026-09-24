@@ -40,6 +40,21 @@ export type BookingStatus = (typeof BOOKING_STATUSES)[number];
  */
 export const BLOCKING_STATUSES: readonly BookingStatus[] = ["hold", "confirmed", "active"];
 
+/**
+ * How long an unpaid 'hold' keeps a car off the market before it is released.
+ *
+ * BUSINESS POLICY REQUIRED: 30 is a placeholder until the owner sets the real TTL.
+ * The database enforces this, not the app: public.expire_stale_booking_holds()
+ * (migration 20260924180000_vehicle_blocks_and_booking_occupancy.sql) moves holds
+ * older than this to 'cancelled'. Its default interval MUST equal this number;
+ * the schema-contract test pins the two together.
+ *
+ * The pg_cron schedule SHIPS DISABLED (QA B2): nothing writes 'confirmed' yet, so
+ * a live sweep would cancel every Rental Board hold, real pickups included. The
+ * one-line enable is in the migration header; turning it on is an owner decision.
+ */
+export const HOLD_TTL_MINUTES = 30;
+
 export function isBookingStatus(v: unknown): v is BookingStatus {
   return typeof v === "string" && (BOOKING_STATUSES as readonly string[]).includes(v);
 }
