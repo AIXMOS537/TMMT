@@ -34,21 +34,17 @@ jobs:
   push-mission:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/mission-call.sh
+          sparse-checkout-cone-mode: false
+      # PASS only when the mission was built (and sent, when notify=true).
+      # A redirect, login page, 401/403, 5xx or ok!=true fails the job.
+      # Auth is Authorization: Bearer (the only header the edge accepts).
       - name: POST /api/mission/generate
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           MISSION_API_BASE: ${{ secrets.MISSION_API_BASE || 'https://tmmt-ops.vercel.app' }}
           AUDIENCE: ${{ github.event.inputs.audience || 'team' }}
           NOTIFY: ${{ github.event.inputs.notify || 'true' }}
-        run: |
-          if [ -z "$CRON_SECRET" ]; then
-            echo "::error::CRON_SECRET repo secret is not set"
-            exit 1
-          fi
-          echo "Calling $MISSION_API_BASE/api/mission/generate (audience=$AUDIENCE notify=$NOTIFY)"
-          response=$(curl -sS --fail-with-body -X POST \
-            "$MISSION_API_BASE/api/mission/generate" \
-            -H "x-cron-secret: $CRON_SECRET" \
-            -H "Content-Type: application/json" \
-            -d "{\"audience\":\"$AUDIENCE\",\"notify\":$NOTIFY}")
-          echo "$response"
+        run: bash scripts/mission-call.sh
