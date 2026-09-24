@@ -37,6 +37,15 @@
 --   (e.g. maintenance + damage) are allowed.
 --   The ledger is keyed on vehicle_id alone, because a vehicle uuid is global.
 --
+-- SECTION 1b: BOOKINGS TENANT INTEGRITY + STATUS DEFAULT (E6c, authorised by M1; prod has 0 bookings)
+--   * bookings.status default 'inquiry' -> 'hold'. 'inquiry' is NOT in bookings_status_check, so any
+--     insert that omitted status failed with 23514. 'hold' is in the allowed set and is what the app sends.
+--   * A booking's org_id must equal its vehicle's org_id: the same rule, and the same function, as
+--     vehicle_blocks. RULE, stated once: if the vehicle HAS an org, the row's org_id must be that org.
+--     A NULL row org_id on an org-owned vehicle is rejected too (IS DISTINCT FROM). If the vehicle has NO
+--     org, any org may hold the row, and RLS still scopes the row to its own org_id. Violations raise
+--     23514 with a message starting 'vehicle_org_mismatch:'. create-booking.ts keys its refusal on that.
+--
 -- SECTION 5: HOLD EXPIRY
 --   A 'hold' older than the TTL releases the car. public.expire_stale_booking_holds() moves it to
 --   'cancelled' and stamps metadata.cancel_reason = 'hold_expired'. The status vocabulary has no
@@ -87,6 +96,9 @@ end $$;
 create index if not exists bookings_vehicle_window_idx
   on public.bookings (vehicle_id, starts_at, ends_at)
   where status in ('hold','confirmed','active');
+
+-- 1b. Status default: 'inquiry' is outside bookings_status_check; 'hold' is inside it. Re-running is a no-op.
+alter table public.bookings alter column status set default 'hold';
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2. vehicle_blocks
@@ -171,9 +183,10 @@ create index if not exists vehicle_occupancy_org_id_idx on public.vehicle_occupa
 -- 4. Triggers
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 4a. A block's org_id must equal its vehicle's org (when the vehicle has one).
---     Not added to bookings: that would change behaviour on a live, app-written table.
-create or replace function public.vehicle_blocks_enforce_vehicle_org()
+-- 4a. Tenant integrity, shared by vehicle_blocks and bookings: when the vehicle has an org, the
+--     row's org_id must be that org (NULL counts as a mismatch). No vehicle, or a vehicle with no
+--     org -> allowed. Raises 23514 'vehicle_org_mismatch: ...'.
+create or replace function public.enforce_vehicle_org()
 returns trigger
 language plpgsql
 security definer
@@ -181,9 +194,15 @@ set search_path = ''
 as $fn$
 declare v_org uuid;
 begin
+  if new.vehicle_id is null then
+    return new;
+  end if;
   select v.org_id into v_org from public.vehicles v where v.id = new.vehicle_id;
   if v_org is not null and v_org is distinct from new.org_id then
-    raise exception 'org_id % does not own vehicle %', new.org_id, new.vehicle_id
+    -- The vehicle's own org is deliberately NOT in the message: a caller from another org
+    -- must not learn which tenant owns the car.
+    raise exception 'vehicle_org_mismatch: % org_id % is not the org of vehicle %',
+      tg_table_name, coalesce(new.org_id::text, 'NULL'), new.vehicle_id
       using errcode = '23514';
   end if;
   return new;
@@ -231,13 +250,18 @@ begin
 end;
 $fn$;
 
-revoke all on function public.vehicle_blocks_enforce_vehicle_org() from public, anon, authenticated;
+revoke all on function public.enforce_vehicle_org() from public, anon, authenticated;
 revoke all on function public.vehicle_occupancy_sync() from public, anon, authenticated;
 
 drop trigger if exists vehicle_blocks_enforce_vehicle_org on public.vehicle_blocks;
 create trigger vehicle_blocks_enforce_vehicle_org
   before insert or update of vehicle_id, org_id on public.vehicle_blocks
-  for each row execute function public.vehicle_blocks_enforce_vehicle_org();
+  for each row execute function public.enforce_vehicle_org();
+
+drop trigger if exists bookings_enforce_vehicle_org on public.bookings;
+create trigger bookings_enforce_vehicle_org
+  before insert or update of vehicle_id, org_id on public.bookings
+  for each row execute function public.enforce_vehicle_org();
 
 drop trigger if exists vehicle_blocks_sync_occupancy on public.vehicle_blocks;
 create trigger vehicle_blocks_sync_occupancy

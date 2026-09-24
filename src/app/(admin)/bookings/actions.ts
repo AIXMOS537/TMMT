@@ -292,7 +292,11 @@ export async function placeHold(input: {
 
   if (result.ok) return { ok: true, refCode: result.refCode, bookingId: result.bookingId };
   // The database refused the dates: its message is already written for a human.
-  if (result.reason === "conflict_race" || result.reason === "rejected_dates") {
+  if (
+    result.reason === "conflict_race" ||
+    result.reason === "rejected_dates" ||
+    result.reason === "wrong_org"
+  ) {
     return { ok: false, error: result.message };
   }
 
