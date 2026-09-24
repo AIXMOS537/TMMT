@@ -47,7 +47,7 @@ afterEach(() => {
 
 describe("GET /api/health", () => {
   it("is 200 ok with an empty degraded list when every durable path is answering", async () => {
-    const res = await GET();
+    const res = await GET(new Request("https://tmmt-ops.test/api/health"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({ ok: true, service: "tmmt-ops", degraded: [] });
@@ -57,7 +57,7 @@ describe("GET /api/health", () => {
   it("lists engaged fallbacks without changing ok or the status code", async () => {
     reportDegraded("rate-limit", "function rate_limit_hit does not exist", { code: "42883" });
     reportDegraded("ghl-event-dedupe", 'relation "ghl_webhook_events" does not exist');
-    const res = await GET();
+    const res = await GET(new Request("https://tmmt-ops.test/api/health"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
@@ -75,7 +75,7 @@ describe("GET /api/health", () => {
   it("drops a component once it has recovered", async () => {
     reportDegraded("rate-limit", "blip");
     clearDegraded("rate-limit");
-    const body = await (await GET()).json();
+    const body = await (await GET(new Request("https://tmmt-ops.test/api/health"))).json();
     expect(body.degraded).toEqual([]);
   });
 });

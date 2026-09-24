@@ -25,10 +25,10 @@ const DB_PROBE_TIMEOUT_MS = 5_000;
  * routes) so the public cannot drive database load through it, and it never
  * returns the error text — that goes to the function log only.
  */
-export async function GET(req?: Request) {
-  const deep = req ? new URL(req.url).searchParams.get("deep") : null;
+export async function GET(req: Request) {
+  const deep = new URL(req.url).searchParams.get("deep");
   if (deep === "1" || deep === "true") {
-    if (!deepAuthorized(req!)) {
+    if (!deepAuthorized(req)) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
     return deepProbe();
