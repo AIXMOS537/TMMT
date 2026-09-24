@@ -46,6 +46,8 @@ export const BOOKING_BLOCKED_MESSAGE =
   "That car is unavailable for those dates (maintenance or out of service).";
 export const BOOKING_REJECTED_DATES_MESSAGE =
   "Those dates can't be booked for this car. Check the dates and try again.";
+export const BOOKING_WRONG_ORG_MESSAGE =
+  "That car belongs to a different organisation and can't be booked here.";
 
 /** Postgres exclusion_violation — the race-loss signal. */
 const PG_EXCLUSION_VIOLATION = "23P01";
@@ -55,6 +57,8 @@ const PG_UNIQUE_VIOLATION = "23505";
 const PG_CHECK_VIOLATION = "23514";
 /** The occupancy-ledger constraint: a vehicle_block covers these dates. */
 const BLOCK_OVERLAP_CONSTRAINT = "vehicle_occupancy_no_block_overlap";
+/** Message prefix raised by public.enforce_vehicle_org() (23514): tenant mismatch. */
+const VEHICLE_ORG_MISMATCH = "vehicle_org_mismatch";
 
 export type CreateBookingInput = {
   /** Row from the live `fleet` table — the real inventory. */
@@ -81,6 +85,7 @@ export type CreateBookingResult =
   | { ok: false; reason: "quote_failed"; detail: string }
   | { ok: false; reason: "conflict_race"; message: string }
   | { ok: false; reason: "rejected_dates"; message: string }
+  | { ok: false; reason: "wrong_org"; message: string }
   | { ok: false; reason: "write_failed"; detail: string };
 
 /**
@@ -217,14 +222,15 @@ export async function createBooking(
  * 23P01 means the dates are taken: another booking (bookings_no_overlap) or a
  * vehicle block (vehicle_occupancy_no_block_overlap) holds the car. 23505 on the
  * deterministic ref_code means this same car/start/customer was already booked.
- * 23514 is a CHECK failure (bookings_interval_sane / bookings_status_check). That
- * is a real refusal the user can act on, but it is NOT "already booked", so it
- * gets its own honest message rather than the conflict one.
+ * 23514 is either a CHECK failure (bookings_interval_sane / bookings_status_check)
+ * or the tenant-integrity trigger (public.enforce_vehicle_org, message prefix
+ * "vehicle_org_mismatch"). Neither means "already booked", so each gets its own
+ * honest message rather than the conflict one.
  */
 export function mapBookingWriteError(error: {
   code?: string | null;
   message?: string | null;
-}): Extract<CreateBookingResult, { reason: "conflict_race" | "rejected_dates" }> | null {
+}): Extract<CreateBookingResult, { reason: "conflict_race" | "rejected_dates" | "wrong_org" }> | null {
   switch (error.code) {
     case PG_EXCLUSION_VIOLATION:
       return {
@@ -237,6 +243,9 @@ export function mapBookingWriteError(error: {
     case PG_UNIQUE_VIOLATION:
       return { ok: false, reason: "conflict_race", message: BOOKING_CONFLICT_MESSAGE };
     case PG_CHECK_VIOLATION:
+      if ((error.message ?? "").includes(VEHICLE_ORG_MISMATCH)) {
+        return { ok: false, reason: "wrong_org", message: BOOKING_WRONG_ORG_MESSAGE };
+      }
       return { ok: false, reason: "rejected_dates", message: BOOKING_REJECTED_DATES_MESSAGE };
     default:
       return null;

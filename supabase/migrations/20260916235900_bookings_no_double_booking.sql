@@ -36,6 +36,20 @@
 -- that two requests raced and this one lost. See src/lib/rental-pricing/
 -- create-booking.ts, which turns it into a conflict result rather than a 500.
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- EDITED 2026-09-24 (E6c, authorised by M1): the three ADD CONSTRAINTs below are
+-- now wrapped in IF NOT EXISTS guards. The constraint definitions are unchanged.
+--
+-- Why editing an applied file is acceptable HERE and only here: this SQL IS live in
+-- production, but apply_migration recorded it under its own version 20260917200051
+-- (name bookings_no_double_booking; see LEDGER-SNAPSHOT.txt). This file's version
+-- 20260916235900 has never been recorded. A `supabase db push` would therefore
+-- re-run this file, and the old bare ADD CONSTRAINTs would abort the push with
+-- "already exists". Guarded, a re-run is a no-op, and a fresh database still ends up
+-- with exactly the schema prod has. The same guards are restated in
+-- 20260924180000_vehicle_blocks_and_booking_occupancy.sql.
+-- ─────────────────────────────────────────────────────────────────────────────
+
 begin;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -52,18 +66,30 @@ create extension if not exists btree_gist;
 -- Keep the two in step: the partial index in step 3 depends on these spellings,
 -- and a typo'd status would silently stop blocking the calendar.
 -- ─────────────────────────────────────────────────────────────────────────────
-alter table public.bookings
-  add constraint bookings_status_check
-  check (status in ('hold','confirmed','active','completed','cancelled','no_show'));
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'bookings_status_check'
+                 and conrelid = 'public.bookings'::regclass) then
+    alter table public.bookings
+      add constraint bookings_status_check
+      check (status in ('hold','confirmed','active','completed','cancelled','no_show'));
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. An end must come after its start.
 --    The app guard already refuses this; the database should not accept it
 --    either, or a direct SQL write could create a booking that never ends.
 -- ─────────────────────────────────────────────────────────────────────────────
-alter table public.bookings
-  add constraint bookings_interval_sane
-  check (starts_at is null or ends_at is null or ends_at > starts_at);
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'bookings_interval_sane'
+                 and conrelid = 'public.bookings'::regclass) then
+    alter table public.bookings
+      add constraint bookings_interval_sane
+      check (starts_at is null or ends_at is null or ends_at > starts_at);
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 4. THE GUARANTEE: no two live bookings on one vehicle may overlap in time.
@@ -77,18 +103,24 @@ alter table public.bookings
 --     release it, so a cancelled booking never blocks the calendar.
 --   - vehicle_id must be present; a booking with no car cannot conflict.
 -- ─────────────────────────────────────────────────────────────────────────────
-alter table public.bookings
-  add constraint bookings_no_overlap
-  exclude using gist (
-    vehicle_id with =,
-    tstzrange(starts_at, ends_at, '[)') with &&
-  )
-  where (
-    vehicle_id is not null
-    and starts_at is not null
-    and ends_at is not null
-    and status in ('hold','confirmed','active')
-  );
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'bookings_no_overlap'
+                 and conrelid = 'public.bookings'::regclass) then
+    alter table public.bookings
+      add constraint bookings_no_overlap
+      exclude using gist (
+        vehicle_id with =,
+        tstzrange(starts_at, ends_at, '[)') with &&
+      )
+      where (
+        vehicle_id is not null
+        and starts_at is not null
+        and ends_at is not null
+        and status in ('hold','confirmed','active')
+      );
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. The calendar read path: "what is on this car between these dates".

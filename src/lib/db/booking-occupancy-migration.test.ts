@@ -86,10 +86,16 @@ describe("records the live bookings guards, create-only-if-missing", () => {
     );
   });
 
-  it("does not drop or replace anything on bookings", () => {
+  it("changes exactly one thing on bookings' columns: the status default, to 'hold'", () => {
     expect(norm).not.toMatch(/drop constraint[^;]*bookings/);
-    expect(norm).not.toMatch(/alter table public\.bookings (alter|drop)/);
     expect(norm).not.toMatch(/policy [^;]* on public\.bookings/);
+    const alters = norm.match(/alter table public\.bookings (alter|drop)[^;]*;/g) ?? [];
+    expect(alters).toEqual(["alter table public.bookings alter column status set default 'hold';"]);
+  });
+
+  it("the new default is inside the allowed status set", () => {
+    expect(norm).toContain("check (status in ('hold','confirmed','active','completed','cancelled','no_show'))");
+    expect(norm).not.toContain("'inquiry'");
   });
 });
 
@@ -135,6 +141,52 @@ describe("block vs booking: one exclusion on the occupancy ledger", () => {
   it("the ledger writer is SECURITY DEFINER with a pinned search_path", () => {
     const fn = norm.slice(norm.indexOf("create or replace function public.vehicle_occupancy_sync()"));
     expect(fn.slice(0, 200)).toContain("security definer set search_path = ''");
+  });
+});
+
+describe("tenant integrity: row org must match the vehicle's org", () => {
+  it("one shared function raises 23514 with the vehicle_org_mismatch marker", () => {
+    const fn = norm.slice(norm.indexOf("create or replace function public.enforce_vehicle_org()"));
+    expect(fn.slice(0, 200)).toContain("security definer set search_path = ''");
+    expect(fn).toContain("if v_org is not null and v_org is distinct from new.org_id then");
+    expect(fn).toContain("raise exception 'vehicle_org_mismatch:");
+    expect(fn).toContain("using errcode = '23514'");
+    const raise = fn.slice(fn.indexOf("raise exception 'vehicle_org_mismatch:"), fn.indexOf("using errcode = '23514'"));
+    expect(raise, "the message must not reveal the vehicle's own org").not.toContain("v_org");
+  });
+
+  for (const t of ["bookings", "vehicle_blocks"]) {
+    it(`${t} runs it before insert or update of vehicle_id, org_id`, () => {
+      expect(norm).toContain(
+        `create trigger ${t}_enforce_vehicle_org before insert or update of vehicle_id, org_id on public.${t} ` +
+          "for each row execute function public.enforce_vehicle_org();",
+      );
+    });
+  }
+});
+
+describe("old 20260916235900 file is safe to re-run", () => {
+  const OLD = join(MIGRATIONS, "20260916235900_bookings_no_double_booking.sql");
+  const oldNorm = readFileSync(OLD, "utf8")
+    .split("\n")
+    .map((l) => l.replace(/--.*$/, ""))
+    .join("\n")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+  for (const c of ["bookings_status_check", "bookings_interval_sane", "bookings_no_overlap"]) {
+    it(`${c} is behind an existence check`, () => {
+      expect(oldNorm).toContain(
+        `if not exists (select 1 from pg_constraint where conname = '${c}' and conrelid = 'public.bookings'::regclass)`,
+      );
+    });
+  }
+
+  it("has no bare add constraint left", () => {
+    const adds = oldNorm.split("add constraint").length - 1;
+    const guarded = oldNorm.split("if not exists (select 1 from pg_constraint").length - 1;
+    expect(adds).toBe(3);
+    expect(guarded).toBe(adds);
   });
 });
 
@@ -212,7 +264,7 @@ describe("idempotency", () => {
       );
     }
     const triggers = norm.match(/create trigger (\w+) \w+ [^;]*? on ([\w.]+)/g) ?? [];
-    expect(triggers.length).toBe(3);
+    expect(triggers.length).toBe(4);
     for (const tr of triggers) {
       const [, name, table] = tr.match(/create trigger (\w+) \w+ [^;]*? on ([\w.]+)/)!;
       expect(norm, `trigger ${name} is not dropped first`).toContain(

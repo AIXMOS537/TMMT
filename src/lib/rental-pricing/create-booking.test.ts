@@ -5,6 +5,7 @@ import {
   BOOKING_BLOCKED_MESSAGE,
   BOOKING_CONFLICT_MESSAGE,
   BOOKING_REJECTED_DATES_MESSAGE,
+  BOOKING_WRONG_ORG_MESSAGE,
   createBooking,
   makeRefCode,
   mapBookingWriteError,
@@ -201,6 +202,28 @@ describe("createBooking — losing the race", () => {
     } else {
       throw new Error("expected write_failed");
     }
+  });
+});
+
+describe("createBooking — tenant integrity", () => {
+  it("turns the vehicle-org trigger's 23514 into a wrong-org refusal", async () => {
+    const c = client({
+      insertError: {
+        code: "23514",
+        message:
+          "vehicle_org_mismatch: bookings org_id b0000000-0000-0000-0000-00000000000b does not match vehicle a1 (org a0)",
+      },
+    });
+    const r = await createBooking(c as unknown as SupabaseClient, input());
+    expect(r).toEqual({ ok: false, reason: "wrong_org", message: BOOKING_WRONG_ORG_MESSAGE });
+  });
+
+  it("does not leak the other org's id to the user", () => {
+    const r = mapBookingWriteError({
+      code: "23514",
+      message: "vehicle_org_mismatch: bookings org_id x does not match vehicle y (org secret-org)",
+    });
+    expect(r?.message).not.toContain("secret-org");
   });
 });
 
