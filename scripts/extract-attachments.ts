@@ -646,7 +646,7 @@ async function runExtract(token: string, sbUrl: string, sbKey: string): Promise<
 
   console.error(
     '\nUploads complete. Metadata rows are NOT written — the destination tables cannot carry\n' +
-      'provenance yet (no sha256 / source_* columns). See CHANGE_REQUEST_001.\n' +
+      'provenance yet (no sha256 / source_* columns). See CHANGE_REQUEST_003.\n' +
       'Gate 2 also requires opening >=10 files per table and spot-checking parent linkage.',
   );
 }

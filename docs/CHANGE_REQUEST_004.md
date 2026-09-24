@@ -1,4 +1,4 @@
-# CHANGE_REQUEST_002 — Purge stored carrier credential from Supabase
+# CHANGE_REQUEST_004 — Purge stored carrier credential from Supabase
 
 Status: **PROPOSED — awaiting owner approval.** Not applied.
 Raised: 2026-09-15 · Blocks: Gate 0 · Prime Directive 8 · **P0 security**

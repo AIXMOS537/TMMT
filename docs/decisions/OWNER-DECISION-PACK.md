@@ -9,7 +9,7 @@ number appears, it was counted.
 | 1 | Screening policy | ~20 min | Rules engine, every client install |
 | 2 | Partner splits | ~15 min | Partner earnings, payout math |
 | 3 | §7 deferral register | ~5 min | Schema choices in remaining build |
-| 4 | CR-001 authorization | ~5 min | P0 #2, Gate 2 |
+| 4 | CR-003 authorization | ~5 min | P0 #2, Gate 2 |
 | 5 | Script capture (UI work) | ~45 min | Gate 4, cancellation |
 
 ---
@@ -158,7 +158,7 @@ keep-the-door-open decision. Detail: `TMMT-AIRTABLE-CAPABILITY-MATRIX.md` §7.
 
 ---
 
-## 4. CR-001 — read the SQL, then authorize
+## 4. CR-003 — read the SQL, then authorize
 
 The migration is written and staged at
 `supabase/migrations/_staged/20260922000000_attachment_provenance_STAGED.sql`.
@@ -173,7 +173,7 @@ Seven postcondition queries are in the file — per CLAUDE.md, `success: true` i
 ☐ **Authorized** — and Gate 0's offline archive exists first
 ☐ Changes needed: ______________
 
-> Order matters: archive → CR-001 → counsel retention rule → extraction. Applying CR-001
+> Order matters: archive → CR-003 → counsel retention rule → extraction. Applying CR-003
 > after extraction makes rollback a question about what happens to extracted files.
 
 ---

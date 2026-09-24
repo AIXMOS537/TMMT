@@ -1,4 +1,4 @@
-# CHANGE_REQUEST_001 — Provenance columns + private storage buckets for attachment extraction
+# CHANGE_REQUEST_003 — Provenance columns + private storage buckets for attachment extraction
 
 Status: **PROPOSED — awaiting owner approval.** Not applied.
 Raised: 2026-09-15 · Blocks: Phase 2 (attachment extraction) · Prime Directive 8
