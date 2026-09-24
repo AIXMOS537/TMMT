@@ -104,6 +104,45 @@ Everything else is engineering work and is either done or unblocked.
 - **Build verified GREEN** (2026-09-16): `npm ci`, `tsc --noEmit`, `npm run build` all exit 0.
   `scripts/` is inside the normal typecheck scope; no tsconfig exclusion is needed.
 
+## Workstream B — native capability landed (2026-09-24)
+
+Built against `TMMT-AIRTABLE-CAPABILITY-MATRIX.md` §4.1. All three were marked in the matrix as
+needing **no owner decision**, which holds for the mechanism; none of them decides business
+policy, and none crosses a gate.
+
+| Capability | Module | Tests | Status |
+|---|---|---:|---|
+| Rollups / counts | `src/lib/rules/rollups.ts` | 23 | **LANDED** |
+| Validation / field registry | `src/lib/rules/field-types.ts` | 28 | **LANDED** (app boundary) |
+| Linked-record integrity | `evidence/linked-record-integrity.md` | — | **AUDITED**, read-only |
+
+One invariant spans the first two: **a derived value is computed, never stored.**
+`field-types.ts` rejects any write to a `rollup` / `formula` / `multipleLookupValues` /
+`autoNumber` / `createdBy` / `lastModifiedTime` field; `rollups.ts` derives from the linked
+source records and `detectRollupDrift()` proves whether a stored value has gone stale. That is
+the migration rule (*recompute, never copy stale values*) enforced in code rather than asserted
+in a comment.
+
+Three documented defects are now structurally prevented rather than merely described:
+
+- **Select-option drift.** A value outside the declared option set is rejected — the mechanism
+  by which a free-typed `"ou"` became a permanent `Eligibility Status` choice that
+  `bg_check_decide` rejects.
+- **The PostgREST numeric-string trap.** Postgres `numeric` arrives as a JSON *string*, so a
+  strict `SUM` silently returns `0`. Values are never coerced (that invents data) and never
+  ignored quietly — the count of excluded values is reported.
+- **Attachments with no provenance.** An attachment value lacking `storage_path` + `sha256` is
+  flagged as evidence of a **missing** file, per the standing rule.
+
+**Two limits, stated plainly.** The matrix's acceptance test for validation says *rejected at DB,
+not just UI*; only the application-boundary half is done, because DB constraints are a schema
+change requiring an owner-authorised CR. And the integrity audit tested `org_id` only — every
+other internal reference is **UNCOUNTED, which is not the same as clean**.
+
+New finding: **`cases` holds 4 rows with `org_id` NULL on all of them** — a populated table with
+no tenant, not an empty one. Nothing was backfilled; intended behaviour must be established
+first. See `linked-record-integrity.md`.
+
 ## Tooling
 
 | Script | Purpose | Safe to run? |
