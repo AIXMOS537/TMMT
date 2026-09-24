@@ -1,9 +1,12 @@
 -- Stop the same car being rented to two people over the same dates.
 --
--- ⚠️ NOT APPLIED. Written 2026-09-16, left for X to run deliberately.
---    Applying DDL to the live database is his call, not mine.
+-- ✅ APPLIED TO PRODUCTION on 2026-09-17, recorded in supabase_migrations.schema_migrations
+--    as version 20260917200051 (name bookings_no_double_booking). apply_migration assigned
+--    its own version, so this file's 20260916235900 is NOT in the ledger; LEDGER-SNAPSHOT.txt
+--    has the mapping. (The original 2026-09-16 note here said "NOT APPLIED"; it went stale.)
+--    Rename-to-ledger-version was considered and deferred: see the E6e handoff.
 --
--- WHY
+-- WHY (as written 2026-09-16, before the apply)
 -- Verified read-only against production 2026-09-16. public.bookings has:
 --   bookings_pkey, bookings_ref_code_key (unique), and six FKs.
 -- It has NO constraint preventing overlapping bookings on one vehicle, and NO

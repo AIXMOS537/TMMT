@@ -51,8 +51,10 @@ export const BOOKING_WRONG_ORG_MESSAGE =
 
 /** Postgres exclusion_violation — the race-loss signal. */
 const PG_EXCLUSION_VIOLATION = "23P01";
-/** Postgres unique_violation — a ref_code collision. */
+/** Postgres unique_violation — on bookings this can only be bookings_ref_code_key. */
 const PG_UNIQUE_VIOLATION = "23505";
+/** How many distinct ref_codes one createBooking call tries before giving up. */
+export const REF_CODE_ATTEMPTS = 3;
 /** Postgres check_violation — bookings_interval_sane / bookings_status_check. */
 const PG_CHECK_VIOLATION = "23514";
 /** The occupancy-ledger constraint: a vehicle_block covers these dates. */
@@ -89,8 +91,11 @@ export type CreateBookingResult =
   | { ok: false; reason: "write_failed"; detail: string };
 
 /**
- * Human-readable, collision-resistant booking reference.
- * Caller supplies randomness so this stays testable and deterministic.
+ * Human-readable booking reference, derived from a seed.
+ * Deterministic for a given seed. createBooking() puts a random nonce in the
+ * seed, so two attempts at the same car + start + email get DIFFERENT refs
+ * (QA B1: an expired hold kept its ref, and re-holding the same car/start/email
+ * hit bookings_ref_code_key and was wrongly reported as "already booked").
  */
 export function makeRefCode(seed: string): string {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no I/L/O/0/1
@@ -108,6 +113,11 @@ function hash(s: string): number {
     h = Math.imul(h, 16777619);
   }
   return h | 0;
+}
+
+/** Short random nonce for the ref seed. Not a secret; only has to differ between attempts. */
+function refNonce(): string {
+  return globalThis.crypto.randomUUID().slice(0, 8);
 }
 
 export async function createBooking(
@@ -162,12 +172,46 @@ export async function createBooking(
     };
   }
 
-  const refCode = makeRefCode(
-    opts?.refSeed ?? `${input.vehicleId}|${input.interval.startsAt.toISOString()}|${input.customer.email ?? ""}`
-  );
+  // A fixed refSeed (tests) stays deterministic; otherwise every call gets a fresh nonce.
+  // Each retry after a ref_code collision appends the attempt number, so no two
+  // attempts ever reuse a ref.
+  const seedBase =
+    opts?.refSeed ??
+    `${input.vehicleId}|${input.interval.startsAt.toISOString()}|${input.customer.email ?? ""}|${refNonce()}`;
 
   // 5. Write the hold. Status is 'hold', never 'confirmed': nothing is confirmed
   //    until money is actually taken, and this module does not take money.
+  let lastRefError = "";
+  for (let attempt = 0; attempt < REF_CODE_ATTEMPTS; attempt++) {
+    const refCode = makeRefCode(attempt === 0 ? seedBase : `${seedBase}|retry${attempt}`);
+    const written = await insertHold(supabase, input, refCode, {
+      quote: quoteResult.quote,
+      weeklyCents: floor.weeklyCents,
+      rateSource: resolved.source,
+      days,
+    });
+    if (written.ok) return written;
+    if (written.refCollision) {
+      lastRefError = written.detail;
+      continue; // a fresh ref, never "already booked": 23505 here says nothing about the car
+    }
+    return written.result;
+  }
+  return { ok: false, reason: "write_failed", detail: `ref_code collided ${REF_CODE_ATTEMPTS} times: ${lastRefError}` };
+}
+
+type InsertOutcome =
+  | (Extract<CreateBookingResult, { ok: true }> & { refCollision?: never })
+  | { ok: false; refCollision: true; detail: string }
+  | { ok: false; refCollision: false; result: CreateBookingResult };
+
+async function insertHold(
+  supabase: SupabaseClient,
+  input: CreateBookingInput,
+  refCode: string,
+  priced: { quote: RentalQuote; weeklyCents: number; rateSource: string; days: number },
+): Promise<InsertOutcome> {
+  const { quote, weeklyCents, rateSource, days } = priced;
   const { data, error } = await supabase
     .from("bookings")
     .insert({
@@ -181,18 +225,18 @@ export async function createBooking(
       customer_email: input.customer.email?.trim().toLowerCase() ?? null,
       customer_phone: input.customer.phone ?? null,
       vehicle_tier: input.vehicle.tier,
-      quoted_daily_cents: quoteResult.quote.quoted_daily_cents,
-      quoted_weekly_cents: floor.weeklyCents,
-      quoted_deposit_cents: quoteResult.quote.quoted_deposit_cents,
-      pricing_rule_id: quoteResult.quote.pricing_rule_id,
-      insurance_coverage_source: quoteResult.quote.insurance ? "tmmt_internal" : "pending",
+      quoted_daily_cents: quote.quoted_daily_cents,
+      quoted_weekly_cents: weeklyCents,
+      quoted_deposit_cents: quote.quoted_deposit_cents,
+      pricing_rule_id: quote.pricing_rule_id,
+      insurance_coverage_source: quote.insurance ? "tmmt_internal" : "pending",
       insurance_verified: false,
       lot_release_approved: false,
       metadata: {
-        rate_source: resolved.source,
-        quote_lines: quoteResult.quote.lines,
-        subtotal_cents: quoteResult.quote.subtotal_cents,
-        due_now_cents: quoteResult.quote.due_now_cents,
+        rate_source: rateSource,
+        quote_lines: quote.lines,
+        subtotal_cents: quote.subtotal_cents,
+        due_now_cents: quote.due_now_cents,
         days,
       },
     })
@@ -200,19 +244,23 @@ export async function createBooking(
     .single();
 
   if (error) {
+    // A ref_code collision says nothing about the car: the caller retries with a new ref.
+    if (error.code === PG_UNIQUE_VIOLATION) {
+      return { ok: false, refCollision: true, detail: error.message };
+    }
     // The database refused because another request took the car first. This is
     // an expected outcome under load, not an error condition.
     const conflict = mapBookingWriteError(error);
-    if (conflict) return conflict;
-    return { ok: false, reason: "write_failed", detail: error.message };
+    if (conflict) return { ok: false, refCollision: false, result: conflict };
+    return { ok: false, refCollision: false, result: { ok: false, reason: "write_failed", detail: error.message } };
   }
 
   return {
     ok: true,
     bookingId: (data as { id: string }).id,
     refCode: (data as { ref_code: string }).ref_code,
-    quote: quoteResult.quote,
-    weeklyCents: floor.weeklyCents,
+    quote,
+    weeklyCents,
   };
 }
 
@@ -220,8 +268,10 @@ export async function createBooking(
  * Turn a database refusal into a user-facing conflict, or null if it is not one.
  *
  * 23P01 means the dates are taken: another booking (bookings_no_overlap) or a
- * vehicle block (vehicle_occupancy_no_block_overlap) holds the car. 23505 on the
- * deterministic ref_code means this same car/start/customer was already booked.
+ * vehicle block (vehicle_occupancy_no_block_overlap) holds the car.
+ * 23505 (bookings_ref_code_key) is NOT a conflict: refs are random per attempt,
+ * so a collision says nothing about the car. createBooking retries it with a new
+ * ref, and this function returns null for it.
  * 23514 is either a CHECK failure (bookings_interval_sane / bookings_status_check)
  * or the tenant-integrity trigger (public.enforce_vehicle_org, message prefix
  * "vehicle_org_mismatch"). Neither means "already booked", so each gets its own
@@ -240,8 +290,6 @@ export function mapBookingWriteError(error: {
           ? BOOKING_BLOCKED_MESSAGE
           : BOOKING_CONFLICT_MESSAGE,
       };
-    case PG_UNIQUE_VIOLATION:
-      return { ok: false, reason: "conflict_race", message: BOOKING_CONFLICT_MESSAGE };
     case PG_CHECK_VIOLATION:
       if ((error.message ?? "").includes(VEHICLE_ORG_MISMATCH)) {
         return { ok: false, reason: "wrong_org", message: BOOKING_WRONG_ORG_MESSAGE };

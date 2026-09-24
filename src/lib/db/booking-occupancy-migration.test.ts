@@ -210,9 +210,17 @@ describe("hold expiry", () => {
     expect(norm).toContain("grant execute on function public.expire_stale_booking_holds(interval) to service_role;");
   });
 
-  it("is scheduled by pg_cron under a stable job name (idempotent upsert)", () => {
+  it("ships DISABLED: no cron.schedule outside comments (QA B2)", () => {
+    expect(norm).not.toContain("cron.schedule(");
+    // ...but the one-line enable is documented in the file for the owner.
+    expect(raw).toContain(
+      "select cron.schedule('expire-stale-booking-holds', '*/5 * * * *', 'select public.expire_stale_booking_holds()');",
+    );
+  });
+
+  it("deactivates any pre-existing active job of that name", () => {
     expect(norm).toContain(
-      "perform cron.schedule('expire-stale-booking-holds', '*/5 * * * *', 'select public.expire_stale_booking_holds()')",
+      "for v_job in select jobid from cron.job where jobname = 'expire-stale-booking-holds' and active loop perform cron.alter_job(v_job, active := false);",
     );
   });
 });
@@ -248,6 +256,72 @@ describe("RLS", () => {
     );
     expect(norm).toContain("grant select on public.vehicle_occupancy to authenticated;");
     expect(norm).not.toMatch(/grant [^;]*(insert|update|delete|truncate|all)[^;]*vehicle_occupancy/);
+  });
+});
+
+describe("service_role hardening (QA B4)", () => {
+  it("revokes TRUNCATE on all three tables from service_role", () => {
+    expect(norm).toContain(
+      "revoke truncate on public.bookings, public.vehicle_blocks, public.vehicle_occupancy from service_role;",
+    );
+  });
+
+  it("service_role cannot write the ledger directly either", () => {
+    expect(norm).toContain("revoke insert, update, delete, truncate on public.vehicle_occupancy from service_role;");
+    expect(norm).not.toMatch(/grant [^;]*vehicle_occupancy to service_role/);
+  });
+});
+
+describe("rollback script (QA B3)", () => {
+  const DOWN = join(process.cwd(), "supabase/rollbacks/20260924180000_down.sql");
+  const down = existsSync(DOWN)
+    ? readFileSync(DOWN, "utf8")
+        .split("\n")
+        .map((l) => l.replace(/--.*$/, ""))
+        .join("\n")
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+    : "";
+
+  it("exists, is referenced from the migration header, and is not in supabase/migrations", () => {
+    expect(existsSync(DOWN)).toBe(true);
+    expect(raw).toContain("ROLLBACK: supabase/rollbacks/20260924180000_down.sql");
+    expect(readdirSync(MIGRATIONS)).not.toContain("20260924180000_down.sql");
+  });
+
+  it("drops every object the forward migration creates", () => {
+    for (const stmt of [
+      "drop trigger if exists bookings_sync_occupancy on public.bookings;",
+      "drop trigger if exists bookings_enforce_vehicle_org on public.bookings;",
+      "drop table if exists public.vehicle_occupancy;",
+      "drop table if exists public.vehicle_blocks;",
+      "drop function if exists public.expire_stale_booking_holds(interval);",
+      "drop function if exists public.vehicle_occupancy_sync();",
+      "drop function if exists public.enforce_vehicle_org();",
+      "perform cron.unschedule('expire-stale-booking-holds');",
+    ]) {
+      expect(down, stmt).toContain(stmt);
+    }
+  });
+
+  it("restores what the forward migration changed on bookings", () => {
+    expect(down).toContain("alter table public.bookings alter column status set default 'inquiry';");
+    expect(down).toContain("grant truncate on public.bookings to service_role;");
+  });
+
+  it("keeps the pre-existing live guards (they predate this migration)", () => {
+    expect(down).not.toMatch(/drop constraint/);
+    expect(down).not.toContain("bookings_vehicle_window_idx");
+    expect(down).not.toContain("drop extension");
+  });
+});
+
+describe("old 20260916235900 header is no longer stale", () => {
+  it("says it IS applied, under ledger version 20260917200051", () => {
+    const head = readFileSync(join(MIGRATIONS, "20260916235900_bookings_no_double_booking.sql"), "utf8").slice(0, 800);
+    expect(head).not.toContain("NOT APPLIED. Written");
+    expect(head).toContain("APPLIED TO PRODUCTION");
+    expect(head).toContain("20260917200051");
   });
 });
 
