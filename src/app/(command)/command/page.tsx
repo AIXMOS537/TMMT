@@ -1,31 +1,57 @@
 import Link from "next/link";
 import { Card, PageHeader } from "@/components/ui";
-import { commandHubSections } from "@/lib/command-hub-nav";
-import { OWNER_HUB_HOST } from "@/lib/site-domains";
+import { commandHubSectionsFor } from "@/lib/command-hub-nav";
+import { getRequestBrand } from "@/lib/platform/request-brand";
 import { ChevronRight } from "lucide-react";
 
-export const metadata = {
-  title: "Owner command hub — TMMT",
-  description: "Private ops navigation for fleet, leads, bookings, and command messaging",
-};
+// Title follows the tenant. A white-labelled operator must not see "TMMT" in their
+// own browser tab. getRequestBrand() resolves from the request host, same source the
+// rest of the brand chrome already uses.
+export async function generateMetadata() {
+  const brand = await getRequestBrand();
+  return {
+    title: `Owner command hub \u2014 ${brand.displayName}`,
+    description:
+      "Private ops navigation for fleet, leads, bookings, and command messaging",
+  };
+}
 
-export default function CommandHubPage() {
+export default async function CommandHubPage() {
+  const brand = await getRequestBrand();
+  const sections = commandHubSectionsFor(brand);
+  const marketingHost = brand.domains.marketing ?? null;
+  const opsHost = brand.domains.app ?? null;
   return (
     <div className="space-y-8">
       <PageHeader
         title="Owner command hub"
-        description={`Private ops on ${OWNER_HUB_HOST} — fleet, pipeline, workflow, and executive command`}
+        description={`Private ops${opsHost ? ` on ${opsHost}` : ""} — fleet, pipeline, workflow, and executive command`}
       />
 
-      <Card className="p-4 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-        <p className="text-sm text-gray-700 dark:text-slate-300">
-          Public marketing and customer forms stay on{" "}
-          <span className="font-medium">allinonemanagementsolutions.com</span>. This hub is
-          owner-only on <span className="font-medium">{OWNER_HUB_HOST}</span>.
-        </p>
-      </Card>
+      {/* Both hosts come from the tenant record. These were hardcoded to
+          allinonemanagementsolutions.com — which is the AIXMOS tenant's domain, so every
+          white-labelled operator was told their own public site was somebody else's.
+          If a tenant has no hosts configured, say nothing rather than guess. */}
+      {(marketingHost || opsHost) && (
+        <Card className="p-4 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
+            {marketingHost && (
+              <>
+                Public marketing and customer forms stay on{" "}
+                <span className="font-medium">{marketingHost}</span>.{" "}
+              </>
+            )}
+            {opsHost && (
+              <>
+                This hub is owner-only on{" "}
+                <span className="font-medium">{opsHost}</span>.
+              </>
+            )}
+          </p>
+        </Card>
+      )}
 
-      {commandHubSections.map((section) => (
+      {sections.map((section) => (
         <section key={section.title}>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-3">
             {section.title}

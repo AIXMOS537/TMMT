@@ -8,7 +8,29 @@ test.describe("Public Forms", () => {
     await expect(page.locator('input[name="phone"]')).toBeVisible();
   });
 
-  test("lead intake form validates and submits", async ({ page }) => {
+  /**
+   * THIS TEST WRITES A REAL ROW. It is the only one here that does, and it is how the
+   * anonymous-lead loss (the RETURNING-clause bug) was proven fixed end to end.
+   *
+   * It must not run against production. Verified 2026-09-17: eleven "Test User" rows had
+   * accumulated in the live `incoming_leads` book — three more on each prod smoke run —
+   * inflating an 890-lead book with fakes. The consent gate caught them
+   * (`contact_gate = BLOCK_NO_PROVENANCE`, so nobody was ever contacted), but a test that
+   * quietly pollutes the real lead book is still a test that lies about the size of the
+   * business.
+   *
+   * Against localhost or a preview deployment it runs normally and is valuable. Against
+   * production it skips, unless someone explicitly opts in for a one-off verification.
+   */
+  test("lead intake form validates and submits", async ({ page, baseURL }) => {
+    const target = baseURL ?? "";
+    const isProd = /tmmt-ops\.vercel\.app|tmmtrentals\.com/i.test(target);
+    test.skip(
+      isProd && process.env.E2E_ALLOW_PROD_WRITES !== "1",
+      `refusing to write a lead into production (${target}). ` +
+        `Run against localhost, or set E2E_ALLOW_PROD_WRITES=1 for a deliberate one-off.`,
+    );
+
     await page.goto("/forms/lead-intake");
     await page.fill('input[name="contact_name"]', "Test User");
     await page.fill('input[name="phone"]', "5551234567");
