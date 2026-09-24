@@ -4,6 +4,45 @@
 > `@docs/AIXMOS_MASTER_PROJECT.md` when deep context is needed (it's large; don't
 > import it by default or it bloats every session).
 
+## ACTIVE PROGRAM — NATIVE AIRTABLE REPLACEMENT (two workstreams, do not conflate)
+- **Workstream A — Airtable Exit.** Plan of record: `AIRTABLE-EXIT-EXECUTION-PLAN.md`. Work its
+  phases in order; a gate is passed by producing its named artifact in `evidence/`, never by
+  believing the work is done.
+- **Workstream B — TMMT Native Capability.** Map of record: `TMMT-AIRTABLE-CAPABILITY-MATRIX.md`.
+  Goal is to make TMMT capable of replacing Airtable **broadly**, without prematurely building
+  generic platform infrastructure nothing needs. Capabilities not currently required are
+  **DEFERRED, never "out of scope"** (§7 is a deferral register: each entry records what would
+  make it a requirement and the cheap decision that keeps the path open). Build against it; do
+  not rebuild from memory of what Airtable offers. Current build order: rules/formula engine →
+  attachment provenance → automation safety envelope.
+- A migration blocker does not stop product development. A product feature does not authorize an
+  unsafe migration.
+
+Standing rules while this program is open:
+- **Nothing is deleted from Airtable, and the subscription is not cancelled,** until Gate 2
+  (attachments) and Gate 4 (write paths) both pass. Airtable is the sole copy of 706 attachment
+  records including identity documents.
+- **Tag every finding VERIFIED / INFERRED / REPORTED / UNKNOWN / CONFLICT.** UNKNOWN means
+  uncounted — it never means empty.
+- Attachment extraction is blocked on a **written retention rule from counsel**. Claude Code
+  implements that decision; it does not make it.
+- **Code existing != integration live.** Distinguish: code exists -> configured -> enabled ->
+  capable -> actually fired -> recently active. Never call a system live because code for it exists.
+- **706 = attachment-bearing RECORDS, not files** (file count UNKNOWN until enumerated).
+  **293 = identity-document records**, not 283. A populated jsonb attachment column is evidence
+  of a MISSING file, not a migrated one.
+- Assume concurrent operators/jobs in production: re-check state before mutating; never reset,
+  rebase or force-push over other work.
+- **Airtable automation logic is unrecoverable after cancellation.** 8 automations hold 15
+  `customScript` bodies that the API will not return and the base export does not include. They
+  must be captured from the live UI first: `evidence/automation-logic-capture.md`. Never infer a
+  script body from its neighbouring nodes — UNKNOWN until captured. **No cancellation gate may
+  pass while unrecoverable automation logic remains uncaptured.**
+- **Open owner decisions live in `docs/decisions/OWNER-DECISION-PACK.md`** — every blocker
+  turned into a question with the real counts attached. Check there before asking the owner
+  anything, and before assuming a rule is unknowable.
+- Live status: `evidence/README.md`.
+
 ## WHO / WHAT
 AIXMOS is the AI + automation spine for TMMT Auto Services LLC (PROJECT X HAILMARY, CEO).
 You are working inside the codebase that powers the platform. Owner is moving from

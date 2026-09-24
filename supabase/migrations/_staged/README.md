@@ -10,6 +10,7 @@ migrations that **should** run, once a human has read them.
 
 | File | What it does | Blocked on |
 |---|---|---|
+| `20260922000000_attachment_provenance_STAGED.sql` | CHANGE_REQUEST_003 — 12 provenance columns on `documents`/`vehicle_media`, `customer_email` nullable, idempotency indexes, 7 private buckets. Unblocks Phase 2 extraction (Gate 2). All 3 tables hold 0 rows; rollback clean while empty | **owner authorization + Gate 0 offline archive must exist first** |
 | `20260908000000_agent_messages_provider_sid_index_STAGED.sql` | inbound-SMS replay gate (`src/app/api/agent/sms/inbound/route.ts`, F-01) | staged |
 | `20260908000200_audit_events_webhook_replay_indexes_STAGED.sql` | Cal.com booking-uid + Stripe event-id replay gates (`src/lib/agent/webhook-replay.ts`, T-02b) | staged |
 | `20260908000002_dnc_stop_rows_braden_hott_STAGED.sql` | Two customers replied STOP but had no `do_not_contact_numbers` row (M1 audit 2026-09-08). **APPLIED live 2026-09-09T00:36Z** by M1 Rick on owner approval; the owner runner (`02-Needs-You/APPLY-DNC-STOP-ROWS-20260908.mjs`) re-ran idempotently and confirmed both …8055 and …9845 ON DNC. File kept as the record | done |
