@@ -1,7 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { makeFakeSupabase, writes } from "@/lib/testing/fake-supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createBooking, makeRefCode, type CreateBookingInput } from "./create-booking";
+import {
+  BOOKING_BLOCKED_MESSAGE,
+  BOOKING_CONFLICT_MESSAGE,
+  BOOKING_REJECTED_DATES_MESSAGE,
+  createBooking,
+  makeRefCode,
+  mapBookingWriteError,
+  type CreateBookingInput,
+} from "./create-booking";
 
 const RULE = {
   id: "r-econ", tier: "economy", make: null, model: null, year_min: null, year_max: null,
@@ -145,15 +153,43 @@ describe("createBooking — losing the race", () => {
   it("turns a 23P01 exclusion violation into a clean conflict, not a crash", async () => {
     // This is what the database returns when another request took the car
     // between our availability check and our insert.
-    const c = client({ insertError: { code: "23P01", message: "conflicting key value" } });
+    const c = client({
+      insertError: {
+        code: "23P01",
+        message: 'conflicting key value violates exclusion constraint "bookings_no_overlap"',
+      },
+    });
     const r = await createBooking(c as unknown as SupabaseClient, input());
-    expect(r).toEqual({ ok: false, reason: "conflict_race" });
+    expect(r).toEqual({ ok: false, reason: "conflict_race", message: BOOKING_CONFLICT_MESSAGE });
+    expect(BOOKING_CONFLICT_MESSAGE).toBe("That car is already booked for those dates.");
+  });
+
+  it("says the car is blocked when a vehicle_block (not a booking) took the dates", async () => {
+    const c = client({
+      insertError: {
+        code: "23P01",
+        message: 'conflicting key value violates exclusion constraint "vehicle_occupancy_no_block_overlap"',
+      },
+    });
+    const r = await createBooking(c as unknown as SupabaseClient, input());
+    expect(r).toEqual({ ok: false, reason: "conflict_race", message: BOOKING_BLOCKED_MESSAGE });
+  });
+
+  it("turns a 23514 check violation into a user-facing refusal, not write_failed", async () => {
+    const c = client({
+      insertError: {
+        code: "23514",
+        message: 'new row for relation "bookings" violates check constraint "bookings_interval_sane"',
+      },
+    });
+    const r = await createBooking(c as unknown as SupabaseClient, input());
+    expect(r).toEqual({ ok: false, reason: "rejected_dates", message: BOOKING_REJECTED_DATES_MESSAGE });
   });
 
   it("treats a duplicate ref_code as a conflict too", async () => {
     const c = client({ insertError: { code: "23505", message: "duplicate key" } });
     const r = await createBooking(c as unknown as SupabaseClient, input());
-    expect(r).toEqual({ ok: false, reason: "conflict_race" });
+    expect(r).toEqual({ ok: false, reason: "conflict_race", message: BOOKING_CONFLICT_MESSAGE });
   });
 
   it("surfaces any other write failure instead of swallowing it", async () => {
@@ -165,5 +201,20 @@ describe("createBooking — losing the race", () => {
     } else {
       throw new Error("expected write_failed");
     }
+  });
+});
+
+describe("mapBookingWriteError", () => {
+  it("maps only the refusal codes and leaves everything else to write_failed", () => {
+    expect(mapBookingWriteError({ code: "23P01", message: "x" })?.message).toBe(BOOKING_CONFLICT_MESSAGE);
+    expect(mapBookingWriteError({ code: "23514", message: "x" })?.reason).toBe("rejected_dates");
+    expect(mapBookingWriteError({ code: "42501", message: "permission denied" })).toBeNull();
+    expect(mapBookingWriteError({ code: null, message: "network" })).toBeNull();
+  });
+
+  it("never leaks the raw database message to the user", () => {
+    const raw = 'conflicting key value violates exclusion constraint "bookings_no_overlap"';
+    const r = mapBookingWriteError({ code: "23P01", message: raw });
+    expect(r?.message).not.toContain("constraint");
   });
 });
