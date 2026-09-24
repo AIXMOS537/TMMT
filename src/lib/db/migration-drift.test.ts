@@ -55,10 +55,13 @@ function repoVersions(): { version: string; file: string }[] {
 const KNOWN_UNAPPLIED = 54;
 
 /*
- * 53 -> 54 on 2026-09-24, deliberately: 20260924180000_rental_reservation_spine.sql
- * (feat/rental-reservation-spine). Genuinely never run on production -- rehearsed on
- * tmmt-e2e-throwaway (schema rental_proto) only. Applying it is a prod write and needs
- * the owner's baton. Drops back to 53 when it is applied and reconciled.
+ * 53 -> 54 on 2026-09-24, deliberately: 20260924180000_vehicle_blocks_and_booking_occupancy.sql
+ * (feat/rental-reservation-spine, E6b; it replaces E6's withdrawn reservations file). Genuinely
+ * never run on production -- rehearsed on tmmt-e2e-throwaway (schema rental_proto) only.
+ * Applying it is a prod write and needs the owner's baton. Drops back to 53 when it is
+ * applied and reconciled. Its section 1 re-states bookings_no_overlap / status_check /
+ * interval_sane guarded by IF NOT EXISTS; those are live under ledger version 20260917200051
+ * (see LEDGER-SNAPSHOT.txt), so that part is a no-op on prod.
  */
 
 /*

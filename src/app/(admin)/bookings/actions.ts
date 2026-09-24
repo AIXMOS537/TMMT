@@ -291,6 +291,10 @@ export async function placeHold(input: {
   });
 
   if (result.ok) return { ok: true, refCode: result.refCode, bookingId: result.bookingId };
+  // The database refused the dates: its message is already written for a human.
+  if (result.reason === "conflict_race" || result.reason === "rejected_dates") {
+    return { ok: false, error: result.message };
+  }
 
   // Every refusal is deliberate. Say which one, in words an operator can act on.
   const messages: Record<string, string> = {
@@ -298,7 +302,6 @@ export async function placeHold(input: {
     not_priceable: "That car has no posted price and no usable rate — price it before booking.",
     below_floor: "Refused: the rate works out below this car's own floor price.",
     quote_failed: "Could not price this booking.",
-    conflict_race: "Someone booked that car a moment before you. Reload the board.",
     write_failed: "The booking could not be saved.",
   };
   return { ok: false, error: messages[result.reason] ?? "The booking was refused." };

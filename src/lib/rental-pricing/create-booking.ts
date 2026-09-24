@@ -17,7 +17,9 @@ import type { QuotableVehicle, RentalQuote } from "./quote";
  *      only thing that can win a race between two simultaneous requests.
  * Layer 1 without layer 2 is a lie under concurrency, so this module treats a
  * SQLSTATE 23P01 from the insert as a normal conflict outcome, not a crash.
- * Until the migration is applied, only layer 1 exists — see BOOKING_GUARD_NOTE.
+ * Since migration 20260924180000 a 23P01 can also come from the occupancy
+ * ledger (vehicle_occupancy_no_block_overlap): the car is blocked for
+ * maintenance / out of service / owner hold / damage over those dates.
  *
  * WHERE THIS SITS RELATIVE TO THE OWNER-APPROVAL GATE
  * CLAUDE.md requires every customer-facing, financial, legal or production-bound
@@ -33,14 +35,26 @@ import type { QuotableVehicle, RentalQuote } from "./quote";
  */
 
 export const BOOKING_GUARD_NOTE =
-  "Database-level overlap protection requires migration " +
-  "20260916235900_bookings_no_double_booking.sql. Until it is applied, two " +
-  "simultaneous requests can both pass the application check.";
+  "Database-level overlap protection is bookings_no_overlap (live in production, " +
+  "applied from 20260916235900_bookings_no_double_booking.sql under ledger version " +
+  "20260917200051). Block-vs-booking protection needs migration " +
+  "20260924180000_vehicle_blocks_and_booking_occupancy.sql, which is NOT applied yet.";
+
+/** What the renter / operator is told when the database refuses the dates. */
+export const BOOKING_CONFLICT_MESSAGE = "That car is already booked for those dates.";
+export const BOOKING_BLOCKED_MESSAGE =
+  "That car is unavailable for those dates (maintenance or out of service).";
+export const BOOKING_REJECTED_DATES_MESSAGE =
+  "Those dates can't be booked for this car. Check the dates and try again.";
 
 /** Postgres exclusion_violation — the race-loss signal. */
 const PG_EXCLUSION_VIOLATION = "23P01";
 /** Postgres unique_violation — a ref_code collision. */
 const PG_UNIQUE_VIOLATION = "23505";
+/** Postgres check_violation — bookings_interval_sane / bookings_status_check. */
+const PG_CHECK_VIOLATION = "23514";
+/** The occupancy-ledger constraint: a vehicle_block covers these dates. */
+const BLOCK_OVERLAP_CONSTRAINT = "vehicle_occupancy_no_block_overlap";
 
 export type CreateBookingInput = {
   /** Row from the live `fleet` table — the real inventory. */
@@ -65,7 +79,8 @@ export type CreateBookingResult =
   | { ok: false; reason: "not_priceable" }
   | { ok: false; reason: "below_floor"; weeklyCents: number; floorWeeklyCents: number }
   | { ok: false; reason: "quote_failed"; detail: string }
-  | { ok: false; reason: "conflict_race" }
+  | { ok: false; reason: "conflict_race"; message: string }
+  | { ok: false; reason: "rejected_dates"; message: string }
   | { ok: false; reason: "write_failed"; detail: string };
 
 /**
@@ -182,8 +197,8 @@ export async function createBooking(
   if (error) {
     // The database refused because another request took the car first. This is
     // an expected outcome under load, not an error condition.
-    if (error.code === PG_EXCLUSION_VIOLATION) return { ok: false, reason: "conflict_race" };
-    if (error.code === PG_UNIQUE_VIOLATION) return { ok: false, reason: "conflict_race" };
+    const conflict = mapBookingWriteError(error);
+    if (conflict) return conflict;
     return { ok: false, reason: "write_failed", detail: error.message };
   }
 
@@ -194,4 +209,36 @@ export async function createBooking(
     quote: quoteResult.quote,
     weeklyCents: floor.weeklyCents,
   };
+}
+
+/**
+ * Turn a database refusal into a user-facing conflict, or null if it is not one.
+ *
+ * 23P01 means the dates are taken: another booking (bookings_no_overlap) or a
+ * vehicle block (vehicle_occupancy_no_block_overlap) holds the car. 23505 on the
+ * deterministic ref_code means this same car/start/customer was already booked.
+ * 23514 is a CHECK failure (bookings_interval_sane / bookings_status_check). That
+ * is a real refusal the user can act on, but it is NOT "already booked", so it
+ * gets its own honest message rather than the conflict one.
+ */
+export function mapBookingWriteError(error: {
+  code?: string | null;
+  message?: string | null;
+}): Extract<CreateBookingResult, { reason: "conflict_race" | "rejected_dates" }> | null {
+  switch (error.code) {
+    case PG_EXCLUSION_VIOLATION:
+      return {
+        ok: false,
+        reason: "conflict_race",
+        message: (error.message ?? "").includes(BLOCK_OVERLAP_CONSTRAINT)
+          ? BOOKING_BLOCKED_MESSAGE
+          : BOOKING_CONFLICT_MESSAGE,
+      };
+    case PG_UNIQUE_VIOLATION:
+      return { ok: false, reason: "conflict_race", message: BOOKING_CONFLICT_MESSAGE };
+    case PG_CHECK_VIOLATION:
+      return { ok: false, reason: "rejected_dates", message: BOOKING_REJECTED_DATES_MESSAGE };
+    default:
+      return null;
+  }
 }
