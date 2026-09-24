@@ -127,6 +127,90 @@ async function acknowledgementCount(
   return Math.max(byJourney, byProfile);
 }
 
+
+/**
+ * Core modules only. Gate 40 is "All CORE rebuild modules at 100%", and `training_modules`
+ * carries `is_core` precisely to make that distinction — an earlier version of this file
+ * counted every active module, so an optional extra could hold a renter back from a car.
+ */
+async function coreModuleTotal(db: SupabaseClient): Promise<number | null> {
+  const { count, error } = await db
+    .from("training_modules")
+    .select("*", { count: "exact", head: true })
+    .eq("is_core", true)
+    .eq("active", true);
+  if (error) throw new Error(`[drive-to-own] training_modules count failed: ${error.message}`);
+  return (count ?? 0) > 0 ? count! : null;
+}
+
+/**
+ * This renter's training. Counted across journey_id (the normal case) and profile_id
+ * (historical rows), because 20260917120000 made journey the usable key.
+ *
+ * Returns nulls when the table is unwired system-wide — never zeros, which would report a
+ * renter as having skipped training nobody has ever recorded.
+ */
+async function trainingProgress(
+  db: SupabaseClient,
+  journey: JourneyRow,
+): Promise<{ started: boolean | null; coreComplete: number | null }> {
+  const total = await countAll(db, "training_module_progress");
+  if (total === 0) return { started: null, coreComplete: null };
+
+  const filters: Array<[string, string]> = [["journey_id", journey.id]];
+  if (journey.profile_id) filters.push(["profile_id", journey.profile_id]);
+
+  let started = 0;
+  let coreComplete = 0;
+  for (const [col, val] of filters) {
+    const { data, error } = await db
+      .from("training_module_progress")
+      .select("module_id, percent_complete, training_modules!inner(is_core, active)")
+      .eq(col, val);
+    if (error) throw new Error(`[drive-to-own] training progress read failed: ${error.message}`);
+    for (const raw of (data ?? []) as unknown[]) {
+      const row = raw as {
+        percent_complete: number | null;
+        // PostgREST returns an embedded relation as an array on some shapes and an object
+        // on others depending on the join. Handle both rather than trusting one.
+        training_modules: { is_core: boolean; active: boolean } | { is_core: boolean; active: boolean }[] | null;
+      };
+      started += 1;
+      const m = Array.isArray(row.training_modules) ? row.training_modules[0] : row.training_modules;
+      if (m?.is_core && m?.active && (row.percent_complete ?? 0) >= 100) coreComplete += 1;
+    }
+  }
+  return { started: started > 0, coreComplete };
+}
+
+/**
+ * The renter's credit enrollment. `credit_enrollments` is already journey-keyed, so no
+ * migration was needed here — only a read that distinguishes an ACTIVE plan from a
+ * cancelled or completed one, and spots the Path C upgrade that satisfies gate 50.
+ */
+async function enrollmentState(
+  db: SupabaseClient,
+  journeyId: string,
+): Promise<{ active: boolean | null; dfy: boolean | null }> {
+  const total = await countAll(db, "credit_enrollments");
+  if (total === 0) return { active: null, dfy: null };
+
+  const { data, error } = await db
+    .from("credit_enrollments")
+    .select("status, delivery_mode, completed_at")
+    .eq("journey_id", journeyId);
+  if (error) throw new Error(`[drive-to-own] credit_enrollments read failed: ${error.message}`);
+
+  const rows = (data ?? []) as Array<{ status: string | null; delivery_mode: string | null; completed_at: string | null }>;
+  const live = rows.filter(r => (r.status ?? "").toLowerCase() === "active" && !r.completed_at);
+  return {
+    active: live.length > 0,
+    // Path C ($1,000 mentorship) is delivery_mode 'done_for_you'. Optional on the ladder,
+    // so this never blocks — it only lets a renter who DID buy it see it marked.
+    dfy: rows.some(r => r.delivery_mode === "done_for_you"),
+  };
+}
+
 export async function loadLadderEvidence(
   db: SupabaseClient,
   journey: JourneyRow,
@@ -134,7 +218,7 @@ export async function loadLadderEvidence(
   // How many education sections a renter must acknowledge. Seeded content, so a zero here
   // means the programme has no content yet — the ladder treats that as unknown, not passed.
   const requiredSections = await countAll(db, "credit_education_sections");
-  const coreModulesTotal = await countAll(db, "training_modules");
+  const coreModulesTotal = await coreModuleTotal(db);
 
   // ── JOIN KEYS ARE NOT INTERCHANGEABLE. Verified against production 2026-09-16:
   //     credit_education_acknowledgments -> profile_id
@@ -151,12 +235,8 @@ export async function loadLadderEvidence(
   // somewhere to live. Counted across BOTH keys.
   const acknowledged = await acknowledgementCount(db, journey);
 
-  const enrollments = await wiredCount(db, "credit_enrollments", "journey_id", journey.id);
-
-  // No profile means this is unevidencable for this renter, which is `unknown` and never 0.
-  const moduleProgress = journey.profile_id
-    ? await wiredCount(db, "training_module_progress", "profile_id", journey.profile_id)
-    : null;
+  const enrollment = await enrollmentState(db, journey.id);
+  const training = await trainingProgress(db, journey);
 
   const ltoSigned = await wiredCount(db, "lto_agreements", "journey_id", journey.id);
 
@@ -168,16 +248,13 @@ export async function loadLadderEvidence(
     educationSectionsAcknowledged: acknowledged,
     educationSectionsRequired: requiredSections > 0 ? requiredSections : null,
 
-    creditEnrollmentActive: enrollments === null ? null : enrollments > 0,
+    creditEnrollmentActive: enrollment.active,
 
-    anyModuleStarted: moduleProgress === null ? null : moduleProgress > 0,
-    // Completion needs a per-module progress read that the schema does not yet expose in a
-    // single count. Refusing is correct: claiming "0 complete" would be inventing a result.
-    coreModulesComplete: null,
-    coreModulesTotal: coreModulesTotal > 0 ? coreModulesTotal : null,
+    anyModuleStarted: training.started,
+    coreModulesComplete: training.coreComplete,
+    coreModulesTotal,
 
-    // Path C is a paid upgrade with no recorded source yet. Optional, so it never blocks.
-    mentorshipDfyActive: null,
+    mentorshipDfyActive: enrollment.dfy,
 
     ltoAgreementSigned: ltoSigned === null ? null : ltoSigned > 0,
     // Turnover is recorded on the agreement's status once that write path exists.
