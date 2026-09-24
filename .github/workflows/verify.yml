@@ -46,5 +46,13 @@ jobs:
         run: npx tsc --noEmit
       - name: Unit tests
         run: npm test
+      # Release-blocking regression guard for the profiles self-promote-to-admin
+      # hole (PR #249). Embedded Postgres 17 (PGlite) with production's helper
+      # bodies, policies and grants; every attack must fail with the migration.
+      - name: SQL security rehearsals (profiles privilege escalation)
+        run: |
+          npm ci --prefix scripts/tests/sql --no-audit --no-fund
+          node scripts/tests/sql/profiles-access-columns.rehearsal.mjs
+          node scripts/tests/sql/profiles-escalation-adversarial.rehearsal.mjs
       - name: Production build
         run: npm run build

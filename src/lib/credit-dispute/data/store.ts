@@ -1,4 +1,6 @@
 import type { CreditProfile, DisputeRoundType, NegativeItem } from "../types";
+import type { ItemAssessment } from "../policy/dispute-policy";
+import type { DisputeLetterBatch } from "../engine/protocol";
 
 export type ReportSource = "disputefox" | "myfreescorenow" | "smartcredit";
 
@@ -22,6 +24,15 @@ export interface StoredClient {
   disputeRounds: StoredDisputeRound[];
   importedAt: string;
   externalId?: string;
+  /**
+   * The accuracy call a human made on each item, keyed by negative-item id.
+   *
+   * Separate from the item itself because it is a JUDGEMENT about the item, made
+   * by a named person at a point in time — not a property of the tradeline. It is
+   * also the thing the policy gate requires before any letter exists, so it needs
+   * to survive a page reload.
+   */
+  assessments?: Record<string, ItemAssessment>;
 }
 
 /**
@@ -65,3 +76,22 @@ export function clearLegacyClients(): void {
 export function generateId(): string {
   return `client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+
+/*
+ * setItemAssessment / getAssessments / roundsSentByItem used to live here.
+ *
+ * They read and wrote the whole client record in localStorage - and that
+ * record carries legal name, email, phone, date of birth, social-security
+ * last four, home address and tri-bureau scores. Storing an accuracy call
+ * there meant storing all of it there.
+ *
+ * They are gone, not moved: their server replacements are
+ * recordItemAssessment() in the desk's actions.ts, and the read side needs no
+ * function at all because listDisputeClients() already returns `assessments`
+ * and `disputeRounds` inside each StoredClient (dispute_clients.payload).
+ *
+ * Do not reintroduce them. The only localStorage left in this file is the
+ * one-way legacy rescue above (readLegacyClients / clearLegacyClients), which
+ * exists to empty the old key, never to fill it.
+ */

@@ -6,7 +6,9 @@
  * Order of guards, and why each sits where it does:
  *   signature → parse → org → lead/conversation → REPLAY GATE → record inbound
  *   → COMMUNICATION CONTROL (STOP keyword → suppress; START; stop-like → hold)
- *   → OPTED-OUT GUARD → OUTBOUND GATE (A2P + do-not-contact) → agent → reply.
+ *   → OPTED-OUT GUARD → OUTBOUND GATE (A2P + do-not-contact) → agent
+ *   → OWNER-APPROVAL HOLD (AI draft stored, nothing sent, unless the org is on
+ *     B3_AUTO_REPLY_ORGS) → reply.
  * Communication control sits before every AI guard and the LLM: honouring a
  * stop never depends on the licence, the kill switch, the spend cap or the
  * model. Everything expensive or customer-visible (the LLM call, the state
@@ -23,6 +25,7 @@ import {
 } from '@/lib/agent/guard'
 import { handoffToHuman } from '@/lib/agent/handoff'
 import { emitAudit } from '@/lib/agent/audit'
+import { isAutoReplyAuthorized } from '@/lib/agent/auto-reply-policy'
 import { isOptInMessage, optOutAutoReply } from '@/lib/agent/compliance/opt-out'
 import { recordGlobalOptOut } from '@/lib/agent/compliance/record-opt-out'
 import { classifyCommunicationControl } from '@/lib/agent/compliance/communication-control'
@@ -373,40 +376,61 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
     await db.from('incoming_leads').update(patch).eq('id', lead.id)
 
-    // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
-    // The patch above is scoped to ONE lead row in ONE org. do_not_contact_numbers
-    // is what assertOutboundAllowed() checks on every outbound message for every
-    // org, and nothing in this codebase wrote to it — so a re-imported lead row
-    // (opted_out defaulting to false) or a different org could text this person
-    // again. A person who says stop means stop, not "stop from this record".
-    // Failure is recorded on the message instead of thrown: the customer's reply
-    // must not be lost because a compliance write failed, but it must not be
-    // invisible either.
-    if (result.complianceFlags.includes('opt_out')) {
-      const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
-      if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
-    }
+      // ── STOP REACHES THE GLOBAL LIST ───────────────────────────────────────
+      // do_not_contact_numbers is what assertOutboundAllowed() checks for every
+      // org, so a per-lead flag alone lets a re-imported row be texted again.
+      // A person who says stop means stop, not "stop from this record".
+      if (result.complianceFlags.includes('opt_out')) {
+        const dnc = await recordGlobalOptOut(db, from, 'inbound STOP via SMS agent')
+        if (!dnc.ok) result.complianceFlags.push('dnc_write_failed')
+      }
 
-    if (result.outboundBody) {
+      // ── OWNER-APPROVAL HOLD ────────────────────────────────────────────────
+      // An AI reply is held as a draft unless the owner has put this org on
+      // B3_AUTO_REPLY_ORGS (empty by default). Runs AFTER the opt-out write:
+      // holding a reply must never suppress a compliance record.
+      const autoReply = isAutoReplyAuthorized(org.id)
+      const sentBody = autoReply ? result.outboundBody : null
+
+      if (sentBody) {
       await db.from('agent_messages').insert({
         conversation_id: conv.id,
         direction: 'out',
-        body: result.outboundBody,
+        body: sentBody,
         compliance_flags: [...result.complianceFlags, ...outbound.flags],
         llm_assessment: result.llmAssessment ?? null,
+      })
+    } else if (!autoReply && result.draftBody) {
+      await db.from('agent_messages').insert({
+        conversation_id: conv.id,
+        direction: 'out',
+        body: result.draftBody,
+        compliance_flags: [
+          ...result.complianceFlags,
+          ...outbound.flags,
+          'held_owner_approval',
+          ...(result.quietHoursDeferred ? ['quiet_hours'] : []),
+        ],
+        llm_assessment: result.llmAssessment ?? null,
+        metadata: { held: 'owner_approval', organization_id: org.id, lead_id: lead.id },
+      })
+      await emitAudit({
+        organizationId: org.id,
+        action: 'agent.reply_held_owner_approval',
+        payload: { lead_id: lead.id, conversation_id: conv.id },
       })
     }
 
     if (result.newState === 'HUMAN_HANDOFF') {
       const allRecent = [...recent, { direction: 'in' as const, body }]
-      if (result.outboundBody) allRecent.push({ direction: 'out' as const, body: result.outboundBody })
+      if (sentBody) allRecent.push({ direction: 'out' as const, body: sentBody })
       handoffToHuman({
         org, leadId: lead.id, phone: from,
         reason: 'llm_escalated', recentMessages: allRecent,
       }).catch(() => undefined)
     }
 
-    return xmlResp(twiml(result.outboundBody ?? ''))
+    return xmlResp(twiml(sentBody ?? ''))
   } catch (e) {
     if (
       e instanceof LicenseDisabledError ||

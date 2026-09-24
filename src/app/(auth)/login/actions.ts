@@ -126,12 +126,11 @@ export async function signUp(formData: FormData) {
     if (error) console.error("[register] could not release invite:", error.message);
   };
 
+  // C3-001/002: NO client-supplied metadata goes into the auth user. user_metadata is
+  // writable by the user later anyway, so it is never trusted for anything; the
+  // display name is written to profiles by the server below instead.
   const supabase = await createSSRClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName || email } },
-  });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     console.error("[register] failed:", error.message);
@@ -139,10 +138,25 @@ export async function signUp(formData: FormData) {
     return { error: "Could not create that login. Try signing in, or use another email." };
   }
 
-  await admin.from("signup_invites").update({ used_by: data.user?.id ?? null }).eq("id", claimed.id);
+  // With email confirmation on, Supabase answers an ALREADY-REGISTERED email with a
+  // look-alike user that has no identities (and creates nothing). Treat it as a
+  // failure: hand the invite back, and do not record a used_by that does not exist.
+  const existingEmail = !!data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+  if (!data.user || existingEmail) {
+    await releaseClaim();
+    await auditSignup("signup.invite_rejected", ip, { email, reason: existingEmail ? "email-exists" : "no-user" });
+    return { error: "Could not create that login. Try signing in, or use another email." };
+  }
+
+  await admin.from("signup_invites").update({ used_by: data.user.id }).eq("id", claimed.id);
+  if (fullName) {
+    // Best-effort, server-side, display only. Never a role, org or link.
+    await admin.from("profiles").update({ full_name: fullName.slice(0, 120) }).eq("id", data.user.id);
+  }
   await auditSignup("signup.invite_redeemed", ip, { email, invite_id: claimed.id });
 
-  if (!data.user) {
+  // Confirmation required: the account exists but there is no session yet.
+  if (!data.session) {
     return { error: "Check your email to confirm the account, then sign in." };
   }
 

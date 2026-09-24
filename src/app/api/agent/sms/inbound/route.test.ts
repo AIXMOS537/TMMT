@@ -74,7 +74,7 @@ const h = vi.hoisted(() => {
 vi.mock('@/lib/agent/process-inbound', () => ({ processInbound: h.processInbound }))
 vi.mock('@/lib/supabase-service', () => ({ createServiceRoleClient: () => h.makeDb() }))
 vi.mock('@/lib/agent/tenant', () => ({
-  resolveOrgByTwilioNumber: async () => ({ id: 'org-1', name: 'TMMT', partnerAppSlug: 'aixmos' }),
+  resolveOrgByTwilioNumber: async () => ({ id: '11111111-1111-4111-8111-111111111111', name: 'TMMT', partnerAppSlug: 'aixmos' }),
   OrgNotFoundError: class OrgNotFoundError extends Error {},
 }))
 vi.mock('@/lib/agent/handoff', () => ({ handoffToHuman: vi.fn(async () => undefined) }))
@@ -102,6 +102,7 @@ vi.mock('@/lib/outbound-gate', () => ({
 }))
 
 const processInbound = h.processInbound
+const ORG_ID = '11111111-1111-4111-8111-111111111111'
 
 import { POST } from './route'
 
@@ -133,9 +134,11 @@ beforeEach(() => {
   h.state.audits = []
   delete process.env.B3_KILL_SWITCH
   processInbound.mockReset()
+  delete process.env.B3_AUTO_REPLY_ORGS
   processInbound.mockImplementation(async () => ({
     newState: 'ENGAGED',
     outboundBody: 'agent reply',
+    draftBody: 'agent reply',
     complianceFlags: [] as string[],
     llmAssessment: null,
   }))
@@ -206,7 +209,8 @@ describe('inbound SMS — malformed body', () => {
 })
 
 describe('inbound SMS — replay gate (F-01)', () => {
-  it('processes a first delivery', async () => {
+  it('processes a first delivery (reply sent only because the org is allowlisted)', async () => {
+    process.env.B3_AUTO_REPLY_ORGS = ORG_ID
     const res = await POST(signedRequest(base))
     expect(processInbound).toHaveBeenCalledTimes(1)
     expect(await res.text()).toContain('agent reply')
@@ -289,7 +293,7 @@ describe('inbound SMS — the TwiML reply goes through the outbound gate (F-02 /
     expect(h.outboundGate).toHaveBeenCalledWith(
       expect.objectContaining({
         phone: '+15551112222',
-        organizationId: 'org-1',
+        organizationId: '11111111-1111-4111-8111-111111111111',
         vertical: 'aixmos',
         type: 'transactional',
       })
@@ -306,6 +310,7 @@ describe('inbound SMS — the TwiML reply goes through the outbound gate (F-02 /
   })
 
   it('stamps the gate flags onto the recorded reply when allowed', async () => {
+    process.env.B3_AUTO_REPLY_ORGS = ORG_ID
     await POST(signedRequest(base))
     const out = h.state.inserted.find((r) => r.table === 'agent_messages' && r.direction === 'out')
     expect(out?.compliance_flags).toEqual(['gate_allow', 'dnc_clear'])
@@ -438,6 +443,95 @@ describe('inbound SMS — START acknowledgement is contained, behaviour not wide
   })
 })
 
+// ── owner-approval hold for AI replies (C-21 containment B) ─────────────────
+const heldDrafts = () => h.state.inserted.filter(
+  (r) => r.table === 'agent_messages' && r.direction === 'out'
+    && Array.isArray(r.compliance_flags) && (r.compliance_flags as string[]).includes('held_owner_approval'),
+)
+
+describe('inbound SMS — AI reply is held for owner approval by default', () => {
+  it('normal inbound: AI draft created, held, nothing sent', async () => {
+    const res = await POST(signedRequest(base))
+    expect(processInbound).toHaveBeenCalledTimes(1)
+    expect(await res.text()).toBe('<Response/>')
+    expect(heldDrafts()).toEqual([
+      expect.objectContaining({
+        conversation_id: 'conv-1',
+        body: 'agent reply',
+        compliance_flags: ['gate_allow', 'dnc_clear', 'held_owner_approval'],
+        metadata: { held: 'owner_approval', organization_id: ORG_ID, lead_id: 'lead-1' },
+      }),
+    ])
+    expect(h.state.audits).toEqual([expect.objectContaining({ action: 'agent.reply_held_owner_approval' })])
+  })
+
+  it.each([
+    ['unset', undefined],
+    ['empty', ''],
+    ['wildcard', '*'],
+    ['another org only', '22222222-2222-4222-8222-222222222222'],
+  ])('allowlist %s: no AI text reaches the customer', async (_label, raw) => {
+    if (raw !== undefined) process.env.B3_AUTO_REPLY_ORGS = raw
+    const res = await POST(signedRequest(base))
+    expect(await res.text()).toBe('<Response/>')
+    expect(heldDrafts()).toHaveLength(1)
+  })
+
+  it('quiet hours: the generated draft is still kept, flagged quiet_hours', async () => {
+    processInbound.mockResolvedValue({
+      newState: 'ENGAGED', outboundBody: null, draftBody: 'agent reply', quietHoursDeferred: true,
+      complianceFlags: [], llmAssessment: null,
+    } as never)
+    const res = await POST(signedRequest(base))
+    expect(await res.text()).toBe('<Response/>')
+    expect(heldDrafts()).toEqual([
+      expect.objectContaining({ compliance_flags: ['gate_allow', 'dnc_clear', 'held_owner_approval', 'quiet_hours'] }),
+    ])
+  })
+
+  it('suppressed customer: no AI generation, no draft, no send', async () => {
+    h.state.scenario.optedOut = true
+    const res = await POST(signedRequest(base))
+    expect(await res.text()).toBe('<Response/>')
+    expect(processInbound).not.toHaveBeenCalled()
+    expect(heldDrafts()).toEqual([])
+  })
+
+  it('do-not-contact customer: no AI generation, no draft, no send', async () => {
+    h.outboundGate.mockResolvedValue({ allowed: false, reason: 'dnc', flags: ['gate_allow', 'dnc'] })
+    await POST(signedRequest(base))
+    expect(processInbound).not.toHaveBeenCalled()
+    expect(heldDrafts()).toEqual([])
+  })
+
+  it('STOP still takes the deterministic path: suppression and the fixed acknowledgement, no owner approval needed', async () => {
+    const res = await POST(signedRequest({ ...base, Body: 'STOP' }))
+    expect(processInbound).not.toHaveBeenCalled()
+    expect(h.state.updates).toContainEqual(expect.objectContaining({ table: 'incoming_leads', opted_out: true }))
+    expect(await res.text()).toContain('opted out')
+    expect(heldDrafts()).toEqual([])
+  })
+
+  it('an allowlisted org sends, and every earlier guard still ran first', async () => {
+    process.env.B3_AUTO_REPLY_ORGS = ORG_ID
+    const res = await POST(signedRequest(base))
+    expect(h.outboundGate).toHaveBeenCalledTimes(1)
+    expect(processInbound).toHaveBeenCalledTimes(1)
+    expect(await res.text()).toContain('agent reply')
+    expect(heldDrafts()).toEqual([])
+  })
+
+  it('an allowlisted org is still silenced by the opted-out guard and the outbound gate', async () => {
+    process.env.B3_AUTO_REPLY_ORGS = ORG_ID
+    h.state.scenario.optedOut = true
+    expect(await (await POST(signedRequest(base))).text()).toBe('<Response/>')
+    h.state.scenario.optedOut = false
+    h.outboundGate.mockResolvedValue({ allowed: false, reason: 'dnc', flags: ['gate_allow', 'dnc'] })
+    expect(await (await POST(signedRequest(base))).text()).toBe('<Response/>')
+    expect(processInbound).not.toHaveBeenCalled()
+  })
+})
+
 describe('a keyword STOP reaches the GLOBAL do-not-contact list', () => {
   /**
    * Caught while resolving the C-21a merge, and the reason this block exists.
@@ -466,6 +560,29 @@ describe('a keyword STOP reaches the GLOBAL do-not-contact list', () => {
     expect(
       h.state.upserts.some(u => u.table === 'do_not_contact_numbers'),
       'keyword STOP must reach do_not_contact_numbers, not only the lead row',
+    ).toBe(true)
+  })
+
+  // The two call sites are different code paths and only ONE of them is the
+  // keyword branch above. This is the other: processInbound decides it was an
+  // opt-out (a phrasing the deterministic matcher did not catch), and the
+  // fallback write must still reach the global list. Deleting that site leaves
+  // the keyword test above green, so without this the fallback is unguarded.
+  it('writes the global list when processInbound returns opt_out (the fallback path)', async () => {
+    h.state.scenario = { optedOut: false, seenSid: false, duplicateSidOnInsert: false, leadUpdateError: false, dncWriteError: false }
+    h.state.upserts = []
+    processInbound.mockImplementation(async () => ({
+      newState: 'CLOSED',
+      outboundBody: '',
+      draftBody: '',
+      complianceFlags: ['opt_out'],
+      llmAssessment: null,
+    }))
+    const res = await POST(signedRequest({ ...base, Body: 'i am done with this', From: '+15715550103', MessageSid: 'SM_fallback_dnc' }))
+    expect(res.status).toBe(200)
+    expect(
+      h.state.upserts.some(u => u.table === 'do_not_contact_numbers'),
+      'an opt_out from processInbound must reach do_not_contact_numbers too',
     ).toBe(true)
   })
 
