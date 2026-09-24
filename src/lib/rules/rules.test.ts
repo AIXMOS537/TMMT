@@ -213,7 +213,10 @@ describe("eligibility — refuses to reconstruct a rule that never existed", () 
       const e = err as BusinessPolicyRequiredError;
       expect(e.policyKey).toBe("eligibility_truth_table");
       expect(e.docRef).toMatch(/business-rules/);
-      expect(e.message).toMatch(/must not be used to infer/);
+      // The refusal now cites the decisive fact: the signals were never recorded at all,
+      // so no rule is derivable from history even in principle.
+      expect(e.message).toMatch(/ZERO records/);
+      expect(e.message).toMatch(/OWNER-DECISION-PACK/);
     }
   });
 
