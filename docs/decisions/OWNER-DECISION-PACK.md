@@ -209,6 +209,44 @@ fact is the failure this register exists to prevent.
 
 ---
 
+## 6. Four `cases` rows have no tenant — who owns them?
+
+VERIFIED 2026-09-24 (read-only): `public.cases` holds **4 rows**, and `org_id` is **NULL on
+every one of them**. This is not an empty table — `bookings` and `payments` genuinely are empty
+(0 rows); `cases` is populated and untenanted.
+
+Why it needs you rather than a fix from me: `org_id` is the column data isolation runs on. With
+it NULL, a query filtering `where org_id = $tenant` returns **none** of these 4 rows, and a
+query that forgets the filter returns **all** of them. Both failures are silent. But writing an
+owner into those rows is a guess about who the records belong to, and guessing wrong moves
+someone's data into someone else's tenant — so nothing was backfilled.
+
+The rows may legitimately predate the tenancy model, or belong to the owner org.
+
+### ☐ DECISION 6A — what are these 4 rows?
+
+- ☐ Owner-org records → backfill `org_id` with the owner org, then constrain
+- ☐ Pre-tenancy legacy → archive them, leave tenancy to new rows only
+- ☐ Test/scratch data → delete (needs a separate authorization; nothing is deleted on inference)
+- ☐ Something else / I need to see them first — say so and I will produce the 4 rows' non-PII
+  shape (ids, timestamps, status) for you to identify
+
+### ☐ DECISION 6B — should `org_id` become NOT NULL + a foreign key?
+
+VERIFIED: **zero orphaned `org_id`** across the 7 tables tested (1,531 rows) — integrity is
+currently held by application code, not by the database. Making it structural is a schema
+change, so it needs your authorization as a change request, and 6A must be settled first
+because a NOT NULL constraint cannot be added while those 4 rows are NULL.
+
+- ☐ Yes — raise the CR
+- ☐ Not yet
+
+> Scope note: only `org_id` was tested. `profile_id`, `booking_id`, `vehicle_id` and `case_id`
+> remain **UNCOUNTED**, which is not the same as clean. Full audit:
+> `evidence/linked-record-integrity.md`.
+
+---
+
 ## Still owner-only, not in this pack
 
 Carrier credential rotation · offline archive · true infrastructure cost · Zapier/GHL console
