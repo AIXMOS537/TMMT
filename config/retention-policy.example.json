@@ -1,0 +1,66 @@
+{
+  "_README": [
+    "TEMPLATE ONLY — copy to config/retention-policy.json and have counsel fill it in.",
+    "",
+    "scripts/extract-attachments.ts refuses to run until this file exists and covers every",
+    "document type it can encounter. That refusal is deliberate: plan §4.2 requires a written",
+    "retention rule from a licensed Virginia attorney BEFORE any identity document is copied",
+    "forward. Over-retention of identity documents is its own liability.",
+    "",
+    "The values below are PLACEHOLDERS with action 'destroy' so that an accidentally-copied",
+    "template extracts nothing. They are not advice and not a recommendation.",
+    "Replace every 'basis' string with counsel's actual stated reasoning.",
+    "",
+    "Counts as of 2026-09-15 are in evidence/attachment-inventory.md §5."
+  ],
+
+  "issued_by": "REQUIRED — name and bar admission of the attorney issuing this rule",
+  "issued_date": "REQUIRED — YYYY-MM-DD",
+
+  "rules": {
+    "drivers_license": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — 293 records (283 Background Checks + 10 Do Not Rent List). Identity documents, most belonging to people who are no longer customers."
+    },
+    "income_verification": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — 269 records. Paystubs for applicants; clearest over-retention candidate in the base."
+    },
+    "proof_of_insurance": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — applicant and fleet insurance evidence."
+    },
+    "background_check_report": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — third-party consumer-report output. FCRA handling may apply; counsel to confirm."
+    },
+    "insurance_policy": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — commercial policy documents."
+    },
+    "citation_document": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — 308 records. Citations may carry live legal or financial exposure."
+    },
+    "expense_receipt": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — 32 records. Company tax records; a retention period likely applies."
+    },
+    "vehicle_photo": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — company asset photos, low sensitivity."
+    },
+    "vehicle_registration": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — company asset documents."
+    },
+    "vehicle_inspection_photo": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — condition evidence."
+    },
+    "vehicle_state_inspection": {
+      "action": "destroy",
+      "basis": "PLACEHOLDER — VA state inspection and emissions records."
+    }
+  }
+}

@@ -138,3 +138,6 @@ auth/*.bak*
 # Outbound email drafts. These hold real customer addresses and message bodies —
 # PII. Never commit them. Path is overridable via EMAIL_OUTBOX_DIR.
 .outbox/
+
+# Counsel-issued retention rule — never commit the live one
+config/retention-policy.json
