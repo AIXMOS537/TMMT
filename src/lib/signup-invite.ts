@@ -46,9 +46,33 @@ export type InviteRow = {
   email: string | null;
   expires_at: string;
   used_at: string | null;
+  /** C3 (staged signup_invites v2): absent on today's table, where it reads as pending. */
+  status?: InviteStatus | null;
+  revoked_at?: string | null;
 };
 
-export type InviteRejection = "malformed" | "unknown" | "used" | "expired" | "wrong-email";
+export type InviteRejection = "malformed" | "unknown" | "used" | "expired" | "wrong-email" | "revoked";
+
+/**
+ * C3-001/002 — the invitation lifecycle.
+ *
+ *   PENDING ──claim──▶ ACCEPTED        (once; single-use)
+ *   PENDING ──time───▶ EXPIRED         (computed from expires_at, never stored early)
+ *   PENDING ──owner──▶ REVOKED         (kept as a record; revoking ≠ deleting)
+ *   ACCEPTED / EXPIRED / REVOKED are terminal.
+ *
+ * An invite may carry ONE bound relationship (e.g. a credit case); it grants
+ * nothing by itself — the server makes the link after the account exists, from the
+ * invite row, never from anything the browser sent.
+ */
+export type InviteStatus = "pending" | "accepted" | "expired" | "revoked";
+
+export function inviteState(invite: InviteRow, now: Date = new Date()): InviteStatus {
+  if (invite.status === "revoked" || invite.revoked_at) return "revoked";
+  if (invite.status === "accepted" || invite.used_at) return "accepted";
+  if (new Date(invite.expires_at).getTime() <= now.getTime()) return "expired";
+  return "pending";
+}
 
 /**
  * Every reason a code is refused. Returns null when the code may be claimed.
@@ -63,8 +87,10 @@ export function inviteRejection(
   now: Date = new Date()
 ): InviteRejection | null {
   if (!invite) return "unknown";
-  if (invite.used_at) return "used";
-  if (new Date(invite.expires_at).getTime() <= now.getTime()) return "expired";
+  const state = inviteState(invite, now);
+  if (state === "revoked") return "revoked";
+  if (state === "accepted") return "used";
+  if (state === "expired") return "expired";
   if (invite.email && invite.email.trim().toLowerCase() !== email.trim().toLowerCase()) {
     return "wrong-email";
   }
