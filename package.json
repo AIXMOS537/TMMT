@@ -58,7 +58,9 @@
     "audit:crawl": "node scripts/audit-reset.mjs && playwright test --project=audit",
     "audit:report": "node scripts/audit-report.mjs",
     "audit:static": "npm run lint && npm run build",
-    "invite": "node scripts/invite.mjs"
+    "invite": "node scripts/invite.mjs",
+    "pretest:e2e": "playwright install chromium",
+    "pretest:e2e:prod": "playwright install chromium"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

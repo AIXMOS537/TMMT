@@ -320,3 +320,13 @@
 # but it would still be a re-run, so they are counted as drift rather than hidden.
 20260919221554
 20260920014756
+
+# -- Applied 2026-09-21 by Phase 2A (prod baton id 8, owner-approved in chat) --
+# Same apply_migration version mismatch: the ledger holds its own timestamp.
+#
+#   20260921234148  <- 20260917160000_profiles_protect_access_columns.sql  (PR #249)
+#
+# Still counted as drift by migration-drift.test.ts (KNOWN_UNAPPLIED stays 53).
+# Verified after apply: trigger present, anon/authenticated cannot UPDATE role/email/org
+# or INSERT/DELETE profiles; customer JWT role=admin attempt -> 42501.
+20260921234148

@@ -12,22 +12,57 @@ function fakeDb(
   mine: Record<string, number> = {},
   /** Latest financing_applications outcome for the journey, if any. */
   financingOutcome?: string,
+  /** Rows returned for the per-renter reads that select() rather than count(). */
+  rows: {
+    training?: Array<{ percent_complete: number; is_core?: boolean; active?: boolean }>;
+    enrollments?: Array<{ status: string; delivery_mode?: string; completed_at?: string | null }>;
+    coreModules?: number;
+  } = {},
 ) {
   return {
     from(table: string) {
       const chain = {
         _filtered: false,
-        select() {
+        _cols: "",
+        select(cols?: string) {
+          chain._cols = cols ?? "";
           return chain;
         },
         eq() {
           chain._filtered = true;
+          // training_modules is counted with .eq(is_core).eq(active) and resolves as a
+          // count; everything else resolves through then() or limit() below.
+          if (table === "training_modules") {
+            return {
+              eq: () =>
+                Promise.resolve({ count: rows.coreModules ?? totals[table] ?? 0, error: null }),
+            };
+          }
+          if (table === "training_module_progress" && chain._cols.includes("training_modules")) {
+            return Promise.resolve({
+              data: (rows.training ?? []).map(t => ({
+                module_id: "m",
+                percent_complete: t.percent_complete,
+                training_modules: { is_core: t.is_core ?? true, active: t.active ?? true },
+              })),
+              error: null,
+            });
+          }
+          if (table === "credit_enrollments" && chain._cols.includes("delivery_mode")) {
+            return Promise.resolve({
+              data: (rows.enrollments ?? []).map(e => ({
+                status: e.status,
+                delivery_mode: e.delivery_mode ?? "self_guided_training",
+                completed_at: e.completed_at ?? null,
+              })),
+              error: null,
+            });
+          }
           return chain;
         },
         order() {
           return chain;
         },
-        // financing_applications is read as ROWS, not a count.
         limit() {
           return Promise.resolve({
             data: financingOutcome ? [{ outcome: financingOutcome, applied_at: "2026-09-16" }] : [],
@@ -80,7 +115,7 @@ describe("an unwired source is unknown, not a failure", () => {
     expect(e.goodStandingDays).toBe(9);
     expect(e.goodStanding).toBe(true);
     expect(e.educationSectionsRequired).toBe(3);
-    expect(e.coreModulesTotal).toBe(8);
+    expect(e.coreModulesTotal).toBe(8); // core+active only, not every module
   });
 
   it("the ladder therefore blames nobody", async () => {
@@ -178,5 +213,107 @@ describe("the lender's verdict is read from financing_applications and nowhere e
     );
     expect(e.financingApproved).toBeNull();
     expect(evaluateLadder(e).complete).toBe(false);
+  });
+});
+
+describe("gate 40 counts CORE modules only", () => {
+  it("an optional module at 0% does not hold a renter back", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb(
+        { ...PRODUCTION_TODAY, training_module_progress: 9 },
+        {},
+        undefined,
+        {
+          coreModules: 2,
+          training: [
+            { percent_complete: 100, is_core: true },
+            { percent_complete: 100, is_core: true },
+            { percent_complete: 0, is_core: false }, // optional extra, untouched
+          ],
+        },
+      ),
+      JOURNEY,
+    );
+    expect(e.coreModulesTotal).toBe(2);
+    expect(e.coreModulesComplete).toBe(2);
+    expect(evaluateLadder(e).gates.find(g => g.slug === "training_core_complete")!.state).toBe("met");
+  });
+
+  it("a core module at 99% is not complete", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, training_module_progress: 9 }, {}, undefined, {
+        coreModules: 2,
+        training: [{ percent_complete: 100 }, { percent_complete: 99 }],
+      }),
+      JOURNEY,
+    );
+    expect(e.coreModulesComplete).toBe(1);
+    expect(evaluateLadder(e).gates.find(g => g.slug === "training_core_complete")!.state).toBe("not_met");
+  });
+
+  it("any progress row at all starts gate 30", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, training_module_progress: 9 }, {}, undefined, {
+        coreModules: 2,
+        training: [{ percent_complete: 5 }],
+      }),
+      JOURNEY,
+    );
+    expect(e.anyModuleStarted).toBe(true);
+    expect(evaluateLadder(e).gates.find(g => g.slug === "training_path_started")!.state).toBe("met");
+  });
+});
+
+describe("gate 20 needs an ACTIVE plan, and gate 50 spots Path C", () => {
+  it("an active self-guided plan clears gate 20 and leaves mentorship unmet", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, credit_enrollments: 4 }, {}, undefined, {
+        enrollments: [{ status: "active", delivery_mode: "self_guided_training" }],
+      }),
+      JOURNEY,
+    );
+    expect(e.creditEnrollmentActive).toBe(true);
+    expect(e.mentorshipDfyActive).toBe(false);
+  });
+
+  it("a COMPLETED plan is not an active one", async () => {
+    // completed_at set means the plan is finished, not running. Reading it as active would
+    // keep someone on a gate they have already left behind.
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, credit_enrollments: 4 }, {}, undefined, {
+        enrollments: [{ status: "active", completed_at: "2026-09-01" }],
+      }),
+      JOURNEY,
+    );
+    expect(e.creditEnrollmentActive).toBe(false);
+  });
+
+  it("a cancelled plan is not an active one", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, credit_enrollments: 4 }, {}, undefined, {
+        enrollments: [{ status: "cancelled" }],
+      }),
+      JOURNEY,
+    );
+    expect(e.creditEnrollmentActive).toBe(false);
+  });
+
+  it("done_for_you is Path C — gate 50 met, and it still never blocks", async () => {
+    const e = await loadLadderEvidence(
+      fakeDb({ ...PRODUCTION_TODAY, credit_enrollments: 4 }, {}, undefined, {
+        enrollments: [{ status: "active", delivery_mode: "done_for_you" }],
+      }),
+      JOURNEY,
+    );
+    expect(e.mentorshipDfyActive).toBe(true);
+    const g = evaluateLadder(e).gates.find(x => x.slug === "mentorship_dfy_active")!;
+    expect(g.state).toBe("met");
+    expect(g.optional).toBe(true);
+  });
+
+  it("an empty enrollments table is unknown, not a cancelled plan", async () => {
+    const e = await loadLadderEvidence(fakeDb(PRODUCTION_TODAY), JOURNEY);
+    expect(e.creditEnrollmentActive).toBeNull();
+    expect(e.mentorshipDfyActive).toBeNull();
   });
 });

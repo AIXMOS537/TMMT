@@ -124,3 +124,62 @@ check before trusting a "pass" that depends on a constraint existing.
 advances. Idempotent — a second tap is success, not a duplicate. A read failure **throws**
 rather than rendering zero progress, because silently showing 0 of 3 would erase work the
 renter actually did.
+
+---
+
+# REHEARSAL — gates 20, 30, 40, 50 and the checkpoint trail
+
+Migration: `supabase/migrations/20260917120000_training_progress_by_journey.sql`
+Run 2026-09-17 on the throwaway. **Production untouched.**
+
+## Checked before assuming — only ONE table had the profile trap
+
+| Table | Key | Needed a migration? |
+|---|---|---|
+| `credit_enrollments` | `journey_id` NOT NULL | **No** — already journey-keyed |
+| `journey_checkpoint_events` | `journey_id` NOT NULL, `UNIQUE(journey_id, checkpoint_slug)` | **No** — idempotency already built in |
+| `training_module_progress` | `profile_id` NOT NULL | **Yes** — same trap as gate 10 |
+
+So gates 30 and 40 were unevidencable for every renter (0 of 35 journeys carry a
+profile_id), while 20 and 50 only ever needed a reader.
+
+## Constraints, watched refusing
+
+| # | Attempt | Result |
+|---|---|---|
+| T1 | progress belonging to neither a journey nor a profile | **REFUSED** (check) ✅ |
+| T2 | `percent_complete = 250` | **REFUSED** (check) ✅ |
+| T3 | a second progress row for the same renter + module | **REFUSED** (unique) ✅ |
+
+T2 matters: 250 would read as complete to any `>= 100` test and quietly clear a gate.
+Nothing constrained the range before.
+
+## Two bugs found in my own earlier reader
+
+1. **`coreModulesTotal` counted EVERY active module**, not core ones. Gate 40 is *"all CORE
+   rebuild modules at 100%"*, and `training_modules.is_core` exists precisely for that. An
+   optional extra could have held a renter back from a car. Now core+active only, pinned by
+   a test.
+2. **`coreModulesComplete` was hardcoded `null`** — correct while unreadable, wrong once the
+   data existed. Now a real per-module read.
+
+## Now wired for real
+
+- **Gate 20** — an enrollment counts only when `status = 'active'` AND `completed_at` is
+  null. A finished or cancelled plan is not a running one.
+- **Gate 50** — Path C is `delivery_mode = 'done_for_you'`. Detected, marked, and still
+  optional so it never blocks a Path A/B renter.
+- **Gates 30/40** — real progress rows, core-only for completion.
+- **Checkpoint trail** — `journey_checkpoint_events` held **0 rows** since the ladder was
+  designed. `recordMetCheckpoints` now writes one per cleared gate, with the reason kept in
+  `evidence` so the trail explains itself.
+
+## The rule the trail follows
+
+**An event is history, not current state.** When a gate stops being met — standing lapses, a
+plan is cancelled — the event is **left alone**. "Met on the 4th" stays true even if it is
+not true today. Nothing in `checkpoint-events.ts` deletes, and a test asserts it.
+
+A `23503` (slug not in `journey_checkpoints`) is surfaced as a failure rather than swallowed:
+it would mean the code's ladder and the database's have drifted, and silently dropping it
+would stop one step being recorded forever.
