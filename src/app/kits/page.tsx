@@ -101,7 +101,7 @@ export default function KitsLandingPage() {
           {[
             { title: "AIXMOS Dealer", desc: "Ops + command on your dedicated instance" },
             { title: "AIXMOS Operator", desc: "$97/mo · 500 tokens · cert path" },
-            { title: "GHL hub", desc: "Checkout, CRM, follow-up — already included" },
+            { title: "Sales hub", desc: "Checkout, CRM, follow-up — already included" },
           ].map((item) => (
             <div
               key={item.title}
@@ -210,8 +210,7 @@ export default function KitsLandingPage() {
         </div>
 
         <p id="checkout-pending" className="mt-10 text-center text-sm text-slate-500">
-          Buy opens GoHighLevel checkout (or the live GHL site with your kit campaign
-          until product links are pasted). Questions: {support}
+          Secure online checkout. Questions: {support}
         </p>
       </section>
 

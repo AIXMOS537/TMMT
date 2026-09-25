@@ -308,9 +308,20 @@ describe("public paths render signed-out", () => {
   it("a public path is a prefix match, not a substring match", async () => {
     // "/legalese" would be caught by startsWith("/legal") — that IS the current
     // rule, so pin the narrower cases that must stay protected.
-    for (const path of ["/loginx", "/kitsy", "/buildings", "/joined", "/api/healthz"]) {
+    for (const path of ["/api/healthz"]) {
       const res = await middleware(req(path));
       expect(redirectTarget(res), path).toBe("/login");
+    }
+  });
+
+  it("unknown top-level paths pass through to the customer 404, not /login", async () => {
+    // Signed-out visitors who mistype a URL used to land on the staff login.
+    // KNOWN_ROUTE_SEGMENTS keeps the fail-closed redirect for real routes;
+    // anything else falls through so src/app/not-found.tsx renders.
+    for (const path of ["/loginx", "/kitsy", "/buildings", "/joined", "/typo-here"]) {
+      const res = await middleware(req(path));
+      expect(redirectTarget(res), path).toBeNull();
+      expect(isPassThrough(res), path).toBe(true);
     }
   });
 });

@@ -11,7 +11,7 @@ import { crossSellServices } from "@/lib/business-lines/cross-sell";
  * sent that visitor to /login, which meant someone who wanted to rent a car was
  * shown a staff sign-in screen and left.
  *
- * The copy says only what is true. TMMT screens on licence, platform activation and
+ * The copy says only what is true. TMMT screens on license, platform activation and
  * ability to pay weekly, not on a credit score; it is not a loan and not credit
  * repair; and not everyone qualifies. Rates come from the fleet table rather than
  * being written into the page, so this cannot drift away from what is actually
@@ -22,11 +22,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "TMMT Rentals — weekly car rental for rideshare and delivery drivers",
   description:
-    "Weekly car rental for rideshare and delivery drivers. Screened on your licence and platform activation, not your credit score.",
+    "Weekly car rental for rideshare and delivery drivers. Screened on your license and platform activation, not your credit score.",
 };
 
 const QUALIFY = [
-  "A valid driver's licence you've held for a while",
+  "A valid driver's license you've held for a while",
   "An active rideshare or delivery account (Uber, Lyft, DoorDash and the like)",
   "Enough hours on the road to cover the weekly payment",
   "A clean enough driving record for our insurance",
@@ -63,7 +63,7 @@ export default async function WelcomePage() {
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-[#41527a]">
             Rent by the week and drive for Uber, Lyft, DoorDash or anyone else. We look
-            at your licence, your driving account and whether the weekly payment works
+            at your license, your driving account and whether the weekly payment works
             for you — <strong className="font-semibold text-[#0A1628]">not your credit score</strong>.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -160,7 +160,7 @@ export default async function WelcomePage() {
           <ol className="mt-4 space-y-3">
             {[
               ["Tell us what you need", "Two minutes. Name, number, and the kind of car."],
-              ["We check you're a fit", "Licence, driving account, and the weekly number."],
+              ["We check you're a fit", "License, driving account, and the weekly number."],
               ["Pick up and drive", "Paperwork and keys — then the car is yours by the week."],
             ].map(([title, body], i) => (
               <li key={title} className="flex gap-4 rounded-xl border border-[#dbe4f5] bg-white p-5">

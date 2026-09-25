@@ -141,6 +141,11 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+      <p className="mt-4 text-center text-sm">
+        <Link href="/" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+          ← Back to TMMT Rentals
+        </Link>
+      </p>
     </div>
   );
 }

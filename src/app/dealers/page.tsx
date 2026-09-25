@@ -145,7 +145,7 @@ export default function DealersPage() {
           </article>
         </div>
         <p id="checkout-pending" className="mt-8 text-center text-sm text-slate-500">
-          Secure checkout via Stripe · Questions: {support}
+          Secure checkout via Stripe · Questions:{" "}{support}
         </p>
       </section>
 

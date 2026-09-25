@@ -9,7 +9,7 @@ import { Car, CheckCircle } from "lucide-react";
 import BrandName from "@/components/brand/BrandName";
 import { offerLabel } from "@/lib/offer-labels";
 
-const priorityOptions = ["Urgent", "Moderate", "Requires Follow Up"];
+const priorityOptions = ["Urgent", "Moderate", "No rush"];
 
 const ATTRIBUTION_FIELDS = [
   "utm_source",
