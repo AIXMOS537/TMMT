@@ -219,6 +219,30 @@ function cronMachineCall(request: NextRequest, pathname: string): boolean {
   return false;
 }
 
+/**
+ * First-level route segments that actually exist in src/app (route-group
+ * prefixes stripped). Used below so a signed-out visitor who mistypes a URL
+ * lands on the customer-facing 404 instead of the staff login: only paths
+ * that belong to a real route keep the fail-closed redirect to /login.
+ *
+ * Generated 2026-09-24 from the page.tsx/route.ts files in src/app. When you
+ * add a new top-level protected route, add its segment here — and note the
+ * route-group layouts re-check the caller's tier as defence in depth, so a
+ * segment missed here still cannot render for the wrong caller.
+ */
+const KNOWN_ROUTE_SEGMENTS = new Set([
+  "affiliates", "api", "background-checks", "bookings", "build", "cases",
+  "clock", "command", "configurator", "credit-funding", "customers", "dealers",
+  "desk", "dispatch", "do-not-rent", "executive", "expenses", "explainer",
+  "former-customers", "forms", "inspections", "insurance", "intake",
+  "interfaces", "investor", "join", "kits", "leads", "learn", "legal", "login",
+  "lp", "maintenance", "money", "my-credit", "no-access", "offline",
+  "operation-costs", "operator", "operators", "partner", "partners", "pocket",
+  "revenue", "scorecard", "status", "tasks", "tickets", "timesheets", "trust",
+  "try", "upgrade", "va-queue", "vendor", "vendors", "waitlist", "welcome",
+  "whoami", "work", "workflow-vendors",
+]);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
@@ -330,6 +354,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && !isPublicPath(pathname)) {
+    // Unknown top-level paths used to dump every signed-out visitor on the
+    // staff login. Paths that are not real app routes now fall through so
+    // the customer-facing 404 (src/app/not-found.tsx) renders; real routes
+    // keep the fail-closed redirect to /login. Nothing about tier checks or
+    // the (admin)/(command)/etc. layout gates changes.
+    const firstSegment = pathname.split("/")[1] ?? "";
+    if (!KNOWN_ROUTE_SEGMENTS.has(firstSegment)) {
+      return withRobotsHeader(nextWithTenant());
+    }
     // Every signed-out visitor goes to /login, "/" included.
     //
     // "/" used to bounce to the public GHL site, on the assumption that staff

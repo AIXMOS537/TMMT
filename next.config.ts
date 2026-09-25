@@ -69,6 +69,22 @@ const nextConfig: NextConfig = {
         destination: "/forms/credit-funding-intake?entry=credit",
         permanent: false,
       },
+
+      // Customer-facing audit fixes (2026-09-24). Not permanent: 307, so
+      // nothing is cached into a browser if these paths are ever wanted for
+      // something else.
+      //
+      // /rent was never a page — signed-out visitors hit the middleware gate
+      // and landed on the staff login. The hero "Rent a car" CTA goes to the
+      // lead-intake form, so /rent should too.
+      { source: "/rent", destination: "/forms/lead-intake", permanent: false },
+      { source: "/rent/:path*", destination: "/forms/lead-intake", permanent: false },
+
+      // Legacy legal/help paths that used to dead-end at the staff login.
+      { source: "/terms", destination: "/legal/rental", permanent: false },
+      { source: "/privacy", destination: "/legal/privacy", permanent: false },
+      { source: "/sms-policy", destination: "/legal/sms", permanent: false },
+      { source: "/help", destination: "/forms/ticket", permanent: false },
     ];
   },
   async headers() {
