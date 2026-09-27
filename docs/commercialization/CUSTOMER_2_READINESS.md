@@ -100,8 +100,8 @@ Every access to TMMT RENTALS data to date has been through
 **Customer #2 would be the first scoped tenant user this system has ever had.**
 
 **Attribution note.** This deployment is Muhammad Taha's rental operation, run by
-him and his staff. It is a REFERENCE DEPLOYMENT, not a TechHaus customer, and its
-transactions are not TechHaus revenue. The application role named `staff` is an
+him and his staff. It is a REFERENCE DEPLOYMENT, not a AIOMS customer, and its
+transactions are not AIOMS revenue. The application role named `staff` is an
 application role, not evidence of anyone's employer.
 
 ---
@@ -310,7 +310,7 @@ The founder-minute count per step is the Stage 2 roadmap. Automate by
 
 ## EXIT CRITERIA
 
-TechHaus can honestly say *"we can onboard an external managed rental customer"*
+AIOMS can honestly say *"we can onboard an external managed rental customer"*
 when:
 
 1. P0-1 fixed and verified — a scoped user reads their own payments and checks.

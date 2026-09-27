@@ -65,7 +65,7 @@ the code.** "Uses background checks" is not "needs raw background-check records.
 ### Option A — No customer access *(recommended)*
 
 Screening stays entirely inside the managed service. Customer #2 receives
-outcomes through TechHaus, not through a table.
+outcomes through AIOMS, not through a table.
 
 - **For:** costs nothing today — no customer surface reads this table. Preserves
   the August hardening untouched. Zero migration. Smallest possible attack
@@ -123,7 +123,7 @@ daily operation**. They should not automatically follow the background-check ans
 
 ### Option A — No direct view; managed reporting
 
-TechHaus supplies a statement. **Weak** — an operator asking "who owes me money?"
+AIOMS supplies a statement. **Weak** — an operator asking "who owes me money?"
 should not have to email their vendor.
 
 ### Option B — Projected org-scoped view *(recommended)*
@@ -165,7 +165,7 @@ Verified facts:
 
 Classification: **UNVERIFIED POLICY**, not DEFECT.
 
-Both readings are coherent. **Intentional:** TechHaus managed-service staff work
+Both readings are coherent. **Intentional:** AIOMS managed-service staff work
 across tenants by design, so a global masked queue is the point. **Unintended:**
 scoping was simply never added because only one tenant existed.
 
