@@ -4,6 +4,7 @@
  * No side effects; tested in isolation.
  */
 import { AGENT_HUMAN_HANDOFF_THRESHOLD_CENTS } from '@/lib/pricing/catalog'
+import { isGateOpen } from '../../../shared/compliance-gates/gate'
 
 export type AgentState = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'BOOKED' | 'CLOSED' | 'LOST' | 'HUMAN_HANDOFF'
 
@@ -43,6 +44,19 @@ const QUALIFIED_CONFIDENCE_THRESHOLD = 0.6
 // Tied to the membership price in src/lib/pricing/catalog.ts (F-13).
 const HUMAN_PRICE_THRESHOLD = AGENT_HUMAN_HANDOFF_THRESHOLD_CENTS
 
+// SKUs whose sale can be credit-repair under CROA. `intro-97` is sold on
+// /lp/*/intro-97 as a "Credit + Funding Audit" (it is also the Academy $97
+// sku, which is why this is conservative). Until billing is proven never to
+// charge before services are performed (gate no_advance_fee_billing_enforced),
+// the agent must not close these with a payment link: a human books the call.
+// Evidence: no-advance-fee.test.ts.
+export const CREDIT_ADJACENT_SKUS: ReadonlySet<string> = new Set(['intro-97'])
+
+function mayAgentSendPaymentLink(sku: string | undefined): boolean {
+  if (sku && CREDIT_ADJACENT_SKUS.has(sku)) return isGateOpen('no_advance_fee_billing_enforced')
+  return true
+}
+
 export function step(prev: MachineState, evt: AgentEvent): StepResult {
   // Terminal-overriding events apply at any state
   switch (evt.kind) {
@@ -78,7 +92,7 @@ export function step(prev: MachineState, evt: AgentEvent): StepResult {
 
   if (prev.state === 'QUALIFIED' && evt.kind === 'continue') {
     const price = prev.skuPriceCents ?? 0
-    const action: AgentAction = price <= HUMAN_PRICE_THRESHOLD
+    const action: AgentAction = price <= HUMAN_PRICE_THRESHOLD && mayAgentSendPaymentLink(prev.sku)
       ? { kind: 'send_stripe_link' }
       : { kind: 'send_cal_link' }
     return { state: 'QUALIFIED', sku: prev.sku, skuPriceCents: price, actions: [action] }
