@@ -1,0 +1,240 @@
+
+> tmmt-app@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.3.5 (webpack)
+[@sentry/nextjs] Importing `withSentryConfig` from `@sentry/nextjs` is deprecated and will stop working in v11. Import it from `@sentry/nextjs/config` instead:
+  import { withSentryConfig } from '@sentry/nextjs/config';
+✓ Running next.config.ts took 6.5s
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · serverActions
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (132kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (113kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (267kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+⚠ Compiled with warnings in 53s
+
+./node_modules/next/dist/esm/server/app-render/dynamic-rendering.js
+A Node.js API is used (process.cwd at line: 1044) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/next/dist/esm/server/app-render/dynamic-rendering.js
+./node_modules/next/dist/esm/server/request/draft-mode.js
+./node_modules/next/dist/esm/api/headers.js
+./src/lib/supabase-server.ts
+
+./node_modules/next/dist/esm/server/app-render/dynamic-rendering.js
+A Node.js API is used (process.cwd at line: 1044) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/next/dist/esm/server/app-render/dynamic-rendering.js
+./node_modules/next/dist/esm/server/request/draft-mode.js
+./node_modules/next/dist/esm/api/headers.js
+./src/lib/supabase-server.ts
+
+./node_modules/next/dist/esm/shared/lib/constants.js
+A Node.js API is used (process.features at line: 77) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+./node_modules/next/dist/esm/shared/lib/constants.js
+./node_modules/next/dist/esm/api/constants.js
+./node_modules/@sentry/nextjs/build/esm/common/utils/isBuild.js
+./node_modules/@sentry/nextjs/build/esm/edge/index.js
+
+  Running TypeScript ...
+  Finished TypeScript in 15.0s ...
+  Collecting page data using 23 workers ...
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  Generating static pages using 23 workers (0/151) ...
+  Generating static pages using 23 workers (37/151) 
+  Generating static pages using 23 workers (75/151) 
+  Generating static pages using 23 workers (113/151) 
+✓ Generating static pages using 23 workers (151/151) in 3.9s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /affiliates
+├ ƒ /api/agent/cal/webhook/[slug]
+├ ƒ /api/agent/health
+├ ƒ /api/agent/sms/inbound
+├ ƒ /api/agent/stripe/webhook/[slug]
+├ ƒ /api/agent/voice/ghl
+├ ƒ /api/audit/events
+├ ƒ /api/auth/callback
+├ ƒ /api/cron/journey-recompute
+├ ƒ /api/cron/marketing-kpi-ghl
+├ ƒ /api/cube/application
+├ ƒ /api/forms/submit
+├ ƒ /api/health
+├ ƒ /api/leads/webhook
+├ ƒ /api/license/heartbeat
+├ ƒ /api/license/provision
+├ ƒ /api/license/revoke
+├ ƒ /api/mission/generate
+├ ƒ /api/offline/merge
+├ ƒ /api/ops/command
+├ ƒ /api/pocket/chat
+├ ƒ /api/rental/quote
+├ ƒ /api/webhooks/airtable
+├ ƒ /api/webhooks/airtable/locations
+├ ƒ /api/webhooks/ghl
+├ ƒ /api/webhooks/ghl/appointment
+├ ƒ /api/webhooks/ghl/contact
+├ ƒ /api/webhooks/ghl/form
+├ ƒ /api/webhooks/ghl/overdue
+├ ƒ /api/webhooks/ghl/program
+├ ƒ /background-checks
+├ ƒ /bookings
+├ ○ /build
+├ ○ /build/reserved
+├ ƒ /cases
+├ ○ /clock
+├ ƒ /command
+├ ƒ /command/credit-dispute
+├ ƒ /command/credit-dispute/[id]
+├ ƒ /command/credit-dispute/import
+├ ƒ /command/desk
+├ ƒ /command/handoffs
+├ ƒ /command/outbox
+├ ○ /configurator
+├ ƒ /credit-funding
+├ ƒ /customers
+├ ○ /dealers
+├ ƒ /desk
+├ ƒ /dispatch
+├ ƒ /dispatch/incident/[id]
+├ ƒ /dispatch/incident/new
+├ ƒ /dispatch/me
+├ ƒ /dispatch/responders
+├ ƒ /dispatch/units
+├ ƒ /do-not-rent
+├ ƒ /executive
+├ ƒ /expenses
+├ ○ /explainer
+├ ƒ /former-customers
+├ ƒ /forms
+├ ƒ /forms/[slug]
+├ ƒ /forms/academy-join
+├ ƒ /forms/affiliates
+├ ƒ /forms/apply
+├ ƒ /forms/appointment
+├ ƒ /forms/background-check
+├ ƒ /forms/credit-funding-intake
+├ ƒ /forms/customer-intake
+├ ƒ /forms/dealer-apply
+├ ƒ /forms/handover
+├ ƒ /forms/inspection
+├ ƒ /forms/lead-intake
+├ ƒ /forms/license-upload
+├ ƒ /forms/onboarding-inspection
+├ ƒ /forms/operator-apply
+├ ƒ /forms/partner-apply
+├ ƒ /forms/sovereign
+├ ƒ /forms/ticket
+├ ƒ /forms/waitlist
+├ ƒ /inspections
+├ ƒ /insurance
+├ ƒ /intake
+├ ƒ /intake/[business]
+├ ƒ /intake/thanks
+├ ƒ /interfaces/appointments
+├ ƒ /interfaces/contracts
+├ ƒ /interfaces/payments
+├ ƒ /interfaces/vehicles
+├ ƒ /investor
+├ ○ /join
+├ ○ /kits
+├ ƒ /leads
+├ ƒ /learn
+├ ○ /learn/application/review
+├ ○ /learn/coach
+├ ○ /learn/consent
+├ ○ /learn/dashboard
+├ ○ /learn/documents
+├ ○ /learn/onboarding
+├ ○ /learn/products
+├ ○ /learn/questionnaire/business
+├ ○ /learn/questionnaire/personal
+├ ○ /learn/status
+├ ○ /legal
+├ ○ /legal/credit
+├ ○ /legal/funding
+├ ○ /legal/privacy
+├ ○ /legal/rental
+├ ○ /legal/sms
+├ ƒ /login
+├ ƒ /login/forgot
+├ ƒ /login/reset
+├ ƒ /lp/[org]/[sku]
+├ ○ /lp/aixmos
+├ ƒ /maintenance
+├ ○ /manifest.webmanifest
+├ ƒ /money
+├ ƒ /no-access
+├ ○ /offline
+├ ƒ /operation-costs
+├ ƒ /operator
+├ ƒ /operator/leads
+├ ƒ /operator/training
+├ ƒ /operator/training/[moduleId]
+├ ƒ /operators
+├ ƒ /operators/onboard
+├ ƒ /partner
+├ ○ /partners/all-in-one
+├ ƒ /pocket
+├ ○ /pocket/academy
+├   /pocket/academy/[slug]
+│ ├ ● /pocket/academy/how-the-network-earns
+│ ├ ● /pocket/academy/credit-guidance-basics
+│ ├ ● /pocket/academy/where-leads-come-from
+│ └ ● [+2 more paths]
+├ ƒ /pocket/agents
+├ ○ /pocket/assistant
+├ ƒ /pocket/build
+├ ƒ /pocket/climb
+├ ○ /pocket/compass
+├ ƒ /pocket/earn
+├ ƒ /revenue
+├ ƒ /scorecard
+├ ƒ /status/[token]
+├ ƒ /tasks
+├ ƒ /tickets
+├ ƒ /timesheets
+├ ○ /trust
+├ ○ /try
+├ ○ /upgrade
+├ ƒ /va-queue
+├ ƒ /vendor
+├ ƒ /vendors
+├ ƒ /waitlist
+├ ƒ /welcome
+├ ƒ /whoami
+├ ƒ /work/admin
+├ ƒ /work/program
+├ ƒ /work/review
+├ ƒ /work/supervisor
+└ ƒ /workflow-vendors
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+EXIT=0 DUR=102s

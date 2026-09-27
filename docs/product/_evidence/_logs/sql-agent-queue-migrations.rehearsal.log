@@ -1,0 +1,10 @@
+ok  1 all seven docs/repairs bodies are byte-identical to the production ledger (md5)
+ok  2 verbatim bodies are NOT fresh-safe (missing is_platform_admin / intake_events): repo forms are needed
+ok  3 fresh empty DB: all repo forms apply, RLS on with no policy (deny), no triggers on missing tables, cron skipped, re-run clean
+ok  4 all 15 queue/routing functions: body md5, SECURITY DEFINER and volatility equal production
+ok  5 ACLs match production (agent_wp_* service_role only; reap and gen-1/gen-2 not callable); 2 policies; 5 triggers
+ok  6 lifecycle: capture -> enqueue -> 15-min lease claim -> fenced complete -> write-back -> auto-route; duplicate completion rejected
+ok  7 lease expiry -> reap (audited) -> stale and foreign results rejected -> reclaim epoch 3 -> single write-back
+ok  8 re-running all seven repo forms is clean and does not regress the 20260908195354 reaper
+
+ALL PASS

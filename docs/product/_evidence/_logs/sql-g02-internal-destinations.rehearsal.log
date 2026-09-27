@@ -1,0 +1,7 @@
+ok  1 staff alert to a configured internal destination is eligible even though the address is a GHL DND contact
+ok  2 customer message to a GHL DND destination is blocked (also for the staff address used as a customer)
+ok  3 relabelling fails: internal purpose via customer evaluator, unconfigured address, customer purpose via internal evaluator all blocked
+ok  4 inactive destination, purpose not allowed, and wrong-channel address are blocked
+ok  5 shadow batch: internal alert allow->eligible; the DND customer stays blocked on every channel/purpose
+ok  6 internal destinations and evaluator locked to service_role
+G-02 internal destinations rehearsal passed

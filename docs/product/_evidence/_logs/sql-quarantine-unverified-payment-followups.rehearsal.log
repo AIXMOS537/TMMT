@@ -1,0 +1,7 @@
+ok  1 fresh environment: quarantine skipped, generator function created
+ok  2 unverified 21-row set: aborted, statuses unchanged, nothing created
+ok  3 re-runs cleanly; 3 reconciliation rows seeded unverified; anon/authenticated locked out
+ok  4 generator: 3 overdue but unverified obligations -> 0 payment tasks (quarantined work not recreated)
+ok  5 verification needs evidence; once one obligation is verified, exactly 1 task is generated
+ok  6 verified but DNC: still no task (existing DNC filter preserved)
+quarantine rehearsal passed

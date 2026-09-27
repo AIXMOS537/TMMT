@@ -1,0 +1,5 @@
+ok  1 fresh reset without prerequisites: skipped, nothing created
+ok  2 empty queue tables: ledger created, RLS on, anon/authenticated no SELECT, 0 rows
+ok  3 unverified 71-row set: aborted, statuses unchanged, no ledger
+ok  4 already normalized: re-runs twice as a no-op
+G-01 migration rehearsal passed
