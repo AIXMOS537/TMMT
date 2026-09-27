@@ -1,0 +1,5 @@
+ok  1 fresh environment: skipped without error
+ok  2 anon/authenticated: no table access, no helper EXECUTE; service_role keeps both
+ok  3 anon is denied directly, but an anon lead insert still runs the definer trigger chain
+ok  4 service_role server paths still read exec_va_tasks
+least-privilege rehearsal passed

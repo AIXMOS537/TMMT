@@ -1,0 +1,16 @@
+# EXTRACTION BATON — TMMT Master Product Extraction
+
+Separate from the device-cleanup baton (`Desktop\CONSOLIDATION-2026-09-21\BATCH_1_EXECUTION_PACKAGE.md`) and from Desktop `WORK-BATON.md`.
+
+- **STATUS: DONE / STOP (2026-09-22).** The extraction, synthesis, builder pack, Forge tasks and the final consistency review are complete. Nothing further runs from this baton: no implementation, Forge execution, deploy, merge, migration, prod change, messaging activation, cron repair, signup change, GHL or Credit change. The owner reviews `EXTRACTION_FINAL_REPORT.md` and decides what lands.
+- **CURRENT PROJECT:** TMMT OS master product extraction (spec + builder pack). Extraction only, no implementation.
+- **CANONICAL SOURCE:** AIXMOS537/TMMT `origin/master` @ `4cca6835` (2026-09-21 19:44, PR #254). Worktree `C:\dev\wt-master-extraction`, branch `docs/tmmt-master-extraction-2026-09-21`. **Uncommitted; nothing pushed** (final commit = "uncommitted on `docs/tmmt-master-extraction-2026-09-21`, base `4cca6835`").
+- **PHASE 1 (evidence): DONE.** 6/6 evidence files in `_evidence/` (E1 build/tests · E2 screens/roles/design · E3 data/rental/payments/fleet · E4 GHL/intake/comms/automation · E5 credit/AIXMOS/security · E6 rescue/history/tracks). Spot-checked by hand on 2026-09-21: GHL tag → `customer_payments` insert path exists in code (never fired on prod); `lead_to_active_customer_trg` enabled; `/api/cron/*` → `/login` locked in by `middleware.test.ts:237`; `partner_acquisition` authenticated ALL/true (historical — REMEDIATED on prod 2026-09-22 00:50Z, ledger `20260922005007`).
+- **PHASE 2 (synthesis S1): DONE.** `TMMT_MASTER_BUILD_SPEC.md`, `TMMT_FLAGSHIP_READINESS_REPORT.md`, `TMMT_ROADMAP.md` (PM- prefix; GHL M0–M13 and Credit S/C never renumbered).
+- **PHASE 2 (synthesis S2): DONE.** `TMMT_BUILDER_CONTEXT/` (15 files), `TMMT_BUILDER_MASTER_PROMPT.md`, `FORGE_TASKS/` (INDEX + 57), `S2_SPEC_ISSUES.md` (11 issues).
+- **FINAL CONSISTENCY REVIEW: DONE (2026-09-22).** Owner delta `_review/FINAL_REVIEW_DELTA.md` applied (30 points). Outputs: `_review/DEFECT_TRACEABILITY.md` (45 KD + 3 SEC-only, 0 orphans), `_review/FORGE_TRACEABILITY.md` (57 kept / 4 rewritten / 0 deleted), `_review/CONSISTENCY_LOG.md` (31 contradictions fixed + pack/prompt/task edits), `S2_SPEC_ISSUES.md` SI-01…SI-11 all RESOLVED, `EXTRACTION_FINAL_REPORT.md` (22 headings). Master prompt: PASS after §0.0.
+- **PARALLEL TRACK (separate, not this baton):** `sec/partner-acquisition-rls` @ `620e100e` in `C:\dev\wt-sec-partner-acq` — policy REMEDIATED on prod; branch landing, `KNOWN_UNAPPLIED` 54→53 and the `internal_team` product decision are that workstream's / the owner's.
+- **RECOMMENDED FIRST IMPLEMENTATION MILESTONE (for the owner, not for this baton):** PM-00 Security containment, in the order given in `EXTRACTION_FINAL_REPORT.md` §20.
+- **DO NOT TOUCH:** other worktrees (GHL M0–M13 `wt-ghl-*`, Credit C1 `wt-credit-c1`, Phase 2A `wt-2a-profiles`, `wt-ghl-audit`, `wt-sec-partner-acq`), production data, deploys, the M1 sync, rescue bundles.
+- **PRECONDITION MET:** rescue archive ACL locked (A4 done); the rescue archive was read at path/metadata level only, never credential files.
+- **BLOCKERS:** none. **NEXT:** none — STOP for owner review.

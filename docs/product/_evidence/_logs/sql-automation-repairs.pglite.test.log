@@ -1,0 +1,20 @@
+FAIL contract date invariant: Missing expected rejection: partial date writes cannot invert a contract
+FAIL classifier source identity: same contact with different source IDs remains two actionable items
++ actual - expected
+
+  [
+    {
++     n: 1,
++     triage: 'ignore'
++   },
++   {
++     n: 1,
+-     n: 2,
+      triage: 'needs_approval'
+    }
+  ]
+
+FAIL agent lease terminal reap: expiry at max attempts is terminal
+
+'queued' !== 'failed'
+

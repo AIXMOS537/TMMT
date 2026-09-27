@@ -1,0 +1,13 @@
+ok  1 starts free; migration re-runs cleanly
+ok  2 session A acquires
+ok  3 session B is refused and told who holds it
+ok  4 the database itself refuses a second open baton (race-safe)
+ok  5 assert passes for the holder, raises for anyone else
+ok  6 a non-holder cannot renew or release
+ok  7 an unexpired baton cannot be recovered, however idle it looks
+ok  8 expiry does not free the baton: acquire still refused, expired holder can no longer assert
+ok  9 stale recovery needs a real reason, frees without handing over, and is recorded
+ok 10 recoverer acquires normally, releases with evidence; full history kept
+ok 11 ttl is bounded
+ok 12 anon/authenticated have no schema, table or function access; service_role can execute
+production write baton rehearsal passed

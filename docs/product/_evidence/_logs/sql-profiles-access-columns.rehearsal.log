@@ -1,0 +1,23 @@
+ok  1 fixture covers every profiles column
+ok  2 BEFORE: customer sets own role=admin and gains is_admin() + other customers' cases
+ok  3 BEFORE: customer swaps own email and reads that person's cases, ledger, alerts
+ok  4 migration (trigger + grants): customer cannot change any of 16 protected columns on own row
+ok  5 migration (trigger + grants): combined update, upsert, insert and delete give no path to a role
+ok  6 migration (trigger + grants): customer and anon cannot change another profile or create one
+ok  7 migration (trigger + grants): helpers stay false; customer A reads own rows, not customer B's or an unclaimed email's
+ok  8 grants only (trigger dropped): customer cannot change any of 16 protected columns on own row
+ok  9 grants only (trigger dropped): combined update, upsert, insert and delete give no path to a role
+ok 10 grants only (trigger dropped): customer and anon cannot change another profile or create one
+ok 11 grants only (trigger dropped): helpers stay false; customer A reads own rows, not customer B's or an unclaimed email's
+ok 12 trigger only (table grants restored): customer cannot change any of 16 protected columns on own row
+ok 13 trigger only (table grants restored): combined update, upsert, insert and delete give no path to a role
+ok 14 trigger only (table grants restored): customer and anon cannot change another profile or create one
+ok 15 trigger only (table grants restored): helpers stay false; customer A reads own rows, not customer B's or an unclaimed email's
+ok 16 customer can still edit own full_name and phone
+ok 17 admin JWT edits display fields of others; role changes via JWT refused by design
+ok 18 service_role and postgres can still change role, portal_role and email
+ok 19 signup trigger still creates the profile (customer/client defaults)
+ok 20 foreign-key cascades through profiles still run (package set null, user delete)
+ok 21 re-applying is a no-op; final grants are SELECT + UPDATE(full_name, phone, updated_at)
+
+21 checks passed

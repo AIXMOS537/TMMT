@@ -1,0 +1,56 @@
+
+> tmmt-app@0.1.0 test
+> vitest run
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v4.1.11 C:/dev/wt-master-extraction
+
+ ❯ src/lib/agent/compliance/record-opt-out.test.ts (12 tests | 1 failed) 13ms
+     × wires recordGlobalOptOut into the opt-out branch 5ms
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+ ❯ src/lib/guards/ticket-requester-is-not-the-customer.test.ts (4 tests | 1 failed) 6ms
+     × finds the call sites it is meant to police 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/guards/ticket-requester-is-not-the-customer.test.ts > no screen presents requested_by_customer as the customer > finds the call sites it is meant to police
+AssertionError: expected 0 to be greater than 0
+ ❯ src/lib/guards/ticket-requester-is-not-the-customer.test.ts:38:26
+     36|   it("finds the call sites it is meant to police", () => {
+     37|     // If this ever hits zero the guard has silently stopped guarding …
+     38|     expect(files.length).toBeGreaterThan(0);
+       |                          ^
+     39|   });
+     40|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lib/agent/compliance/record-opt-out.test.ts > the inbound route actually calls it > wires recordGlobalOptOut into the opt-out branch
+AssertionError: recordGlobalOptOut at index 12115 is not on an opt-out branch: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/agent/compliance/record-opt-out.test.ts:137:9
+    135|         /control\.kind === 'opt_out'|complianceFlags\.includes\('opt_o…
+    136|         `recordGlobalOptOut at index ${at} is not on an opt-out branch…
+    137|       ).toBe(true)
+       |         ^
+    138|     }
+    139|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 150 passed (152)
+      Tests  2 failed | 2320 passed | 14 skipped (2336)
+   Start at  20:09:11
+   Duration  13.44s (transform 16.72s, setup 56.67s, import 49.61s, tests 4.76s, environment 50.85s)
+
+EXIT=1 DUR=17s

@@ -1,0 +1,13 @@
+ok  0 fresh environment builds; evaluator works with no source tables
+ok  1 dismissed task that still says pending -> blocked task_closed
+ok  2 DNC added after task creation -> re-evaluation blocks (send-time style check)
+ok  3 GHL per-channel DND without TMMT DNC -> blocked suppressed_provider_dnd; inactive DND ignored
+ok  4 SMS STOP -> SMS blocked; email gets cross_channel_policy_undecided (policy not decided in code)
+ok  5 email present, no consent evidence -> review_required consent_unknown (unknown is not yes)
+ok  6 rental inquiry -> credit offer is never eligible without explicit consent evidence
+ok  7 payment follow-up on an unverified obligation -> blocked obligation_unverified
+ok  9 verified obligation + open task + no suppression -> eligible (valid transactional)
+ok  8 internal alert to the owner -> eligible
+ok 10 owner approval missing -> review_required; with record consent + approval -> eligible
+ok 11 guards: unknown purpose/channel/destination; shadow rows hold hashes not PII; comms locked to service_role
+G-02 shadow rehearsal passed
