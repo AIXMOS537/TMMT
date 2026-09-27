@@ -6,7 +6,7 @@
  * SAFETY (lead-cyber gate): this page is 100% client-side and scripted.
  * - NO Supabase, NO API keys, NO real engine, NO real data, NO network writes.
  * - Every response below is canned. Nothing here touches owner assets.
- * The only outbound action is a link into the existing $97 funnel (/lp/moe-legacy/intro-97).
+ * The only outbound action is a link into the existing $97 funnel (/lp/aixmos/intro-97).
  *
  * Compliance: sells the TOOL/experience, never a credit outcome. See the disclaimer footer.
  */
@@ -184,7 +184,7 @@ export default function TryGeniePage() {
           Learn the system, earn with it, keep it. Starts at $97/mo. No $5k guru tax.
         </p>
         <Link
-          href="/lp/moe-legacy/intro-97"
+          href="/lp/aixmos/intro-97"
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
         >
           Get started — $97/mo <ArrowRight className="h-4 w-4" />
