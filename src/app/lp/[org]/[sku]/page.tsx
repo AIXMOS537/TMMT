@@ -16,6 +16,13 @@ import { resolveTenantBySlug, tenantOrDefault } from '@/lib/platform/tenant-reso
 
 const LP_FALLBACK_TENANT = 'tmmt_property'
 
+// Brands with no lead destination. The aixmos_credit brand's org (the retired
+// Moe Legacy tenant row) had its licence wiped 2026-09-21 and owns no
+// partner_app_slug, so /api/leads/webhook answers 404 for every alias of it
+// (moe-legacy, credit, aixmos-credit). The page still rendered, took a phone
+// number and SMS consent in that brand's name, and saved nothing.
+const RETIRED_LP_TENANTS: ReadonlySet<string> = new Set(['aixmos_credit'])
+
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ org: string; sku: string }> }) {
@@ -41,7 +48,7 @@ export default async function LandingPage({ params, searchParams }: {
   // exist. An unknown pair is a typo, a stale link, or a probe. 404 it.
   const copy = Object.hasOwn(COPY, skuParam) ? COPY[skuParam] : undefined
   const brand = resolveTenantBySlug(orgParam)
-  if (!brand || !copy) notFound()
+  if (!brand || !copy || RETIRED_LP_TENANTS.has(brand.slug)) notFound()
   const utm = {
     utm_source: sp.utm_source ?? '',
     utm_medium: sp.utm_medium ?? '',
@@ -80,7 +87,10 @@ export default async function LandingPage({ params, searchParams }: {
         </ul>
 
         <PhoneOnlyForm
-          orgSlug={orgParam}
+          // The canonical slug, not the URL segment: /lp/tmmt/* renders the TMMT
+          // brand through an alias, but only `tmmt_property` is an org slug the
+          // webhook can resolve. Posting the alias 404'd every submission.
+          orgSlug={brand.slug}
           sku={skuParam}
           cta={copy.cta}
           utm={utm}
