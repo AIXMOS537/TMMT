@@ -104,7 +104,7 @@ to a vehicle-inclusive option, and none is being sold.
 > ### TENANT ADMIN ≠ PLATFORM ADMIN
 >
 > A Khan Strategies administrator must be able to administer Khan Strategies
-> **without gaining visibility or authority over TMMT, TechHaus operations, or any
+> **without gaining visibility or authority over TMMT, AIOMS operations, or any
 > other organization.**
 
 **This is a permanent architecture and security rule for the shared multi-tenant
@@ -113,7 +113,7 @@ decision.
 
 ### Two authority domains
 
-**PLATFORM AUTHORITY** — reserved for authorized TechHaus/platform personnel.
+**PLATFORM AUTHORITY** — reserved for authorized AIOMS/platform personnel.
 Platform roles may hold cross-organization capabilities **where explicitly
 intended**.
 

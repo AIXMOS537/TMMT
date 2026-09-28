@@ -14,7 +14,7 @@
 
 
 External research pass. Retrieved **2026-09-07**, US market.
-Companion to `TECHHAUS_CATALOG.md`. **No prices were changed in code, database,
+Companion to `AIOMS_CATALOG.md`. **No prices were changed in code, database,
 checkout or contracts by this pass.**
 
 Comparable grades: **A** direct · **B** strong analog · **C** weak context.
@@ -23,14 +23,14 @@ Comparable grades: **A** direct · **B** strong analog · **C** weak context.
 
 ## 0. THE FINDING THAT REFRAMES EVERYTHING
 
-TechHaus prices have been compared against the wrong market.
+AIOMS prices have been compared against the wrong market.
 
 | Market | Price | Grade |
 |---|---|---|
 | Car-rental **software** (SaaS) | **$49–$400/mo**; setup ~**$650**; $4–5/vehicle/mo mid-market | B |
 | Fractional **operations** (COO-level) | **$5,000–$12,000/mo**; $6–10k for 10–15 hrs/wk; **$175–$400/hr** | A |
 
-TechHaus's proposed **$3,750/mo** sits *between* them — roughly **10–25× rental
+AIOMS's proposed **$3,750/mo** sits *between* them — roughly **10–25× rental
 SaaS** and **below the fractional-ops floor**.
 
 **Both readings cannot be right.** The number is only defensible as **managed
@@ -80,14 +80,14 @@ references, the top of a band is the hardest place to sell from.
 **The decisive external fact: GoHighLevel's own platform tiers are
 $97 / $297 / $497.**
 
-The "$97 vs $297" conflict is almost certainly **not a TechHaus pricing decision
-at all** — it is GHL's price ladder copied into TechHaus copy. That reframes D-2
+The "$97 vs $297" conflict is almost certainly **not a AIOMS pricing decision
+at all** — it is GHL's price ladder copied into AIOMS copy. That reframes D-2
 entirely: there was likely never a deliberate $297 seat strategy to defend.
 
 Corroborating internal evidence: **5 operator rows carry $97, 14 carry $0, none
 carry $297**, and the token ledger can grant only 500 tokens on tag `member-97`.
 
-**Margin note that matters:** if a seat includes a GHL subaccount and TechHaus
+**Margin note that matters:** if a seat includes a GHL subaccount and AIOMS
 holds **Agency Pro at $497/mo with unlimited subaccounts**, the marginal cost per
 seat is near zero and the plan pays for itself at **~6 seats**. At $97 with 5
 live seats ($485/mo) you are approximately at break-even on the platform fee
@@ -114,7 +114,7 @@ are enforced.
 | **$7,500** | mid-market **$5,000–$20,000** | supported |
 | **$15,000** | top of small-business implementation | supported, at ceiling |
 | **$25,000** | above small-business band; custom software **$20K–$60K** | needs scope proof |
-| **$35,000–$50,000** | platforms **$60K–$180K** — TechHaus is *below* this | defensible **if** scope is genuinely platform-level |
+| **$35,000–$50,000** | platforms **$60K–$180K** — AIOMS is *below* this | defensible **if** scope is genuinely platform-level |
 
 **Six rungs is too many for a business with zero software customers.** Every rung
 is a decision the buyer must make and a fulfilment path you must staff.
@@ -164,7 +164,7 @@ universally "contact sales" — **recorded as such, not estimated.**
 
 $50,000 is *below* the custom-platform band ($60K–$180K), so it is not
 aggressive **for the scope claimed**. But the scope claimed exceeds the scope
-implemented (see `TECHHAUS_CATALOG.md` §5 — SHA-256 described as HMAC,
+implemented (see `AIOMS_CATALOG.md` §5 — SHA-256 described as HMAC,
 unverified attestation, advisory kill switch).
 
 **VERDICT: HOLD.** Not because the price is wrong, but because selling it today
@@ -202,7 +202,7 @@ Market evidence (A): **5–15% of initial project value** is the standard for
 service-based B2B and consulting referrals. **1–5%** for large, hands-off
 introductions. Up to **35%** where the referrer actively closes.
 
-TechHaus's position: warm-but-aged leads, no qualification work performed,
+AIOMS's position: warm-but-aged leads, no qualification work performed,
 hands-off introduction → the **lower** band.
 
 | Structure | Market observation | Note |
@@ -212,7 +212,7 @@ hands-off introduction → the **lower** band.
 | Hands-off intro on large deals | **1–5%** | closest to this situation |
 | Tiered by volume | varies | premature at one partner |
 
-**Recommended TechHaus term (NON-BINDING, owner decision):** a **fixed fee per
+**Recommended AIOMS term (NON-BINDING, owner decision):** a **fixed fee per
 qualified lead** or **5–10% of first collected revenue**, capped, for a defined
 12-month window. Fixed-per-lead is preferable here because it pays regardless of
 the partner's close rate — which you cannot observe or audit.
@@ -221,15 +221,15 @@ the partner's close rate — which you cannot observe or audit.
 
 ## 10. PROOF DISCOUNT
 
-TechHaus has **$0 external software revenue** and **no external software
+AIOMS has **$0 external software revenue** and **no external software
 customer at any price**.
 
 **Attribution correction.** The $9,510.57 / 31 payments / $577 figures are
 **consumer rental transactions belonging to Muhammad Taha's rental operation**,
 recorded through the system. They are operational transaction evidence — proof
-the workflows have been exercised against a real business — **not TechHaus
+the workflows have been exercised against a real business — **not AIOMS
 revenue, ARR, MRR or commercial traction**, and they do not establish a
-willingness-to-pay ceiling for B2B software. Do not carry them into a TechHaus
+willingness-to-pay ceiling for B2B software. Do not carry them into a AIOMS
 revenue figure.
 
 Standard practice is to discount for absent proof, then raise once references
@@ -243,7 +243,7 @@ exist.
 
 A skeptical buyer at premium pricing will demand: a paying reference, measured
 ROI, an implementation case study, fulfilment history, and uptime evidence.
-**TechHaus currently has none of these.** That is the discount, and it is
+**AIOMS currently has none of these.** That is the discount, and it is
 temporary — the first three customers buy it back.
 
 ---
