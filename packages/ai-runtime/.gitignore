@@ -1,0 +1,5 @@
+DEVICE_ROLE.md
+node_modules/
+.DS_Store
+._*
+*.log
