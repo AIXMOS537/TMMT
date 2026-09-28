@@ -1,0 +1,728 @@
+diff --git a/src/app/(command)/command/page.tsx b/src/app/(command)/command/page.tsx
+index 4cc8a7e5..68774cbd 100644
+--- a/src/app/(command)/command/page.tsx
++++ b/src/app/(command)/command/page.tsx
+@@ -1,6 +1,10 @@
+ import Link from "next/link";
+ import { Card, PageHeader } from "@/components/ui";
+-import { commandHubSections } from "@/lib/command-hub-nav";
++import {
++  hiddenCommandHubCount,
++  visibleCommandHubSections,
++} from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ import { OWNER_HUB_HOST } from "@/lib/site-domains";
+ import { ChevronRight } from "lucide-react";
+ 
+@@ -9,7 +13,11 @@ export const metadata = {
+   description: "Private ops navigation for fleet, leads, bookings, and command messaging",
+ };
+ 
+-export default function CommandHubPage() {
++export default async function CommandHubPage() {
++  const viewer = await getCommandHubViewer();
++  const sections = visibleCommandHubSections(viewer);
++  const hidden = hiddenCommandHubCount(viewer);
++
+   return (
+     <div className="space-y-8">
+       <PageHeader
+@@ -25,7 +33,7 @@ export default function CommandHubPage() {
+         </p>
+       </Card>
+ 
+-      {commandHubSections.map((section) => (
++      {sections.map((section) => (
+         <section key={section.title}>
+           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-3">
+             {section.title}
+@@ -79,6 +87,19 @@ export default function CommandHubPage() {
+           </ul>
+         </section>
+       ))}
++
++      {hidden > 0 && (
++        <Card className="p-4">
++          <p className="text-sm text-gray-600 dark:text-slate-400">
++            {hidden} {hidden === 1 ? "tool is" : "tools are"} hidden — they belong to modules
++            this account has not licensed, or to a connection that is not set up yet.{" "}
++            <Link href="/upgrade" className="text-blue-600 dark:text-blue-400 underline">
++              See what unlocks them
++            </Link>
++            .
++          </p>
++        </Card>
++      )}
+     </div>
+   );
+ }
+diff --git a/src/app/(command)/layout.tsx b/src/app/(command)/layout.tsx
+index 570c82ec..cdcc8170 100644
+--- a/src/app/(command)/layout.tsx
++++ b/src/app/(command)/layout.tsx
+@@ -1,15 +1,20 @@
+ import PortalChrome from "@/components/PortalChrome";
+ import BrandScope from "@/components/brand/BrandScope";
++import { allowedCommandHubHrefs } from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ 
+ export const metadata = {
+   title: "Command Center — TMMT",
+   description: "Private owner hub — ops navigation, fleet, leads, and command desk",
+ };
+ 
+-export default function CommandLayout({ children }: { children: React.ReactNode }) {
++export default async function CommandLayout({ children }: { children: React.ReactNode }) {
++  const navHrefs = allowedCommandHubHrefs(await getCommandHubViewer());
++
+   return (
+     <BrandScope>
+       <PortalChrome
++        navHrefs={navHrefs}
+         title="Command center"
+         subtitle="Owner hub on .net — ops, fleet, pipeline, and executive command"
+       >
+diff --git a/src/app/(executive)/layout.tsx b/src/app/(executive)/layout.tsx
+index 6cddcedf..06589e4e 100644
+--- a/src/app/(executive)/layout.tsx
++++ b/src/app/(executive)/layout.tsx
+@@ -1,14 +1,19 @@
+ import PortalChrome from "@/components/PortalChrome";
+ import BrandScope from "@/components/brand/BrandScope";
++import { allowedCommandHubHrefs } from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ 
+ export const metadata = {
+   title: "Executive VA — TMMT",
+ };
+ 
+-export default function ExecutiveLayout({ children }: { children: React.ReactNode }) {
++export default async function ExecutiveLayout({ children }: { children: React.ReactNode }) {
++  const navHrefs = allowedCommandHubHrefs(await getCommandHubViewer());
++
+   return (
+     <BrandScope>
+       <PortalChrome
++        navHrefs={navHrefs}
+         title="Executive VA"
+         subtitle="Owner commands · relay to operators (AI-reviewed)"
+       >
+diff --git a/src/app/(investor)/layout.tsx b/src/app/(investor)/layout.tsx
+index 221eec83..ee16196c 100644
+--- a/src/app/(investor)/layout.tsx
++++ b/src/app/(investor)/layout.tsx
+@@ -1,15 +1,20 @@
+ import PortalChrome from "@/components/PortalChrome";
+ import BrandScope from "@/components/brand/BrandScope";
++import { allowedCommandHubHrefs } from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ 
+ export const metadata = {
+   title: "Investor Portal — TMMT",
+   description: "Investor-safe updates and announcements",
+ };
+ 
+-export default function InvestorLayout({ children }: { children: React.ReactNode }) {
++export default async function InvestorLayout({ children }: { children: React.ReactNode }) {
++  const navHrefs = allowedCommandHubHrefs(await getCommandHubViewer());
++
+   return (
+     <BrandScope>
+       <PortalChrome
++        navHrefs={navHrefs}
+         title="Investor portal"
+         subtitle="Performance updates and announcements — no internal operations data"
+       >
+diff --git a/src/app/(operator)/layout.tsx b/src/app/(operator)/layout.tsx
+index 62a47cbe..4758b340 100644
+--- a/src/app/(operator)/layout.tsx
++++ b/src/app/(operator)/layout.tsx
+@@ -1,14 +1,22 @@
+ import PortalChrome from "@/components/PortalChrome";
+ import BrandScope from "@/components/brand/BrandScope";
++import { allowedCommandHubHrefs } from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ 
+ export const metadata = {
+   title: "Operator — TMMT",
+ };
+ 
+-export default function OperatorLayout({ children }: { children: React.ReactNode }) {
++export default async function OperatorLayout({ children }: { children: React.ReactNode }) {
++  const navHrefs = allowedCommandHubHrefs(await getCommandHubViewer());
++
+   return (
+     <BrandScope>
+-      <PortalChrome title="Operator" subtitle="Approved instructions from leadership">
++      <PortalChrome
++        navHrefs={navHrefs}
++        title="Operator"
++        subtitle="Approved instructions from leadership"
++      >
+         {children}
+       </PortalChrome>
+     </BrandScope>
+diff --git a/src/app/(vendor)/layout.tsx b/src/app/(vendor)/layout.tsx
+index f86cc3ef..7f78e8e5 100644
+--- a/src/app/(vendor)/layout.tsx
++++ b/src/app/(vendor)/layout.tsx
+@@ -1,15 +1,20 @@
+ import PortalChrome from "@/components/PortalChrome";
+ import BrandScope from "@/components/brand/BrandScope";
++import { allowedCommandHubHrefs } from "@/lib/command-hub-access";
++import { getCommandHubViewer } from "@/lib/command-hub-access-server";
+ 
+ export const metadata = {
+   title: "Vendor Portal — TMMT",
+   description: "Jobs assigned to your vendor account",
+ };
+ 
+-export default function VendorLayout({ children }: { children: React.ReactNode }) {
++export default async function VendorLayout({ children }: { children: React.ReactNode }) {
++  const navHrefs = allowedCommandHubHrefs(await getCommandHubViewer());
++
+   return (
+     <BrandScope>
+       <PortalChrome
++        navHrefs={navHrefs}
+         title="Vendor portal"
+         subtitle="Accept jobs, update status, upload photos and invoices"
+       >
+diff --git a/src/components/CommandHubNav.tsx b/src/components/CommandHubNav.tsx
+index 913796c8..029c2098 100644
+--- a/src/components/CommandHubNav.tsx
++++ b/src/components/CommandHubNav.tsx
+@@ -2,61 +2,253 @@
+ 
+ import Link from "next/link";
+ import { usePathname } from "next/navigation";
++import { useEffect, useId, useRef, useState } from "react";
++import { ChevronDown, LayoutDashboard } from "lucide-react";
+ import { cn } from "@/lib/utils";
+-import { commandHubSections } from "@/lib/command-hub-nav";
++import { commandHubSections, type CommandHubLink } from "@/lib/command-hub-nav";
++import { COMMAND_HUB_HREF } from "@/lib/command-hub-access";
+ 
+-const quickLinks = commandHubSections.flatMap((s) => s.links);
++/**
++ * The dispatch cockpit is a full-height map + queue, so the nav collapses to a
++ * vertical dropdown there instead of eating a row of vertical space.
++ */
++const DROPDOWN_ROUTE = "/dispatch";
+ 
+-export default function CommandHubNav() {
++export default function CommandHubNav({ allowedHrefs }: { allowedHrefs: string[] }) {
+   const pathname = usePathname();
++  const allowed = new Set(allowedHrefs);
++  const showHub = allowed.has(COMMAND_HUB_HREF);
++  const sections = commandHubSections
++    .map((section) => ({
++      ...section,
++      links: section.links.filter((link) => allowed.has(link.href)),
++    }))
++    .filter((section) => section.links.length > 0);
++
++  if (!showHub && sections.length === 0) return null;
++
++  const asDropdown =
++    pathname === DROPDOWN_ROUTE || pathname.startsWith(`${DROPDOWN_ROUTE}/`);
+ 
+   return (
+     <nav
+       aria-label="Command center"
+       className="border-b border-gray-200 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-900/50"
+     >
+-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex gap-2 overflow-x-auto">
+-        <Link
+-          href="/command"
+-          className={cn(
+-            "shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+-            pathname === "/command"
+-              ? "bg-blue-600 text-white"
+-              : "text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"
+-          )}
+-        >
++      {asDropdown ? (
++        <DropdownNav sections={sections} showHub={showHub} pathname={pathname} />
++      ) : (
++        <BarNav sections={sections} showHub={showHub} pathname={pathname} />
++      )}
++    </nav>
++  );
++}
++
++type Sections = { title: string; links: CommandHubLink[] }[];
++
++function isActive(pathname: string, link: CommandHubLink) {
++  return !link.external && (pathname === link.href || pathname.startsWith(`${link.href}/`));
++}
++
++/** Default: one scrollable row of pills. */
++function BarNav({
++  sections,
++  showHub,
++  pathname,
++}: {
++  sections: Sections;
++  showHub: boolean;
++  pathname: string;
++}) {
++  const pill = (active: boolean) =>
++    cn(
++      "shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
++      active
++        ? "bg-blue-600 text-white"
++        : "text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"
++    );
++
++  return (
++    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex gap-2 overflow-x-auto">
++      {showHub && (
++        <Link href={COMMAND_HUB_HREF} className={pill(pathname === COMMAND_HUB_HREF)}>
+           Hub
+         </Link>
+-        {quickLinks.map((item) => {
+-          const active =
+-            !item.external &&
+-            (pathname === item.href || pathname.startsWith(`${item.href}/`));
+-          const className = cn(
+-            "shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+-            active
+-              ? "bg-blue-600 text-white"
+-              : "text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"
+-          );
+-          if (item.external) {
+-            return (
+-              <a
+-                key={item.href}
+-                href={item.href}
+-                target="_blank"
+-                rel="noopener noreferrer"
+-                className={className}
+-              >
+-                {item.label}
+-              </a>
+-            );
+-          }
+-          return (
+-            <Link key={item.href} href={item.href} className={className}>
++      )}
++      {sections
++        .flatMap((section) => section.links)
++        .map((item) =>
++          item.external ? (
++            <a
++              key={item.href}
++              href={item.href}
++              target="_blank"
++              rel="noopener noreferrer"
++              className={pill(false)}
++            >
++              {item.label}
++            </a>
++          ) : (
++            <Link key={item.href} href={item.href} className={pill(isActive(pathname, item))}>
+               {item.label}
+             </Link>
+-          );
+-        })}
++          )
++        )}
++    </div>
++  );
++}
++
++/** Dispatch only: a single trigger that opens the sections stacked vertically. */
++function DropdownNav({
++  sections,
++  showHub,
++  pathname,
++}: {
++  sections: Sections;
++  showHub: boolean;
++  pathname: string;
++}) {
++  const [open, setOpen] = useState(false);
++  const containerRef = useRef<HTMLDivElement>(null);
++  const menuId = useId();
++
++  const current =
++    pathname === COMMAND_HUB_HREF
++      ? "Hub"
++      : sections.flatMap((s) => s.links).find((l) => isActive(pathname, l))?.label ?? "Menu";
++
++  useEffect(() => {
++    if (!open) return;
++    const onPointerDown = (e: PointerEvent) => {
++      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
++    };
++    const onKeyDown = (e: KeyboardEvent) => {
++      if (e.key === "Escape") setOpen(false);
++    };
++    document.addEventListener("pointerdown", onPointerDown);
++    document.addEventListener("keydown", onKeyDown);
++    return () => {
++      document.removeEventListener("pointerdown", onPointerDown);
++      document.removeEventListener("keydown", onKeyDown);
++    };
++  }, [open]);
++
++  const item = (active: boolean) =>
++    cn(
++      "flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
++      active
++        ? "bg-blue-600 text-white"
++        : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
++    );
++
++  return (
++    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
++      <div ref={containerRef} className="relative inline-block text-left">
++        <button
++          type="button"
++          onClick={() => setOpen((v) => !v)}
++          aria-haspopup="menu"
++          aria-expanded={open}
++          aria-controls={open ? menuId : undefined}
++          className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
++        >
++          <span className="max-w-[16rem] truncate">{current}</span>
++          <ChevronDown
++            size={16}
++            className={cn("shrink-0 transition-transform", open && "rotate-180")}
++          />
++        </button>
++
++        {open && (
++          <div
++            id={menuId}
++            role="menu"
++            aria-label="Command center sections"
++            className="absolute left-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-lg"
++          >
++            {showHub && (
++              <Link
++                href={COMMAND_HUB_HREF}
++                role="menuitem"
++                onClick={() => setOpen(false)}
++                className={item(pathname === COMMAND_HUB_HREF)}
++              >
++                <LayoutDashboard size={16} className="mt-0.5 shrink-0" />
++                <span className="font-medium">Hub</span>
++              </Link>
++            )}
++
++            {sections.map((section) => (
++              <div key={section.title} className="mt-2 first:mt-0">
++                <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
++                  {section.title}
++                </p>
++                {section.links.map((link) => {
++                  const active = isActive(pathname, link);
++                  const Icon = link.icon;
++                  const body = (
++                    <>
++                      <Icon size={16} className="mt-0.5 shrink-0" />
++                      <span className="min-w-0">
++                        <span className="flex items-center gap-2">
++                          <span className="font-medium">{link.label}</span>
++                          {link.badge && (
++                            <span
++                              className={cn(
++                                "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
++                                active
++                                  ? "bg-white/20 text-white"
++                                  : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400"
++                              )}
++                            >
++                              {link.badge}
++                            </span>
++                          )}
++                        </span>
++                        <span
++                          className={cn(
++                            "block text-xs",
++                            active ? "text-blue-100" : "text-gray-500 dark:text-slate-400"
++                          )}
++                        >
++                          {link.description}
++                        </span>
++                      </span>
++                    </>
++                  );
++
++                  if (link.external) {
++                    return (
++                      <a
++                        key={link.href}
++                        href={link.href}
++                        target="_blank"
++                        rel="noopener noreferrer"
++                        role="menuitem"
++                        onClick={() => setOpen(false)}
++                        className={item(false)}
++                      >
++                        {body}
++                      </a>
++                    );
++                  }
++                  return (
++                    <Link
++                      key={link.href}
++                      href={link.href}
++                      role="menuitem"
++                      onClick={() => setOpen(false)}
++                      className={item(active)}
++                    >
++                      {body}
++                    </Link>
++                  );
++                })}
++              </div>
++            ))}
++          </div>
++        )}
+       </div>
+-    </nav>
++    </div>
+   );
+ }
+diff --git a/src/components/PortalChrome.tsx b/src/components/PortalChrome.tsx
+index cb5a34ee..1d3c1131 100644
+--- a/src/components/PortalChrome.tsx
++++ b/src/components/PortalChrome.tsx
+@@ -11,10 +11,13 @@ import { useBrand } from "@/components/brand/BrandProvider";
+ export default function PortalChrome({
+   title,
+   subtitle,
++  navHrefs,
+   children,
+ }: {
+   title: string;
+   subtitle: string;
++  /** Command-hub links this account may see (see command-hub-access). */
++  navHrefs?: string[];
+   children: React.ReactNode;
+ }) {
+   const brand = useBrand();
+@@ -42,7 +45,7 @@ export default function PortalChrome({
+           </div>
+         </div>
+       </header>
+-      <CommandHubNav />
++      {navHrefs && navHrefs.length > 0 && <CommandHubNav allowedHrefs={navHrefs} />}
+       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">{children}</main>
+     </div>
+   );
+diff --git a/src/lib/command-hub-nav.ts b/src/lib/command-hub-nav.ts
+index a608704e..515d404e 100644
+--- a/src/lib/command-hub-nav.ts
++++ b/src/lib/command-hub-nav.ts
+@@ -1,4 +1,5 @@
+ import type { LucideIcon } from "lucide-react";
++import type { AccessTier } from "@/lib/auth-roles";
+ import { ghlLinks } from "@/lib/ghl-links";
+ import { CLICKUP_WORKSPACE_URL } from "@/lib/clickup/config";
+ import {
+@@ -16,8 +17,41 @@ import {
+   ExternalLink,
+   Handshake,
+   Scale,
++  Siren,
+ } from "lucide-react";
+ 
++/**
++ * Purchased org modules — mirrors `organization_licenses.modules` in Supabase
++ * (a `full_os` license implies every module).
++ */
++export const ORG_MODULES = [
++  "rentals_app",
++  "credit_repair",
++  "lease_to_own",
++  "operator_program",
++  "dispatch_core",
++  "agent_sales",
++  "partner_deploy",
++  "revenue_engine",
++] as const;
++
++export type OrgModule = (typeof ORG_MODULES)[number];
++
++/** Third-party connections that must be wired up before we surface their link. */
++export type IntegrationId = "clickup" | "ghl";
++
++/** What an account must have bought (or connected) before a link is shown. */
++export type CommandHubRequirement = {
++  /** Org module from the client's license. */
++  module?: OrgModule;
++  /** Entitlement slug from the client's package (`package_entitlements`). */
++  entitlement?: string;
++  /** Access tiers allowed to see the link. Defaults to owner + staff. */
++  tiers?: AccessTier[];
++  /** Hide unless this connection is configured for the deployment. */
++  integration?: IntegrationId;
++};
++
+ export type CommandHubLink = {
+   href: string;
+   label: string;
+@@ -25,6 +59,7 @@ export type CommandHubLink = {
+   icon: LucideIcon;
+   badge?: string;
+   external?: boolean;
++  requires?: CommandHubRequirement;
+ };
+ 
+ export const commandHubSections: { title: string; links: CommandHubLink[] }[] = [
+@@ -47,18 +82,21 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Fleet",
+         description: "Vehicles, availability, maintenance status",
+         icon: Car,
++        requires: { module: "rentals_app" },
+       },
+       {
+         href: "/appointments",
+         label: "Bookings & appointments",
+         description: "Scheduled pickups, returns, and calendar",
+         icon: CalendarCheck,
++        requires: { module: "rentals_app" },
+       },
+       {
+         href: "/maintenance",
+         label: "Maintenance",
+         description: "Shop work and vehicle downtime",
+         icon: Wrench,
++        requires: { module: "rentals_app" },
+       },
+     ],
+   },
+@@ -70,6 +108,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Program desk (Work face)",
+         description: "Credit & funding readiness — staff review queue",
+         icon: TrendingUp,
++        requires: { module: "credit_repair" },
+         badge: "Cube",
+       },
+       {
+@@ -77,6 +116,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Credit dispute command",
+         description: "Dispute Fox + MyFreeScoreNow → deep audit → FCRA letters → funding",
+         icon: Scale,
++        requires: { module: "credit_repair" },
+         badge: "AIXMOS",
+       },
+       {
+@@ -87,6 +127,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Learn face (client)",
+         description: "Education, coach, questionnaires",
+         icon: ExternalLink,
++        requires: { module: "credit_repair", entitlement: "credit_education_hub" },
+         external: process.env.NEXT_PUBLIC_CUBE_SAME_ORIGIN === "false",
+       },
+       {
+@@ -94,6 +135,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "GHL upsell queue",
+         description: "Contacts tagged ready-for-aixmos → membership",
+         icon: TrendingUp,
++        requires: { integration: "ghl" },
+         badge: "GHL",
+         external: true,
+       },
+@@ -109,6 +151,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "TMMT → AIXMOS ladder",
+         description: "Move existing renters into higher GHL tiers",
+         icon: TrendingUp,
++        requires: { module: "operator_program", entitlement: "upgrade_center" },
+         badge: "GHL",
+       },
+     ],
+@@ -121,6 +164,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Entity handoffs",
+         description: "Cross-entity client handoffs (TMMT · AIXMOS · MOE) with consent status",
+         icon: Handshake,
++        requires: { module: "partner_deploy" },
+         badge: "Federation",
+       },
+       {
+@@ -128,6 +172,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "Operators",
+         description: "Provision operator sub-accounts under an agency and fund their tokens",
+         icon: Users,
++        requires: { module: "operator_program" },
+         badge: "Network",
+       },
+     ],
+@@ -152,11 +197,19 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+   {
+     title: "Workflow & command",
+     links: [
++      {
++        href: "/dispatch",
++        label: "Dispatch cockpit",
++        description: "Live incident queue, units on the map, and assignment locks",
++        icon: Siren,
++        requires: { module: "dispatch_core" },
++      },
+       {
+         href: "/command/desk",
+         label: "Command desk",
+         description: "Voice → AI refine → dispatch to executive VAs",
+         icon: Radio,
++        requires: { tiers: ["owner"] },
+         badge: "Owner",
+       },
+       {
+@@ -170,6 +223,7 @@ export const commandHubSections: { title: string; links: CommandHubLink[] }[] =
+         label: "ClickUp workspace",
+         description: "TMMT RENTALS — fleet, ops, admin lists",
+         icon: ExternalLink,
++        requires: { integration: "clickup" },
+         badge: "ClickUp",
+         external: true,
+       },
+diff --git a/src/middleware.ts b/src/middleware.ts
+index a34ec337..6c699c74 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -4,7 +4,8 @@ import { createMiddlewareClient } from "@/lib/supabase-server";
+ import { isRateLimited } from "@/lib/rate-limit";
+ import { getTierForUser, homePathForTier, type AccessTier } from "@/lib/auth-roles";
+ import { isOwnerHubHost, shouldBounceTmmtCreditToAixmos, aixmosCreditRedirectUrl } from "@/lib/site-domains";
+-import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG } from "@/lib/platform/tenant-resolve";
++import { TENANT_HEADER, resolveTenant, OPS_FALLBACK_SLUG, normalizeHost } from "@/lib/platform/tenant-resolve";
++import { ORG_HEADER, HOST_HEADER, orgIdForHostStatic } from "@/lib/platform/tenant-org";
+ 
+ /** Revenue funnel + webhook surfaces — must stay public (ad loop, GHL, Twilio, dealer demos). */
+ function isFunnelPublicPath(pathname: string) {
+@@ -119,6 +120,22 @@ export async function middleware(request: NextRequest) {
+   });
+   const requestHeaders = new Headers(request.headers);
+   requestHeaders.set(TENANT_HEADER, tenant.slug);
++
++  // Host-based tenancy. The brand above says what to RENDER; the org says what
++  // data the request may TOUCH, and only the org is what RLS enforces.
++  //
++  // Only the house hosts are resolved here, from a static map — an operator's
++  // domain is looked up server-side from organization_domains, because Edge
++  // middleware runs on every request and must not carry a database round trip.
++  // Forwarding the normalized host is what makes that later lookup possible.
++  //
++  // Deliberately no fallback org: an unrecognised host gets no org header at
++  // all. Defaulting to the house org here would silently serve one tenant
++  // another tenant's data, which is precisely what this exists to prevent.
++  requestHeaders.set(HOST_HEADER, normalizeHost(host));
++  const staticOrgId = orgIdForHostStatic(host);
++  if (staticOrgId) requestHeaders.set(ORG_HEADER, staticOrgId);
++  else requestHeaders.delete(ORG_HEADER); // never trust an inbound org header
+   const nextWithTenant = () =>
+     NextResponse.next({ request: { headers: requestHeaders } });
+ 
+diff --git a/supabase/.temp/cli-latest b/supabase/.temp/cli-latest
+index abf43d4f..a0df631c 100755
+--- a/supabase/.temp/cli-latest
++++ b/supabase/.temp/cli-latest
+@@ -1 +1 @@
+-v2.100.1
+\ No newline at end of file
++v2.116.0
+\ No newline at end of file

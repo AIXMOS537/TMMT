@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0a0f1a" />
+  <title>Prompt Library — AIXMOS / TMMT</title>
+
+  <script src="os/kernel.js"></script>
+  <script src="os/theme.js"></script>
+  <link rel="stylesheet" href="brand/console.css" />
+
+  <style>
+    .lib { max-width: 920px; margin: 0 auto 3rem; }
+    .eyebrow {
+      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.6rem;
+    }
+    .lead { color: var(--muted); max-width: 46rem; margin: 0.6rem auto 2rem; text-align: center; line-height: 1.55; }
+    article {
+      border: 1px solid var(--border); background: var(--card);
+      border-radius: var(--radius); padding: 1.25rem 1.35rem; margin-bottom: 1.1rem;
+    }
+    article h2 { font-size: 1.15rem; margin-bottom: 0.35rem; letter-spacing: -0.02em; color: var(--text); }
+    .tag {
+      display: inline-block; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); border: 1px solid var(--accent-line-soft);
+      border-radius: 999px; padding: 0.15rem 0.55rem; margin-bottom: 0.7rem;
+    }
+    pre {
+      white-space: pre-wrap; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5;
+      color: var(--text); background: rgba(0, 0, 0, 0.32); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem; overflow: auto; max-height: 24rem;
+    }
+    .copy {
+      float: right; border: 1px solid var(--border); background: transparent;
+      color: var(--accent-soft); border-radius: 999px; padding: 0.25rem 0.7rem;
+      font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    }
+    .copy:hover { border-color: var(--accent-line); }
+    header.top {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 920px; margin: 0 auto 1.5rem;
+    }
+    header.top a { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+    header.top a:hover { color: var(--accent-soft); }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a href="CEO-Dashboard.html">← Command</a>
+    <span class="badge live">Internal</span>
+  </header>
+
+  <div class="lib">
+    <p class="eyebrow" style="text-align:center">Internal · Prompt Library</p>
+    <h1 style="text-align:center">Reusable <em style="color:var(--accent);font-style:italic">prompts</em></h1>
+    <p class="lead">
+      Reusable briefs for TMMT / AIXMOS agents. Copy into Cursor. Continue from the
+      current phase — do not rewrite working architecture. Every brief names a role,
+      states its anti-patterns, and ends with a deliverable.
+    </p>
+
+    <article>
+      <button class="copy" type="button">Copy</button>
+      <span class="tag">OS · Agent</span>
+      <h2>Command engine — TMMT</h2>
+      <p class="small">Typed ops assistant. Wake “Nexus”. Status machine. Per-role accent, amber warnings.</p>
+      <pre>You are a Senior Operations Architect for TMMT / AIXMOS.
+
+This is NOT a chatbot bolted onto a link page.
+This is a command engine for the Command Center console.
+
+Continue from the existing engine in CommandCenter/os/command-engine.js.
+Do not rewrite existing architecture. Only extend it.
+
+WAKE: "Nexus" / "hey Nexus" / "command"
+STATES: idle | listening | thinking | acting | speaking | error | offline
+PRIMARY INPUT: voice. The command palette (Ctrl+K) and the mouse are fallbacks.
+INTERRUPT: if the user speaks while the system speaks, stop immediately.
+
+TYPED ACTIONS (discriminated union):
+- summary (pending / plate / queue / mission)
+- assign_staff
+- assign_vendor
+- advance_case
+- approve_sync
+- post_ledger
+
+DESIGN: navy #0a0f1a / #0f1729, per-role accent from os/theme.js, system type stack.
+The accent drives the primary action, the mic and focus. Amber #ffc24b is the warning
+and the GoHighLevel tiles. Green #3ddc97 is live / healthy. Never fetch a web font.
+
+SECURITY: no shell exec from voice. No shutdown, restart, or file deletion.
+Refuse those before matching, not after.
+
+DELIVERABLE: one spoken summary + typed results with links.
+Unknown input returns the verb list, never a web-search dump.</pre>
+    </article>
+
+    <article>
+      <button class="copy" type="button">Copy</button>
+      <span class="tag">OS · Hardware</span>
+      <h2>Hardware-adaptive surface (low-spec first)</h2>
+      <p class="small">The brief that keeps one file correct on a 2013 shop PC and an M-series Mac.</p>
+      <pre>You are a Principal Performance Engineer for the Command Center console shell.
+
+Continue from CommandCenter/os/kernel.js. Do not rewrite it. Only extend it.
+
+THE RULE: nothing expensive is on by default. The kernel opts in, the CSS never does.
+Every effect is gated on html[data-effects~="..."] — motion, grid, shadow, blur, glow.
+
+DETECT, in this order, and never block first paint:
+1. Cheap signals, synchronously: hardwareConcurrency, deviceMemory, devicePixelRatio,
+   platform, prefers-reduced-motion, prefers-reduced-transparency, forced-colors,
+   (update: slow), connection.saveData.
+2. GPU, on idle, cached per machine: WEBGL_debug_renderer_info UNMASKED_RENDERER_WEBGL.
+   Classify NVIDIA / AMD / Intel / Apple / Adreno / Mali / PowerVR / software.
+   A software rasteriser (SwiftShader, llvmpipe, RDP) outranks any vendor string it names.
+3. Measured frames, after load: sample ~45 rAF frames. Under 42fps, demote one tier.
+   Measured reality outranks every heuristic. A pinned tier outranks measurement.
+
+TIERS: lite | standard | full.
+CEILINGS, not score nudges:
+- non-Apple integrated GPU never reaches 'full' without >= 8 cores AND >= 8 GB.
+- software and mobile GPUs never reach 'full'.
+- forced-colors forces lite.
+
+CROSS-PLATFORM, non-negotiable:
+- Apple/Safari: -webkit-backdrop-filter alongside backdrop-filter; 100dvh with a
+  100vh fallback; never rely on deviceMemory (Safari and Firefox do not report it).
+- Old Chromium and Safari 16.x: no color-mix() without a literal fallback declared first.
+- Windows High Contrast: hand the surface to the system palette under forced-colors.
+- Fonts load off the critical path so an offline machine paints instantly.
+
+ES5 ONLY in the kernel. No frameworks, no build step, no optional chaining.
+
+DELIVERABLE: data-tier / data-effects / data-gpu / data-platform on <html>, an
+owner-visible readout of the machine, and a manual pin the owner can always set.</pre>
+    </article>
+
+    <article>
+      <button class="copy" type="button">Copy</button>
+      <span class="tag">Surface</span>
+      <h2>Console surface — TMMT / AIXMOS</h2>
+      <p class="small">The navy Command Center chrome. One stylesheet, one accent source.</p>
+      <pre>Build or extend a TMMT / AIXMOS console surface.
+
+Ground: navy #0a0f1a with a #0f1729 radial lift at the top.
+Cards: #161f33, hover #1d2a45, 20px radius, 1px hairline border.
+Accent: PER ROLE, from os/theme.js — owner and dispatch blue #4f8cff, manager
+  violet #b794ff, operator green #3ddc97, sales amber #ffc24b, family pink
+  #ff8fab, friend cyan #5ad1e6, vendor orange #ffa94d. The accent drives the
+  primary tile, the mic and the focus ring on that person's console.
+Semantic: green #3ddc97 live / healthy, amber #ffc24b warning and GHL tiles.
+Type: the system stack ("Segoe UI", system-ui, -apple-system). No web font.
+Icons: emoji tiles are fine here — this is a tool, not a brand campaign.
+
+Motion: settle, not linear. Everything gated behind html[data-effects~="motion"].
+Respect prefers-reduced-motion.
+
+Do NOT declare :root or a token block in a page. Inherit brand/console.css.
+Do NOT hard-code an accent in a page. Call AIXOS.theme.apply(role, override).
+Do NOT use color-mix() — the accent varies per role and old Safari/Chromium
+  cannot resolve it. os/theme.js writes literal rgba companions instead.
+Do NOT fetch a web font. Staff laptops go offline and staff files get emailed.</pre>
+    </article>
+
+    <article>
+      <button class="copy" type="button">Copy</button>
+      <span class="tag">Architecture</span>
+      <h2>Phased extend-only (NEXUS law)</h2>
+      <pre>Continue from Phase N.
+Do not rewrite existing architecture.
+Only extend it.
+
+Every brief includes: TECH STACK, DESIGN LANGUAGE, INTERACTION, STATES,
+COMMAND ENGINE, HARDWARE BUDGET, CONSISTENCY, PERFORMANCE, SECURITY, DELIVERABLE.
+
+Named role. Explicit anti-patterns. Modular files. Mouse is fallback.
+
+Console shell phases, current as of 2026-08-26:
+  Phase 1 Foundation ....... DONE  os/kernel.js - capability tiers, GPU class, frame demotion
+  Phase 2 Brain ............ DONE  os/command-engine.js - state machine, verbs, palette, wake
+  Phase 2b Theme ........... DONE  os/theme.js - the per-role accent, one copy
+  Phase 3 Knowledge ........ OPEN  live ops verbs against TMMT data (summary, assign, advance)
+  Phase 4 Worlds ........... OPEN  graded surfaces (Industrial Deck / Dark Lab / Observatory)
+  Phase 5 Bridge ........... OPEN  local loopback, execFile-only, dual-display
+  Phase 6 Stillness ........ OPEN  master clock, zero drift, film LUTs
+
+Production TMMT OS on Vercel keeps its live blue/Airtable schema.
+The --lux-* tokens in tmmt-os/src/app/globals.css stay opt-in and unused.
+Never bind --lux-* to --primary.</pre>
+    </article>
+
+    <article>
+      <button class="copy" type="button">Copy</button>
+      <span class="tag">Review</span>
+      <h2>Surface audit — run before shipping any console</h2>
+      <p class="small">The checklist that would have caught the blue hero and the dropped tiles.</p>
+      <pre>Audit this surface against the Command Center laws. Report findings, do not fix silently.
+
+1. TOKENS. Does the page declare its own :root or a second copy of the stylesheet?
+   That is a regression. Every console inherits brand/console.css and nothing else.
+2. COLOUR. Is any accent hard-coded in the page instead of coming from
+   AIXOS.theme.apply(role)? A second copy of the role map is how they drift apart.
+3. WARNING. Amber #ffc24b is the warning and the GHL tiles. It must never be
+   reused as a role accent on a console where amber already means "careful".
+4. TILES. Is every tile in the catalog actually rendered? Walk the render path and
+   name any section skipped by a guard clause. A dropped tile also drops its voice target.
+5. VOICE. Does unknown input return the verb list, or does it fall through to a search?
+6. EFFECTS. Is any blur, shadow, grid or transition declared outside a
+   html[data-effects~="..."] gate? On a low-spec PC that is a dropped frame.
+7. COMPAT. Any color-mix() at all (the accent is dynamic, so it cannot have a
+   literal fallback), backdrop-filter without -webkit-, 100vh without 100dvh,
+   or a web-font fetch? Each is a named defect.
+8. NO-JS. With script disabled, does the page render anything at all?
+
+DELIVERABLE: a numbered list of defects, each with file, line, and the one-line fix.</pre>
+    </article>
+  </div>
+
+  <footer>
+    Command Center · internal prompt library · extend-only<br />
+    <span id="os-machine">detecting hardware</span>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pre = btn.parentElement.querySelector('pre');
+        if (!navigator.clipboard) { btn.textContent = 'Select manually'; return; }
+        navigator.clipboard.writeText(pre.textContent).then(function () {
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+        }, function () {
+          btn.textContent = 'Blocked';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+        });
+      });
+    });
+
+    if (window.AIXOS && window.AIXOS.kernel) {
+      var el = document.getElementById('os-machine');
+      window.AIXOS.kernel.on(function () { el.textContent = window.AIXOS.kernel.describe(); });
+    }
+  </script>
+</body>
+</html>

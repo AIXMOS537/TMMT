@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#060606" />
+  <title>AIXMOS OS — Abdul</title>
+
+  <!-- =====================================================================
+       HOW TO MAKE A NEW CONSOLE FOR SOMEONE  (takes ~30 seconds)
+       ---------------------------------------------------------------------
+       1. Copy this file and rename it, e.g.  Dashboard-Sara.html
+       2. Scroll down to the  ==== PROFILE ====  block near the bottom.
+       3. Change just THREE things:
+            name:  their first name      (e.g. "Sara")
+            role:  pick ONE from this list:
+                   owner | manager | dispatch | operator | sales
+                   family | friend | vendor
+            subtitle: the line under their name (optional)
+       4. (Optional) add personal links just for them in  extraTiles.
+       5. Save. Send them the file. Done — they only see what their role allows.
+
+       Roles, from most access to least:
+         owner    = you. Sees EVERYTHING (admin, money, infra).
+         manager  = trusted lead. Operations + Billing. No infra/keys.
+         dispatch = office/coordination. Dispatch, Cases, conversations.
+         operator = field/detailer. Dispatch, Cases, schedule, assistant.
+         sales    = CRM/pipeline. GoHighLevel + Intake.
+         family / friend / vendor = personal links only (no business tiles).
+
+       DO NOT paste a stylesheet into this file. Every console inherits
+       brand/luxury-os.css. A second copy of the styles is how the surface
+       drifted back to SaaS blue last time.
+       ===================================================================== -->
+
+  <!-- INLINED from os/kernel.js — do not edit here.
+       Regenerate with: node tools/build-consoles.js -->
+  <script>
+/* AIXMOS OS - kernel.js
+   Phase 1 - Foundation. Hardware capability detection + effect tiering.
+
+   Load SYNCHRONOUSLY in <head>, before any stylesheet that reads the tier:
+     <script src="os/kernel.js"><\/script>
+
+   It stamps <html> with:
+     data-tier       lite | standard | full
+     data-effects    space-separated: motion grid blur glow shadow
+     data-gpu        nvidia | amd | intel | apple | adreno | mali | powervr | software | unknown
+     data-gpu-class  discrete | integrated | mobile | software | unknown
+     data-platform   windows | macos | ios | ipados | android | linux | unknown
+
+   Rules of the house:
+   - No frameworks. ES5 only. Must run on a 2013 shop PC and on an M-series Mac.
+   - Never block first paint on a GPU probe. Cheap signals decide the first tier;
+     the GPU probe refines it on idle and is cached per machine.
+   - The owner can always pin a tier by hand; a pin outranks every heuristic.
+*/
+(function () {
+  'use strict';
+
+  var W = window;
+  var D = document;
+  var ROOT = D.documentElement;
+  var NS = (W.AIXOS = W.AIXOS || {});
+  if (NS.kernel) { return; }
+
+  var CACHE_KEY = 'aixos.kernel.gpu.v1';
+  var PIN_KEY = 'aixos.kernel.tier.pin';
+  var TIERS = ['lite', 'standard', 'full'];
+
+  /* ---------- tiny helpers (no deps, never throw) ---------- */
+  function store(key, value) {
+    try {
+      if (arguments.length === 1) { return W.localStorage.getItem(key); }
+      if (value === null) { W.localStorage.removeItem(key); return null; }
+      W.localStorage.setItem(key, value);
+      return value;
+    } catch (e) { return null; }
+  }
+  function mq(query) {
+    try { return W.matchMedia ? W.matchMedia(query) : null; } catch (e) { return null; }
+  }
+  function mqOn(query) {
+    var m = mq(query);
+    return !!(m && m.matches);
+  }
+  function finiteNum(value, fallback) {
+    return (typeof value === 'number' && isFinite(value) && value > 0) ? value : fallback;
+  }
+
+  /* ---------- 1. cheap signals (safe before first paint) ---------- */
+  var ua = navigator.userAgent || '';
+  var uaData = navigator.userAgentData || null;
+  var cores = finiteNum(navigator.hardwareConcurrency, 0);
+  var memory = finiteNum(navigator.deviceMemory, 0); /* GiB, Chromium only */
+  var touchPoints = finiteNum(navigator.maxTouchPoints, 0);
+  var dpr = finiteNum(W.devicePixelRatio, 1);
+
+  function detectPlatform() {
+    var hint = (uaData && uaData.platform) || navigator.platform || '';
+    var s = (hint + ' ' + ua).toLowerCase();
+    if (/iphone|ipod/.test(s)) { return 'ios'; }
+    if (/ipad/.test(s)) { return 'ipados'; }
+    if (/android/.test(s)) { return 'android'; }
+    if (/mac/.test(s)) {
+      /* iPadOS masquerades as desktop Safari; only it reports real touch on a "Mac". */
+      return touchPoints > 2 ? 'ipados' : 'macos';
+    }
+    if (/win/.test(s)) { return 'windows'; }
+    if (/cros|linux|x11|freebsd/.test(s)) { return 'linux'; }
+    return 'unknown';
+  }
+  var platform = detectPlatform();
+  var isApple = platform === 'macos' || platform === 'ios' || platform === 'ipados';
+
+  function connection() {
+    var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!c) { return { saveData: false, effectiveType: '' }; }
+    return { saveData: !!c.saveData, effectiveType: String(c.effectiveType || '') };
+  }
+
+  /* ---------- 2. GPU probe (cached; runs once per machine) ---------- */
+  var GPU_PATTERNS = [
+    ['nvidia',   /nvidia|geforce|quadro|\brtx\b|\bgtx\b|tegra/],
+    ['apple',    /apple\s*m\d|apple\s*a\d|apple gpu|apple paravirtual/],
+    ['amd',      /\bamd\b|radeon|\brx\s*\d|vega|firepro|\bati\b|navi/],
+    ['intel',    /intel|hd graphics|uhd graphics|iris|\barc\s*a\d/],
+    ['adreno',   /adreno/],
+    ['mali',     /mali/],
+    ['powervr',  /powervr|sgx/]
+  ];
+  var SOFTWARE_RE = /swiftshader|llvmpipe|softpipe|microsoft basic|basic render|virgl|software adapter/;
+
+  function classifyGpu(renderer) {
+    var s = String(renderer || '').toLowerCase();
+    if (!s) { return { vendor: 'unknown', klass: 'unknown', renderer: '' }; }
+
+    var vendor = 'unknown';
+    for (var i = 0; i < GPU_PATTERNS.length; i++) {
+      if (GPU_PATTERNS[i][1].test(s)) { vendor = GPU_PATTERNS[i][0]; break; }
+    }
+    /* Software rasterisers often still name a vendor ("Intel, SwiftShader"). They win. */
+    if (SOFTWARE_RE.test(s)) { vendor = 'software'; }
+
+    var klass;
+    if (vendor === 'software') {
+      klass = 'software';
+    } else if (vendor === 'adreno' || vendor === 'mali' || vendor === 'powervr') {
+      klass = 'mobile';
+    } else if (vendor === 'apple') {
+      /* Apple silicon is integrated but outruns most discrete parts for this workload. */
+      klass = 'integrated';
+    } else if (vendor === 'nvidia') {
+      klass = 'discrete';
+    } else if (vendor === 'amd') {
+      klass = (/vega\s*\d|radeon\s*graphics|\bapu\b|ryzen/.test(s) && !/\brx\s*\d|radeon pro|navi/.test(s))
+        ? 'integrated' : 'discrete';
+    } else if (vendor === 'intel') {
+      klass = /\barc\s*a\d/.test(s) ? 'discrete' : 'integrated';
+    } else {
+      klass = 'unknown';
+    }
+    return { vendor: vendor, klass: klass, renderer: String(renderer) };
+  }
+
+  function probeGpu() {
+    var canvas, gl = null, info, renderer = '';
+    try {
+      canvas = D.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      var opts = {
+        failIfMajorPerformanceCaveat: false, powerPreference: 'low-power',
+        antialias: false, depth: false, stencil: false
+      };
+      gl = canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts) ||
+           canvas.getContext('experimental-webgl', opts);
+      if (!gl) { return { vendor: 'software', klass: 'software', renderer: 'no-webgl' }; }
+      info = gl.getExtension('WEBGL_debug_renderer_info');
+      if (info) { renderer = gl.getParameter(info.UNMASKED_RENDERER_WEBGL) || ''; }
+      if (!renderer) { renderer = gl.getParameter(gl.RENDERER) || ''; }
+    } catch (e) {
+      return { vendor: 'unknown', klass: 'unknown', renderer: '' };
+    } finally {
+      /* Release immediately - a held GL context costs real memory on a 4 GB box. */
+      try {
+        var lose = gl && gl.getExtension('WEBGL_lose_context');
+        if (lose) { lose.loseContext(); }
+      } catch (e2) {}
+    }
+    return classifyGpu(renderer);
+  }
+
+  function cachedGpu() {
+    var raw = store(CACHE_KEY);
+    if (!raw) { return null; }
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.ua === ua && parsed.gpu) { return parsed.gpu; }
+    } catch (e) {}
+    return null;
+  }
+  function cacheGpu(gpu) {
+    try { store(CACHE_KEY, JSON.stringify({ ua: ua, gpu: gpu })); } catch (e) {}
+  }
+
+  /* ---------- 3. scoring ---------- */
+  var OLD_INTEL_RE = /hd graphics (2000|3000|4000|4400|4600|5000|5500|520)/;
+
+  function scoreOf(gpu) {
+    var conn = connection();
+    var score = 0;
+
+    if (cores >= 8) { score += 2; }
+    else if (cores >= 4) { score += 1; }
+    else if (cores > 0) { score -= 1; }
+
+    if (memory >= 8) { score += 2; }
+    else if (memory >= 4) { score += 1; }
+    else if (memory > 0 && memory <= 2) { score -= 2; }
+
+    /* Safari and Firefox never report deviceMemory. Absence is not weakness. */
+    if (!memory && isApple) { score += 1; }
+
+    switch (gpu && gpu.klass) {
+      case 'discrete': score += 2; break;
+      case 'integrated': score += (gpu.vendor === 'apple') ? 2 : 1; break;
+      case 'mobile': break;
+      case 'software': score -= 5; break;
+      default: break;
+    }
+    /* Pre-Skylake Intel iGPUs stall on backdrop-filter at any window size. */
+    if (gpu && gpu.vendor === 'intel' && OLD_INTEL_RE.test(String(gpu.renderer).toLowerCase())) {
+      score -= 2;
+    }
+    /* Pushing many pixels through a weak GPU is the classic shop-PC stall. */
+    try {
+      var pixels = (screen.width || 0) * (screen.height || 0) * dpr * dpr;
+      if (pixels > 4000000 && score < 4) { score -= 1; }
+    } catch (e) {}
+
+    if (conn.saveData) { score -= 3; }
+    if (/^(slow-2g|2g)$/.test(conn.effectiveType)) { score -= 2; }
+    if (mqOn('(update: slow)')) { score -= 3; }
+    if (mqOn('(forced-colors: active)')) { score -= 5; }
+
+    return score;
+  }
+
+  function tierFromScore(score, gpu) {
+    var tier = score >= 4 ? 'full' : (score >= 1 ? 'standard' : 'lite');
+
+    /* Ceiling, not a score adjustment: a non-Apple integrated GPU does not get
+       backdrop-filter just because the box has plenty of RAM. An Iris 540 with
+       16 GB scores well and still drops frames compositing glass. Let it earn
+       'full' only with a modern core count and memory behind it. */
+    if (tier === 'full' && gpu && gpu.klass === 'integrated' && gpu.vendor !== 'apple') {
+      if (!(cores >= 8 && memory >= 8)) { tier = 'standard'; }
+    }
+    if (gpu && (gpu.klass === 'software' || gpu.klass === 'mobile') && tier === 'full') {
+      tier = 'standard';
+    }
+    return tier;
+  }
+
+  /* ---------- 4. effect budget ---------- */
+  function effectsFor(tier) {
+    var reduceMotion = mqOn('(prefers-reduced-motion: reduce)');
+    var reduceTransparency = mqOn('(prefers-reduced-transparency: reduce)');
+    var forced = mqOn('(forced-colors: active)');
+    var out = [];
+
+    if (!reduceMotion && tier !== 'lite') { out.push('motion'); }
+    if (tier !== 'lite' && !forced) { out.push('grid'); }
+    if (tier !== 'lite' && !forced) { out.push('shadow'); }
+    if (tier === 'full' && !reduceTransparency && !forced) { out.push('blur'); }
+    if (tier === 'full' && !forced) { out.push('glow'); }
+    return out;
+  }
+
+  /* ---------- 5. apply ---------- */
+  var state = {
+    tier: 'standard',
+    pinned: null,
+    effects: [],
+    gpu: { vendor: 'unknown', klass: 'unknown', renderer: '' },
+    platform: platform,
+    cores: cores,
+    memory: memory,
+    dpr: dpr,
+    score: 0,
+    fps: 0,
+    demotions: 0,
+    source: 'boot'
+  };
+  var listeners = [];
+
+  function snapshot() {
+    return {
+      tier: state.tier, pinned: state.pinned, effects: state.effects.slice(),
+      gpu: state.gpu.vendor, gpuClass: state.gpu.klass, renderer: state.gpu.renderer,
+      platform: state.platform, cores: state.cores, memory: state.memory,
+      dpr: state.dpr, score: state.score, fps: state.fps, source: state.source
+    };
+  }
+  function emit() {
+    var snap = snapshot();
+    for (var i = 0; i < listeners.length; i++) {
+      try { listeners[i](snap); } catch (e) {}
+    }
+  }
+
+  function apply(tier, source) {
+    var effective = state.pinned || tier;
+    var changed = effective !== state.tier;
+    state.tier = effective;
+    state.effects = effectsFor(effective);
+    state.source = source || state.source;
+
+    ROOT.setAttribute('data-tier', effective);
+    ROOT.setAttribute('data-effects', state.effects.join(' '));
+    ROOT.setAttribute('data-platform', state.platform);
+    ROOT.setAttribute('data-gpu', state.gpu.vendor);
+    ROOT.setAttribute('data-gpu-class', state.gpu.klass);
+    if (changed) { emit(); }
+    return effective;
+  }
+
+  state.pinned = (function () {
+    var pin = store(PIN_KEY);
+    return (pin && TIERS.indexOf(pin) !== -1) ? pin : null;
+  })();
+
+  /* First paint decides on cheap signals only. A cached GPU verdict counts as cheap. */
+  var cached = cachedGpu();
+  if (cached) { state.gpu = cached; }
+  state.score = scoreOf(state.gpu);
+  apply(tierFromScore(state.score, state.gpu), cached ? "cache" : "provisional");
+
+  /* ---------- 6. refine off the critical path ---------- */
+  function idle(fn) {
+    if (W.requestIdleCallback) { W.requestIdleCallback(fn, { timeout: 2000 }); }
+    else { setTimeout(fn, 250); }
+  }
+
+  if (!cached) {
+    idle(function () {
+      var gpu = probeGpu();
+      state.gpu = gpu;
+      cacheGpu(gpu);
+      state.score = scoreOf(gpu);
+      apply(tierFromScore(state.score, state.gpu), 'probe');
+    });
+  }
+
+  /* ---------- 7. measured reality beats every heuristic ---------- */
+  function demote(reason) {
+    if (state.pinned) { return; }
+    var i = TIERS.indexOf(state.tier);
+    if (i <= 0) { return; }
+    state.demotions++;
+    apply(TIERS[i - 1], reason || 'measured');
+  }
+
+  function measureFrames(sampleFrames, done) {
+    if (!W.requestAnimationFrame) { done(0); return; }
+    var frames = 0, start = 0;
+    function step(now) {
+      if (!start) { start = now; }
+      frames++;
+      if (frames < sampleFrames) { W.requestAnimationFrame(step); return; }
+      var elapsed = now - start;
+      done(elapsed > 0 ? Math.round((frames - 1) * 1000 / elapsed) : 0);
+    }
+    W.requestAnimationFrame(step);
+  }
+
+  function watchFrames() {
+    if (state.pinned || D.hidden) { return; }
+    measureFrames(45, function (fps) {
+      state.fps = fps;
+      /* 0 means we could not measure - never punish a machine for that. */
+      if (fps > 0 && fps < 42) { demote('slow-frames'); }
+      emit();
+    });
+  }
+
+  function onReady(fn) {
+    if (D.readyState === 'complete' || D.readyState === 'interactive') { setTimeout(fn, 0); }
+    else { D.addEventListener('DOMContentLoaded', fn); }
+  }
+  onReady(function () { setTimeout(watchFrames, 900); });
+
+  /* Re-evaluate the budget when an accessibility preference changes mid-session. */
+  var PREF_QUERIES = [
+    '(prefers-reduced-motion: reduce)',
+    '(prefers-reduced-transparency: reduce)',
+    '(forced-colors: active)'
+  ];
+  for (var q = 0; q < PREF_QUERIES.length; q++) {
+    (function (query) {
+      var m = mq(query);
+      if (!m) { return; }
+      var handler = function () { apply(state.tier, 'preference'); emit(); };
+      if (m.addEventListener) { m.addEventListener('change', handler); }
+      else if (m.addListener) { m.addListener(handler); }
+    })(PREF_QUERIES[q]);
+  }
+
+  /* ---------- 8. public surface ---------- */
+  NS.kernel = {
+    version: 1,
+    tiers: TIERS.slice(),
+    get: snapshot,
+    has: function (effect) { return state.effects.indexOf(effect) !== -1; },
+    pin: function (tier) {
+      if (tier === null || tier === 'auto') {
+        state.pinned = null;
+        store(PIN_KEY, null);
+        state.score = scoreOf(state.gpu);
+        return apply(tierFromScore(state.score, state.gpu), 'auto');
+      }
+      if (TIERS.indexOf(tier) === -1) { return state.tier; }
+      state.pinned = tier;
+      store(PIN_KEY, tier);
+      return apply(tier, 'pinned');
+    },
+    cycle: function () {
+      var order = ['auto'].concat(TIERS);
+      var current = state.pinned || 'auto';
+      return NS.kernel.pin(order[(order.indexOf(current) + 1) % order.length]);
+    },
+    remeasure: watchFrames,
+    on: function (fn) { if (typeof fn === 'function') { listeners.push(fn); fn(snapshot()); } },
+    describe: function () {
+      var s = snapshot();
+      var bits = [s.gpu === 'unknown' ? 'GPU unknown' : s.gpu.toUpperCase()];
+      if (s.cores) { bits.push(s.cores + ' cores'); }
+      if (s.memory) { bits.push(s.memory + ' GB'); }
+      bits.push(s.tier + (s.pinned ? ' (pinned)' : '') + ' graphics');
+      return bits.join(' · ');
+    }
+  };
+})();
+
+  </script>
+
+  <!-- INLINED from brand/luxury-os.css — do not edit here. -->
+  <style>
+/* TMMT / AIXMOS - industrial luxury OS
+   Source craft: Brand Motion cosmos-landing + NEXUS. Not Iron Man, not SaaS navy.
+
+   Contract with os/kernel.js. The kernel stamps <html> with:
+     data-tier      lite | standard | full
+     data-effects   motion grid blur glow shadow
+     data-gpu       nvidia | amd | intel | apple | software | ...
+     data-platform  windows | macos | ios | ipados | android | linux
+
+   Nothing expensive is ever on by default. Every effect is opt-in and only the
+   kernel opts in. That is what lets this run on a 4 GB shop PC and an M-series
+   Mac from the same file.
+
+   Colour law:
+     gold   = the centred, primary, earned action. Focus. Never a warning.
+     silver = body and telemetry.
+     orange = warning, isolated, never gold.
+     green  = live / healthy.
+
+   Fonts are loaded by the PAGE, not by this file, so an offline machine paints
+   immediately in the system stack instead of waiting on a font server.
+*/
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  --bg: #060606;
+  --bg2: #0c0c0c;
+  --card: rgba(255, 255, 255, 0.035);
+  --card-hover: rgba(212, 175, 55, 0.1);
+  --border: rgba(205, 209, 216, 0.12);
+  --text: #f7f7f5;
+  --muted: #9aa3ad;
+
+  --accent: #d4af37;
+  --accent-soft: #f0d488;
+  /* Static companions to --accent. Literal rgba, so no color-mix() dependency:
+     Safari 16.2 and Chromium <111 are still real machines in this fleet. */
+  --accent-line: rgba(212, 175, 55, 0.45);
+  --accent-line-soft: rgba(212, 175, 55, 0.28);
+  --accent-fill: rgba(212, 175, 55, 0.14);
+  --accent-glow: rgba(212, 175, 55, 0.28);
+
+  --silver: #cdd1d8;
+  --green: #8fd9b4;
+  --green-line: rgba(143, 217, 180, 0.35);
+  --warning: #c45c2a;
+  --amber: #c45c2a; /* kept: older pages still reference --amber */
+
+  /* Role tint colours the identity chip only. It never becomes the CTA. */
+  --role-tint: var(--silver);
+
+  --font-display: "Space Grotesk", "Segoe UI Variable Display", system-ui, -apple-system, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --radius: 16px;
+  --shell: 1080px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1); /* settle, not linear */
+}
+
+/* --------------------------------------------------------------- reset */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg); /* paint black before body styles resolve */
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh; /* iOS/iPadOS: dodge the collapsing address bar */
+  padding: 1.5rem 1.25rem 3rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
+  position: relative;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------- architectural grid */
+/* Only drawn when the kernel says the GPU can spare a fixed compositing layer. */
+body::before { content: none; }
+
+html[data-effects~="grid"] body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(205, 209, 216, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(205, 209, 216, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  z-index: 0;
+}
+body > * { position: relative; z-index: 1; }
+
+/* ------------------------------------------------------------- header */
+header { text-align: center; max-width: var(--shell); margin: 0 auto 2rem; }
+header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 1.1rem + 1.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+header .sub { color: var(--muted); margin-top: 0.4rem; font-size: 0.95rem; }
+
+.meta { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+.badge {
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+}
+.badge.live { color: var(--green); border-color: var(--green-line); }
+.badge.role { color: var(--role-tint); border-color: var(--border); }
+.badge.warn { color: var(--warning); border-color: rgba(196, 92, 42, 0.45); }
+.badge.mono { font-family: var(--font-mono); letter-spacing: 0.04em; text-transform: none; }
+
+/* ------------------------------------------------------ command strip */
+.voice-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.65rem; margin-top: 1.5rem;
+}
+#mic {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; max-width: 420px;
+  padding: 1.05rem 1.5rem;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #160f00;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+#mic[disabled] { opacity: 0.45; cursor: not-allowed; }
+#mic .mic-icon { font-size: 1.25rem; line-height: 1; }
+#mic.listening { background: transparent; color: var(--accent-soft); border-color: var(--accent-soft); }
+
+.hf-toggle {
+  margin-top: 0.2rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hf-toggle.on { color: var(--green); border-color: var(--green-line); }
+
+/* --------------------------------------------------- state machine UI */
+/* One element, seven states. The colour says which. Gold is focus only. */
+#voice-status, .os-status {
+  min-height: 1.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 34rem;
+}
+.os-status.listening { color: var(--accent-soft); }
+.os-status.thinking  { color: var(--silver); }
+.os-status.acting    { color: var(--green); }
+.os-status.speaking  { color: var(--silver); }
+.os-status.error     { color: var(--warning); }
+.os-status.offline   { color: var(--muted); }
+/* Legacy classes from the pre-engine build, kept so old pages do not break. */
+.os-status.ok, #voice-status.ok { color: var(--green); }
+#voice-status.warn { color: var(--warning); }
+
+.os-statebar {
+  display: flex; justify-content: center; align-items: center;
+  gap: 0.5rem; flex-wrap: wrap;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.os-statebar .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted);
+}
+html[data-os-state="listening"] .os-statebar .dot { background: var(--accent); }
+html[data-os-state="acting"] .os-statebar .dot,
+html[data-os-state="speaking"] .os-statebar .dot { background: var(--green); }
+html[data-os-state="error"] .os-statebar .dot { background: var(--warning); }
+.os-statebar button {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font: inherit; border-radius: 999px; padding: 0.15rem 0.6rem; cursor: pointer;
+}
+.os-statebar button:hover { color: var(--silver); border-color: var(--silver); }
+
+/* ------------------------------------------------------------ layout */
+section { max-width: var(--shell); margin: 0 auto 2rem; }
+section h2 {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--silver);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+  padding-left: 0.25rem;
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.9rem; }
+.grid.big { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+a.tile, div.tile {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.55rem;
+  padding: 1.4rem 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-align: center;
+  min-height: 124px;
+}
+a.tile:hover, a.tile:focus-visible {
+  background: var(--card-hover);
+  border-color: var(--accent-line);
+}
+.icon { font-size: 1.35rem; line-height: 1; color: var(--silver); }
+.small { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+
+a.tile.primary {
+  background: var(--accent-fill);
+  border-color: var(--accent-line);
+  min-height: 150px;
+  font-size: 1.15rem;
+  font-family: var(--font-display);
+}
+a.tile.ghl:hover { border-color: var(--accent-soft); }
+
+.empty {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+footer {
+  max-width: var(--shell);
+  margin: 2.5rem auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+
+/* -------------------------------------------------- command palette */
+.os-palette {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 12vh 1rem 1rem;
+  background: rgba(6, 6, 6, 0.72);
+}
+.os-palette[hidden] { display: none; }
+.os-palette-sheet {
+  width: 100%; max-width: 640px;
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.os-palette-input {
+  width: 100%;
+  padding: 1.1rem 1.25rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.os-palette-input:focus { outline: none; border-bottom-color: var(--accent-line); }
+.os-palette-list { list-style: none; max-height: 46vh; overflow-y: auto; }
+.os-palette-item {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 1.25rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.os-palette-item.active { background: var(--accent-fill); border-left-color: var(--accent); }
+.os-palette-kind {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.os-palette-label { font-size: 0.92rem; font-weight: 600; }
+.os-palette-hint {
+  font-size: 0.75rem; color: var(--muted); text-align: right;
+  max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.os-palette-empty { padding: 1.1rem 1.25rem; color: var(--muted); font-size: 0.85rem; }
+.os-palette-foot {
+  padding: 0.65rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ================================================================
+   EFFECT BUDGET - everything below is gated by the kernel
+   ================================================================ */
+
+/* Motion: springy settle, never linear. Off on lite tier and reduced-motion. */
+html[data-effects~="motion"] a.tile,
+html[data-effects~="motion"] #mic,
+html[data-effects~="motion"] .hf-toggle {
+  transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease),
+              transform 0.22s var(--ease), box-shadow 0.22s var(--ease);
+}
+html[data-effects~="motion"] a.tile:hover,
+html[data-effects~="motion"] a.tile:focus-visible { transform: translateY(-2px); }
+html[data-effects~="motion"] #mic:hover,
+html[data-effects~="motion"] #mic:focus-visible { transform: translateY(-1px); }
+
+/* Glass: backdrop-filter is the single most expensive thing on an Intel iGPU.
+   Full tier only, and only when the user has not asked for less transparency. */
+html[data-effects~="blur"] a.tile,
+html[data-effects~="blur"] div.tile,
+html[data-effects~="blur"] .os-palette-sheet {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+html[data-effects~="blur"] .os-palette {
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* Gold glow: focus made visible. Full tier only. */
+html[data-effects~="glow"] #mic:hover,
+html[data-effects~="glow"] #mic:focus-visible { box-shadow: 0 0 0 6px var(--accent-glow); }
+html[data-effects~="glow"] a.tile.primary:hover { box-shadow: 0 0 0 4px var(--accent-glow); }
+
+html[data-effects~="shadow"] .os-palette-sheet { box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6); }
+
+/* Lite tier: flat, opaque, cheap. Still unmistakably the same OS. */
+html[data-tier="lite"] a.tile,
+html[data-tier="lite"] div.tile { background: #101010; }
+html[data-tier="lite"] a.tile.primary { background: #1c1608; }
+html[data-tier="lite"] a.tile:hover { background: #171308; }
+html[data-tier="lite"] .os-palette { background: #060606; }
+
+/* Software rasteriser (SwiftShader / llvmpipe / RDP session): strip it back
+   further. These machines cannot composite a translucent layer at all. */
+html[data-gpu="software"] a.tile,
+html[data-gpu="software"] div.tile,
+html[data-gpu="software"] .os-palette-sheet {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: #101010;
+}
+
+/* Apple: Safari needs the prefix above, and hairline borders read heavier on
+   Retina, so lighten them a touch rather than fake a different design. */
+html[data-platform="macos"] a.tile,
+html[data-platform="ios"] a.tile,
+html[data-platform="ipados"] a.tile { border-color: rgba(205, 209, 216, 0.1); }
+
+/* -------------------------------------------------------- responsive */
+@media (max-width: 600px) {
+  body { padding-top: 1rem; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+  a.tile { min-height: 110px; padding: 1.1rem 0.5rem; font-size: 0.9rem; }
+  a.tile.primary { min-height: 124px; font-size: 1rem; }
+  .os-palette { padding-top: 6vh; }
+}
+
+/* Coarse pointers (shop tablet on the wall): bigger targets, no hover states. */
+@media (hover: none) and (pointer: coarse) {
+  a.tile { min-height: 132px; }
+  a.tile:hover { transform: none; }
+}
+
+/* The OS must survive the user's own settings, not fight them. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  a.tile:hover, #mic:hover { transform: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  a.tile, div.tile, .os-palette-sheet {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: #101010;
+  }
+  .os-palette { background: #060606; }
+}
+
+/* Windows High Contrast: hand the whole surface to the system palette. */
+@media (forced-colors: active) {
+  a.tile, div.tile, .badge, .os-palette-sheet, #mic {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .icon { forced-color-adjust: auto; }
+}
+
+@media print {
+  body { background: #fff; color: #000; }
+  #mic, .hf-toggle, .os-palette, .os-statebar { display: none !important; }
+}
+
+  </style>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" />
+  <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" /></noscript>
+
+  <style>
+    .icon { font-size: 1.45rem; }
+    a.tile.primary .icon { font-size: 1.7rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="greeting">AIXMOS OS</h1>
+    <p class="sub" id="subtitle">AIXMOS · TMMT</p>
+    <div class="meta">
+      <span class="badge live">● Live</span>
+      <span class="badge role" id="role-chip">operator</span>
+      <span class="badge mono" id="clock">—</span>
+    </div>
+
+    <div class="voice-wrap">
+      <button id="mic" type="button" aria-pressed="false">
+        <span class="mic-icon" aria-hidden="true">◎</span>
+        <span id="mic-label">Hold to command</span>
+      </button>
+      <div id="voice-status" class="os-status idle" role="status" aria-live="polite">Starting…</div>
+      <button id="handsfree" type="button" class="hf-toggle" aria-pressed="false">Hands-free: off</button>
+
+      <div class="os-statebar">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="os-state">idle</span>
+        <span aria-hidden="true">·</span>
+        <span id="os-machine">detecting hardware</span>
+        <button id="os-graphics" type="button" title="Cycle graphics: auto → lite → standard → full">graphics</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="sections"><!-- tiles are generated by the script below --></main>
+
+  <noscript>
+    <section>
+      <h2>Script is off — direct links</h2>
+      <div class="grid">
+        <a class="tile" href="https://tmmt-ops.vercel.app/internal/briefing">Morning Briefing</a>
+        <a class="tile" href="https://tmmt-ops.vercel.app/internal/dispatch">Dispatch</a>
+        <a class="tile" href="mailto:tmmtautodetail@gmail.com">Message Muhammad</a>
+      </div>
+    </section>
+  </noscript>
+
+  <footer id="footer"></footer>
+
+  <!-- INLINED from os/command-engine.js — do not edit here. -->
+  <script>
+/* AIXMOS OS - command-engine.js
+   Phase 2 - Brain. One command engine behind voice, keyboard and mouse.
+
+   Load AFTER kernel.js, at the end of <body>:
+     <script src="os/command-engine.js"><\/script>
+
+   Laws (from the NEXUS brief - do not relitigate these in a later pass):
+   - Voice is the primary input. The palette and the mouse are fallbacks, never absent.
+   - The engine is a STATE MACHINE, not a regex that opens a URL:
+       idle | listening | thinking | acting | speaking | error | offline
+   - Unknown input returns the verb list. It never dumps the user into a web search.
+     A web search is its own verb, spoken on purpose: "search <thing>".
+   - Speaking is interruptible. New input stops the voice immediately.
+   - No shell, no shutdown, no delete. Voice cannot reach the machine.
+*/
+(function () {
+  'use strict';
+
+  var W = window;
+  var D = document;
+  var ROOT = D.documentElement;
+  var NS = (W.AIXOS = W.AIXOS || {});
+  if (NS.os) { return; }
+
+  var STATES = ['idle', 'listening', 'thinking', 'acting', 'speaking', 'error', 'offline'];
+  var WAKE_WORDS = ['nexus', 'hey nexus', 'okay nexus', 'ok nexus', 'command', 'hey command', 'okay command', 'computer'];
+  var QUESTION_RE = /^(what|when|where|why|who|how|which|is|are|can|could|should|do|does|did|will|would|tell me|show me)\b/;
+  /* Voice must never be able to touch the machine. Refuse, loudly, before matching. */
+  var FORBIDDEN_RE = /\b(shutdown|shut down|reboot|restart the (pc|computer|machine)|format|wipe|erase|uninstall|delete (all|everything|the)|rm -rf|kill process|disable (defender|firewall|antivirus))\b/;
+
+  var config = {
+    assistantUrl: '',
+    allowAssistant: false,
+    searchUrl: 'https://www.google.com/search?q=',
+    speak: true,
+    statusEl: null,
+    stateEl: null,
+    micEl: null,
+    micLabelEl: null,
+    handsFreeEl: null
+  };
+
+  var targets = [];
+  var commands = [];
+  var listeners = [];
+  var state = 'idle';
+  var lastMessage = '';
+
+  /* ---------------- state machine ---------------- */
+  function setState(next, message) {
+    if (STATES.indexOf(next) === -1) { next = 'idle'; }
+    state = next;
+    lastMessage = message || '';
+    ROOT.setAttribute('data-os-state', state);
+
+    if (config.statusEl) {
+      config.statusEl.textContent = lastMessage;
+      config.statusEl.className = 'os-status ' + state;
+    }
+    if (config.stateEl) {
+      config.stateEl.textContent = state;
+    }
+    if (config.micEl) {
+      config.micEl.classList.toggle('listening', state === 'listening');
+      config.micEl.setAttribute('aria-pressed', state === 'listening' ? 'true' : 'false');
+    }
+    for (var i = 0; i < listeners.length; i++) {
+      try { listeners[i](state, lastMessage); } catch (e) {}
+    }
+  }
+  function idleSoon(message, delay) {
+    W.setTimeout(function () {
+      if (state !== 'listening') { setState(navigator.onLine === false ? 'offline' : 'idle', message || ''); }
+    }, delay || 2600);
+  }
+
+  /* ---------------- speech out (interruptible) ---------------- */
+  var synth = W.speechSynthesis || null;
+  function stopSpeaking() {
+    if (synth) { try { synth.cancel(); } catch (e) {} }
+  }
+  function say(text) {
+    if (!config.speak || !synth || !text) { return; }
+    try {
+      stopSpeaking();
+      var utter = new W.SpeechSynthesisUtterance(String(text));
+      utter.rate = 1.02;
+      utter.onend = function () { if (state === 'speaking') { setState('idle', ''); } };
+      setState('speaking', text);
+      synth.speak(utter);
+    } catch (e) {}
+  }
+
+  /* ---------------- registry ---------------- */
+  function normalise(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function registerTarget(t) {
+    if (!t || !t.name) { return; }
+    var keywords = [];
+    var words = normalise(t.name).split(' ');
+    for (var i = 0; i < words.length; i++) { if (words[i].length > 1) { keywords.push(words[i]); } }
+    if (t.keywords) {
+      var extra = (typeof t.keywords === 'string') ? t.keywords.split(',') : t.keywords;
+      for (var j = 0; j < extra.length; j++) {
+        var k = normalise(extra[j]);
+        if (k) { keywords.push(k); }
+      }
+    }
+    targets.push({
+      kind: 'target',
+      id: t.id || ('target-' + targets.length),
+      name: t.name,
+      label: t.label || t.name,
+      hint: String(t.hint || '').replace(/\s+/g, ' ').trim().slice(0, 64),
+      keywords: keywords,
+      open: t.open || null,
+      href: t.href || '',
+      external: t.external !== false
+    });
+  }
+
+  function registerCommand(c) {
+    if (!c || !c.verb || typeof c.run !== 'function') { return; }
+    commands.push({
+      kind: 'command',
+      id: c.id || c.verb,
+      verb: c.verb,
+      phrases: (c.phrases || [c.verb]).map(normalise),
+      help: c.help || '',
+      args: !!c.args,
+      run: c.run
+    });
+  }
+
+  function verbList() {
+    var out = [];
+    for (var i = 0; i < commands.length; i++) { out.push(commands[i].verb); }
+    return out;
+  }
+
+  /* ---------------- matching ---------------- */
+  function matchCommand(said) {
+    for (var i = 0; i < commands.length; i++) {
+      var c = commands[i];
+      for (var p = 0; p < c.phrases.length; p++) {
+        var phrase = c.phrases[p];
+        if (!phrase) { continue; }
+        if (said === phrase) { return { cmd: c, rest: '' }; }
+        if (said.indexOf(phrase + ' ') === 0) { return { cmd: c, rest: said.slice(phrase.length).trim() }; }
+      }
+    }
+    return null;
+  }
+
+  function matchTarget(said) {
+    if (!said) { return null; }
+    var i, t;
+    for (i = 0; i < targets.length; i++) {
+      t = targets[i];
+      var name = normalise(t.name);
+      if (said === name || said.indexOf(name) !== -1 || (name.length > 3 && name.indexOf(said) !== -1)) { return t; }
+    }
+    var spoken = said.split(' ');
+    var best = null, bestScore = 0;
+    for (i = 0; i < targets.length; i++) {
+      t = targets[i];
+      var score = 0;
+      for (var k = 0; k < t.keywords.length; k++) {
+        for (var w = 0; w < spoken.length; w++) {
+          var word = spoken[w];
+          if (word.length < 3) { continue; }
+          if (word === t.keywords[k]) { score += 2; }
+          else if (t.keywords[k].indexOf(word) !== -1 || word.indexOf(t.keywords[k]) !== -1) { score += 1; }
+        }
+      }
+      if (score > bestScore) { bestScore = score; best = t; }
+    }
+    /* One weak keyword hit is a coincidence, not an intent. */
+    return bestScore >= 2 ? best : null;
+  }
+
+  function openTarget(t) {
+    setState('acting', 'Opening ' + t.label);
+    try {
+      if (typeof t.open === 'function') { t.open(); }
+      else if (t.href) {
+        if (t.external) { W.open(t.href, '_blank', 'noopener'); }
+        else { W.location.href = t.href; }
+      }
+    } catch (e) {
+      setState('error', 'Could not open ' + t.label);
+      return;
+    }
+    idleSoon('');
+  }
+
+  function stripWake(said) {
+    for (var i = 0; i < WAKE_WORDS.length; i++) {
+      var w = WAKE_WORDS[i];
+      if (said === w) { return ''; }
+      if (said.indexOf(w + ' ') === 0) { return said.slice(w.length).trim(); }
+    }
+    return null; /* null = no wake word present */
+  }
+
+  /* ---------------- the one entry point ---------------- */
+  function run(raw, source) {
+    stopSpeaking();
+    var said = normalise(raw);
+    if (!said) { setState('idle', ''); return; }
+
+    if (FORBIDDEN_RE.test(said)) {
+      setState('error', 'Refused. This console cannot control the machine.');
+      idleSoon('', 4000);
+      return;
+    }
+
+    setState('thinking', 'Heard "' + said + '"');
+
+    var stripped = stripWake(said);
+    if (stripped !== null) {
+      if (!stripped) { setState('listening', 'Yes? Name a page or a verb.'); return; }
+      said = stripped;
+    }
+
+    var hit = matchCommand(said);
+    if (hit) {
+      try { hit.cmd.run(hit.rest, { source: source || 'text', said: said }); }
+      catch (e) { setState('error', 'That command failed.'); idleSoon(''); }
+      return;
+    }
+
+    var t = matchTarget(said);
+    if (t) { openTarget(t); return; }
+
+    if (QUESTION_RE.test(said) && config.allowAssistant && config.assistantUrl) {
+      askAssistant(said);
+      return;
+    }
+
+    /* The NEXUS rule: unknown input returns the verb list, not a web dump. */
+    setState('error', 'Not a known command. Try: ' + verbList().slice(0, 6).join(', ') + ' - or press Ctrl+K.');
+    idleSoon('', 5200);
+  }
+
+  function askAssistant(question) {
+    if (!config.assistantUrl) {
+      setState('error', 'No assistant is configured on this profile.');
+      idleSoon('');
+      return;
+    }
+    setState('acting', 'Asking the Assistant: "' + question + '"');
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(question).catch(function () {});
+      }
+    } catch (e) {}
+    W.open(config.assistantUrl + (config.assistantUrl.indexOf('?') === -1 ? '?q=' : '&q=') + encodeURIComponent(question), '_blank', 'noopener');
+    idleSoon('');
+  }
+
+  /* ---------------- built-in verbs ---------------- */
+  function installBuiltins() {
+    registerCommand({
+      verb: 'help', phrases: ['help', 'what can you do', 'commands', 'verbs'],
+      help: 'list every verb this console knows',
+      run: function () {
+        var msg = 'Verbs: ' + verbList().join(', ') + '. Or say a tile name.';
+        setState('acting', msg);
+        say('I know ' + verbList().length + ' verbs. ' + verbList().slice(0, 6).join(', '));
+        idleSoon('', 7000);
+      }
+    });
+    registerCommand({
+      verb: 'open', phrases: ['open', 'go to', 'launch', 'show me', 'show'], args: true,
+      help: 'open a tile by name',
+      run: function (rest) {
+        var t = matchTarget(normalise(rest));
+        if (t) { openTarget(t); return; }
+        setState('error', 'No tile called "' + rest + '". Press Ctrl+K to see them all.');
+        idleSoon('', 4200);
+      }
+    });
+    registerCommand({
+      verb: 'search', phrases: ['search', 'search the web', 'look up', 'google'], args: true,
+      help: 'search the web on purpose',
+      run: function (rest) {
+        if (!rest) { setState('error', 'Say what to search for.'); idleSoon(''); return; }
+        setState('acting', 'Searching the web for "' + rest + '"');
+        W.open(config.searchUrl + encodeURIComponent(rest), '_blank', 'noopener');
+        idleSoon('');
+      }
+    });
+    registerCommand({
+      verb: 'ask', phrases: ['ask', 'ask the assistant', 'assistant', 'question'], args: true,
+      help: 'send a question to the TMMT Assistant',
+      run: function (rest) {
+        if (!config.allowAssistant) { setState('error', 'The Assistant is not available on this profile.'); idleSoon(''); return; }
+        if (!rest) { setState('error', 'Say the question after "ask".'); idleSoon(''); return; }
+        askAssistant(rest);
+      }
+    });
+    registerCommand({
+      verb: 'graphics', phrases: ['graphics', 'performance', 'graphics mode', 'set graphics'], args: true,
+      help: 'pin graphics: auto | lite | standard | full',
+      run: function (rest) {
+        if (!NS.kernel) { setState('error', 'Kernel not loaded.'); idleSoon(''); return; }
+        var want = normalise(rest);
+        var applied = want ? NS.kernel.pin(want === 'auto' ? 'auto' : want) : NS.kernel.cycle();
+        setState('acting', 'Graphics: ' + applied + ' - ' + NS.kernel.describe());
+        idleSoon('', 5000);
+      }
+    });
+    registerCommand({
+      verb: 'status', phrases: ['status', 'system', 'diagnostics', 'what machine is this'],
+      help: 'report the machine this console is running on',
+      run: function () {
+        var text = NS.kernel ? NS.kernel.describe() : 'Kernel not loaded';
+        setState('acting', text);
+        say(text);
+        idleSoon('', 6000);
+      }
+    });
+    registerCommand({
+      verb: 'stop', phrases: ['stop', 'cancel', 'never mind', 'quiet'],
+      help: 'stop listening and stop speaking',
+      run: function () { stopSpeaking(); voice.stop(); setState('idle', ''); }
+    });
+  }
+
+  /* ---------------- command palette (keyboard fallback) ---------------- */
+  var palette = (function () {
+    var wrap = null, input = null, list = null, items = [], active = 0, lastFocus = null;
+
+    function build() {
+      wrap = D.createElement('div');
+      wrap.className = 'os-palette';
+      wrap.setAttribute('hidden', 'hidden');
+      wrap.innerHTML =
+        '<div class="os-palette-sheet" role="dialog" aria-modal="true" aria-label="Command palette">' +
+          '<input class="os-palette-input" type="text" autocomplete="off" spellcheck="false" ' +
+                 'placeholder="Type a verb or a page name" aria-label="Command" />' +
+          '<ul class="os-palette-list" role="listbox"></ul>' +
+          '<p class="os-palette-foot">Enter to run · Esc to close · voice is the primary input</p>' +
+        '</div>';
+      D.body.appendChild(wrap);
+      input = wrap.querySelector('.os-palette-input');
+      list = wrap.querySelector('.os-palette-list');
+
+      input.addEventListener('input', function () { render(input.value); });
+      input.addEventListener('keydown', onKey);
+      wrap.addEventListener('mousedown', function (e) { if (e.target === wrap) { close(); } });
+    }
+
+    function pool() {
+      var out = [];
+      for (var i = 0; i < commands.length; i++) {
+        out.push({ kind: 'command', label: commands[i].verb, hint: commands[i].help, ref: commands[i] });
+      }
+      for (var j = 0; j < targets.length; j++) {
+        out.push({ kind: 'target', label: targets[j].label, hint: targets[j].hint, ref: targets[j] });
+      }
+      return out;
+    }
+
+    function render(query) {
+      var q = normalise(query);
+      var all = pool();
+      items = [];
+      for (var i = 0; i < all.length; i++) {
+        var hay = normalise(all[i].label + ' ' + all[i].hint);
+        if (!q || hay.indexOf(q) !== -1) { items.push(all[i]); }
+      }
+      items = items.slice(0, 40);
+      active = 0;
+      var html = '';
+      for (var k = 0; k < items.length; k++) {
+        html += '<li role="option" class="os-palette-item' + (k === 0 ? ' active' : '') + '" data-i="' + k + '">' +
+                  '<span class="os-palette-kind">' + (items[k].kind === 'command' ? 'verb' : 'open') + '</span>' +
+                  '<span class="os-palette-label"></span>' +
+                  '<span class="os-palette-hint"></span>' +
+                '</li>';
+      }
+      list.innerHTML = html || '<li class="os-palette-empty">Nothing matches. Try: ' + verbList().slice(0, 5).join(', ') + '</li>';
+      /* textContent, not innerHTML, for anything that came from a profile file. */
+      var nodes = list.querySelectorAll('.os-palette-item');
+      for (var n = 0; n < nodes.length; n++) {
+        nodes[n].querySelector('.os-palette-label').textContent = items[n].label;
+        nodes[n].querySelector('.os-palette-hint').textContent = items[n].hint || '';
+        nodes[n].addEventListener('click', function (e) {
+          choose(parseInt(e.currentTarget.getAttribute('data-i'), 10));
+        });
+      }
+    }
+
+    function move(delta) {
+      if (!items.length) { return; }
+      var nodes = list.querySelectorAll('.os-palette-item');
+      if (nodes[active]) { nodes[active].classList.remove('active'); }
+      active = (active + delta + items.length) % items.length;
+      if (nodes[active]) {
+        nodes[active].classList.add('active');
+        if (nodes[active].scrollIntoView) { nodes[active].scrollIntoView({ block: 'nearest' }); }
+      }
+    }
+
+    function choose(i) {
+      var item = items[typeof i === 'number' ? i : active];
+      if (!item) { return; }
+      close();
+      if (item.kind === 'target') { openTarget(item.ref); return; }
+      if (item.ref.args) { setState('listening', item.ref.verb + ' what? Type it and press Enter.'); reopenWith(item.ref.verb + ' '); return; }
+      run(item.ref.verb, 'palette');
+    }
+
+    function reopenWith(prefix) {
+      open();
+      input.value = prefix;
+      render(prefix);
+    }
+
+    function onKey(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        var typed = input.value;
+        if (items.length) { choose(); }
+        else { close(); run(typed, 'palette'); }
+      } else if (e.key === 'Escape') { e.preventDefault(); close(); }
+    }
+
+    function open() {
+      if (!wrap) { build(); }
+      stopSpeaking();
+      lastFocus = D.activeElement;
+      wrap.removeAttribute('hidden');
+      ROOT.setAttribute('data-os-palette', 'open');
+      input.value = '';
+      render('');
+      input.focus();
+    }
+    function close() {
+      if (!wrap) { return; }
+      wrap.setAttribute('hidden', 'hidden');
+      ROOT.removeAttribute('data-os-palette');
+      if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+    }
+    function isOpen() { return !!wrap && !wrap.hasAttribute('hidden'); }
+
+    return { open: open, close: close, toggle: function () { isOpen() ? close() : open(); }, isOpen: isOpen };
+  })();
+
+  /* ---------------- voice ---------------- */
+  var voice = (function () {
+    var SR = W.SpeechRecognition || W.webkitSpeechRecognition;
+    var rec = null, active = false, handsFree = false, supported = !!SR;
+
+    function ensure() {
+      if (rec || !supported) { return rec; }
+      rec = new SR();
+      rec.lang = 'en-US';
+      rec.maxAlternatives = 3;
+
+      rec.onstart = function () {
+        active = true;
+        setState('listening', handsFree ? 'Listening for "Nexus ..."' : 'Speak now');
+        if (config.micLabelEl) { config.micLabelEl.textContent = handsFree ? 'Hands-free on' : 'Listening'; }
+      };
+      rec.onerror = function (e) {
+        active = false;
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          handsFree = false; paintHandsFree();
+          setState('error', 'Microphone blocked. Allow mic access, or press Ctrl+K.');
+        } else if (e.error === 'no-speech' && !handsFree) {
+          setState('error', 'Did not catch that. Tap the mic, or press Ctrl+K.');
+          idleSoon('');
+        }
+      };
+      rec.onend = function () {
+        active = false;
+        if (config.micLabelEl) { config.micLabelEl.textContent = handsFree ? 'Hands-free on' : 'Hold to command'; }
+        if (handsFree) { try { rec.start(); } catch (e) {} }
+        else if (state === 'listening') { setState('idle', ''); }
+      };
+      rec.onresult = function (e) {
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          if (!e.results[i].isFinal) { continue; }
+          var alts = e.results[i];
+          if (handsFree) {
+            for (var a = 0; a < alts.length; a++) {
+              var stripped = stripWake(normalise(alts[a].transcript));
+              if (stripped !== null) {
+                if (stripped) { run(stripped, 'voice'); }
+                else { setState('listening', 'Yes? Name a page or a verb.'); }
+                return;
+              }
+            }
+            return; /* no wake word - stay asleep, say nothing */
+          }
+          run(alts[0].transcript, 'voice');
+          return;
+        }
+      };
+      return rec;
+    }
+
+    function applyMode() {
+      var r = ensure();
+      if (!r) { return; }
+      r.continuous = handsFree;
+      r.interimResults = handsFree;
+    }
+    function paintHandsFree() {
+      if (!config.handsFreeEl) { return; }
+      config.handsFreeEl.classList.toggle('on', handsFree);
+      config.handsFreeEl.textContent = handsFree ? 'Hands-free: on' : 'Hands-free: off';
+      config.handsFreeEl.setAttribute('aria-pressed', handsFree ? 'true' : 'false');
+    }
+
+    function start() {
+      if (!supported) { setState('error', 'Voice needs Edge or Chrome. Press Ctrl+K instead.'); return; }
+      stopSpeaking();
+      applyMode();
+      try { ensure().start(); } catch (e) {}
+    }
+    function stop() {
+      handsFree = false; paintHandsFree();
+      if (rec) { try { rec.stop(); } catch (e) {} }
+    }
+    function toggleHandsFree() {
+      if (!supported) { setState('error', 'Voice needs Edge or Chrome. Press Ctrl+K instead.'); return; }
+      handsFree = !handsFree;
+      paintHandsFree();
+      if (handsFree) {
+        if (active && rec) { try { rec.stop(); } catch (e) {} }
+        applyMode();
+        try { ensure().start(); } catch (e) {}
+      } else {
+        if (rec) { try { rec.stop(); } catch (e) {} }
+        setState('idle', 'Hands-free off. Tap the mic or press Ctrl+K.');
+      }
+    }
+    function tap() {
+      if (handsFree) { setState('listening', 'Hands-free is on. Say "Nexus ..."'); return; }
+      if (active) { stop(); setState('idle', ''); return; }
+      start();
+    }
+
+    return {
+      supported: supported, start: start, stop: stop, tap: tap,
+      toggleHandsFree: toggleHandsFree, paint: paintHandsFree,
+      isHandsFree: function () { return handsFree; }
+    };
+  })();
+
+  /* ---------------- wiring ---------------- */
+  function indexTiles(selector) {
+    var nodes = D.querySelectorAll(selector || 'a.tile');
+    for (var i = 0; i < nodes.length; i++) {
+      (function (el) {
+        /* A card may be a tile (icon + label + .small) or a hero (h3 + p).
+           Take the heading when there is one; never let a paragraph of body
+           copy become the target's name. */
+        var heading = el.querySelector('h2, h3, h4');
+        var name;
+        if (heading) {
+          name = heading.textContent.replace(/\s+/g, ' ').trim();
+        } else {
+          var clone = el.cloneNode(true);
+          var junk = clone.querySelectorAll('.icon, .small');
+          for (var j = 0; j < junk.length; j++) { junk[j].parentNode.removeChild(junk[j]); }
+          name = clone.textContent.replace(/\s+/g, ' ').trim();
+        }
+        var subEl = el.querySelector('.small') || (heading ? el.querySelector('p') : null);
+        registerTarget({
+          name: name,
+          label: name,
+          hint: subEl ? subEl.textContent.trim() : '',
+          keywords: el.getAttribute('data-say') || '',
+          href: el.getAttribute('href') || '',
+          external: el.getAttribute('target') === '_blank',
+          open: function () {
+            if (el.getAttribute('target') === '_blank') { W.open(el.href, '_blank', 'noopener'); }
+            else { W.location.href = el.href; }
+          }
+        });
+      })(nodes[i]);
+    }
+  }
+
+  function bindKeys() {
+    D.addEventListener('keydown', function (e) {
+      var k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === 'k') { e.preventDefault(); palette.toggle(); return; }
+      if (palette.isOpen()) { return; }
+      var typing = /^(input|textarea|select)$/i.test((e.target && e.target.tagName) || '') ||
+                   (e.target && e.target.isContentEditable);
+      if (typing) { return; }
+      if (k === 'escape') { stopSpeaking(); voice.stop(); setState('idle', ''); return; }
+      if (k === '/') { e.preventDefault(); palette.open(); return; }
+      if (k === ' ' && e.shiftKey) { e.preventDefault(); voice.tap(); }
+    });
+    W.addEventListener('online', function () { setState('idle', ''); });
+    W.addEventListener('offline', function () { setState('offline', 'Offline. Local tiles still work.'); });
+  }
+
+  function configure(options) {
+    options = options || {};
+    for (var key in options) {
+      if (Object.prototype.hasOwnProperty.call(options, key)) { config[key] = options[key]; }
+    }
+    if (config.micEl) {
+      config.micEl.addEventListener('click', function () { voice.tap(); });
+      if (!voice.supported) {
+        config.micEl.setAttribute('disabled', 'disabled');
+        config.micEl.setAttribute('title', 'Voice needs Edge or Chrome. Press Ctrl+K.');
+      }
+    }
+    if (config.handsFreeEl) {
+      config.handsFreeEl.addEventListener('click', function () { voice.toggleHandsFree(); });
+      if (!voice.supported) { config.handsFreeEl.style.display = 'none'; }
+      voice.paint();
+    }
+    /* Only promise voice on a surface that actually has a mic control. A page
+       with no mic must not tell the user to say "Nexus" at nothing. */
+    var hasMic = !!(config.micEl || config.handsFreeEl);
+    setState(navigator.onLine === false ? 'offline' : 'idle',
+      (hasMic && voice.supported)
+        ? 'Say "Nexus ..." then a page or a verb · Ctrl+K for the palette'
+        : 'Press Ctrl+K for the command palette');
+    return NS.os;
+  }
+
+  installBuiltins();
+  bindKeys();
+
+  NS.os = {
+    version: 2,
+    states: STATES.slice(),
+    get state() { return state; },
+    setState: setState,
+    run: run,
+    say: say,
+    stopSpeaking: stopSpeaking,
+    configure: configure,
+    registerTarget: registerTarget,
+    registerCommand: registerCommand,
+    indexTiles: indexTiles,
+    verbs: verbList,
+    palette: palette,
+    voice: voice,
+    on: function (fn) { if (typeof fn === 'function') { listeners.push(fn); } }
+  };
+})();
+
+  </script>
+  <script>
+  /* =====================================================================
+     PROFILE  —  EDIT THIS BLOCK TO MAKE A CONSOLE FOR SOMEONE
+     ===================================================================== */
+  var PROFILE = {
+    name: "Abdul",
+    role: "operator",
+    subtitle: "TMMT · Detailer",
+    tint: "",
+    extraTiles: [
+    ]
+  };
+  /* ============================ END PROFILE ============================ */
+
+
+  /* ===== Tile catalog (shared by every console). Each tile lists which roles
+     may see it. 'owner' always sees everything. You normally never need to
+     edit below this line. ===== */
+
+  /* Role tints the identity chip. It does NOT become the call to action:
+     gold is the earned, centred, primary action for every single role. */
+  var ROLE_TINT = {
+    owner: "#f0d488", manager: "#cdd1d8", dispatch: "#cdd1d8", operator: "#8fd9b4",
+    sales: "#f0d488", family: "#cdd1d8", friend: "#cdd1d8", vendor: "#cdd1d8"
+  };
+  var STAFF = ["owner", "manager", "dispatch", "operator", "sales"];
+
+  var TMMT = "https://tmmt-ops.vercel.app";
+  var GHL  = "https://app.gohighlevel.com";
+  var LOC  = "Xcd8DZt5T4GWnBtBEC5V";        // TMMT Rentals GHL location
+  var LOC2 = "EaRPXFwPZbqCM9pynHwt";        // Restoration / LTO GHL location
+
+  var SECTIONS = [
+    { title: "Start here", big: true, tiles: [
+      { icon:"📋", label:"Morning Briefing", sub:"your daily dashboard", href:TMMT+"/internal/briefing", primary:true, say:"briefing, morning, daily, brief, today", roles:["manager","dispatch","operator","sales"] },
+      { icon:"⬡", label:"TMMT Ops", sub:"full command center", href:TMMT+"/internal/dashboard", primary:true, say:"ops, command, dashboard, home, command center", roles:["manager"] },
+    ]},
+    { title: "TMMT operations", tiles: [
+      { icon:"🚀", label:"Dispatch", href:TMMT+"/internal/dispatch", say:"dispatch, jobs, route", roles:["manager","dispatch","operator"] },
+      { icon:"📁", label:"Cases", href:TMMT+"/internal/cases", say:"cases, case, files", roles:["manager","dispatch","operator"] },
+      { icon:"🏢", label:"Agency", href:TMMT+"/internal/agency", roles:["manager","dispatch"] },
+      { icon:"👥", label:"Operators", href:TMMT+"/internal/operators", say:"operators, staff, crew, detailers", roles:["manager","dispatch"] },
+      { icon:"🛒", label:"Marketplace", href:TMMT+"/internal/marketplace", roles:["manager","sales"] },
+      { icon:"🚗", label:"Dealer", href:TMMT+"/internal/dealer", roles:["manager"] },
+      { icon:"💳", label:"Billing", href:TMMT+"/internal/billing", say:"billing, invoice, money, pay", roles:["manager"] },
+      { icon:"📈", label:"Investor", href:TMMT+"/investor/dashboard", roles:[] },        // owner only
+      { icon:"📥", label:"Intake", href:TMMT+"/intake", say:"intake, new lead, new customer", roles:["manager","dispatch","sales","vendor"] },
+      { icon:"💻", label:"Local dev", href:"http://localhost:3000/internal/briefing", say:"local, dev, localhost", roles:[] },
+    ]},
+    { title: "GoHighLevel", tiles: [
+      { icon:"🏠", label:"TMMT Rentals", sub:"main pipeline", href:GHL+"/v2/location/"+LOC+"/launchpad", ghl:true, say:"rentals, tmmt rentals, pipeline", roles:["manager","sales"] },
+      { icon:"🔧", label:"Restoration", sub:"credit journey", href:GHL+"/v2/location/"+LOC2+"/launchpad", ghl:true, say:"restoration, credit, lto, repair", roles:["manager","sales"] },
+      { icon:"💬", label:"Conversations", href:GHL+"/v2/location/"+LOC+"/conversations/conversations", ghl:true, say:"conversations, messages, texts, inbox", roles:["manager","dispatch","sales"] },
+      { icon:"📅", label:"Calendar", href:GHL+"/v2/location/"+LOC+"/calendars/view", ghl:true, say:"calendar, schedule, bookings", roles:["manager","dispatch","sales","operator"] },
+      { icon:"👤", label:"Contacts", href:GHL+"/v2/location/"+LOC+"/contacts/smart_list/All", ghl:true, say:"contacts, customers, people", roles:["manager","sales"] },
+      { icon:"📞", label:"GHL Home", href:GHL+"/", ghl:true, roles:["manager","sales"] },
+    ]},
+    { title: "AIXMOS stack", tiles: [
+      { icon:"▲", label:"Vercel", href:"https://vercel.com/aixmos537", say:"vercel, deploys, hosting", roles:[] },
+      { icon:"🗄", label:"Supabase", href:"https://supabase.com/dashboard/project/uapxakmlwnpfsftfeezx", say:"supabase, database, db", roles:[] },
+      { icon:"💰", label:"Stripe", href:"https://dashboard.stripe.com/", say:"stripe, payments", roles:[] },
+      { icon:"📝", label:"Notion", href:"https://www.notion.so/", roles:["manager"] },
+      { icon:"💼", label:"Slack", href:"https://app.slack.com/client", roles:["manager","dispatch"] },
+      { icon:"⌥", label:"GitHub", href:"https://github.com/", say:"github, code, repo", roles:[] },
+    ]},
+    { title: "AI & build", tiles: [
+      { icon:"◎", label:"TMMT Assistant", href:TMMT+"/internal/assistant", say:"assistant, ai, help", roles:["manager","dispatch","operator","sales"] },
+      { icon:"▲", label:"Alt deploy", href:"https://tmmt-c919-two.vercel.app", roles:[] },
+    ]},
+    { title: "Personal", tiles: [
+      { icon:"✉️", label:"Message Muhammad", sub:"email", href:"mailto:tmmtautodetail@gmail.com", target:false, roles:["family","friend","vendor"], ownerHide:true },
+    ]},
+  ];
+
+  var ROLE = (PROFILE.role || "operator").toLowerCase();
+  var IS_STAFF = STAFF.indexOf(ROLE) !== -1;
+
+  /* ===== Renderer ===== */
+  (function render() {
+    document.documentElement.style.setProperty('--role-tint', PROFILE.tint || ROLE_TINT[ROLE] || ROLE_TINT.operator);
+    document.getElementById('subtitle').textContent = PROFILE.subtitle || '';
+    document.getElementById('role-chip').textContent = ROLE;
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function visible(t) {
+      if (ROLE === 'owner') { return !t.ownerHide; }
+      return t.roles && t.roles.indexOf(ROLE) !== -1;
+    }
+    function tileHTML(t) {
+      var cls = 'tile' + (t.primary ? ' primary' : '') + (t.ghl ? ' ghl' : '');
+      var tgt = (t.target === false) ? '' : ' target="_blank" rel="noopener"';
+      var say = t.say ? ' data-say="' + esc(t.say) + '"' : '';
+      var sub = t.sub ? '<span class="small">' + esc(t.sub) + '</span>' : '';
+      return '<a class="' + cls + '" href="' + esc(t.href) + '"' + tgt + say + '>' +
+             '<span class="icon" aria-hidden="true">' + t.icon + '</span>' + esc(t.label) + sub + '</a>';
+    }
+    function sectionHTML(title, tiles, big) {
+      if (!tiles.length) { return ''; }
+      return '<section><h2>' + esc(title) + '</h2><div class="grid' + (big ? ' big' : '') + '">' +
+             tiles.map(tileHTML).join('') + '</div></section>';
+    }
+
+    // Role-correct "My Mission" entry — lands on the live mission board.
+    var MISSION_DASH = {
+      owner: '/admin/dashboard', manager: '/admin/dashboard', dispatch: '/team/dashboard',
+      operator: '/team/dashboard', sales: '/team/dashboard', vendor: '/vendor/dashboard'
+    };
+
+    var html = '';
+    if (MISSION_DASH[ROLE]) {
+      html += sectionHTML('Mission today', [
+        { icon: '🎯', label: 'My Mission', sub: 'live — what to do now',
+          href: TMMT + MISSION_DASH[ROLE], primary: true,
+          say: 'mission, today, what do i do, my mission' }
+      ], true);
+    }
+
+    var extras = (PROFILE.extraTiles || []).filter(function (t) { return t && t.href; });
+    if (extras.length) { html += sectionHTML('Your links', extras, extras.length <= 2); }
+
+    SECTIONS.forEach(function (s) { html += sectionHTML(s.title, s.tiles.filter(visible), s.big); });
+    document.getElementById('sections').innerHTML = html;
+
+    document.getElementById('footer').innerHTML =
+      'AIXMOS OS · TMMT · Production: tmmt-ops.vercel.app<br />' +
+      'Ctrl+K command palette · Shift+Space to talk';
+  })();
+
+  /* ===== Clock + greeting ===== */
+  (function () {
+    var h = new Date().getHours();
+    var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = greet + ', ' + (PROFILE.name || 'there');
+    var el = document.getElementById('clock');
+    function tick() {
+      el.textContent = new Date().toLocaleString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+    }
+    tick();
+    setInterval(tick, 30000);
+  })();
+
+  /* ===== Boot the console =====
+     One shared command engine. Do not paste a voice parser in here. */
+  (function () {
+    if (!window.AIXOS || !window.AIXOS.os) { return; }
+    var os = window.AIXOS.os;
+
+    os.indexTiles('a.tile');
+    os.configure({
+      assistantUrl: 'https://tmmt-ops.vercel.app/internal/assistant',
+      allowAssistant: IS_STAFF,
+      statusEl: document.getElementById('voice-status'),
+      stateEl: document.getElementById('os-state'),
+      micEl: document.getElementById('mic'),
+      micLabelEl: document.getElementById('mic-label'),
+      handsFreeEl: document.getElementById('handsfree')
+    });
+
+    var machine = document.getElementById('os-machine');
+    var gfxBtn = document.getElementById('os-graphics');
+    if (window.AIXOS.kernel) {
+      window.AIXOS.kernel.on(function () { machine.textContent = window.AIXOS.kernel.describe(); });
+      gfxBtn.addEventListener('click', function () {
+        window.AIXOS.kernel.cycle();
+        machine.textContent = window.AIXOS.kernel.describe();
+      });
+    } else {
+      machine.textContent = 'kernel not loaded';
+      gfxBtn.style.display = 'none';
+    }
+  })();
+  </script>
+</body>
+</html>
