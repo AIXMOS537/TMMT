@@ -18,6 +18,9 @@ const eslintConfig = defineConfig([
     "**/out/**",
     "**/build/**",
     "**/next-env.d.ts",
+    // Absorbed repos (own tooling; not part of the Next app)
+    "packages/ai-runtime/**",
+    "ops/**",
   ]),
   {
     rules: {
