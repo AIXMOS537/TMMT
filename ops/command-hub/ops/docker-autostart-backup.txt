@@ -1,0 +1,5 @@
+Docker Desktop autostart removed from HKCU Run on 2026-08-27 17:31.
+Original value:
+C:\Users\AIXMOS\AppData\Local\Programs\DockerDesktop\Docker Desktop.exe
+
+To restore: Docker Desktop -> Settings -> General -> 'Start Docker Desktop when you sign in'.

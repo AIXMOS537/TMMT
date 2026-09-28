@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TMMT Mission Control — Preview</title>
+  <style>
+    :root{
+      --bg:#0a0f1a; --bg2:#0f1729; --card:#161f33; --card2:#1d2a45;
+      --border:rgba(255,255,255,.08); --text:#f5f7fb; --muted:#8a98b5;
+      --blue:#4f8cff; --purple:#b794ff; --green:#3ddc97; --amber:#ffc24b; --red:#ff6b6b; --cyan:#5ad1e6;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(ellipse at top,var(--bg2),var(--bg) 60%);color:var(--text);min-height:100vh;padding:1.25rem 1.25rem 3rem}
+    .wrap{max-width:1100px;margin:0 auto}
+    .preview-banner{background:linear-gradient(145deg,rgba(255,194,75,.16),rgba(255,194,75,.06));border:1px solid rgba(255,194,75,.35);color:var(--amber);border-radius:14px;padding:.7rem 1rem;font-size:.85rem;font-weight:600;text-align:center;margin-bottom:1.25rem}
+    header.top{text-align:center;margin-bottom:1.5rem}
+    header.top h1{font-size:2rem;letter-spacing:-.02em}
+    header.top .sub{color:var(--muted);margin-top:.35rem}
+    h2.sec{font-size:.95rem;font-weight:700;color:var(--muted);margin:1.8rem .25rem .8rem;text-transform:uppercase;letter-spacing:.08em}
+
+    /* agent strip */
+    .agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.7rem}
+    .agent{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.2rem}
+    .agent .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:.4rem;box-shadow:0 0 8px currentColor}
+    .agent .nm{font-weight:700;font-size:.95rem}
+    .agent .role{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+    .agent .st{font-size:.82rem;margin-top:.25rem}
+
+    /* live stats */
+    .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem}
+    .stat{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.1rem 1rem;text-align:center}
+    .stat .n{font-size:2.1rem;font-weight:800;line-height:1}
+    .stat .l{color:var(--muted);font-size:.82rem;margin-top:.35rem}
+    .stat.alert{border-color:rgba(255,107,107,.4);background:linear-gradient(145deg,rgba(255,107,107,.14),rgba(255,107,107,.05))}
+    .stat.warn{border-color:rgba(255,194,75,.4)}
+    .stat.good{border-color:rgba(61,220,151,.35)}
+
+    /* mission columns */
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media(max-width:780px){.cols{grid-template-columns:1fr}}
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.1rem 1.2rem}
+    .panel h3{font-size:1.05rem;margin-bottom:.2rem}
+    .panel .who{color:var(--muted);font-size:.8rem;margin-bottom:.8rem}
+    .item{display:flex;gap:.7rem;align-items:flex-start;padding:.7rem 0;border-top:1px solid var(--border)}
+    .item:first-of-type{border-top:none}
+    .item .ic{font-size:1.3rem;line-height:1.4}
+    .item .body{flex:1}
+    .item .t{font-weight:600}
+    .item .d{color:var(--muted);font-size:.84rem;margin-top:.1rem}
+    .tag{display:inline-block;font-size:.68rem;font-weight:700;padding:.12rem .5rem;border-radius:999px;margin-left:.4rem;vertical-align:middle}
+    .tag.sticks{background:rgba(255,107,107,.16);color:var(--red)}
+    .tag.tank{background:rgba(79,140,255,.16);color:var(--blue)}
+    .tag.vision{background:rgba(183,148,255,.16);color:var(--purple)}
+    .tag.flyguy{background:rgba(90,209,230,.16);color:var(--cyan)}
+    .grow{background:linear-gradient(145deg,rgba(61,220,151,.14),rgba(79,140,255,.08));border-color:rgba(61,220,151,.3)}
+    footer{color:var(--muted);font-size:.8rem;text-align:center;margin-top:2rem;line-height:1.6;border-top:1px solid var(--border);padding-top:1rem}
+    .speak{display:inline-flex;align-items:center;gap:.5rem;background:linear-gradient(145deg,rgba(79,140,255,.24),rgba(79,140,255,.12));border:1px solid rgba(79,140,255,.45);color:var(--text);padding:.7rem 1.3rem;border-radius:999px;font-weight:700;margin-top:.6rem}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="preview-banner">⚠️ PREVIEW — real numbers pulled from your live database on Jun 6, 2026. In the real build this updates in real time inside TMMT OS, per person.</div>
+
+  <header class="top">
+    <h1>🛰️ TMMT Mission Control</h1>
+    <p class="sub">Friday, June 6 · Everyone sees what's happening, what they're needed for, and their next move to grow TMMT</p>
+    <div class="speak">🎙️ "What do I need to do today?"</div>
+  </header>
+
+  <h2 class="sec">📡 What's happening now — live</h2>
+  <div class="stats">
+    <div class="stat alert"><div class="n">17</div><div class="l">New leads waiting</div></div>
+    <div class="stat warn"><div class="n">2</div><div class="l">Deals in contracting</div></div>
+    <div class="stat good"><div class="n">20</div><div class="l">Active rentals</div></div>
+    <div class="stat"><div class="n">43</div><div class="l">Vehicles in fleet</div></div>
+    <div class="stat warn"><div class="n">4</div><div class="l">Maintenance due</div></div>
+    <div class="stat"><div class="n">104</div><div class="l">On waitlist</div></div>
+    <div class="stat good"><div class="n">0</div><div class="l">Open cases</div></div>
+    <div class="stat"><div class="n">308</div><div class="l">Tickets logged</div></div>
+  </div>
+
+  <h2 class="sec">🤖 AIXMOS agents — on watch</h2>
+  <div class="agents">
+    <div class="agent"><span class="nm"><span class="dot" style="color:var(--purple)"></span>VISION</span><span class="role">Governance</span><span class="st">2 items need your go/no-go</span></div>
+    <div class="agent"><span class="nm"><span class="dot" style="color:var(--blue)"></span>TANK</span><span class="role">Execution</span><span class="st">Assigning today's work</span></div>
+    <div class="agent"><span class="nm"><span class="dot" style="color:var(--cyan)"></span>FLY GUY</span><span class="role">Communication</span><span class="st">17 lead replies drafted</span></div>
+    <div class="agent"><span class="nm"><span class="dot" style="color:var(--green)"></span>BOB</span><span class="role">Logging</span><span class="st">All actions audited</span></div>
+    <div class="agent"><span class="nm"><span class="dot" style="color:var(--red)"></span>STICKS</span><span class="role">Monitoring</span><span class="st">3 SLA risks flagged</span></div>
+  </div>
+
+  <h2 class="sec">🎯 What you're needed for &amp; how to grow — by person</h2>
+  <div class="cols">
+
+    <div class="panel">
+      <h3>👑 Muhammad — Owner</h3>
+      <div class="who">Company-wide · your decisions unblock everyone</div>
+      <div class="item"><span class="ic">✅</span><div class="body"><div class="t">Approve 2 contracts to close <span class="tag vision">VISION</span></div><div class="d">2 deals stuck in contracting — your go/no-go releases ~$X revenue.</div></div></div>
+      <div class="item"><span class="ic">⚠️</span><div class="body"><div class="t">3 SLA risks need a call <span class="tag sticks">STICKS</span></div><div class="d">Leads aging past 24h — assign or they go cold.</div></div></div>
+      <div class="item grow" style="border-radius:12px;margin-top:.6rem;padding:.7rem"><span class="ic">🚀</span><div class="body"><div class="t">Grow move: convert the waitlist</div><div class="d">104 on the waitlist + fleet has capacity. Greenlight a batch outreach to fill idle cars this week.</div></div></div>
+    </div>
+
+    <div class="panel">
+      <h3>🧰 Team member — Operator</h3>
+      <div class="who">Detailer / field · scoped to your department</div>
+      <div class="item"><span class="ic">🚗</span><div class="body"><div class="t">Confirm 4 maintenance appointments <span class="tag tank">TANK</span></div><div class="d">Today's vehicles to prep before handover.</div></div></div>
+      <div class="item"><span class="ic">📞</span><div class="body"><div class="t">Call 5 new leads assigned to you <span class="tag flyguy">FLY GUY</span></div><div class="d">Replies are pre-drafted — just review &amp; send.</div></div></div>
+      <div class="item grow" style="border-radius:12px;margin-top:.6rem;padding:.7rem"><span class="ic">🌟</span><div class="body"><div class="t">Grow move: 5-star ask</div><div class="d">After each handover today, request a review — fastest cheap growth lever.</div></div></div>
+    </div>
+
+    <div class="panel">
+      <h3>🧑‍💼 Manager</h3>
+      <div class="who">Operations oversight</div>
+      <div class="item"><span class="ic">📋</span><div class="body"><div class="t">17 new leads to assign <span class="tag tank">TANK</span></div><div class="d">Distribute to the team so none age out.</div></div></div>
+      <div class="item"><span class="ic">💳</span><div class="body"><div class="t">Chase contracting on 2 deals</div><div class="d">Push paperwork so VISION can approve.</div></div></div>
+      <div class="item grow" style="border-radius:12px;margin-top:.6rem;padding:.7rem"><span class="ic">📈</span><div class="body"><div class="t">Grow move: fleet utilization</div><div class="d">20 of 43 cars rented = 47%. Target the idle 23 against the 104 waitlist.</div></div></div>
+    </div>
+
+    <div class="panel">
+      <h3>🔧 Vendor — Michael Bibbs</h3>
+      <div class="who">Cleaning &amp; moving</div>
+      <div class="item"><span class="ic">🧽</span><div class="body"><div class="t">2 cars queued for cleaning <span class="tag tank">TANK</span></div><div class="d">Turnaround before next rental.</div></div></div>
+      <div class="item"><span class="ic">📸</span><div class="body"><div class="t">Upload before/after photos</div><div class="d">Closes the job &amp; triggers your payout.</div></div></div>
+      <div class="item grow" style="border-radius:12px;margin-top:.6rem;padding:.7rem"><span class="ic">⚡</span><div class="body"><div class="t">Grow move: faster turnaround</div><div class="d">Same-day cleans = more rentable days = more volume sent your way.</div></div></div>
+    </div>
+
+  </div>
+
+  <footer>
+    Preview only · numbers are live, the per-person missions shown are illustrative.<br/>
+    Real build lives inside TMMT OS (per-role portals) · written &amp; monitored by your AIXMOS agents · pushed to Telegram.
+  </footer>
+</div>
+</body>
+</html>

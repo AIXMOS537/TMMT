@@ -1,0 +1,28 @@
+# tmmt-os is its own git repo living inside this folder. Do not swallow it.
+tmmt-os/
+
+# Quarantine and backups are recovery material, not source.
+_QUARANTINE*/
+_mission-control-backup/
+Snapshots/
+
+# Generated at runtime.
+node_modules/
+health-check.txt
+setup-complete.txt
+ClosedLoop/SCOREBOARD.md
+ClosedLoop/logs/
+*.log
+*.jsonl
+
+# Never. The ops scripts read credentials from the environment; nothing here
+# should ever hold one.
+.env
+.env.*
+*_OWNER*
+*secret*
+*.key
+*.pem
+
+# Watchtower writes its PID here on every start.
+Watchtower/*.pid
