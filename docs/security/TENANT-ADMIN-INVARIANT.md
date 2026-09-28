@@ -8,7 +8,7 @@ Authority record: `docs/commercialization/COMMERCIAL_AUTHORITY.md` A-4.
 ## THE INVARIANT
 
 > A **Khan Strategies administrator** must be able to administer Khan Strategies
-> **without gaining visibility or authority over TMMT, TechHaus operations, or any
+> **without gaining visibility or authority over TMMT, AIOMS operations, or any
 > other organization.**
 
 This is a permanent rule for the shared multi-tenant SaaS model. It is not a
@@ -16,7 +16,7 @@ commercial preference and does not expire with a pricing decision.
 
 ### Two authority domains
 
-**PLATFORM AUTHORITY** — reserved for authorized TechHaus/platform personnel.
+**PLATFORM AUTHORITY** — reserved for authorized AIOMS/platform personnel.
 Platform roles may hold cross-organization capabilities **where explicitly
 intended**.
 

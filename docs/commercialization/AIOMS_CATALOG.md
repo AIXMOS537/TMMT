@@ -1,4 +1,4 @@
-# TECHHAUS CATALOG
+# AIOMS CATALOG
 
 > **REPOSITIONING REQUIRED (2026-09-08).** The product model is now confirmed as
 > **shared multi-tenant white-label SaaS** — customer organisations operate their
@@ -152,7 +152,7 @@ Blocked by **D-5** (contract policy values are unset) rather than by product.
 
 | | |
 |---|---|
-| **Buyer** | An operator working under a TechHaus/AIXMOS org |
+| **Buyer** | An operator working under a AIOMS/AIXMOS org |
 | **What it buys** | Their own subaccount + a one-shot on their devices — work at the office or on the move |
 | **Price** | **$97/mo [DB]** — carried by 5 live operator rows |
 | **Readiness** | 🟠 — manual invite issuance; no automatic entitlement grant |

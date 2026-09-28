@@ -1,4 +1,4 @@
-# TECHHAUS PROJECT DOSSIER
+# AIOMS PROJECT DOSSIER
 
 **Repository:** `/Users/ceo.moe/Projects/TMMT` (github.com/AIXMOS537/TMMT)
 **Generated:** 2026-09-05 · read-only reconnaissance · **no application file was modified**
