@@ -1,6 +1,6 @@
 # Local ML face/voice assets — never deploy to Vercel (2GB+)
 .aixmos/face/
 
-# Absorbed repos — not part of the deployed app
-ops/
-packages/ai-runtime/
+# Absorbed repos — not part of the deployed app (anchored: src/**/ops must still deploy)
+/ops/
+/packages/ai-runtime/
