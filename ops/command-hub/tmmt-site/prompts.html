@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS Prompt Library — TMMT</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0a0f1a" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" />
+  <noscript><link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" /></noscript>
+  <!-- Hardware kernel: sets data-tier / data-effects before first paint. -->
+  <script src="js/kernel.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="grid-overlay" aria-hidden="true"></div>
+  <div class="site">
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="index.html"><span class="logo-mark">TM</span> TMMT</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html">Site</a>
+          <a href="prompts.html">Prompts</a>
+        </nav>
+        <div class="header-actions">
+          <a class="btn btn-gold" href="index.html#contact">Start your project</a>
+        </div>
+      </div>
+    </header>
+    <main class="prompt-lib">
+      <p class="eyebrow">Internal · Prompt Library</p>
+      <h1>Reusable <em>prompts</em></h1>
+      <p class="lede">NEXUS-grade briefs for TMMT / AIXMOS agents. Copy into Cursor. Continue from the current phase — do not rewrite working architecture.</p>
+
+      <article class="prompt-card">
+        <button class="copy" type="button">Copy</button>
+        <span class="tag">OS · Agent</span>
+        <h2>NEXUS command engine — TMMT</h2>
+        <pre>You are a Principal Creative Technologist and Senior Operations Architect for TMMT / AIXMOS.
+
+This is NOT a dashboard chatbot.
+This is a command engine for an industrial operations OS.
+
+Continue from the existing TMMT OS OpsCommandSchema.
+Do not rewrite existing architecture. Only extend it.
+
+WAKE: “Nexus” / “hey Nexus” / “command”
+STATES: idle | listening | thinking | speaking | interrupted | offline
+PRIMARY INPUT: voice. Mouse and type are fallbacks.
+
+TYPED ACTIONS: summary · assign_staff · assign_vendor · advance_case · approve_sync · post_ledger
+
+DESIGN: navy #0a0f1a / #0f1729, per-role accent from os/theme.js, system type stack.
+The accent drives the primary action, the mic and focus. Amber #ffc24b is the
+warning and the GoHighLevel tiles. Green #3ddc97 is live / healthy.
+
+SECURITY: no shell exec from voice. No shutdown, restart, or file deletion.
+
+DELIVERABLE: one spoken summary + typed results with links.</pre>
+      </article>
+
+      <article class="prompt-card">
+        <button class="copy" type="button">Copy</button>
+        <span class="tag">Surface</span>
+        <h2>TMMT surface</h2>
+        <pre>Create or extend a dark TMMT / AIXMOS surface.
+
+Ground: navy #0a0f1a with a #0f1729 lift. Cards #161f33, hover #1d2a45.
+Accent: electric blue #4f8cff / #93b8ff. On a console the accent is PER ROLE and
+comes from os/theme.js — never hard-code one into a page.
+Semantic: green #3ddc97 live / healthy, amber #ffc24b warning and GHL.
+Type: Space Grotesk + Inter on the public site; the system stack on consoles,
+which never fetch a web font.
+
+Motion: settle, not linear. Gate every effect behind html[data-effects~="..."]
+so the kernel can turn it off on a machine that cannot afford it.
+
+Do NOT declare a second token block in a page — inherit the stylesheet.
+Do NOT use color-mix(): the accent is dynamic and old Safari cannot resolve it.</pre>
+      </article>
+
+      <article class="prompt-card">
+        <button class="copy" type="button">Copy</button>
+        <span class="tag">Architecture</span>
+        <h2>Phased extend-only (NEXUS law)</h2>
+        <pre>Continue from Phase N.
+Do not rewrite existing architecture.
+Only extend it.
+
+Every brief includes: TECH STACK, DESIGN LANGUAGE, INTERACTION, STATES, COMMAND ENGINE, CONSISTENCY, PERFORMANCE, SECURITY, DELIVERABLE.
+
+Named role. Explicit anti-patterns. Modular files. Mouse is fallback.</pre>
+      </article>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll(".copy").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var pre = btn.parentElement.querySelector("pre");
+        navigator.clipboard.writeText(pre.textContent).then(function () {
+          btn.textContent = "Copied";
+          setTimeout(function () { btn.textContent = "Copy"; }, 1400);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
