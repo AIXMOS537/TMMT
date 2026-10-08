@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0a0f1a" />
+  <title>Command Center — Muhammad Taha</title>
+
+  <!-- This is the OWNER console (role: owner = sees everything).
+       To make a console for someone else, copy Dashboard-Template.html
+       and edit the PROFILE block near the bottom of that file. -->
+
+  <!-- Kernel first and synchronous: it decides the effect tier before first
+       paint, so a low-spec PC never paints glass it cannot afford. -->
+  <script src="os/kernel.js"></script>
+
+  <script src="os/theme.js"></script>
+
+  <link rel="stylesheet" href="brand/console.css" />
+
+  <style>
+    .icon { font-size: 1.45rem; }
+    a.tile.primary .icon { font-size: 1.7rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="greeting">Command Center</h1>
+    <p class="sub" id="subtitle">Muhammad Taha · AIXMOS · TMMT</p>
+    <div class="meta">
+      <span class="badge live">● Live</span>
+      <span class="badge role" id="role-chip">owner</span>
+      <span class="badge mono" id="clock">—</span>
+    </div>
+
+    <div class="voice-wrap">
+      <button id="mic" type="button" aria-pressed="false">
+        <span class="mic-icon" aria-hidden="true">🎙️</span>
+        <span id="mic-label">Hold to command</span>
+      </button>
+      <div id="voice-status" class="os-status idle" role="status" aria-live="polite">Starting…</div>
+      <button id="handsfree" type="button" class="hf-toggle" aria-pressed="false">Hands-free: off</button>
+
+      <div class="os-statebar">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="os-state">idle</span>
+        <span aria-hidden="true">·</span>
+        <span id="os-machine">detecting hardware</span>
+        <button id="os-graphics" type="button" title="Cycle graphics: auto → lite → standard → full">graphics</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="sections"></main>
+
+  <noscript>
+    <section>
+      <h2>Script is off — direct links</h2>
+      <div class="grid">
+        <a class="tile" href="https://tmmt-ops.vercel.app/internal/briefing">Morning Briefing</a>
+        <a class="tile" href="https://tmmt-ops.vercel.app/internal/dashboard">TMMT Ops</a>
+        <a class="tile" href="https://tmmt-ops.vercel.app/internal/dispatch">Dispatch</a>
+        <a class="tile" href="https://app.gohighlevel.com/">GoHighLevel</a>
+      </div>
+    </section>
+  </noscript>
+
+  <footer id="footer"></footer>
+
+  <script src="os/command-engine.js"></script>
+  <script>
+  /* ===== OWNER profile — sees everything ===== */
+  var PROFILE = {
+    name: "Muhammad",
+    role: "owner",
+    subtitle: "Muhammad Taha · AIXMOS · TMMT",
+    accent: "",                    // optional override; blank uses the role colour
+    extraTiles: []
+  };
+
+  /* Accents live in os/theme.js — one copy, not one per console. */
+  var STAFF = ["owner", "manager", "dispatch", "operator", "sales"];
+
+  var TMMT = "https://tmmt-ops.vercel.app";
+  var GHL  = "https://app.gohighlevel.com";
+  var LOC  = "Xcd8DZt5T4GWnBtBEC5V";
+  var LOC2 = "EaRPXFwPZbqCM9pynHwt";
+
+  var SECTIONS = [
+    { title: "Start here", big: true, tiles: [
+      { icon:"📋", label:"Morning Briefing", sub:"your daily dashboard", href:TMMT+"/internal/briefing", primary:true, say:"briefing, morning, daily, brief, today", roles:["manager","dispatch","operator","sales"] },
+      { icon:"⬡", label:"TMMT Ops", sub:"full command center", href:TMMT+"/internal/dashboard", primary:true, say:"ops, command, dashboard, home, command center", roles:["manager"] },
+    ]},
+    { title: "Fleet Watchtower", tiles: [
+      { icon:"🛰️", label:"Watchtower", sub:"up/down board — this tablet", href:"http://127.0.0.1:8787/", primary:true, say:"watchtower, fleet, machines, computers, watch", roles:[] },
+      { icon:"🔭", label:"Deep Hub", sub:"health + activity — Brainiac", href:"http://100.117.163.93:8787/", say:"deep, hub, health, activity, brainiac", roles:[] },
+      { icon:"🕒", label:"Worklog", sub:"who worked how long today", href:"http://100.117.163.93:8787/worklog", say:"worklog, hours, who worked, time", roles:[] },
+    ]},
+    { title: "TMMT operations", tiles: [
+      { icon:"🚀", label:"Dispatch", href:TMMT+"/internal/dispatch", say:"dispatch, jobs, route", roles:["manager","dispatch","operator"] },
+      { icon:"📁", label:"Cases", href:TMMT+"/internal/cases", say:"cases, case, files", roles:["manager","dispatch","operator"] },
+      { icon:"🏢", label:"Agency", href:TMMT+"/internal/agency", roles:["manager","dispatch"] },
+      { icon:"👥", label:"Operators", href:TMMT+"/internal/operators", say:"operators, staff, crew, detailers", roles:["manager","dispatch"] },
+      { icon:"🛒", label:"Marketplace", href:TMMT+"/internal/marketplace", roles:["manager","sales"] },
+      { icon:"🚗", label:"Dealer", href:TMMT+"/internal/dealer", roles:["manager"] },
+      { icon:"💳", label:"Billing", href:TMMT+"/internal/billing", say:"billing, invoice, money, pay", roles:["manager"] },
+      { icon:"📈", label:"Investor", href:TMMT+"/investor/dashboard", roles:[] },
+      { icon:"📥", label:"Intake", href:TMMT+"/intake", say:"intake, new lead, new customer", roles:["manager","dispatch","sales","vendor"] },
+      { icon:"💻", label:"Local dev", href:"http://localhost:3000/internal/briefing", say:"local, dev, localhost", roles:[] },
+    ]},
+    { title: "GoHighLevel", tiles: [
+      { icon:"🏠", label:"TMMT Rentals", sub:"main pipeline", href:GHL+"/v2/location/"+LOC+"/launchpad", ghl:true, say:"rentals, tmmt rentals, pipeline", roles:["manager","sales"] },
+      { icon:"🔧", label:"Restoration", sub:"credit journey", href:GHL+"/v2/location/"+LOC2+"/launchpad", ghl:true, say:"restoration, credit, lto, repair", roles:["manager","sales"] },
+      { icon:"💬", label:"Conversations", href:GHL+"/v2/location/"+LOC+"/conversations/conversations", ghl:true, say:"conversations, messages, texts, inbox", roles:["manager","dispatch","sales"] },
+      { icon:"📅", label:"Calendar", href:GHL+"/v2/location/"+LOC+"/calendars/view", ghl:true, say:"calendar, schedule, bookings", roles:["manager","dispatch","sales","operator"] },
+      { icon:"👤", label:"Contacts", href:GHL+"/v2/location/"+LOC+"/contacts/smart_list/All", ghl:true, say:"contacts, customers, people", roles:["manager","sales"] },
+      { icon:"📞", label:"GHL Home", href:GHL+"/", ghl:true, roles:["manager","sales"] },
+    ]},
+    { title: "AIXMOS stack", tiles: [
+      { icon:"▲", label:"Vercel", href:"https://vercel.com/aixmos537", say:"vercel, deploys, hosting", roles:[] },
+      { icon:"🗄", label:"Supabase", href:"https://supabase.com/dashboard/project/uapxakmlwnpfsftfeezx", say:"supabase, database, db", roles:[] },
+      { icon:"💰", label:"Stripe", href:"https://dashboard.stripe.com/", say:"stripe, payments", roles:[] },
+      { icon:"📝", label:"Notion", href:"https://www.notion.so/", roles:["manager"] },
+      { icon:"💼", label:"Slack", href:"https://app.slack.com/client", roles:["manager","dispatch"] },
+      { icon:"⌥", label:"GitHub", href:"https://github.com/", say:"github, code, repo", roles:[] },
+    ]},
+    { title: "AI &amp; build", tiles: [
+      { icon:"✦", label:"Cursor IDE", href:"cursor://file/C:/Users/AIXMOS/CommandCenter/CEO-Dashboard.html", target:false, say:"cursor, ide, editor", roles:[] },
+      { icon:"📚", label:"Prompt library", sub:"internal", href:"Prompt-Library.html", target:false, say:"prompts, library, briefs", roles:[] },
+      { icon:"🤖", label:"TMMT Assistant", href:TMMT+"/internal/assistant", say:"assistant, ai, help", roles:["manager","dispatch","operator","sales"] },
+      { icon:"▲", label:"Alt deploy", href:"https://tmmt-c919-two.vercel.app", roles:[] },
+    ]},
+    { title: "Personal", tiles: [
+      { icon:"✉️", label:"Message Muhammad", sub:"email", href:"mailto:tmmtautodetail@gmail.com", target:false, roles:["family","friend","vendor"], ownerHide:true },
+    ]},
+  ];
+
+  var ROLE = (PROFILE.role || "operator").toLowerCase();
+  var IS_STAFF = STAFF.indexOf(ROLE) !== -1;
+
+  /* ------------------------------------------------------------ render */
+  (function render() {
+    window.AIXOS.theme.apply(ROLE, PROFILE.accent);
+    document.getElementById('subtitle').textContent = PROFILE.subtitle || '';
+    document.getElementById('role-chip').textContent = ROLE;
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function visible(t) {
+      if (ROLE === 'owner') { return !t.ownerHide; }
+      return t.roles && t.roles.indexOf(ROLE) !== -1;
+    }
+    function tileHTML(t) {
+      var cls = 'tile' + (t.primary ? ' primary' : '') + (t.ghl ? ' ghl' : '');
+      var tgt = (t.target === false) ? '' : ' target="_blank" rel="noopener"';
+      var say = t.say ? ' data-say="' + esc(t.say) + '"' : '';
+      var sub = t.sub ? '<span class="small">' + t.sub + '</span>' : '';
+      return '<a class="' + cls + '" href="' + esc(t.href) + '"' + tgt + say + '>' +
+             '<span class="icon" aria-hidden="true">' + t.icon + '</span>' + t.label + sub + '</a>';
+    }
+    function sectionHTML(title, tiles, big) {
+      if (!tiles.length) { return ''; }
+      return '<section><h2>' + title + '</h2><div class="grid' + (big ? ' big' : '') + '">' +
+             tiles.map(tileHTML).join('') + '</div></section>';
+    }
+
+    var MISSION_DASH = {
+      owner: '/admin/dashboard', manager: '/admin/dashboard', dispatch: '/team/dashboard',
+      operator: '/team/dashboard', sales: '/team/dashboard', vendor: '/vendor/dashboard'
+    };
+
+    var html = '';
+    if (MISSION_DASH[ROLE]) {
+      html += sectionHTML('Mission today', [
+        { icon: '🎯', label: 'My Mission', sub: 'live — what to do now',
+          href: TMMT + MISSION_DASH[ROLE], primary: true,
+          say: 'mission, today, what do i do, my mission' }
+      ], true);
+    }
+
+    var extras = (PROFILE.extraTiles || []).filter(function (t) { return t && t.href; });
+    if (extras.length) { html += sectionHTML('⭐ Your links', extras, extras.length <= 2); }
+
+    /* Every section renders. "Start here" used to be skipped here, which quietly
+       deleted Morning Briefing and TMMT Ops — and with them the voice targets
+       for "briefing" and "ops", so those words fell through to a web search. */
+    SECTIONS.forEach(function (s) { html += sectionHTML(s.title, s.tiles.filter(visible), s.big); });
+    document.getElementById('sections').innerHTML = html;
+
+    document.getElementById('footer').innerHTML =
+      'Command Center · TMMT · Production: tmmt-ops.vercel.app<br />' +
+      'Ctrl+K command palette · Shift+Space to talk · pin to taskbar, auto-starts on login';
+  })();
+
+  /* ------------------------------------------------------------- clock */
+  (function () {
+    var h = new Date().getHours();
+    var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = greet + ', ' + (PROFILE.name || 'there');
+    var el = document.getElementById('clock');
+    function tick() {
+      el.textContent = new Date().toLocaleString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+    }
+    tick();
+    setInterval(tick, 30000);
+  })();
+
+  /* ------------------------------------------------- boot the console */
+  (function () {
+    if (!window.AIXOS || !window.AIXOS.os) { return; }
+    var os = window.AIXOS.os;
+
+    os.indexTiles('a.tile');
+    os.configure({
+      assistantUrl: 'https://tmmt-ops.vercel.app/internal/assistant',
+      allowAssistant: IS_STAFF,
+      statusEl: document.getElementById('voice-status'),
+      stateEl: document.getElementById('os-state'),
+      micEl: document.getElementById('mic'),
+      micLabelEl: document.getElementById('mic-label'),
+      handsFreeEl: document.getElementById('handsfree')
+    });
+
+    /* Owner-only verb: jump straight to the prompt library. */
+    os.registerCommand({
+      verb: 'prompts', phrases: ['prompts', 'prompt library', 'briefs'],
+      help: 'open the internal prompt library',
+      run: function () { window.location.href = 'Prompt-Library.html'; }
+    });
+
+    var machine = document.getElementById('os-machine');
+    var gfxBtn = document.getElementById('os-graphics');
+    if (window.AIXOS.kernel) {
+      window.AIXOS.kernel.on(function () { machine.textContent = window.AIXOS.kernel.describe(); });
+      gfxBtn.addEventListener('click', function () {
+        window.AIXOS.kernel.cycle();
+        machine.textContent = window.AIXOS.kernel.describe();
+      });
+    } else {
+      machine.textContent = 'kernel not loaded';
+      gfxBtn.style.display = 'none';
+    }
+  })();
+  </script>
+</body>
+</html>

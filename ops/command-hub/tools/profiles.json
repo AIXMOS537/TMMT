@@ -1,0 +1,23 @@
+[
+  {
+    "file": "Dashboard-Muhammed.html",
+    "name": "Muhammed",
+    "role": "manager",
+    "subtitle": "TMMT · Manager",
+    "extraTiles": []
+  },
+  {
+    "file": "Dashboard-Justin-Perez.html",
+    "name": "Justin",
+    "role": "manager",
+    "subtitle": "TMMT · Manager",
+    "extraTiles": []
+  },
+  {
+    "file": "Dashboard-Michael-Bibbs.html",
+    "name": "Michael",
+    "role": "vendor",
+    "subtitle": "M. Bibbs Cleaning & Moving",
+    "extraTiles": []
+  }
+]
